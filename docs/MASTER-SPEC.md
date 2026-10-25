@@ -2092,6 +2092,7 @@ Your source file contained these prompts. Exact duplicates were merged into one 
 | 16. Enterprise AI practice gap review (added after review) | Appendix E |
 | 17. Legacy problem design, synthetic operating history, KPI tree, pre-registered hypotheses, member journey, end-to-end ledger proof | Appendix F |
 | 21. Keys, tokens, and account setup without secrets in the prompt | Appendix K and `.env.example` |
+| 22. Live public demo link, GenAI telemetry conventions, AI observability tooling decision | Appendix L |
 | 19. Portfolio continuity with stages 0–8, reuse of existing repos, scope tiers, backlog, Stage 10 boundary, coverage map | Part 0.7 |
 | 20. Document/vision extraction, classical ML baseline, domain-agnostic method and second mini-domain | Appendices H, I, J |
 | 18. Source video transcript and tool roles (Claude Code with MCPs, Egolite, Mira, Codex, Cursor, CodeRabbit, Supabase incl. vector and edge functions, Vercel + bolt.new, Monday.com agents, Miro, Kimi/GLM/Qwen routing, Invoco, minimal-stack principle) | Appendix G |
@@ -2703,6 +2704,34 @@ Classify incoming requests and route them. Classes:
 The method and infrastructure transfer. Discovery, rules, data access, validation, and approvals must be redone for every customer. Prototype speed is not production speed.
 
 **Milestone placement:** Milestone 17.
+
+---
+
+## APPENDIX L: Final enterprise additions
+
+### L1. Live public demo link (Tier 2, near Milestone 12)
+Every published stage on vamsialla.com has a live app, so Stage 9 should too.
+- **Prepare:** a low-cost hosted deployment of the **public demo mode** (C.8).
+  - Synthetic data only.
+  - Mock AI by default, or live AI with a hard spending cap.
+  - Request limits.
+  - No shared admin account.
+  - Scheduled demo reset.
+- **Before anything is created,** present me with:
+  - Two or three hosting options with monthly cost estimates, sourced from current official pricing.
+  - Teardown steps.
+- **Deploy only after I approve the option and budget.** Then verify the live URL with the Playwright happy path and add "Live app →" to the portfolio card, using the site's "wake up" note style if on free or sleeping hosting.
+- Until approved, the card shows no live link.
+
+### L2. GenAI telemetry conventions (Milestone 12)
+- Check the current OpenTelemetry semantic conventions for generative-AI and LLM calls, and their stability status.
+- If they're usable, instrument model calls with them: model, token usage, latency, finish/stop reason. Never include prompt or response content by default.
+- Record the version and stability status in `docs/decisions.md`. If the conventions are still experimental, say so and keep the attribute names isolated in one module for easy migration.
+
+### L3. AI observability tooling decision (Milestone 12)
+- In `docs/fde-tool-map.md`, add a short evaluation of dedicated LLM observability and eval tools (for example Langfuse, Arize Phoenix, LangSmith): what they add over this project's OpenTelemetry tracing and own eval runner, plus data destinations, hosting options, and cost.
+- Optionally run a small trial with one self-hostable option on synthetic traces, only if it needs no paid account.
+- Conclude with **adopt / not needed / revisit at scale**, with reasons. Label it documentation-only if no trial ran.
 
 ---
 
