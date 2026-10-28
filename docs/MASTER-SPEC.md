@@ -120,15 +120,20 @@ The source drafts conflicted on several points. These are the binding resolution
 ### 0.7 Portfolio continuity, reuse, and scope control (read before Milestone 1)
 
 **Where this fits**
-- vamsialla.com presents one simulated engagement for a fictional hotel group, built in stages 0–8. As of October 2026, stage 6 is unpublished.
-- Its public repositories are under `github.com/vamsialladev`:
-  - `hotel-ai-discovery`
-  - `hotel-ops-assistant`
-  - `guest-request-agent`
-  - `eval-harness`
-  - `hotel-ai-handoff`
-  - `hotel-tools-mcp`
-  - `hotel-ops-analytics-agent`
+- vamsialla.com presents one simulated engagement for a fictional hotel group: a pre-sales stage (PS) and stages 0–8, all published as of late October 2026. Stages with an app have verified live links (Streamlit apps, plus a Vercel-hosted MCP endpoint for Stage 7), and each stage has a narrated demo video labeled "Narrated with a generated voice; captions included." Treat the live site and repositories as the source of truth; where they differ from this spec, follow the site and record the difference.
+- Its public repositories are under `github.com/vamsialladev`, including:
+  - `fde-account-research-agent` (PS)
+  - `hotel-ai-discovery` (0)
+  - `hotel-ops-assistant` (1)
+  - `guest-request-agent` (2)
+  - `eval-harness` (3)
+  - `hotel-ai-handoff` (4–5)
+  - `resort-activities-concierge` (6)
+  - `hotel-tools-mcp` (7)
+  - `hotel-ops-analytics-agent` (8)
+  - `agent-protocols-lab` (protocol demos)
+  - `vamsialladev.github.io` (the website)
+- Site conventions to follow (record them in `docs/continuity.md`): badge "Live" only with a verified live link, otherwise "Built" (document-only stages show "Published"); "<App> (live) →" links with the wake note; "Watch the demo" links; case-study sections (real output, problem, approach, architecture, results, demo, trade-offs, limitations, what's next); `projects.json` and the no-JavaScript card copies kept in sync; every number traceable to a stored report.
 - This project is **Stage 9: Loyalty Support Modernization** for the same hotel group.
 
 **Continuity rules**
@@ -2227,10 +2232,11 @@ record exact manual steps and mark it Blocked. Record times, cost, evidence and 
 
 **Website page:**
 ```
-The website repo is at <path>. Inspect how the existing 8 project pages/cards are built.
-Prepare project #9 from portfolio/project-metadata.json and the case study, following those
-conventions exactly. Real screenshots only; leave repo and demo links empty unless I give
-real URLs. Don't deploy or push.
+The website repo is vamsialladev.github.io (local path: <path>). Inspect how the existing
+stage cards and case studies (PS and stages 0–8) are built. Prepare Stage 9 from
+portfolio/project-metadata.json and the case study, following those conventions exactly,
+as a website PR. Real screenshots and video only; add live links only when deployed and
+verified. Don't merge or publish without my OK.
 ```
 
 **Final verification:**
