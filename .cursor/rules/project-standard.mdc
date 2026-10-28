@@ -1,0 +1,22 @@
+---
+description: Stage 9 project standard shared with CLAUDE.md and AGENTS.md
+alwaysApply: true
+---
+
+# Project standard (shared)
+
+This repository is Stage 9 (Loyalty Support Modernization) of a simulated hotel-group engagement with synthetic
+data. The rules live in `CLAUDE.md`; `AGENTS.md` and this file point to the same rules and must not contradict
+them. The binding specification is `docs/MASTER-SPEC.md`.
+
+- Read `docs/implementation-status.md` and `docs/session-handoff.md` first; run the tests before editing.
+- One bounded change per requirement ID (`docs/requirements-matrix.md`); review the diff; update tracking files.
+- No fabricated results, URLs, users, approvals, savings or tool usage. Never weaken a failing test.
+- Eligibility, authorization, approval, amounts and execution stay deterministic Python.
+- Domain code never imports FastAPI, SQLAlchemy sessions, httpx or model SDKs.
+- Never read or print `.env`; use `python -m app.preflight --profile <name>`.
+- Record that the work was done in Cursor (and with which model) in `docs/tool-stack-evidence.md`.
+  Never attribute Cursor's work to another tool.
+
+Rule mechanism: `.cursor/rules/*.mdc` with front matter. Re-verified against Cursor's current docs in
+Milestone 15 (requirement TOOL-CURSOR-01).
