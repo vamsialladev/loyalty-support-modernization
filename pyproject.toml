@@ -1,0 +1,51 @@
+[project]
+name = "loyalty-support-modernization"
+version = "0.1.0"
+description = "Stage 9 of a simulated hotel-group engagement: missing-points investigations with human-approved simulated adjustments, benchmarked legacy vs conventional vs AI. Synthetic data."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Vamsi Alla", email = "vamsialla.dev@gmail.com" }]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "python-dotenv~=1.2.4",
+]
+
+[dependency-groups]
+dev = [
+    "mypy~=2.4.1",
+    "pytest~=9.2.0",
+    "pytest-cov~=7.1.0",
+    "ruff~=0.17.3",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
+ignore = ["S101"]  # assert is how pytest checks
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S603", "S607"]  # fake secrets and git calls in tests
+"app/env_leaks.py" = ["S603", "S607"]  # runs `git ls-files`
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["app"]
+
+[tool.coverage.report]
+fail_under = 70
+show_missing = true
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["app", "scripts"]
