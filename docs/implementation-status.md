@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-10-29 · **Current milestone:** 4 of 20 complete · **Next:** Milestone 5 (legacy arm A, runnable
 end to end in the browser), after the owner confirms the plan-mode choice. **Waiting on the owner:** the 30-label
-review, and two local values in `.env` (`APP_DB_PASSWORD`, `MOCK_API_DB_PASSWORD`) before the stack runs on it.
+review. The stack runs on the owner's `.env` (preflight READY; env-order bug fixed in `6adbc3b`, verification log).
 
 ## Completion scores (spec Part 0.5)
 Counted from `docs/requirements-matrix.md` by `uv run python scripts/matrix_scores.py`. Only "Implemented and

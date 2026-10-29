@@ -5,9 +5,9 @@
 ## Where things stand
 - Milestones 1–4 are done and committed on `main` (local only; no remote exists). 204 offline tests pass; the 6
   real-Postgres tests pass inside `scripts\compose_check.ps1`.
-- The local stack works from scratch on a throwaway env file (compose check). **It has not been started on the
-  owner's `.env`**, which still lacks `APP_DB_PASSWORD` and `MOCK_API_DB_PASSWORD`.
-- Waiting on the owner: the 30-label review; running `scripts\update-local-env.ps1` (adds only the missing values).
+- The local stack runs on the owner's `.env` (preflight READY, roles verified, seeded). A bug where the env script
+  put the role passwords below the URL lines that use them was fixed in `6adbc3b` (verification log, M4 follow-up).
+- Waiting on the owner: the 30-label review.
 
 ## Start the next session with
 1. Read `CLAUDE.md`, `docs/MASTER-SPEC.md`, this file and `docs/implementation-status.md`.
@@ -40,8 +40,7 @@ powershell -ExecutionPolicy Bypass -File scripts\compose_check.ps1
 - App business tables begin here or in M6 (decide in the plan: the safe write path is M6).
 
 ## Open items for the owner
-- Label review; `scripts\update-local-env.ps1`, then preflight READY, then `scripts\stack.ps1 -Action up` and
-  `-Action seed` to run the stack on your own `.env`.
+- Label review.
 - When ready: approval to create the GitHub repo and push.
 - Milestone 4 exercise: see the end of the milestone report.
 

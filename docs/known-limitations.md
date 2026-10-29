@@ -3,8 +3,6 @@
 Kept current at every milestone. Each line says what is limited, why, and what would change it.
 
 ## Added in Milestone 4 (2026-10-29)
-- **The stack hasn't run on the owner's `.env` yet**: it needs two new local role passwords (ADR-0036). The compose
-  check ran on a throwaway env file and passed.
 - **No load test**: concurrency is proven for correctness (20 requests, one key), not for throughput (Milestone 12).
 - **The mock API is a simplification**: real platforms differ in pagination, idempotency windows, lookup lag and
   error styles; the swap guide lists what to verify against a vendor sandbox.

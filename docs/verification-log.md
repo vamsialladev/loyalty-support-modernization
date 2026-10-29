@@ -3,6 +3,36 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## Milestone 4 follow-up: blank `${NAME}` expansion in the owner's `.env` (2026-10-29)
+
+**Reported by the owner** after running `scripts\update-local-env.ps1` on their `.env`: (1) preflight called
+`DATABASE_URL` and `MOCK_API_DATABASE_URL` "invalid format"; (2) `scripts\stack.ps1 -Action up` and `-Action seed`
+warned `The "APP_DB_PASSWORD" variable is not set. Defaulting to a blank string.` (same for `MOCK_API_DB_PASSWORD`),
+while preflight showed both as set. The stack started and seeding worked. No value was printed or read by hand at
+any step; the owner's `.env` was handled only by the script and preflight.
+
+**Root cause (one cause, both symptoms):** the script appended missing keys at the end of the file but rewrote the
+URL lines in place, so the URLs used `${APP_DB_PASSWORD}` / `${MOCK_API_DB_PASSWORD}` above the lines defining
+them. python-dotenv (preflight) and Docker Compose both expand `${NAME}` in a `.env` file top to bottom, so both
+URLs got a blank password. The containers were not affected: `docker-compose.yml` builds their URLs from
+`${APP_DB_PASSWORD:?}` itself and never uses the `.env` URL lines. The compose check missed it because it builds a
+fresh file from the template, where the order is already right.
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | Reproduce on a fake pre-Milestone-4 file (fake values, scratchpad) | old `update-local-env.ps1`, then preflight and `docker compose config --quiet` | Both symptoms reproduced: URL lines at lines 24-25, the appended passwords at 97-98; preflight NOT READY (2 problems, both URLs "invalid format"); Compose printed both "variable is not set" warnings |
+| 2 | Did the blank value reach the containers? | `docker compose config --format json` on the same file, lengths only | No: `db` got both role passwords (48 characters each); the `app` and `mock-api` URLs had 48-character passwords |
+| 3 | Live roles on the owner's original stack, before any change (read-only) | `pytest tests/test_db_roles_postgres.py` with `TEST_DB_ROLES_CONTAINER=loyalty-db-1` | 3 passed: `loyalty_app` and `mock_api` each have a stored SCRAM-SHA-256 password, and both refuse a blank password over TCP. No role was created with a blank password |
+| 4 | Fix | commit `6adbc3b` | Script moves each definition above the first line that uses it (repairs old files too); preflight names a `${NAME}` used above its definition or never defined; compose uses `${NAME:?}` for every secret; `01-roles.sh` refuses blank or short role passwords before `psql` runs; `stack.ps1` stops on Compose's unset-variable warning and gains `-Action verify-roles` |
+| 5 | New tests catch the bug | the 9 new offline tests with the four fixed files stashed (old code) | All 9 failed on the old code; all pass on the fix (preflight per-role URL form x3, compose strictness x1, init script refusing blank or short passwords x3, script repair from two starting files x2) |
+| 6 | Full offline suite | `scripts\test.ps1` | Exit 0: ruff and mypy clean; **215 passed, 9 skipped** (6 mock-API and 3 role tests need a running stack); coverage 94% |
+| 7 | Guard on the owner's unrepaired `.env` | `scripts\stack.ps1 -Action status` | Refused: "Compose would use a blank value for: APP_DB_PASSWORD, MOCK_API_DB_PASSWORD" |
+| 8 | Repair the owner's `.env` | fixed `update-local-env.ps1` | "moved above the lines that use them: APP_DB_PASSWORD, MOCK_API_DB_PASSWORD"; nothing added, generated or rewritten; backup `.env.bak` |
+| 9 | Preflight after the repair | `python -m app.preflight --profile portfolio` | **READY**; both URLs and both role passwords `set` |
+| 10 | Reset the owner's stack (owner approved deleting `loyalty_pgdata`) | `stack.ps1 -Action clean`, `up`, `seed` | Volume removed and recreated (21:09 UTC); `01-roles.sh` ran: `CREATE ROLE` x2, `CREATE DATABASE` x2; all three services healthy; seed: 3,286 members, 6,800 stays, 3,836 ledger entries, 12 queue items; app and mock `/readyz` both ready (each role logged in with its real password) |
+| 11 | Roles after the reset | `stack.ps1 -Action verify-roles` | 3 passed (stored SCRAM password for both roles; blank password refused for both); `docker compose config` printed 0 unset-variable warnings; preflight READY |
+| 12 | Appendix C again (changed init script and compose check) | owner stack `down` (volume kept), `scripts\compose_check.ps1`, owner stack `up` | **compose check passed**, every step including the real-Postgres step with the new role tests; owner stack back up with its seeded data |
+
 ## Milestone 4 (2026-10-29)
 
 | # | Check | Command | Result |

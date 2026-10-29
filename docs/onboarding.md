@@ -134,6 +134,9 @@ contract test. Then explain whether a 502 after a write is safe to retry.
   and commit the new manifest with a reason; if held-out labels changed, that is a new dataset version.
 - **`docker compose` says a variable is required:** run `scripts\update-local-env.ps1`; it adds only missing
   values and never changes yours. Preflight then shows which settings are still missing.
+- **Compose warns "variable is not set" but preflight shows it set, or a URL is "invalid format":** a `.env`
+  line uses `${NAME}` above the line that defines `NAME`, and `.env` is read top to bottom. Preflight names the
+  line; `scripts\update-local-env.ps1` moves the definition up. `stack.ps1` refuses to run until it's fixed.
 - **The mock API's `/readyz` says `not_seeded`:** run `scripts\stack.ps1 -Action seed` (generate `seed_data/v1`
   first if the seed reports `seed_data_missing`).
 - **Port 5432, 8010 or 8020 already in use:** another stack (or the compose check with `-Keep`) is running; stop it.
