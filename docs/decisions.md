@@ -280,3 +280,82 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **Decision:** `evaluations/discovery_analysis.py` writes `docs/day-one-discovery.md`, `docs/problem-statement.md`,
   charts and the executive-brief block from the history; the dashboard page joins the console in Milestone 7.
 - **What would change this decision:** a stakeholder walkthrough needing interactive filtering before Milestone 7.
+
+## ADR-0035: the mock API speaks the customer's field names; the app's adapter maps them
+- **Context:** the purpose asks that every mock can be swapped for the real system. Owner's decision Q1 (M4 plan).
+- **Options considered:** (a) mock returns canonical names, adapter passes them through; (b) mock returns the
+  customer's upstream names from `config/customers/hg-demo.yaml`, adapter maps them to canonical records.
+- **Decision:** (b). One small module, `customer_shapes`, does the mapping in both directions from the same file
+  (field names, enum codes such as `ACTIVE`/`CHECKED_OUT`, dollars to cents), so the mock and the adapter can't drift.
+- **Trade-off:** more code than (a); in return the mapping path a real loyalty platform needs is exercised now, and a
+  contract test checks that the OpenAPI field names equal the mapping file.
+- **What would change this decision:** a real customer API whose responses need more than renames, codes and unit
+  conversions (nested objects, other paging styles): that customer then gets its own adapter, not a bigger mapper.
+
+## ADR-0036: one PostgreSQL server, separate roles and databases
+- **Context:** the app and the mock customer systems stand for systems with different owners. Owner's decision Q4.
+- **Options considered:** one server with one role; one server with a role and database each; two servers.
+- **Decision:** one `postgres:16.15-alpine` container; roles `loyalty_app` (owns `loyalty`) and `mock_api` (owns
+  `mock_customer_api` and `mock_customer_api_test`); `CONNECT` revoked from `PUBLIC`, so neither role can open the
+  other's database. The admin role (`POSTGRES_USER`) is used only by the init script.
+- **Trade-off:** two more local passwords (`APP_DB_PASSWORD`, `MOCK_API_DB_PASSWORD`); the owner's existing values
+  stay untouched (`scripts/update-local-env.ps1` adds only missing ones).
+- **Result:** the compose check proves `loyalty_app` is refused by the mock database.
+- **What would change this decision:** a hosted deployment (separate managed instances per system), or load where
+  the two databases compete for one server.
+
+## ADR-0037: a simulated clock (`X-Sim-Time`) instead of reseeding per case
+- **Context:** each benchmark case must see the world as it was at its `received_at_utc`. Owner's decision Q2.
+- **Options considered:** reseed a snapshot per case; a request header that filters by time.
+- **Decision:** reads honour `X-Sim-Time`: ledger entries posted later and queue items not yet queued are invisible;
+  adjustments are stamped with that time. Accepted only when `MOCK_API_SIM_CLOCK=true` (a typed error otherwise);
+  preflight refuses it with `PUBLIC_DEMO_MODE` and in hosted profiles.
+- **Trade-off:** stays and member profiles are not time-versioned (their state is as of the claim by construction).
+- **What would change this decision:** scenarios where member or stay records themselves change over time.
+
+## ADR-0038: deterministic failure injection by header and seeded rules
+- **Context:** spec B.3 lists the failures to handle; tests and the benchmark must reproduce them on demand.
+- **Decision:** `X-Mock-Fault` (auth_failure, rate_limited, timeout, unavailable, malformed, schema_v1_1, duplicate,
+  partial, commit_then_lost, plus the test-only crash_before_commit) and an opt-in rule file matching IDs by suffix.
+  Both only when `MOCK_API_FAULTS=true`. A timeout is a server-side delay longer than the client timeout, not a hang.
+- **Trade-off:** rule counters (`times`) live in memory and reset on restart; data is durable, faults are not.
+- **What would change this decision:** faults that must survive restarts or span requests (then a fault table).
+
+## ADR-0039: one transaction for an adjustment and its idempotency record; the platform enforces only the key
+- **Context:** spec B.3 requires the operation and its idempotency record to persist atomically; Milestone 6's
+  reconciliation depends on a status lookup by key.
+- **Options considered:** idempotency in a cache or middleware; in the same database transaction.
+- **Decision:** insert the idempotency record (primary key = the key), the ledger entry and the adjustment, store the
+  response, commit: one transaction. Same key and same body replays the stored response; same key and a different
+  body is 409; a concurrent duplicate loses on the primary key and replays the winner. Different keys for the same
+  stay both apply: stopping that is the app's job (M6), and it is what lets the A as-is variant double-credit.
+- **Result:** real-Postgres tests: a failure before commit writes nothing; 20 concurrent requests with one key give
+  exactly one adjustment and one ledger entry.
+- **What would change this decision:** a real platform with different idempotency rules (key expiry, scope per
+  client): its adapter then documents and tests those rules.
+
+## ADR-0040: seed data mounted read-only; images carry service code only
+- **Context:** labels and generator metadata must never reach a service. Owner's decision Q3.
+- **Decision:** `seed_data/v1` is generated on the host and mounted read-only into the mock API container. Images copy
+  only `customer_shapes/`, `config/customers/`, their own package and migrations. `.dockerignore` excludes
+  `benchmarks/`, `evaluations/`, `seed_data/`, `docs/`, `tests/` and `.env*`; a test checks the Dockerfiles and the
+  compose check inspects the built images. Containers run as UID 10001 with read-only root file systems.
+- **What would change this decision:** a hosted demo, where the dataset must ship with the deployment (then a separate
+  data image or a one-off seed job, still without labels).
+
+## ADR-0041: dependency groups per image
+- **Context:** TD-05: generator libraries (reportlab, Pillow, matplotlib) would bloat the service images.
+- **Decision:** core dependencies (pydantic, PyYAML, httpx, python-dotenv, tzdata); group `api` (FastAPI, uvicorn,
+  SQLAlchemy, psycopg, Alembic); group `data` (generator and analysis); group `dev`. Locally `uv sync` installs all;
+  images run `uv sync --frozen --no-default-groups --group api`.
+- **What would change this decision:** the app and the mock API needing different dependency sets.
+
+## ADR-0042: problem+json errors, cursor pagination, and an adapter that never guesses
+- **Context:** the app must handle every failure the same way, whatever system sits behind the port.
+- **Decision:** the mock returns RFC 9457 `application/problem+json` (`code`, `correlation_id`, `Retry-After`) and
+  cursor pagination (max 100). The adapter turns everything into typed errors; retries only 429, 503 and read
+  timeouts (bounded, honouring `Retry-After`); never retries a write after a timeout or 5xx (`UncertainOutcome`, so
+  the caller reconciles first); raises `PartialResult` rather than returning half a ledger; raises `SchemaMismatch` on
+  a renamed field while tolerating new ones.
+- **What would change this decision:** a customer API with a different error or paging style: its adapter maps that
+  style to the same typed errors.

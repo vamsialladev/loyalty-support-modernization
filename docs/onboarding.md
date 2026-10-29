@@ -80,6 +80,50 @@ live only under `benchmarks/datasets/v1/labels/`, and `tests/test_generator.py` 
 number has an extra digit): change its builder in `seed_data/generator/scenarios.py`, regenerate, and see whether
 the labeler agrees. Then explain what the manifest diff tells you.
 
+## 4b. The local stack (Milestone 4)
+
+**What runs.** Three containers (`docker-compose.yml`): Postgres 16 with separate databases and roles for the app
+and the mock customer systems; the mock customer API (a synthetic loyalty platform + PMS, port 8020); the app
+placeholder (health and readiness only, port 8010). All ports bind to 127.0.0.1.
+
+**First run.**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\update-local-env.ps1
+```
+
+```powershell
+uv run python -m app.preflight --profile portfolio
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\stack.ps1 -Action up
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\stack.ps1 -Action seed
+```
+
+Then open http://127.0.0.1:8020/docs (the mock API's contract, with the customer's field names) and
+http://127.0.0.1:8010/readyz. `-Action reset-demo` reloads the data; `-Action clean` deletes the database volume.
+
+**How the app talks to a customer system.** Only through `app/ports/customer_systems.py`. The adapter
+(`app/adapters/mock_customer_api.py`) maps the customer's field names to canonical records with
+`customer_shapes` and the customer file in `config/customers/`, and turns every failure into a typed error.
+Remember three rules: reads retry only transient failures; **a write that times out is never retried blindly**
+(`UncertainOutcome`: look it up by idempotency key first); half a ledger is an error (`PartialResult`), never a result.
+
+**Testing failures.** With `MOCK_API_FAULTS=true`, send `X-Mock-Fault: <name>` (see `mock_customer_api/faults.py`);
+with `MOCK_API_SIM_CLOCK=true`, send `X-Sim-Time` to see the world at a case's request time. Both stay `false` in your
+`.env` and are refused in public demo mode.
+
+**Checks.** `tests/test_mock_api.py` runs everything in-process on SQLite (no Docker). `scripts\compose_check.ps1`
+builds the images, brings up a throwaway stack (its own env file and project name, never your `.env` or volume),
+seeds it, runs live checks and the real-Postgres tests, and tears it down.
+
+**First task here.** Add a fault (for example a 502 from a proxy) to `faults.py`, handle it in the adapter, and add a
+contract test. Then explain whether a 502 after a write is safe to retry.
+
 ## 5. Common failure modes so far
 - **`ModuleNotFoundError: app`** when running pytest outside `uv run`: use `uv run pytest`.
 - **Preflight says NOT READY:** expected with an empty `.env`; it lists exactly which settings are missing.
@@ -88,6 +132,12 @@ the labeler agrees. Then explain what the manifest diff tells you.
   the policy section first; the labeler is usually right.
 - **`test_committed_manifest_is_reproduced` fails:** generator output changed. If the change is intended, regenerate
   and commit the new manifest with a reason; if held-out labels changed, that is a new dataset version.
+- **`docker compose` says a variable is required:** run `scripts\update-local-env.ps1`; it adds only missing
+  values and never changes yours. Preflight then shows which settings are still missing.
+- **The mock API's `/readyz` says `not_seeded`:** run `scripts\stack.ps1 -Action seed` (generate `seed_data/v1`
+  first if the seed reports `seed_data_missing`).
+- **Port 5432, 8010 or 8020 already in use:** another stack (or the compose check with `-Keep`) is running; stop it.
+- **A Postgres test shows SKIPPED:** `TEST_MOCK_API_DATABASE_URL` isn't set; the compose check sets it on its own stack.
 - **Generation feels slow:** the first run on a cold machine took about 70 s (later runs about 5 s). Use
   `--scale 0.1 --no-documents` while iterating.
 

@@ -8,8 +8,8 @@ points ledger right, with a supervisor approving every adjustment.**
 > Guest Rewards program. All data is synthetic. Independent portfolio project; no real customer, users or results.
 > Discovery and scoping (stage 0): [hotel-ai-discovery](https://github.com/vamsialladev/hotel-ai-discovery).
 
-**Status: Milestone 3 of 20 (synthetic data, labels, splits, legacy history, day-one analysis).** There is no app to
-run yet; the data layer runs: `scripts\data.ps1 -Action generate`. Results, a demo and a live link will
+**Status: Milestone 4 of 20 (mock customer systems, contracts, Postgres, Docker Compose).** There is no case workflow
+yet; the data layer and the local stack run: `scripts\data.ps1 -Action generate`, then `scripts\stack.ps1 -Action up`. Results, a demo and a live link will
 appear here only when they exist and are measured. Progress: [docs/implementation-status.md](docs/implementation-status.md).
 
 ## What exists today

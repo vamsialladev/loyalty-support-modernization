@@ -107,24 +107,24 @@ status.
 
 | ID | Requirement | Spec | Tier | M | Score | Implementation | Evidence | Status |
 |---|---|---|---|---|---|---|---|---|
-| ARCH-01 | Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2, Alembic, Postgres 16 | B.1 | 1 | 4 | core | — | — | Planned (M4) |
-| ARCH-02 | Ports and adapters: domain never imports web, DB session, HTTP or model SDKs (enforced by a test) | B.1 | 1 | 4 | core | — | — | Planned (M4) |
-| ARCH-03 | Modular monolith plus separate mock customer API; no needless services, frameworks, vector DBs | B.1 | 1 | 4 | core | — | — | Planned (M4) |
+| ARCH-01 | Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2, Alembic, Postgres 16 | B.1 | 1 | 4 | core | FastAPI, Pydantic v2, SQLAlchemy 2.1, Alembic 1.20, psycopg 3, `postgres:16.15-alpine` (pinned in `uv.lock` and compose) | `tests/test_compose.py::test_compose_binds_locally_pins_images_and_requires_secrets`, `tests/test_mock_api.py::test_migration_matches_the_table_definitions` | Implemented and verified |
+| ARCH-02 | Ports and adapters: domain never imports web, DB session, HTTP or model SDKs (enforced by a test) | B.1 | 1 | 4 | core | `app/domain/` (dataclasses only), `app/ports/`, `app/adapters/` | `tests/test_app_shell.py::test_domain_code_imports_no_web_database_http_or_model_sdk` | Implemented and verified |
+| ARCH-03 | Modular monolith plus separate mock customer API; no needless services, frameworks, vector DBs | B.1 | 1 | 4 | core | App placeholder + separate `mock_customer_api` service and database; no extra services | `tests/test_compose.py::test_compose_binds_locally_pins_images_and_requires_secrets`; compose check 2026-10-29 | Implemented and verified |
 | PROF-01 | Six operating profiles (portfolio, live-model, discovery, staging, approved, enterprise-identity) | B.2 | 1 | 1, 6 | core | `app/preflight.py` profile table | `tests/test_preflight.py::test_all_six_profiles_defined` | Implemented but unverified |
 | PROF-02 | UI banner: SYNTHETIC DATA · profile · AI mode (MOCK / LIVE model ID) · customer | B.2 | 1 | 7 | core | — | — | Planned (M7) |
 | PROF-03 | No silent fallback between providers or data destinations | B.2 | 1 | 1, 8 | core | `app/preflight.py` (provider without key is not ready) | `tests/test_preflight.py::test_selected_provider_without_key_is_not_ready` | Implemented but unverified |
 | PROF-04 | `python -m app.preflight --profile X` reports readiness without printing secrets | B.2 | 1 | 1 | core | `app/preflight.py` | `tests/test_preflight.py` | Implemented and verified |
 | PROF-05 | Four access types kept separate (dev assistant, runtime model, customer system, deployment) | B.2 | 1 | 1 | sec | `docs/tool-access-matrix.md` §2 | — | Documentation-only |
-| MOCK-01 | Mock API endpoints: member, stay, ledger, ticket create, adjustment submit (idempotency key), adjustment status | B.3 | 1 | 4 | core | — | — | Planned (M4) |
-| MOCK-02 | Versioned OpenAPI contracts and adapter interfaces | B.3 | 1 | 4 | core | — | — | Planned (M4) |
-| MOCK-03 | Realistic IDs and timestamps, pagination, typed errors | B.3 | 1 | 4 | core | — | — | Planned (M4) |
-| MOCK-04 | Operation and idempotency record persisted atomically | B.3 | 1 | 4 | core | — | — | Planned (M4) |
-| MOCK-05 | Failure cases: auth, 429, timeouts, 503, malformed, schema change, duplicates, partial, completed-but-response-lost | B.3 | 1 | 4 | core | — | — | Planned (M4) |
-| MOCK-06 | Deterministic failure injection (header + seeded scenarios) | B.3 | 1 | 4 | core | — | — | Planned (M4) |
-| MOCK-07 | Reset and seed control commands | B.3 | 1 | 4 | core | — | — | Planned (M4) |
-| MOCK-08 | Contract tests incl. malformed and schema-changed responses | B.3, D | 1 | 4 | core | — | — | Planned (M4) |
+| MOCK-01 | Mock API endpoints: member, stay, ledger, ticket create, adjustment submit (idempotency key), adjustment status | B.3 | 1 | 4 | core | `mock_customer_api/api.py`: members, stays, ledger, posting queue, tickets, adjustments (Idempotency-Key required), status lookup | `tests/test_mock_api.py::test_adapter_reads_map_to_canonical_records`, `tests/test_mock_api.py::test_ticket_creation`, `tests/test_mock_api.py::test_missing_idempotency_key_is_rejected` | Implemented and verified |
+| MOCK-02 | Versioned OpenAPI contracts and adapter interfaces | B.3 | 1 | 4 | core | `mock_customer_api/contracts/openapi-v1.json` (v1.0.0); port `app/ports/customer_systems.py` | `tests/test_mock_api.py::test_committed_contract_matches_the_service`, `tests/test_mock_api.py::test_contract_uses_the_customers_field_names` | Implemented and verified |
+| MOCK-03 | Realistic IDs and timestamps, pagination, typed errors | B.3 | 1 | 4 | core | Generator IDs, `ADJ-`/`TCK-` IDs, UTC timestamps, cursor pagination (max 100), RFC 9457 problem+json | `tests/test_mock_api.py::test_ledger_pagination_is_complete`, `tests/test_mock_api.py::test_validation_errors_name_the_field` | Implemented and verified |
+| MOCK-04 | Operation and idempotency record persisted atomically | B.3 | 1 | 4 | core | `mock_customer_api/service.py::submit_adjustment`: one transaction (ADR-0039) | `tests/test_mock_api_postgres.py::test_failure_before_commit_writes_nothing`, `tests/test_mock_api_postgres.py::test_twenty_concurrent_requests_with_one_key_apply_once` | Implemented and verified |
+| MOCK-05 | Failure cases: auth, 429, timeouts, 503, malformed, schema change, duplicates, partial, completed-but-response-lost | B.3 | 1 | 4 | core | Faults: auth, 429, timeout, 503, malformed, schema change, duplicate, partial, commit-then-lost; typed adapter errors | `tests/test_mock_api.py::test_faults_raise_typed_errors`, `tests/test_mock_api.py::test_partial_ledger_is_never_returned_as_complete`, `tests/test_mock_api.py::test_commit_then_lost_is_uncertain_and_then_found` | Implemented and verified |
+| MOCK-06 | Deterministic failure injection (header + seeded scenarios) | B.3 | 1 | 4 | core | `X-Mock-Fault` header + seeded rule file, only with `MOCK_API_FAULTS=true` (ADR-0038) | `tests/test_mock_api.py::test_unknown_fault_and_disabled_switches_are_refused`, `tests/test_mock_api.py::test_seeded_fault_rules_fire_a_limited_number_of_times` | Implemented and verified |
+| MOCK-07 | Reset and seed control commands | B.3 | 1 | 4 | core | `python -m mock_customer_api.seed` (--reset, --cleanup), `/_control/seed`, `/_control/reset`; `app.seed` | `tests/test_mock_api.py::test_control_seed_and_reset`, `tests/test_app_shell.py::test_seed_command_migrates_then_calls_the_mock` | Implemented and verified |
+| MOCK-08 | Contract tests incl. malformed and schema-changed responses | B.3, D | 1 | 4 | core | In-process contract tests incl. malformed and schema-changed responses; wire-level adapter tests | `tests/test_mock_api.py::test_schema_change_missing_field_and_extra_field`, `tests/test_mock_api.py::test_wrong_structure_is_malformed` | Implemented and verified |
 | MOCK-09 | Reconciliation jobs against the mock API | B.3 | 1 | 6 | core | — | — | Planned (M6) |
-| MOCK-10 | Seeded scenarios: the 12 listed in B.3 | B.3 | 1 | 4 | core | — | — | Planned (M4) |
+| MOCK-10 | Seeded scenarios: the 12 listed in B.3 | B.3 | 1 | 4 | core | Data scenarios from the generator (M3) + API scenarios in `mock_customer_api/config/fault_rules.yaml` (timeout, rate limit, temporary failure, commit-then-lost) | `tests/test_compose.py::test_fault_rules_reference_known_faults`, `tests/test_generator.py::test_every_catalog_item_is_seeded` | Implemented and verified |
 | CUST-01 | Two customers differ in policy rules, field mappings, waiting periods, approval limits | B.4 | 2 | 14 | core | — | — | Planned (M14) |
 | CUST-02 | Adapt through config and adapters, never a code copy; separate profiles and databases | B.4 | 2 | 14 | core | — | — | Planned (M14) |
 | CUST-03 | No tenant-isolation or multitenancy claim beyond what is implemented and tested | B.4 | 2 | 14 | sec | — | — | Planned (M14) |
@@ -178,7 +178,7 @@ status.
 | WP-09 | Timeout → `Execution unknown` → status reconciliation before any retry | B.10 | 1 | 6 | core | — | — | Planned (M6) |
 | WP-10 | Emergency switch disables adjustments, keeps investigation; tested under concurrency | B.10 | 1 | 6 | core | — | — | Planned (M6) |
 | WP-11 | Audit history, append-only DB role, integrity guarantees stated honestly | B.10 | 1 | 6 | sec | — | — | Planned (M6) |
-| DB-01 | Alembic migrations for users/roles, cases, evidence, policies/chunks, recommendations, approvals, execution attempts, idempotency, jobs, audit, eval runs, feedback | B.11 | 1 | 4, 6 | core | — | — | Planned (M4) |
+| DB-01 | Alembic migrations for users/roles, cases, evidence, policies/chunks, recommendations, approvals, execution attempts, idempotency, jobs, audit, eval runs, feedback | B.11 | 1 | 4, 6 | core | Mock API schema migrated (`mock_customer_api/migrations/`); app baseline revision only; app business tables in M6 | `tests/test_mock_api.py::test_migration_matches_the_table_definitions` | Planned (M6) |
 | API-01 | APIs: cases CRUD/list, view, start investigation, supply info, recommendations/citations, approve/reject, execute, status, audit, metrics, feedback | B.11 | 1 | 6, 7 | core | — | — | Planned (M6) |
 | API-02 | Pagination, validation, consistent errors, OpenAPI docs, duplicate-investigation prevention | B.11 | 1 | 6 | core | — | — | Planned (M6) |
 | JOB-01 | Postgres job queue: leases, heartbeats, abandoned recovery, bounded retries with backoff, dead jobs, duplicate prevention, graceful shutdown, correlation IDs | B.12, App. B | 1 | 6 | core | — | — | Planned (M6) |
@@ -224,9 +224,9 @@ rest are Tier 2.
 | ID | Requirement | Spec | Tier | M | Score | Implementation | Evidence | Status |
 |---|---|---|---|---|---|---|---|---|
 | TEST-01 | Unit tests: eligibility and date boundaries, policy version selection, state transitions, approval binding, redaction | D | 1 | 6 | core | — | — | Planned (M6) |
-| TEST-02 | Real-Postgres integration tests: idempotency atomicity, concurrent approve/execute, duplicates, timeout after commit, reconciliation, worker restart, approval invalidation, object-level authz | D | 1 | 6, 9 | core | — | — | Planned (M6) |
+| TEST-02 | Real-Postgres integration tests: idempotency atomicity, concurrent approve/execute, duplicates, timeout after commit, reconciliation, worker restart, approval invalidation, object-level authz | D | 1 | 6, 9 | core | M4: idempotency atomicity, concurrent duplicates, conflicts, commit-then-lost on real Postgres; approval, execution and worker tests in M6/M9 | `tests/test_mock_api_postgres.py::test_twenty_concurrent_requests_with_one_key_apply_once` | Planned (M6) |
 | TEST-03 | AI harness tests: every stop condition, malformed args, unauthorized tools, injection, citation provenance, missing/conflicting info | D | 1 | 8 | core | — | — | Planned (M8) |
-| TEST-04 | Failure-injection tests: upstream failures, timeouts, rate limits, provider outage | D | 1 | 6, 8 | core | — | — | Planned (M6) |
+| TEST-04 | Failure-injection tests: upstream failures, timeouts, rate limits, provider outage | D | 1 | 6, 8 | core | M4: upstream failures, timeouts, rate limits (contract + live checks); provider outage in M8 | `tests/test_mock_api.py::test_read_timeout_is_retried_then_raised`, `tests/test_mock_api.py::test_write_timeout_is_never_retried` | Planned (M8) |
 | TEST-05 | Playwright: full happy path with a different supervisor, self-approval blocked, escalation, missing info, rejection, reopening, reconciliation | D | 1 | 7 | core | — | — | Planned (M7) |
 | TEST-06 | Deterministic tests separate from model evals; one offline command (`make test` + PowerShell equivalent) | D | 1 | 1 | core | `Makefile`, `scripts/test.ps1` | verification log 2026-10-28 (`scripts/test.ps1` run) | Implemented and verified |
 
@@ -267,12 +267,12 @@ rest are Tier 2.
 | ID | Requirement | Spec | Tier | M | Score | Implementation | Evidence | Status |
 |---|---|---|---|---|---|---|---|---|
 | OPS-01 | Declared load profile and bounded load test report | F.1 | 2 | 12 | core | — | — | Planned (M12) |
-| OPS-02 | `/healthz`, `/readyz`, structured logs with correlation IDs, OpenTelemetry with context propagation, sensitive-data filtering | F.1 | 2 | 6, 12 | core | — | — | Planned (M6) |
+| OPS-02 | `/healthz`, `/readyz`, structured logs with correlation IDs, OpenTelemetry with context propagation, sensitive-data filtering | F.1 | 2 | 6, 12 | core | M4: `/healthz`, `/readyz` on both services, correlation IDs on mock API responses; structured logs and OpenTelemetry in M12 | `tests/test_app_shell.py::test_readyz_needs_migrations_and_customer_systems`, `tests/test_mock_api.py::test_readyz_reports_seeded_and_empty` | Planned (M12) |
 | OPS-03 | Metrics incl. per-case model usage and cost, provider spend tracking | F.1 | 2 | 12 | core | — | — | Planned (M12) |
 | OPS-04 | Dashboards and actionable alerts linked to runbooks | F.1 | 2 | 12 | core | — | — | Planned (M12) |
 | OPS-05 | Reliability: budgets, bounded concurrency, circuit breakers where justified, transient-only backoff, backpressure, provider-outage manual fallback, feature flags | F.1 | 2 | 8, 12 | core | — | — | Planned (M8) |
 | OPS-06 | Proposed SLOs kept apart from measured results; no availability claims from local tests | F.1 | 2 | 12 | core | — | — | Planned (M12) |
-| DEL-01 | Non-root containers with limits; Compose profiles demo/test/enterprise-identity/labs; quickstart works as written | F.2 | 1 | 4, 12 | core | — | — | Planned (M4) |
+| DEL-01 | Non-root containers with limits; Compose profiles demo/test/enterprise-identity/labs; quickstart works as written | F.2 | 1 | 4, 12 | core | M4: non-root (UID 10001), read-only containers, resource limits, quickstart (`up`, `app.seed`) verified by the compose check; Compose profiles (demo/test/enterprise-identity/labs) in M12 | compose check 2026-10-29 | Planned (M12) |
 | DEL-02 | CI: lint/format, types, Postgres tests, migration on empty DB, static analysis, dependency/secret/container/IaC scans, build, SBOM, Playwright, provenance | F.2 | 2 | 12 | sec | — | — | Planned (M12) |
 | DEL-03 | CI rules: no paid key, least-privilege tokens, no secrets to untrusted PRs, scanner failures reported, never disabled | F.2 | 2 | 12 | sec | — | — | Planned (M12) |
 | DEL-04 | Protected manual deploy workflow with environment approval and OIDC; not executed without authorization | F.2 | 2 | 12 | core | — | — | Planned (M12) |
@@ -349,7 +349,7 @@ rest are Tier 2.
 | REPO-02 | README, lockfile, `.env.example`, Windows + macOS/Linux setup, command set, troubleshooting, hardware guidance, MIT licence, third-party notices, limitations list | M.2 | 1 | 1, 20 | other | `README.md`, `uv.lock`, `LICENSE`, `.env.example` (first versions) | — | Implemented but unverified |
 | REPO-03 | Clean install verified from a fresh clone | M.3 | 4 | 20 | other | — | — | Planned (M20) |
 | REPO-04 | Independent usability test, or recorded as pending | M.3 | 4 | 20 | other | — | — | Planned (M20) |
-| DEF-01 | Make targets (`up`, `migrate`, `seed`, `reset-demo`, `test`, `eval`, `benchmark`, `preflight`, `down`, `clean`) each with a `scripts/*.ps1` equivalent | App. B | 1 | 1–6 | core | `Makefile`, `scripts/test.ps1`, `scripts/preflight.ps1`, `scripts/data.ps1` (test, preflight, data targets so far) | verification log 2026-10-29 | Implemented but unverified |
+| DEF-01 | Make targets (`up`, `migrate`, `seed`, `reset-demo`, `test`, `eval`, `benchmark`, `preflight`, `down`, `clean`) each with a `scripts/*.ps1` equivalent | App. B | 1 | 1–6 | core | `Makefile` + `scripts/*.ps1`: test, preflight, data, up, down, migrate, seed, reset-demo, clean, logs, compose-check (eval, benchmark to come) | verification log 2026-10-29 (PowerShell equivalents run; `make` not installed here) | Implemented but unverified |
 | DEF-02 | Tooling: uv + lockfile, ruff, mypy, gitleaks, pip-audit, syft, Trivy, Terraform | App. B | 1 | 1, 12 | other | `pyproject.toml`, `uv.lock` (uv, ruff, mypy, pytest so far) | verification log 2026-10-28 | Implemented but unverified |
 | FINAL-01 | Final acceptance report (N.2) with every item classified | N.2 | 4 | 20 | other | — | — | Planned (M20) |
 

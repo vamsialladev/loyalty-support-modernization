@@ -3,6 +3,21 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## Milestone 4 (2026-10-29)
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | Owner's `.env` before starting anything (owner's request) | `python -m app.preflight --profile portfolio` | `POSTGRES_PASSWORD`, `MOCK_API_TOKEN`, `APP_SECRET_KEY` set; `APP_DB_PASSWORD`, `MOCK_API_DB_PASSWORD` missing (new in M4, ADR-0036). The stack was **not** started on the owner's `.env` |
+| 2 | Base images exist and are pinned | `docker pull` | `postgres:16.15-alpine` (PostgreSQL 16.15), `python:3.12.10-slim-bookworm`, `ghcr.io/astral-sh/uv:0.13.5` |
+| 3 | In-process smoke test | scratch script: migrate SQLite, seed, adapter calls | Seed loaded 3,286 / 6,800 / 3,836 / 12; replay returned the same `ADJ-` ID; commit-then-lost raised `UncertainOutcome`, then found by key; bad token gave a typed 401 |
+| 4 | Contract tests, first run | `pytest tests/test_mock_api.py` | 1 failure: a test helper passed `timeout_fault_seconds` twice (test bug). Fixed; 41 passed |
+| 5 | Label-isolation scan after adding the mock API | `pytest -k app_cannot` | The word scan flagged Alembic's `branch_labels` and a docstring. Changed to path-like references (`labels/`, `benchmarks`, `evaluations`, `ground_truth`, `label-review`); the mock may read `seed_data/v1`, the app may not |
+| 6 | Lint and types | `ruff check`, `ruff format`, `mypy` (strict, 44 files) | Clean after configuring bugbear for FastAPI's `Depends`/`Query`/`Header` defaults |
+| 7 | Compose check, first run | `scripts\compose_check.ps1` | Failed at step 1: PowerShell 5.1 turns Docker's stderr progress into errors under `Stop`. Scripts switched to exit-code checking |
+| 8 | Compose check, second run | same | Everything passed except the image-contents step: PowerShell 5.1 stripped the inner double quotes of the `sh -c` script. Re-run by hand on the built images with a quote-free script: both pass (no `benchmarks`/`evaluations`/`seed_data`/`docs`/`tests`, no `.jsonl` on the image file system, UID 10001, `/srv` not writable) |
+| 9 | **Compose check, third run (Appendix C, M3-4)** | same | **Passed**: from an empty volume, `up --build --wait` healthy; `app.seed` migrated the app and loaded 3,286 members, 6,800 stays, 3,836 ledger entries, 12 queue items; app `/readyz` ready; 6/6 live checks (member, stay, sim clock, idempotent replay, real network timeout, commit-then-lost found by key); both images clean; **6/6 real-Postgres tests** (atomicity, 20 concurrent same-key requests apply once, conflict, two keys both apply, full seed, commit-then-lost over HTTP); `loyalty_app` refused by `mock_customer_api`. Stack and volume removed |
+| 10 | Full offline suite | `scripts\test.ps1` | Exit 0: ruff and mypy clean; **204 passed, 6 skipped** (the real-Postgres tests, which skip without `TEST_MOCK_API_DATABASE_URL` and passed in row 9); coverage 94% (gate 70%) |
+
 ## Milestone 3 (2026-10-28 to 2026-10-29)
 
 | # | Check | Command | Result |

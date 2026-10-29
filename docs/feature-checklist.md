@@ -12,7 +12,8 @@ in `docs/requirements-matrix.md`.
 
 ## Product (Milestones 3–8)
 - [x] Synthetic members, stays, ledger, policies, requests; reproducible by seed (DATA-01 to DATA-06)
-- [ ] Mock customer API with failure injection (MOCK-*)
+- [x] Mock customer API with contract, idempotent adjustments, simulated clock and failure injection (MOCK-01 to MOCK-08, MOCK-10)
+- [x] Local stack: `docker compose up`, migrate, seed from scratch (Appendix C, M3-4)
 - [ ] Legacy arm A end to end in the browser (ARMA-01)
 - [ ] Deterministic eligibility and policy-by-date retrieval (ELIG-01, POL-04)
 - [ ] Case state machine, supervisor approval, no self-approval, approval binding (WP-01–WP-06)
