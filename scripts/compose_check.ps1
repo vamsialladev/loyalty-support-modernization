@@ -39,10 +39,11 @@ foreach ($image in @("$project-mock-api", "$project-app")) {
         & docker run --rm --entrypoint sh $image -c 'for d in benchmarks evaluations seed_data docs tests; do test ! -e /srv/$d || exit 1; done; test -z $(find / -xdev -name *.jsonl 2>/dev/null) && test $(id -u) != 0'
     }
 }
-Step "real-Postgres integration tests" {
+Step "real-Postgres integration tests (incl. stored role passwords, blank password refused)" {
     $env:TEST_MOCK_API_DATABASE_URL = "postgresql+psycopg://mock_api:$($values['MOCK_API_DB_PASSWORD'])@127.0.0.1:5432/mock_customer_api_test"
+    $env:TEST_DB_ROLES_CONTAINER = "$project-db-1"
     uv run pytest -m postgres -q -p no:cacheprovider
-    Remove-Item Env:TEST_MOCK_API_DATABASE_URL
+    Remove-Item Env:TEST_MOCK_API_DATABASE_URL, Env:TEST_DB_ROLES_CONTAINER
 }
 Step "app role cannot connect to the mock database" {
     $out = & docker @compose exec -T -e "PGPASSWORD=$($values['APP_DB_PASSWORD'])" db psql -h 127.0.0.1 -U loyalty_app -d mock_customer_api -c "select 1" 2>&1

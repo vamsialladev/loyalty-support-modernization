@@ -193,12 +193,42 @@ class Settings:
     values: dict[str, str]
     sources: dict[str, str]
     unknown_in_file: tuple[str, ...] = ()
+    reference_problems: tuple[str, ...] = ()
+
+
+_REFERENCE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)")
+
+
+def reference_problems(raw: Mapping[str, str | None], environ: Mapping[str, str]) -> list[str]:
+    """`${NAME}` uses that will expand to a blank string, by name only.
+
+    python-dotenv and Docker Compose both expand references top to bottom, so a variable used on a line above its own
+    definition is blank at that point (unless the process environment supplies it).
+    """
+    order = {name: index for index, name in enumerate(raw)}
+    problems = []
+    for index, (name, value) in enumerate(raw.items()):
+        for ref in dict.fromkeys(_REFERENCE.findall(value or "")):
+            if environ.get(ref, "").strip():
+                continue
+            if ref not in order:
+                problems.append(
+                    f"{name} uses ${{{ref}}}, which is not defined in .env, so it expands to a blank string"
+                )
+            elif order[ref] > index:
+                problems.append(
+                    f"{name} uses ${{{ref}}} above the line that defines {ref}, so it expands to a blank string; "
+                    f"move {ref} above {name} (scripts\\update-local-env.ps1 does this)"
+                )
+    return problems
 
 
 def load_settings(env_file: Path | None, environ: Mapping[str, str]) -> Settings:
     file_values: dict[str, str] = {}
     unknown: list[str] = []
+    references: list[str] = []
     if env_file is not None and env_file.is_file():
+        references = reference_problems(dotenv_values(env_file, interpolate=False), environ)
         for key, value in dotenv_values(env_file).items():
             if key in VARS:
                 file_values[key] = value or ""
@@ -211,7 +241,7 @@ def load_settings(env_file: Path | None, environ: Mapping[str, str]) -> Settings
             values[name], sources[name] = environ[name], "environment"
         elif file_values.get(name, "").strip():
             values[name], sources[name] = file_values[name], ".env"
-    return Settings(values, sources, tuple(sorted(unknown)))
+    return Settings(values, sources, tuple(sorted(unknown)), tuple(references))
 
 
 # ---------- profiles ----------
@@ -425,7 +455,8 @@ def build_report(profile_name: str, settings: Settings) -> Report:
     required = {name: status_of(settings, name) for name in required_names}
     optional = {name: status_of(settings, name) for name in VARS if name not in required}
 
-    problems = [
+    problems = list(settings.reference_problems)
+    problems += [
         f"{name} is {status} (expected {VARS[name].expected})" for name, status in required.items() if status != "set"
     ]
     for name, status in optional.items():

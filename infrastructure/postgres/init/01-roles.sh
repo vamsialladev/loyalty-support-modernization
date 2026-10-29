@@ -4,6 +4,15 @@
 # Neither role can connect to the other's database. Passwords come from the environment, never from this file.
 set -eu
 
+# A blank password must never create a role: refuse before anything is created (verification log, M4 env fix).
+for name in APP_DB_PASSWORD MOCK_API_DB_PASSWORD; do
+  eval "value=\${$name:-}"
+  if [ "${#value}" -lt 8 ]; then
+    echo "01-roles.sh: $name is blank or shorter than 8 characters; no roles created" >&2
+    exit 1
+  fi
+done
+
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
      -v app_pw="$APP_DB_PASSWORD" -v mock_pw="$MOCK_API_DB_PASSWORD" <<'EOSQL'
 CREATE ROLE loyalty_app LOGIN PASSWORD :'app_pw';

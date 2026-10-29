@@ -174,6 +174,56 @@ def test_empty_postgres_password_makes_database_url_invalid(tmp_path):
     assert report.required["DATABASE_URL"] == "invalid format"
 
 
+PER_ROLE_URLS = [
+    "DATABASE_URL=postgresql+psycopg://loyalty_app:${APP_DB_PASSWORD}@localhost:5432/loyalty",
+    "MOCK_API_DATABASE_URL=postgresql+psycopg://mock_api:${MOCK_API_DB_PASSWORD}@localhost:5432/mock_customer_api",
+]
+ROLE_PASSWORDS = [f"APP_DB_PASSWORD={FAKE['APP_DB_PASSWORD']}", f"MOCK_API_DB_PASSWORD={FAKE['MOCK_API_DB_PASSWORD']}"]
+URL_AND_ROLE_KEYS = ("DATABASE_URL", "MOCK_API_DATABASE_URL", "APP_DB_PASSWORD", "MOCK_API_DB_PASSWORD")
+
+
+def write_per_role_env(tmp_path: Path, tail: list[str]) -> Path:
+    env = tmp_path / ".env"
+    head = [f"{k}={v}" for k, v in portfolio().items() if k not in URL_AND_ROLE_KEYS]
+    env.write_text("\n".join(head + tail) + "\n", encoding="utf-8")
+    return env
+
+
+def test_per_role_urls_are_ready_when_the_passwords_are_defined_first(tmp_path):
+    # The .env.example form since Milestone 4 (ADR-0036): each URL takes its role's password by reference.
+    env = write_per_role_env(tmp_path, ROLE_PASSWORDS + PER_ROLE_URLS)
+    report = build_report("portfolio", load_settings(env, {}))
+    assert report.required["DATABASE_URL"] == "set"
+    assert report.required["MOCK_API_DATABASE_URL"] == "set"
+    assert report.problems == []
+
+
+def test_per_role_urls_above_their_passwords_name_the_cause(tmp_path, capsys):
+    # The bug from the owner's first run (verification log): update-local-env.ps1 appended the role passwords
+    # below the URL lines, so ${APP_DB_PASSWORD} expanded to a blank string.
+    env = write_per_role_env(tmp_path, PER_ROLE_URLS + ROLE_PASSWORDS)
+    report = build_report("portfolio", load_settings(env, {}))
+    assert report.required["DATABASE_URL"] == "invalid format"
+    assert report.required["APP_DB_PASSWORD"] == "set"
+    assert any("DATABASE_URL uses ${APP_DB_PASSWORD} above the line that defines" in p for p in report.problems)
+    assert any("MOCK_API_DATABASE_URL uses ${MOCK_API_DB_PASSWORD} above" in p for p in report.problems)
+    main(["--profile", "portfolio", "--env-file", str(env)], environ={})
+    out = capsys.readouterr().out
+    assert FAKE["APP_DB_PASSWORD"] not in out and FAKE["MOCK_API_DB_PASSWORD"] not in out
+
+
+def test_reference_to_an_undefined_variable_is_named(tmp_path):
+    env = write_per_role_env(tmp_path, [PER_ROLE_URLS[0], f"MOCK_API_DB_PASSWORD={FAKE['MOCK_API_DB_PASSWORD']}"])
+    report = build_report("portfolio", load_settings(env, {}))
+    assert any("${APP_DB_PASSWORD}, which is not defined in .env" in p for p in report.problems)
+
+
+def test_reference_supplied_by_the_environment_is_not_a_problem():
+    raw = {"DATABASE_URL": PER_ROLE_URLS[0].split("=", 1)[1]}
+    assert preflight.reference_problems(raw, {"APP_DB_PASSWORD": "from-the-shell"}) == []
+    assert len(preflight.reference_problems(raw, {})) == 1
+
+
 def test_selected_provider_without_key_is_not_ready():
     report = build_report("portfolio", settings_from(portfolio(AI_PROVIDER="anthropic")))
     assert report.required["ANTHROPIC_API_KEY"] == "missing"

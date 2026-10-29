@@ -33,7 +33,7 @@ services:
       context: .
       dockerfile: mock_customer_api/Dockerfile
     environment:
-      MOCK_API_DATABASE_URL: postgresql+psycopg://mock_api:${MOCK_API_DB_PASSWORD}@db:5432/mock_customer_api
+      MOCK_API_DATABASE_URL: postgresql+psycopg://mock_api:${MOCK_API_DB_PASSWORD:?set MOCK_API_DB_PASSWORD in .env}@db:5432/mock_customer_api
       MOCK_API_TOKEN: ${MOCK_API_TOKEN:?set MOCK_API_TOKEN in .env}
       MOCK_API_FAULTS: ${MOCK_API_FAULTS:-false}
       MOCK_API_SIM_CLOCK: ${MOCK_API_SIM_CLOCK:-false}
@@ -61,9 +61,9 @@ services:
       context: .
       dockerfile: Dockerfile.app
     environment:
-      DATABASE_URL: postgresql+psycopg://loyalty_app:${APP_DB_PASSWORD}@db:5432/loyalty
+      DATABASE_URL: postgresql+psycopg://loyalty_app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/loyalty
       MOCK_API_URL: http://mock-api:8020
-      MOCK_API_TOKEN: ${MOCK_API_TOKEN}
+      MOCK_API_TOKEN: ${MOCK_API_TOKEN:?set MOCK_API_TOKEN in .env}
       APP_SECRET_KEY: ${APP_SECRET_KEY:?set APP_SECRET_KEY in .env}
       APP_PROFILE: ${APP_PROFILE:-portfolio}
     ports:
