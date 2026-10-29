@@ -134,3 +134,67 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **Tradeoff:** one more code path to keep isolated; in return the benchmark measures the write path's effect on its
   own, credited to neither B nor C.
 - **Result:** pre-registered in `docs/legacy-defect-catalog.md` §2b and `docs/hypotheses.md` §3a.
+
+## ADR-0019: what AI does and what stays deterministic (spec A.3)
+- **Context:** stage 0 rejected AI-decided refunds; the sponsor's stop condition is points moving without a supervisor.
+- **Decision:** AI (arm C) interprets requests, chooses read-only tools within an allowlist, summarises evidence,
+  finds policy text and explains with citations, flags missing information and drafts recommendations. Eligibility,
+  points, permissions, approvals and execution are deterministic Python.
+- **Tradeoff:** the AI can't fix a wrong rule; in return a wrong or manipulated model output can't move points.
+- **Result:** applies to all arms (`docs/product-requirements.md` §3).
+
+## ADR-0020: build vs buy
+- **Decision:** build the investigation workflow and benchmark (the point of the project is to measure them);
+  reuse maintained components for everything generic: Postgres, FastAPI, Alembic, Keycloak, the official model and
+  protocol SDKs. No case-management product is bought for the simulation.
+- **Tradeoff:** more code owned; in a real engagement, embedding in the client's CRM is the likely route (ENT-29).
+
+## ADR-0021: managed vs self-hosted
+- **Decision:** self-hosted in Docker Compose for development and the benchmark; managed Postgres and container
+  hosting only for an approved hosted profile (ADR-0005). The model is a managed API (no self-hosted model unless the
+  open-model exercise justifies one).
+- **Tradeoff:** local setup takes Docker; in return no paid resources without approval.
+
+## ADR-0022: integration through versioned REST contracts with adapters
+- **Decision:** the app talks to the (mock) loyalty platform and PMS through versioned OpenAPI contracts and adapter
+  interfaces; no direct database access to systems of record; adjustments only through the adjustment API with an
+  idempotency key. Event-driven triggers are documented options (ENT-30), not the core.
+- **Tradeoff:** polling and request/response only; in return real systems can replace the mocks adapter by adapter.
+
+## ADR-0023: REST for the core; MCP as an optional read-only interface
+- **Decision:** the core app uses REST internally. An MCP server exposing read-only loyalty tools is built in
+  Milestone 11 for other AI clients, following stage 7's conventions (role decides tools and fields, every call
+  audited). MCP never exposes adjustment execution.
+- **Tradeoff:** two interfaces to the same services; MCP adds value only for external AI clients.
+
+## ADR-0024: full-text search before embeddings
+- **Decision:** confirms ADR-0008 for the A.3 list: Postgres FTS with stemming and a synonym list (arm B); an
+  embedding or hybrid variant only as a separate, measured experiment.
+
+## ADR-0025: one bounded agent, no orchestration of several agents
+- **Decision:** a single bounded agent loop (plain state machine, ADR-0009). The A2A coordinator/specialist pair in
+  Milestone 11 is a protocol lab, not the core workflow.
+- **Tradeoff:** less parallelism; in return every step is testable and stop conditions are explicit.
+
+## ADR-0026: data processing boundaries
+- **Decision:** member and stay data stay in the app's Postgres and the mock API. The model provider receives only
+  the minimised, redacted context for the current case (no card, passport or full contact data); nothing else is sent
+  to any external service. Logs and traces never carry prompt or response content by default. Evaluation datasets
+  are synthetic.
+- **Tradeoff:** the model sometimes lacks context; it then asks or escalates.
+
+## ADR-0027: operational ownership after handover
+- **Decision:** as in `docs/governance.md`: the administrator owns policies and rule configuration, the sponsor owns
+  rollout gates and business thresholds, IT owns integrations and hosting, security owns exceptions and incidents.
+  Prompt and model changes go through the change request with regression evidence.
+- **Result:** RACI in `docs/governance.md` §2.
+
+## Decision guide: when these would be worth it (spec A.3)
+
+| Option | Worth it when | Not worth it when | In this project |
+|---|---|---|---|
+| Managed backend (e.g. Supabase) | Small team, standard Postgres + auth, no strict network rules | Client mandates its own cloud and IdP; complex row-level rules must be proven at the app layer anyway | Optional profile (M15); Alembic still owns the schema |
+| Visual prototyping (e.g. bolt.new) | Early client walkthroughs; testing a UI idea in hours | The UI must meet accessibility, CSP and security review as-is | React frontend only from a real prototype (M15) |
+| External code review (e.g. CodeRabbit) | Many PRs, several contributors, AI-written code | One author, tiny change volume | Exercise on this repo only, with the owner's OK (M15) |
+| Workflow automation platform | Many simple integrations owned by non-engineers | Money-like actions needing idempotency, approval binding and reconciliation | Documentation only; Stage 10 territory |
+| Self-hosted model | Data must not leave the client network; steady high volume; acceptable quality on the held-out set | Low volume; quality below threshold; no ops capacity for GPUs | Only if the open-model exercise meets the threshold (M15) |
