@@ -37,7 +37,7 @@ status.
 | CONT-06 | Existing synthetic data shapes recorded | 0.7 | 1 | 1 | other | `docs/continuity.md` §10 | verification log | Implemented and verified |
 | CONT-07 | Existing CI and eval conventions recorded | 0.7 | 1 | 1 | other | `docs/continuity.md` §11 | verification log | Implemented and verified |
 | CONT-08 | Spec-vs-site differences recorded; site followed | 0.7 | 1 | 1 | other | `docs/continuity.md` §12 | verification log | Implemented and verified |
-| REUSE-01 | Stage 0 loyalty addendum: fictional stakeholder sessions, four-check test, SOW addendum, pricing from measured costs, security-questionnaire deltas | 0.7 | 1 | 2 | other | — | — | Planned (M2) |
+| REUSE-01 | Stage 0 loyalty addendum: fictional stakeholder sessions, four-check test, SOW addendum, pricing from measured costs, security-questionnaire deltas | 0.7 | 1 | 2 | other | `docs/stage0-loyalty-addendum.md` (pricing is a method until M10 measures costs) | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
 | REUSE-02 | Stage 1 citation and "check with a manager" refusal conventions; stage 1 as a policy tool if its interface fits, else documented why not | 0.7 | 1 | 6–8 | core | — | — | Planned (M6) |
 | REUSE-03 | Stage 9 cases and results exported in eval-harness format; Stage 9 registered with regression gates (reviewed PR to eval-harness, owner's OK) | 0.7 | 2 | 10 | bench | — | — | Planned (M10) |
 | REUSE-04 | Stage 2 approval-UX conventions; explicit statement that stage 2 proposes and stage 9 executes with idempotency and reconciliation | 0.7 | 1 | 7 | core | — | — | Planned (M7) |
@@ -68,23 +68,23 @@ status.
 
 | ID | Requirement | Spec | Tier | M | Score | Implementation | Evidence | Status |
 |---|---|---|---|---|---|---|---|---|
-| DISC-01 | Discovery package files: customer-discovery, business-requirements, product-requirements, workflow, architecture, legacy-discovery | A.2 | 1 | 2 | other | — | — | Planned (M2) |
-| DISC-02 | Fictional customer context, stakeholder map (sponsor, agent, supervisor, admin, auditor, IT, security, ops, data owner) | A.2 | 1 | 2 | other | — | — | Planned (M2) |
-| DISC-03 | Personas, interview guide, labelled FICTIONAL interview examples | A.2 | 1 | 2 | other | — | — | Planned (M2) |
-| DISC-04 | Current and proposed workflows: journey, boundaries, ownership, manual steps, handling costs | A.2 | 1 | 2 | other | — | — | Planned (M2) |
-| DISC-05 | Problem framing incl. when ordinary software suffices, what AI adds, stop/redesign conditions | A.2 | 1 | 2 | other | — | — | Planned (M2) |
-| DISC-06 | Business and nonfunctional requirements, MVP scope, exclusions | A.2 | 1 | 2 | other | — | — | Planned (M2) |
-| DISC-07 | System inventory, integration contracts, data quality assessment | A.2 | 1 | 2 | other | — | — | Planned (M2) |
-| DISC-08 | Access and dependency register, risk register | A.2 | 1 | 2 | other | — | — | Planned (M2) |
-| DISC-09 | Success metrics and acceptance criteria | A.2 | 1 | 2 | other | — | — | Planned (M2) |
-| DISC-10 | Pilot and rollout plan, milestone plan, scope-change template | A.2 | 1 | 2 | other | — | — | Planned (M2) |
-| DISC-11 | RACI | A.2 | 1 | 2 | other | — | — | Planned (M2) |
-| DISC-12 | Architecture diagram, tradeoffs, prototype vs pilot vs production expectations | A.2 | 1 | 2 | other | — | — | Planned (M2) |
-| DEC-01 | Decisions: AI vs rules, build vs buy, managed vs self-hosted, integration options, REST vs MCP, FTS vs embeddings, single agent vs orchestration, data boundaries, operational ownership | A.3 | 1 | 2 | other | — | — | Planned (M2) |
-| DEC-02 | Decision guide: managed backends, visual prototyping, external code review, workflow automation, self-hosted models | A.3 | 1 | 2 | other | — | — | Planned (M2) |
-| GOVN-01 | Responsibility boundaries (app/FDE, identity, platform, security, data owner, product, incident, vendor) | A.4 | 1 | 2 | other | — | — | Planned (M2) |
-| GOVN-02 | Templates: access request, security exception, risk acceptance (owner, rationale, controls, expiry) | A.4 | 1 | 2 | other | — | — | Planned (M2) |
-| GOVN-03 | Technical vs organizational controls distinguished; no fabricated sign-offs | A.4 | 1 | 2 | other | — | — | Planned (M2) |
+| DISC-01 | Discovery package files: customer-discovery, business-requirements, product-requirements, workflow, architecture, legacy-discovery | A.2 | 1 | 2 | other | `docs/customer-discovery.md`, `business-requirements.md`, `product-requirements.md`, `workflow.md`, `architecture.md`, `legacy-discovery.md` | `tests/test_discovery_docs.py::test_document_covers_required_topics`, `::test_document_is_linked_from_readme` | Implemented and verified |
+| DISC-02 | Fictional customer context, stakeholder map (sponsor, agent, supervisor, admin, auditor, IT, security, ops, data owner) | A.2 | 1 | 2 | other | `docs/customer-discovery.md` §1–2 | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
+| DISC-03 | Personas, interview guide, labelled FICTIONAL interview examples | A.2 | 1 | 2 | other | `docs/customer-discovery.md` §3–5 (labelled FICTIONAL) | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
+| DISC-04 | Current and proposed workflows: journey, boundaries, ownership, manual steps, handling costs | A.2 | 1 | 2 | other | `docs/workflow.md` | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
+| DISC-05 | Problem framing incl. when ordinary software suffices, what AI adds, stop/redesign conditions | A.2 | 1 | 2 | other | `docs/customer-discovery.md` §6 | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
+| DISC-06 | Business and nonfunctional requirements, MVP scope, exclusions | A.2 | 1 | 2 | other | `docs/business-requirements.md` §2–5 | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
+| DISC-07 | System inventory, integration contracts, data quality assessment | A.2 | 1 | 2 | other | `docs/legacy-discovery.md` §3–6 | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
+| DISC-08 | Access and dependency register, risk register | A.2 | 1 | 2 | other | `docs/registers.md` | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
+| DISC-09 | Success metrics and acceptance criteria | A.2 | 1 | 2 | other | `docs/business-requirements.md` §6 | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
+| DISC-10 | Pilot and rollout plan, milestone plan, scope-change template | A.2 | 1 | 2 | other | `docs/business-requirements.md` §7–9 | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
+| DISC-11 | RACI | A.2 | 1 | 2 | other | `docs/governance.md` §2 | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
+| DISC-12 | Architecture diagram, tradeoffs, prototype vs pilot vs production expectations | A.2 | 1 | 2 | other | `docs/architecture.md` | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
+| DEC-01 | Decisions: AI vs rules, build vs buy, managed vs self-hosted, integration options, REST vs MCP, FTS vs embeddings, single agent vs orchestration, data boundaries, operational ownership | A.3 | 1 | 2 | other | `docs/decisions.md` ADR-0019 to ADR-0027 | `tests/test_discovery_docs.py::test_decisions_cover_spec_a3_topics` | Implemented and verified |
+| DEC-02 | Decision guide: managed backends, visual prototyping, external code review, workflow automation, self-hosted models | A.3 | 1 | 2 | other | `docs/decisions.md` decision guide | `tests/test_discovery_docs.py::test_decisions_cover_spec_a3_topics` | Implemented and verified |
+| GOVN-01 | Responsibility boundaries (app/FDE, identity, platform, security, data owner, product, incident, vendor) | A.4 | 1 | 2 | other | `docs/governance.md` §1 | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
+| GOVN-02 | Templates: access request, security exception, risk acceptance (owner, rationale, controls, expiry) | A.4 | 1 | 2 | other | `docs/governance.md` §4 | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
+| GOVN-03 | Technical vs organizational controls distinguished; no fabricated sign-offs | A.4 | 1 | 2 | other | `docs/governance.md` §3 | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
 
 ## Part B: core product (Tier 1)
 
@@ -118,7 +118,7 @@ status.
 | DATA-05 | Seed, reset, cleanup commands | B.5 | 1 | 3 | core | — | — | Planned (M3) |
 | DATA-06 | `docs/data-dictionary.md` documents every field | B.5 | 1 | 3 | core | — | — | Planned (M3) |
 | DATA-07 | Never derived from real records; fluency not claimed as realism | B.5 | 1 | 3 | core | — | — | Planned (M3) |
-| POL-01 | Per source: authoritative source, freshness, mapping, owner, conflict rule; validation of missing/conflicting/stale/changed data | B.6 | 1 | 2, 6 | core | — | — | Planned (M2) |
+| POL-01 | Per source: authoritative source, freshness, mapping, owner, conflict rule; validation of missing/conflicting/stale/changed data | B.6 | 1 | 2, 6 | core | Source register in `docs/legacy-discovery.md` §5; data validation in M6 | — | Planned (M6) |
 | POL-02 | Fictional versioned policies with IDs, effective dates, checksum, status, superseded versions; one set per customer | B.6, App. B | 1 | 3 | core | — | — | Planned (M3) |
 | POL-03 | Ingestion: validate, chunk, store source text, Postgres FTS baseline | B.6 | 1 | 6 | core | — | — | Planned (M6) |
 | POL-04 | Policy selected by business date (checkout); citations open exact excerpt and version; provenance and retrieval time | B.6 | 1 | 6 | core | — | — | Planned (M6) |
@@ -129,7 +129,7 @@ status.
 | ELIG-01 | Pure Python eligibility parameterized by customer config; typed result `eligible / ineligible / insufficient_evidence / needs_escalation` with points, reasons, policy refs | B.7 | 1 | 6 | core | — | — | Planned (M6) |
 | ELIG-02 | Model can never override eligibility, calculation, permissions, approval or execution | B.7 | 1 | 8 | core | — | — | Planned (M8) |
 | ARMA-01 | Arm A legacy: queue, separate member/stay search, ledger lookup, keyword policy search, rules, manual evidence, notes, escalation, approval, simulated adjustment; runnable end to end in the browser | B.8 | 1 | 5 | core | — | — | Planned (M5) |
-| ARMA-02 | Legacy limitations documented by kind (functionality, missing, config, data, delays, UI friction); not made incompetent | B.8 | 1 | 5 | core | — | — | Planned (M5) |
+| ARMA-02 | Legacy limitations documented by kind (functionality, missing, config, data, delays, UI friction); not made incompetent | B.8 | 1 | 5 | core | Limitations by kind in `docs/legacy-discovery.md` §2; arm A built in M5 | — | Planned (M5) |
 | ARMB-01 | Arm B improved conventional: corrected rules, consolidated evidence, filters, better search, validation, automated calculations, improved UI; doubles as manual fallback | B.8 | 1 | 7 | core | — | — | Planned (M7) |
 | ARMC-01 | Arm C: B plus interpretation, targeted retrieval, summarization, cited explanation, missing-info detection, drafting, human review | B.8 | 1 | 8 | core | — | — | Planned (M8) |
 | ARMS-01 | Identical safeguards across arms; no ground truth to AI; every arm difference documented; UI gains not credited to AI | B.8 | 1 | 5–8 | bench | — | — | Planned (M5) |
@@ -179,8 +179,8 @@ rest are Tier 2.
 | ID | Requirement | Spec | Tier | M | Score | Implementation | Evidence | Status |
 |---|---|---|---|---|---|---|---|---|
 | SEC-01 | Current NIST AI RMF + GenAI profile, SSDF, ASVS, OWASP GenAI/agentic, protocol security specs consulted; versions and dates recorded; no certification claims | C.1 | 2 | 9 | sec | — | — | Planned (M9) |
-| SEC-02 | `security/` files: inventory, data flow, threat model (canonical), risk register, control matrix, test plan/results, evidence, residual risks, incident runbooks, production readiness; `docs/production-readiness.md` | C.1 | 2 | 2, 9 | sec | — | — | Planned (M2) |
-| SEC-03 | Threat model: trust boundaries, actors, threats, prioritization; updated when integrations change | C.2 | 1 | 2, 9 | sec | — | — | Planned (M2) |
+| SEC-02 | `security/` files: inventory, data flow, threat model (canonical), risk register, control matrix, test plan/results, evidence, residual risks, incident runbooks, production readiness; `docs/production-readiness.md` | C.1 | 2 | 2, 9 | sec | `security/threat-model.md` (draft); other `security/` files in M9 | — | Planned (M9) |
+| SEC-03 | Threat model: trust boundaries, actors, threats, prioritization; updated when integrations change | C.2 | 1 | 2, 9 | sec | `security/threat-model.md` draft v0.1 (16 threats); completed in M9 | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented but unverified |
 | SEC-04 | Tool and access register, data-flow map, data classification, customer access checklist, on/offboarding checklists (categories A–D) | C.3 | 2 | 9 | sec | — | — | Planned (M9) |
 | SEC-05 | Data minimization before model calls; redaction of secrets and unnecessary personal fields | C.3, E3 | 1 | 8, 9 | sec | — | — | Planned (M8) |
 | SEC-06 | Retention and deletion jobs incl. derived indexes and caches; backup-deletion limits documented | C.3 | 2 | 9 | sec | — | — | Planned (M9) |
@@ -222,7 +222,7 @@ rest are Tier 2.
 | EVAL-03 | Evaluated AI never the sole labeler; expected answers inaccessible to the app | E.1 | 1 | 3 | bench | — | — | Planned (M3) |
 | EVAL-04 | Label-review file or interface with reviewer status; disclose if no independent human reviewed. Owner agreed 2026-10-28 to review a stratified sample of about 30 labels | E.1 | 1 | 3 | bench | `evaluations/label-review/README.md` (instructions, sampling plan, status), `review-sheet.template.csv` | — | Planned (M3) |
 | EVAL-05 | Never tune on held-out; replace held-out if it becomes dev data | E.1 | 1 | 3–10 | bench | — | — | Planned (M3) |
-| LEG-01 | Baseline measurement plan, root-cause analysis, experiment plan, error analysis docs | E.2 | 1 | 2, 10 | bench | — | — | Planned (M2) |
+| LEG-01 | Baseline measurement plan, root-cause analysis, experiment plan, error analysis docs | E.2 | 1 | 2, 10 | bench | `docs/baseline-measurement-plan.md`, `docs/experiment-plan.md` done; root-cause analysis and error analysis in M10 | `tests/test_discovery_docs.py::test_document_covers_required_topics` (two of four) | Planned (M10) |
 | LEG-02 | Legacy arm instrumented (outcome, false approve/deny, escalation, missing info, times, steps, reopen, duplicates, overrides, errors); software metrics apart from human usability | E.2 | 1 | 5 | bench | — | — | Planned (M5) |
 | LEG-03 | Case-by-case RCA in the 11 categories with reproduction, expected vs actual, evidence, frequency, consequence, intervention; non-AI fixes named | E.2 | 1 | 10 | bench | — | — | Planned (M10) |
 | BENCH-01 | `benchmarks/` dirs; `benchmark-thresholds.yaml` committed before any run | E.3, E.6 | 1 | 10 | bench | — | — | Planned (M10) |
@@ -390,7 +390,7 @@ rest are Tier 2.
 | LGF-01 | Defect catalog and hypotheses committed before arms B and C are built or benchmarked (Git history is the evidence) | F1 | 1 | 2–3 | bench | `docs/legacy-defect-catalog.md`, `docs/hypotheses.md` | pre-registration commit 2026-10-28 (no arm code exists); `tests/test_preregistration.py::test_documents_are_marked_preregistered` | Implemented and verified |
 | LGF-02 | Synthetic 12-month legacy operating history (volume, seasonality, handling times, outcomes, SLAs, backlog, event log, member text, notes, adjustment log, modeled satisfaction proxy) | F2 | 1 | 3 | bench | — | — | Planned (M3) |
 | LGF-03 | `docs/legacy-defect-catalog.md` with all F3 columns and categories (data, config, search/UI, unstructured, unfixable, controls) | F3 | 1 | 2 | bench | `docs/legacy-defect-catalog.md` | `tests/test_preregistration.py::test_catalog_has_every_defect_with_all_columns` | Implemented and verified |
-| LGF-04 | `docs/kpi-tree.md` (four layers) | F4 | 1 | 2 | bench | — | — | Planned (M2) |
+| LGF-04 | `docs/kpi-tree.md` (four layers) | F4 | 1 | 2 | bench | `docs/kpi-tree.md` | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
 | LGF-05 | `evaluations/financial_model.py` with labelled assumptions, outputs and sensitivity | F4 | 1 | 3, 10 | bench | — | — | Planned (M3) |
 | LGF-06 | `docs/hypotheses.md` H1–H7 with metric, slice, threshold, decision rule | F5 | 1 | 2 | bench | `docs/hypotheses.md` | `tests/test_preregistration.py::test_hypotheses_h1_to_h7_complete` | Implemented and verified |
 | LGF-16 | "A as-is" variant: legacy write path without shared safeguards, reported separately, excluded from H6, unreachable outside the benchmark runner | Owner (ADR-0018) | 1 | 10 | bench | pre-registered in catalog §2b, hypotheses §3a | — | Planned (M10) |

@@ -22,7 +22,7 @@ in `docs/requirements-matrix.md`.
 - [ ] Arm C with a bounded loop and cited recommendations (ARMC-01, AI-*)
 
 ## Evidence (Milestones 2–3, 10)
-- [ ] Defect catalog and hypotheses committed before arms B and C (LGF-01)
+- [x] Defect catalog and hypotheses committed before arms B and C (LGF-01; commit `1f8b8e6`)
 - [ ] ≥60 labelled cases in four splits (EVAL-01)
 - [ ] A vs B vs C benchmark on held-out cases with final-ledger accuracy (LGF-08)
 - [ ] Business-value report chosen by the evidence (BIZ-04)

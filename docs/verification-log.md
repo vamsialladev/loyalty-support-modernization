@@ -3,6 +3,20 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## Milestone 2 (2026-10-28)
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | Property time zones in existing stages | `grep` over the cloned repos | Mountain Lodge's shuttle serves Asheville (AVL) in stage 1; Beach Resort is near Miami; stage 6 uses `America/New_York`. Both properties are Eastern time, so D04 became "UTC read as local" |
+| 2 | Drafts shown to the owner before commit | — | Owner asked for a summary by intervention class and a restatement of choice 1, then approved with one change (A as-is variant) |
+| 3 | Pre-registration content pinned | `uv run pytest tests/test_preregistration.py` | 7 passed |
+| 4 | Pre-registration commit | `git commit` of catalog, hypotheses, decisions, matrix rows, test | `1f8b8e6`; no arm-B or arm-C code exists in the repository at this commit |
+| 5 | Discovery docs test, first run | `uv run pytest` | 2 failed. `docs/legacy-discovery.md` named the category "known functionality" only in lower case (heading fixed). `docs/kpi-tree.md` had the phrase but wrapped over two lines: **a measurement problem**, fixed by matching with line breaks ignored |
+| 6 | Full suite | `uv run pytest -q` | 108 passed |
+| 7 | Completion scores | `uv run python scripts/matrix_scores.py` | 356 requirements; scores in `docs/implementation-status.md` |
+| 8 | Full offline checks on Windows | `powershell -ExecutionPolicy Bypass -File scripts\test.ps1` | Exit 0: ruff clean, mypy clean, **108 passed**, coverage 97% (gate 70%) |
+| 9 | Mermaid diagrams render | — | **Not checked**: no renderer installed; code fences checked closed by a test. To check on GitHub once the repo exists (registers PR-09) |
+
 ## Milestone 1 (2026-10-28)
 
 | # | Check | Command | Result |

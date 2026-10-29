@@ -8,7 +8,8 @@ points ledger right, with a supervisor approving every adjustment.**
 > Guest Rewards program. All data is synthetic. Independent portfolio project; no real customer, users or results.
 > Discovery and scoping (stage 0): [hotel-ai-discovery](https://github.com/vamsialladev/hotel-ai-discovery).
 
-**Status: Milestone 1 of 20 (setup and audit).** There is no app to run yet. Results, a demo and a live link will
+**Status: Milestone 2 of 20 (discovery, architecture, pre-registered defect catalog and hypotheses).** There is no
+app to run yet. Results, a demo and a live link will
 appear here only when they exist and are measured. Progress: [docs/implementation-status.md](docs/implementation-status.md).
 
 ## What exists today
@@ -57,6 +58,16 @@ Prerequisites: Python 3.12 and [uv](https://docs.astral.sh/uv/). Docker Desktop 
 Milestone 4 on. No API key is needed for any offline check.
 
 ## Documentation
+- **Pre-registered before any arm was built (2026-10-28):** [Legacy defect catalog](docs/legacy-defect-catalog.md) ·
+  [Hypotheses H1–H7](docs/hypotheses.md)
+- **Discovery:** [Customer discovery](docs/customer-discovery.md) ·
+  [Stage 0 loyalty addendum](docs/stage0-loyalty-addendum.md) ·
+  [Business requirements](docs/business-requirements.md) · [Product requirements](docs/product-requirements.md) ·
+  [Workflow](docs/workflow.md) · [Legacy discovery](docs/legacy-discovery.md) · [KPI tree](docs/kpi-tree.md)
+- **Design and plans:** [Architecture](docs/architecture.md) ·
+  [Baseline measurement plan](docs/baseline-measurement-plan.md) · [Experiment plan](docs/experiment-plan.md) ·
+  [Threat model](security/threat-model.md) · [Governance and RACI](docs/governance.md) ·
+  [Registers](docs/registers.md)
 - [Implementation plan](docs/implementation-plan.md) · [Status](docs/implementation-status.md) ·
   [Decisions](docs/decisions.md) · [Known limitations](docs/known-limitations.md) ·
   [Verification log](docs/verification-log.md) · [Session handoff](docs/session-handoff.md)
