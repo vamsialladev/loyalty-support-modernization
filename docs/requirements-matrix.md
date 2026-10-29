@@ -220,7 +220,7 @@ rest are Tier 2.
 | EVAL-01 | ≥60 labelled cases; dev/validation/held-out/stress splits; grouped to prevent leakage; temporal/policy-family splits; versions and checksums | E.1 | 1 | 3 | bench | — | — | Planned (M3) |
 | EVAL-02 | Labels from scenario facts: policy, eligibility, points, existing credit, evidence, next action, clarification, escalation; "insufficient evidence" is valid | E.1 | 1 | 3 | bench | — | — | Planned (M3) |
 | EVAL-03 | Evaluated AI never the sole labeler; expected answers inaccessible to the app | E.1 | 1 | 3 | bench | — | — | Planned (M3) |
-| EVAL-04 | Label-review file or interface with reviewer status; disclose if no independent human reviewed | E.1 | 1 | 3 | bench | — | — | Planned (M3) |
+| EVAL-04 | Label-review file or interface with reviewer status; disclose if no independent human reviewed. Owner agreed 2026-10-28 to review a stratified sample of about 30 labels | E.1 | 1 | 3 | bench | `evaluations/label-review/README.md` (instructions, sampling plan, status), `review-sheet.template.csv` | — | Planned (M3) |
 | EVAL-05 | Never tune on held-out; replace held-out if it becomes dev data | E.1 | 1 | 3–10 | bench | — | — | Planned (M3) |
 | LEG-01 | Baseline measurement plan, root-cause analysis, experiment plan, error analysis docs | E.2 | 1 | 2, 10 | bench | — | — | Planned (M2) |
 | LEG-02 | Legacy arm instrumented (outcome, false approve/deny, escalation, missing info, times, steps, reopen, duplicates, overrides, errors); software metrics apart from human usability | E.2 | 1 | 5 | bench | — | — | Planned (M5) |
@@ -387,12 +387,13 @@ rest are Tier 2.
 
 | ID | Requirement | Spec | Tier | M | Score | Implementation | Evidence | Status |
 |---|---|---|---|---|---|---|---|---|
-| LGF-01 | Defect catalog and hypotheses committed before arms B and C are built or benchmarked (Git history is the evidence) | F1 | 1 | 2–3 | bench | — | — | Planned (M2) |
+| LGF-01 | Defect catalog and hypotheses committed before arms B and C are built or benchmarked (Git history is the evidence) | F1 | 1 | 2–3 | bench | `docs/legacy-defect-catalog.md`, `docs/hypotheses.md` | pre-registration commit 2026-10-28 (no arm code exists); `tests/test_preregistration.py::test_documents_are_marked_preregistered` | Implemented and verified |
 | LGF-02 | Synthetic 12-month legacy operating history (volume, seasonality, handling times, outcomes, SLAs, backlog, event log, member text, notes, adjustment log, modeled satisfaction proxy) | F2 | 1 | 3 | bench | — | — | Planned (M3) |
-| LGF-03 | `docs/legacy-defect-catalog.md` with all F3 columns and categories (data, config, search/UI, unstructured, unfixable, controls) | F3 | 1 | 2 | bench | — | — | Planned (M2) |
+| LGF-03 | `docs/legacy-defect-catalog.md` with all F3 columns and categories (data, config, search/UI, unstructured, unfixable, controls) | F3 | 1 | 2 | bench | `docs/legacy-defect-catalog.md` | `tests/test_preregistration.py::test_catalog_has_every_defect_with_all_columns` | Implemented and verified |
 | LGF-04 | `docs/kpi-tree.md` (four layers) | F4 | 1 | 2 | bench | — | — | Planned (M2) |
 | LGF-05 | `evaluations/financial_model.py` with labelled assumptions, outputs and sensitivity | F4 | 1 | 3, 10 | bench | — | — | Planned (M3) |
-| LGF-06 | `docs/hypotheses.md` H1–H7 with metric, slice, threshold, decision rule | F5 | 1 | 2 | bench | — | — | Planned (M2) |
+| LGF-06 | `docs/hypotheses.md` H1–H7 with metric, slice, threshold, decision rule | F5 | 1 | 2 | bench | `docs/hypotheses.md` | `tests/test_preregistration.py::test_hypotheses_h1_to_h7_complete` | Implemented and verified |
+| LGF-16 | "A as-is" variant: legacy write path without shared safeguards, reported separately, excluded from H6, unreachable outside the benchmark runner | Owner (ADR-0018) | 1 | 10 | bench | pre-registered in catalog §2b, hypotheses §3a | — | Planned (M10) |
 | LGF-07 | Simulated member journey per arm (contacts, days, correct points, satisfaction proxy) | F6 | 1 | 10 | bench | — | — | Planned (M10) |
 | LGF-08 | End-to-end proof chain per held-out case per arm; final ledger-state accuracy as the primary metric | F7 | 1 | 10 | bench | — | — | Planned (M10) |
 | LGF-09 | Failure funnel per arm | F7 | 1 | 10 | bench | — | — | Planned (M10) |

@@ -114,10 +114,23 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   before each milestone.
 - **Decision:** write and commit them in Milestone 2, alongside the discovery package they depend on, and in any
   case before any arm-B or arm-C code exists. Git history is the pre-registration evidence.
-- **Result:** pending (Milestone 2).
+- **Result:** done 2026-10-28. Catalog and hypotheses approved by the owner and committed as the
+  pre-registration commit, before any arm-B or arm-C code.
 
 ## ADR-0017: "Planned (M#)" status for requirements no milestone has reached
 - **Context:** the Part 0.4 labels describe built or blocked work; most rows start before any work exists.
 - **Decision:** use `Planned (M#)` until a milestone reaches the row, then a Part 0.4 label. Completion scores
   count only "Implemented and verified" and "Not applicable".
 - **Result:** in `docs/requirements-matrix.md`, counted by `scripts/matrix_scores.py`.
+
+## ADR-0018: an "A as-is" variant shows what the safe write path alone prevents
+- **Context:** spec B.8 requires identical safeguards in every arm, so legacy defects D10 (no duplicate check) and
+  D11 (no approval binding) cannot occur in arms A, B or C. Without a comparison, the write path's value would be
+  invisible in the benchmark.
+- **Decision (owner, 2026-10-28):** add an "A as-is" variant: arm A's scripted agent with the same authorization but
+  the legacy write path (no approval hash, no ledger re-check, no cross-case duplicate check, a fresh idempotency
+  key per attempt). Reported separately next to arm A, excluded from H1–H6, run only inside the benchmark runner on a
+  disposable database, unreachable from the console, API or any profile (test in Milestone 10).
+- **Tradeoff:** one more code path to keep isolated; in return the benchmark measures the write path's effect on its
+  own, credited to neither B nor C.
+- **Result:** pre-registered in `docs/legacy-defect-catalog.md` §2b and `docs/hypotheses.md` §3a.
