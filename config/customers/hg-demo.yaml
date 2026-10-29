@@ -36,7 +36,8 @@ source_code_channels:
 
 partner_confirmation_prefix: TRV-
 
-# Canonical field -> this customer's upstream field name. Real exports are mapped the other way.
+# Canonical field -> this customer's upstream field name (what the mock customer API serves, ADR-0035).
+# The app's adapter maps upstream -> canonical; the mock API maps canonical -> upstream. Real exports map the same way.
 field_mapping:
   member:
     member_number: loyaltyId
@@ -47,23 +48,27 @@ field_mapping:
     date_of_birth: birthDate
     tier: tierCode
     home_region: homeRegion
-    merged_into: mergedIntoLoyaltyId
     enrolled_on: enrollmentDate
+    status: accountStatus
+    merged_into: mergedIntoLoyaltyId
   stay:
+    record_id: pmsRecordId
     stay_id: confirmationNumber
-    member_number: loyaltyId
     property: propertyCode
+    member_number: loyaltyId
+    member_on_booking: loyaltyIdAtBooking
     arrival_date: arrivalDate
+    nights: nights
     checkout_at_utc: checkoutTimestampUtc
     status: stayStatus
     channel: bookingChannel
     source_code: reservationSource
     rate_code: rateCode
-    member_on_booking: loyaltyIdAtBooking
     partner_confirmation: partnerConfirmation
-    room_revenue_usd: roomRevenue
-    taxes_usd: taxAmount
-    fees_usd: feeAmount
+    room_revenue_cents: roomRevenue
+    taxes_cents: taxAmount
+    fees_cents: feeAmount
+    guest_name: guestName
   ledger_entry:
     entry_id: transactionId
     member_number: loyaltyId
@@ -79,3 +84,36 @@ field_mapping:
     points: points
     queued_at_utc: queuedTimestampUtc
     expected_post_at_utc: expectedPostTimestampUtc
+    posts_entry_id: postsTransactionId
+  adjustment:
+    adjustment_id: adjustmentId
+    idempotency_key: idempotencyKey
+    member_number: loyaltyId
+    stay_id: confirmationNumber
+    points: points
+    reason_code: reasonCode
+    note: note
+    requested_by: requestedBy
+    created_at_utc: createdTimestampUtc
+    ledger_entry_id: transactionId
+    status: adjustmentStatus
+  ticket:
+    ticket_id: ticketId
+    member_number: loyaltyId
+    subject: subject
+    body: body
+    created_at_utc: createdTimestampUtc
+
+# Upstream enum codes -> canonical values.
+value_maps:
+  accountStatus: {ACTIVE: active, MERGED: merged}
+  stayStatus: {BOOKED: booked, IN_HOUSE: in_house, CHECKED_OUT: checked_out}
+  bookingChannel: {DIRECT: direct, PHONE: phone, OTA: ota, TRAVEL_AGENT: travel_agent}
+  transactionType: {POST: posting, REV: reversal, REPOST: repost, ADJ: adjustment}
+  adjustmentStatus: {APPLIED: applied}
+
+# Upstream money is a decimal string in US dollars ("1299.90"); canonical money is integer cents.
+conversions:
+  roomRevenue: usd_to_cents
+  taxAmount: usd_to_cents
+  feeAmount: usd_to_cents

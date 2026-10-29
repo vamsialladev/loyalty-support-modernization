@@ -103,6 +103,11 @@ VARS: dict[str, Var] = {
         Var("DATABASE_URL", _postgres_url, "postgresql URL with user, password and host", secret=True),
         Var("MOCK_API_DATABASE_URL", _postgres_url, "postgresql URL with user, password and host", secret=True),
         Var("MOCK_API_TOKEN", _min_len(12), "at least 12 characters", secret=True),
+        Var("APP_DB_PASSWORD", _min_len(8), "at least 8 characters", secret=True),
+        Var("MOCK_API_DB_PASSWORD", _min_len(8), "at least 8 characters", secret=True),
+        Var("MOCK_API_URL", _url("http", "https"), "an http(s) URL"),
+        Var("MOCK_API_FAULTS", _bool, "true or false"),
+        Var("MOCK_API_SIM_CLOCK", _bool, "true or false"),
         Var("AI_PROVIDER", _enum(*PROVIDERS), "one of " + ", ".join(PROVIDERS)),
         Var("ANTHROPIC_API_KEY", _prefix("sk-ant-", 24), "starts with sk-ant-", secret=True),
         Var("ANTHROPIC_MODEL", _regex(r"claude-[a-z0-9][a-z0-9.\-]*"), "an exact Claude model ID (claude-...)"),
@@ -169,6 +174,8 @@ _LOCAL_DB = (
     "POSTGRES_USER",
     "POSTGRES_PASSWORD",
     "POSTGRES_DB",
+    "APP_DB_PASSWORD",
+    "MOCK_API_DB_PASSWORD",
     "DATABASE_URL",
     "MOCK_API_DATABASE_URL",
     "MOCK_API_TOKEN",
@@ -233,6 +240,17 @@ def _check_provider_consistency(settings: Settings) -> list[str]:
     return problems
 
 
+def _check_test_switches(settings: Settings) -> list[str]:
+    """Fault injection and the simulated clock are for tests and the benchmark only (ADR-0037, ADR-0038)."""
+    if not _flag(settings, "PUBLIC_DEMO_MODE"):
+        return []
+    return [
+        f"{name} must be false when PUBLIC_DEMO_MODE is true"
+        for name in ("MOCK_API_FAULTS", "MOCK_API_SIM_CLOCK")
+        if _flag(settings, name)
+    ]
+
+
 def _check_budgets(settings: Settings) -> list[str]:
     try:
         per_run = float(settings.values.get("LLM_BUDGET_USD_PER_RUN", ""))
@@ -260,6 +278,9 @@ def _check_hosted(settings: Settings) -> list[str]:
             problems.append(f"{name} points at a local host; a hosted profile needs the managed database")
     if settings.values.get("LOG_LEVEL", "").strip() == "DEBUG":
         problems.append("LOG_LEVEL is DEBUG; hosted profiles must not run in debug mode")
+    for name in ("MOCK_API_FAULTS", "MOCK_API_SIM_CLOCK"):
+        if _flag(settings, name):
+            problems.append(f"{name} must be false in a hosted profile (tests and benchmark only)")
     return problems
 
 
@@ -285,7 +306,7 @@ class Profile:
         return (self.name, *self.accepts_app_profile)
 
 
-_COMMON_CHECKS = (_check_provider_consistency, _check_budgets)
+_COMMON_CHECKS = (_check_provider_consistency, _check_budgets, _check_test_switches)
 
 PROFILES: dict[str, Profile] = {
     p.name: p

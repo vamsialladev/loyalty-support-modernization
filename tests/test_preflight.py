@@ -22,6 +22,11 @@ FAKE = {
     "DATABASE_URL": "postgresql+psycopg://loyalty:fake-pg-password-7781@localhost:5432/loyalty",
     "MOCK_API_DATABASE_URL": "postgresql+psycopg://loyalty:fake-pg-password-7781@localhost:5432/mock_customer_api",
     "MOCK_API_TOKEN": "fake-mock-api-token-4410",
+    "APP_DB_PASSWORD": "fake-app-db-password-2211",
+    "MOCK_API_DB_PASSWORD": "fake-mock-db-password-3322",
+    "MOCK_API_URL": "http://fake-mock-api.test:8020",
+    "MOCK_API_FAULTS": "false",
+    "MOCK_API_SIM_CLOCK": "false",
     "AI_PROVIDER": "mock",
     "ANTHROPIC_API_KEY": "sk-ant-fake-key-do-not-use-000000000000",
     "ANTHROPIC_MODEL": "claude-haiku-5-5",
@@ -67,6 +72,8 @@ PORTFOLIO_KEYS = [
     "POSTGRES_USER",
     "POSTGRES_PASSWORD",
     "POSTGRES_DB",
+    "APP_DB_PASSWORD",
+    "MOCK_API_DB_PASSWORD",
     "DATABASE_URL",
     "MOCK_API_DATABASE_URL",
     "MOCK_API_TOKEN",
@@ -275,3 +282,19 @@ def test_missing_env_file_is_handled(tmp_path, capsys):
     code = main(["--profile", "portfolio", "--env-file", str(tmp_path / "absent.env")], environ={})
     assert code == 1
     assert "NOT READY" in capsys.readouterr().out
+
+
+def test_test_switches_are_refused_in_public_demo_and_hosted_profiles():
+    report = build_report("portfolio", settings_from(portfolio(PUBLIC_DEMO_MODE="true", MOCK_API_FAULTS="true")))
+    assert any("MOCK_API_FAULTS must be false when PUBLIC_DEMO_MODE" in p for p in report.problems)
+    values = portfolio(APP_PROFILE="staging", MOCK_API_SIM_CLOCK="true")
+    values.update(
+        {
+            k: FAKE[k]
+            for k in ("SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SECRET_KEY", "NEXT_PUBLIC_API_BASE_URL")
+        }
+    )
+    assert any(
+        "MOCK_API_SIM_CLOCK must be false in a hosted profile" in p
+        for p in build_report("staging", settings_from(values)).problems
+    )
