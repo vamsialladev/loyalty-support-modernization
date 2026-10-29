@@ -7,7 +7,13 @@ license = "MIT"
 authors = [{ name = "Vamsi Alla", email = "vamsialla.dev@gmail.com" }]
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "matplotlib~=3.11.2",
+    "pillow~=13.0.0",
+    "pydantic~=2.14.1",
     "python-dotenv~=1.2.4",
+    "pyyaml~=6.0.3",
+    "reportlab~=5.1.0",
+    "tzdata>=2026.6",
 ]
 
 [dependency-groups]
@@ -16,6 +22,7 @@ dev = [
     "pytest~=9.2.0",
     "pytest-cov~=7.1.0",
     "ruff~=0.17.3",
+    "types-pyyaml~=6.0.12",
 ]
 
 [tool.uv]
@@ -30,7 +37,8 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
 ignore = ["S101"]  # assert is how pytest checks
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S105", "S106", "S603", "S607"]  # fake secrets and git calls in tests
+"tests/**" = ["S105", "S106", "S311", "S603", "S607"]  # fake secrets, seeded randomness, git calls
+"seed_data/**" = ["S311"]  # reproducible synthetic data needs a seeded, non-cryptographic generator
 "app/env_leaks.py" = ["S603", "S607"]  # runs `git ls-files`
 
 [tool.pytest.ini_options]
@@ -39,7 +47,7 @@ pythonpath = ["."]
 addopts = "-q"
 
 [tool.coverage.run]
-source = ["app"]
+source = ["app", "seed_data", "evaluations"]
 
 [tool.coverage.report]
 fail_under = 70
@@ -48,4 +56,8 @@ show_missing = true
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["app", "scripts"]
+files = ["app", "scripts", "seed_data", "evaluations"]
+
+[[tool.mypy.overrides]]
+module = ["reportlab.*"]
+ignore_missing_imports = true  # reportlab ships no type information

@@ -1,0 +1,81 @@
+# Customer configuration: the fictional hotel group of stages 0-8 (SYNTHETIC).
+# The canonical data model is customer-neutral. This file says how this customer's upstream systems name and shape
+# things, so a real customer's export can be mapped onto the canonical model (docs/real-system-swap-guide.md).
+# Cedarpoint Inns gets its own file in Milestone 14 (ADR-0012, ADR-0033).
+
+customer_id: hg-demo
+display_name: Simulated hotel group (stages 0-8)
+policy_set: policies/hg-demo
+synthetic: true
+
+properties:
+  beach-resort:
+    name: Beach Resort
+    booking_prefix: BR
+    timezone: America/New_York
+  mountain-lodge:
+    name: Mountain Lodge
+    booking_prefix: ML
+    timezone: America/New_York
+
+member_number:
+  prefix: GR-
+  digits: 5
+
+channels: [direct, phone, ota, travel_agent]
+
+# Reservation source code -> channel, used to derive a blank channel (defect D03).
+source_code_channels:
+  WEB: direct
+  APP: direct
+  FD: direct
+  CALL: phone
+  OTA-FEED: ota
+  GDS-TA: travel_agent
+  LEGACY-IMPORT: null   # cannot be derived
+
+partner_confirmation_prefix: TRV-
+
+# Canonical field -> this customer's upstream field name. Real exports are mapped the other way.
+field_mapping:
+  member:
+    member_number: loyaltyId
+    first_name: givenName
+    last_name: familyName
+    email: emailAddress
+    phone: phoneNumber
+    date_of_birth: birthDate
+    tier: tierCode
+    home_region: homeRegion
+    merged_into: mergedIntoLoyaltyId
+    enrolled_on: enrollmentDate
+  stay:
+    stay_id: confirmationNumber
+    member_number: loyaltyId
+    property: propertyCode
+    arrival_date: arrivalDate
+    checkout_at_utc: checkoutTimestampUtc
+    status: stayStatus
+    channel: bookingChannel
+    source_code: reservationSource
+    rate_code: rateCode
+    member_on_booking: loyaltyIdAtBooking
+    partner_confirmation: partnerConfirmation
+    room_revenue_usd: roomRevenue
+    taxes_usd: taxAmount
+    fees_usd: feeAmount
+  ledger_entry:
+    entry_id: transactionId
+    member_number: loyaltyId
+    stay_id: confirmationNumber
+    kind: transactionType
+    points: points
+    posted_at_utc: postedTimestampUtc
+    reverses_entry_id: reversesTransactionId
+  posting_queue_item:
+    item_id: queueItemId
+    member_number: loyaltyId
+    stay_id: confirmationNumber
+    points: points
+    queued_at_utc: queuedTimestampUtc
+    expected_post_at_utc: expectedPostTimestampUtc

@@ -1,0 +1,138 @@
+# Scenario mix and legacy outcome model for the synthetic 12-month history (spec F2).
+# EVERY NUMBER HERE IS AN ASSUMPTION (docs/legacy-defect-catalog.md sections 3-8; docs/customer-discovery.md A1-A2).
+# The history built from it demonstrates the analysis method; it is not evidence about any real operation.
+
+history:
+  start: 2025-11-01
+  end: 2026-10-31
+  monthly_volume: 320            # assumption A1
+  seasonality:                   # multiplier by month (January and July peaks)
+    1: 1.35
+    2: 1.10
+    3: 0.95
+    4: 0.95
+    5: 0.95
+    6: 0.95
+    7: 1.30
+    8: 1.15
+    9: 0.95
+    10: 0.95
+    11: 0.90
+    12: 0.90
+  sla_business_days: 5           # proposed SLA
+  survey_response_rate: 0.30
+
+# Per-case incidence of each driver (catalog frequency column). The remainder are control cases (K).
+driver_frequency:
+  D01: 0.020
+  D02: 0.020
+  D03: 0.030
+  D04: 0.020
+  D05: 0.030
+  D06: 0.020
+  D07: 0.015
+  D08: 0.025
+  D09: 0.015
+  D10: 0.010
+  D11: 0.005
+  D12: 0.040
+  D13: 0.030
+  D15: 0.020
+  D16: 0.030
+  D17: 0.030
+  D18: 0.020
+  D19: 0.020
+  D20: 0.030
+  D21: 0.010
+  D22: 0.020
+  D23: 0.020
+  D24: 0.015
+  D25: 0.010
+
+# What the policy requires for each driver (control cases split by K01-K06 shares below).
+correct_action:
+  D01: no_adjustment
+  D02: adjust
+  D03: adjust
+  D04: adjust
+  D05: adjust
+  D06: no_adjustment
+  D07: no_adjustment
+  D08: adjust
+  D09: adjust
+  D10: adjust
+  D11: no_adjustment
+  D12: adjust
+  D13: adjust
+  D15: no_adjustment
+  D16: adjust
+  D17: adjust
+  D18: adjust
+  D19: adjust
+  D20: adjust
+  D21: adjust
+  D22: adjust
+  D23: adjust
+  D24: escalate
+  D25: escalate
+
+control_share:                   # among K cases
+  K01: {share: 0.45, correct_action: adjust}
+  K02: {share: 0.20, correct_action: no_adjustment}
+  K03: {share: 0.12, correct_action: deny}
+  K04: {share: 0.12, correct_action: wait}
+  K05: {share: 0.06, correct_action: no_adjustment}
+  K06: {share: 0.05, correct_action: deny}
+
+# Legacy outcome probabilities per driver: correct, false_denial, false_approval, duplicate_credit,
+# escalated_correctly (only meaningful for D24/D25). Each row sums to 1.
+legacy_outcomes:
+  K:   {correct: 0.97, false_denial: 0.02, false_approval: 0.01}
+  D01: {correct: 0.25, false_denial: 0.55, false_approval: 0.20}
+  D02: {correct: 0.30, false_denial: 0.70}
+  D03: {correct: 0.40, false_denial: 0.60}
+  D04: {correct: 0.60, false_denial: 0.35, false_approval: 0.05}
+  D05: {correct: 0.35, false_denial: 0.65}
+  D06: {correct: 0.40, false_approval: 0.60}
+  D07: {correct: 0.45, false_approval: 0.55}
+  D08: {correct: 0.75, false_denial: 0.25}
+  D09: {correct: 0.15, false_denial: 0.85}
+  D10: {correct: 0.50, duplicate_credit: 0.50}
+  D11: {correct: 0.40, false_approval: 0.60}
+  D12: {correct: 0.85, false_denial: 0.15}
+  D13: {correct: 0.45, false_denial: 0.55}
+  D15: {correct: 0.35, false_approval: 0.65}
+  D16: {correct: 0.35, false_denial: 0.65}
+  D17: {correct: 0.40, false_denial: 0.60}
+  D18: {correct: 0.55, false_denial: 0.45}
+  D19: {correct: 0.55, false_denial: 0.25, false_approval: 0.20}
+  D20: {correct: 0.40, false_denial: 0.60}
+  D21: {correct: 0.10, false_denial: 0.90}
+  D22: {correct: 0.50, false_denial: 0.50}
+  D23: {correct: 0.40, false_denial: 0.60}
+  D24: {escalated_correctly: 0.40, false_denial: 0.45, false_approval: 0.15}
+  D25: {escalated_correctly: 0.35, false_denial: 0.25, false_approval: 0.40}
+
+# Median agent handling minutes per driver group (lognormal, sigma below). Assumption A2 (~14 min overall).
+handling_minutes_median:
+  K: 11
+  default_defect: 17
+  D16: 28
+  D20: 20
+  D23: 20
+  D24: 25
+  D25: 25
+handling_sigma: 0.40
+minutes_per_repeat_contact: 6
+
+# Member behaviour after a wrong outcome (assumptions).
+member_behaviour:
+  false_denial_recontact: 0.60   # member writes again
+  false_denial_reopen: 0.35      # the case is reopened after a dispute
+  reopen_corrected: 0.70         # a reopened case ends with the right points
+  info_request_rate_defect: 0.45 # legacy asks for information on defect cases
+  info_request_rate_control: 0.08
+
+# Modelled satisfaction proxy (F2): NOT real sentiment. Score on 1-5, clipped:
+#   5 - 1.5*false_denial - 0.7*(contacts-1) - 1.0*reopened - 0.15*max(0, business_days-5)
+satisfaction_formula: "5 - 1.5*false_denial - 0.7*(contacts-1) - 1.0*reopened - 0.15*max(0, business_days-5)"

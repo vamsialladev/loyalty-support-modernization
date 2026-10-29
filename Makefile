@@ -2,8 +2,10 @@
 # Targets added as milestones reach them: up, migrate, seed, reset-demo, eval, benchmark, down, clean (Appendix B).
 
 PROFILE ?= portfolio
+SEED ?= 20261102
+SCALE ?= 1.0
 
-.PHONY: install test lint typecheck preflight leaks scores
+.PHONY: install test lint typecheck preflight leaks scores data data-reset data-clean data-verify discovery dictionary
 
 install:
 	uv sync
@@ -26,3 +28,21 @@ leaks:
 
 scores:
 	uv run python scripts/matrix_scores.py
+
+# Synthetic data (spec B.5): generate, reset (clean + generate), clean (seed_data/v1 only), verify against the manifest.
+data:
+	uv run python -m seed_data.generator generate --seed $(SEED) --scale $(SCALE)
+
+data-reset: data-clean data
+
+data-clean:
+	uv run python -m seed_data.generator clean
+
+data-verify:
+	uv run python -m seed_data.generator verify --seed $(SEED) --scale $(SCALE)
+
+discovery:
+	uv run python -m evaluations.discovery_analysis
+
+dictionary:
+	uv run python -m seed_data.generator dictionary

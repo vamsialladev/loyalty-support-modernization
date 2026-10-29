@@ -48,6 +48,9 @@ crash.log
 *.tfvars
 !*.tfvars.example
 
+# Regenerated synthetic data (ADR-0030): world, history and documents. Benchmark cases and labels are committed.
+seed_data/v1/
+
 # Local runtime data and scratch
 .local/
 *.log
