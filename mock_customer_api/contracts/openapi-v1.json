@@ -1,0 +1,1856 @@
+{
+  "components": {
+    "schemas": {
+      "Adjustment": {
+        "properties": {
+          "adjustmentId": {
+            "title": "Adjustmentid",
+            "type": "string"
+          },
+          "adjustmentStatus": {
+            "title": "Adjustmentstatus",
+            "type": "string"
+          },
+          "confirmationNumber": {
+            "title": "Confirmationnumber",
+            "type": "string"
+          },
+          "createdTimestampUtc": {
+            "title": "Createdtimestamputc",
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "title": "Idempotencykey",
+            "type": "string"
+          },
+          "loyaltyId": {
+            "title": "Loyaltyid",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "points": {
+            "title": "Points",
+            "type": "integer"
+          },
+          "reasonCode": {
+            "title": "Reasoncode",
+            "type": "string"
+          },
+          "requestedBy": {
+            "title": "Requestedby",
+            "type": "string"
+          },
+          "transactionId": {
+            "title": "Transactionid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "adjustmentId",
+          "idempotencyKey",
+          "loyaltyId",
+          "confirmationNumber",
+          "points",
+          "reasonCode",
+          "note",
+          "requestedBy",
+          "createdTimestampUtc",
+          "transactionId",
+          "adjustmentStatus"
+        ],
+        "title": "Adjustment",
+        "type": "object"
+      },
+      "AdjustmentIn": {
+        "properties": {
+          "confirmationNumber": {
+            "maxLength": 16,
+            "minLength": 3,
+            "title": "Confirmationnumber",
+            "type": "string"
+          },
+          "loyaltyId": {
+            "maxLength": 16,
+            "minLength": 3,
+            "title": "Loyaltyid",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "points": {
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Points",
+            "type": "integer"
+          },
+          "reasonCode": {
+            "maxLength": 40,
+            "minLength": 2,
+            "title": "Reasoncode",
+            "type": "string"
+          },
+          "requestedBy": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Requestedby",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loyaltyId",
+          "confirmationNumber",
+          "points",
+          "reasonCode",
+          "requestedBy"
+        ],
+        "title": "AdjustmentIn",
+        "type": "object"
+      },
+      "AdjustmentList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Adjustment"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "AdjustmentList",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "LedgerEntry": {
+        "properties": {
+          "confirmationNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmationnumber"
+          },
+          "loyaltyId": {
+            "title": "Loyaltyid",
+            "type": "string"
+          },
+          "points": {
+            "title": "Points",
+            "type": "integer"
+          },
+          "postedTimestampUtc": {
+            "title": "Postedtimestamputc",
+            "type": "string"
+          },
+          "reversesTransactionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reversestransactionid"
+          },
+          "transactionId": {
+            "title": "Transactionid",
+            "type": "string"
+          },
+          "transactionType": {
+            "title": "Transactiontype",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transactionId",
+          "loyaltyId",
+          "confirmationNumber",
+          "transactionType",
+          "points",
+          "postedTimestampUtc",
+          "reversesTransactionId"
+        ],
+        "title": "LedgerEntry",
+        "type": "object"
+      },
+      "LedgerPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LedgerEntry"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextcursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "LedgerPage",
+        "type": "object"
+      },
+      "Member": {
+        "properties": {
+          "accountStatus": {
+            "title": "Accountstatus",
+            "type": "string"
+          },
+          "birthDate": {
+            "title": "Birthdate",
+            "type": "string"
+          },
+          "emailAddress": {
+            "title": "Emailaddress",
+            "type": "string"
+          },
+          "enrollmentDate": {
+            "title": "Enrollmentdate",
+            "type": "string"
+          },
+          "familyName": {
+            "title": "Familyname",
+            "type": "string"
+          },
+          "givenName": {
+            "title": "Givenname",
+            "type": "string"
+          },
+          "homeRegion": {
+            "title": "Homeregion",
+            "type": "string"
+          },
+          "loyaltyId": {
+            "title": "Loyaltyid",
+            "type": "string"
+          },
+          "mergedIntoLoyaltyId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mergedintoloyaltyid"
+          },
+          "phoneNumber": {
+            "title": "Phonenumber",
+            "type": "string"
+          },
+          "tierCode": {
+            "title": "Tiercode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loyaltyId",
+          "givenName",
+          "familyName",
+          "emailAddress",
+          "phoneNumber",
+          "birthDate",
+          "tierCode",
+          "homeRegion",
+          "enrollmentDate",
+          "accountStatus",
+          "mergedIntoLoyaltyId"
+        ],
+        "title": "Member",
+        "type": "object"
+      },
+      "MemberList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Member"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "MemberList",
+        "type": "object"
+      },
+      "PostingQueueItem": {
+        "properties": {
+          "confirmationNumber": {
+            "title": "Confirmationnumber",
+            "type": "string"
+          },
+          "expectedPostTimestampUtc": {
+            "title": "Expectedposttimestamputc",
+            "type": "string"
+          },
+          "loyaltyId": {
+            "title": "Loyaltyid",
+            "type": "string"
+          },
+          "points": {
+            "title": "Points",
+            "type": "integer"
+          },
+          "postsTransactionId": {
+            "title": "Poststransactionid",
+            "type": "string"
+          },
+          "queueItemId": {
+            "title": "Queueitemid",
+            "type": "string"
+          },
+          "queuedTimestampUtc": {
+            "title": "Queuedtimestamputc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queueItemId",
+          "loyaltyId",
+          "confirmationNumber",
+          "points",
+          "queuedTimestampUtc",
+          "expectedPostTimestampUtc",
+          "postsTransactionId"
+        ],
+        "title": "PostingQueueItem",
+        "type": "object"
+      },
+      "PostingQueueList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PostingQueueItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "PostingQueueList",
+        "type": "object"
+      },
+      "Stay": {
+        "properties": {
+          "arrivalDate": {
+            "title": "Arrivaldate",
+            "type": "string"
+          },
+          "bookingChannel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bookingchannel"
+          },
+          "checkoutTimestampUtc": {
+            "title": "Checkouttimestamputc",
+            "type": "string"
+          },
+          "confirmationNumber": {
+            "title": "Confirmationnumber",
+            "type": "string"
+          },
+          "feeAmount": {
+            "title": "Feeamount",
+            "type": "string"
+          },
+          "guestName": {
+            "title": "Guestname",
+            "type": "string"
+          },
+          "loyaltyId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loyaltyid"
+          },
+          "loyaltyIdAtBooking": {
+            "title": "Loyaltyidatbooking",
+            "type": "boolean"
+          },
+          "nights": {
+            "title": "Nights",
+            "type": "integer"
+          },
+          "partnerConfirmation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partnerconfirmation"
+          },
+          "pmsRecordId": {
+            "title": "Pmsrecordid",
+            "type": "string"
+          },
+          "propertyCode": {
+            "title": "Propertycode",
+            "type": "string"
+          },
+          "rateCode": {
+            "title": "Ratecode",
+            "type": "string"
+          },
+          "reservationSource": {
+            "title": "Reservationsource",
+            "type": "string"
+          },
+          "roomRevenue": {
+            "title": "Roomrevenue",
+            "type": "string"
+          },
+          "stayStatus": {
+            "title": "Staystatus",
+            "type": "string"
+          },
+          "taxAmount": {
+            "title": "Taxamount",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pmsRecordId",
+          "confirmationNumber",
+          "propertyCode",
+          "loyaltyId",
+          "loyaltyIdAtBooking",
+          "arrivalDate",
+          "nights",
+          "checkoutTimestampUtc",
+          "stayStatus",
+          "bookingChannel",
+          "reservationSource",
+          "rateCode",
+          "partnerConfirmation",
+          "roomRevenue",
+          "taxAmount",
+          "feeAmount",
+          "guestName"
+        ],
+        "title": "Stay",
+        "type": "object"
+      },
+      "StayList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Stay"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "StayList",
+        "type": "object"
+      },
+      "Ticket": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "createdTimestampUtc": {
+            "title": "Createdtimestamputc",
+            "type": "string"
+          },
+          "loyaltyId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loyaltyid"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          },
+          "ticketId": {
+            "title": "Ticketid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticketId",
+          "loyaltyId",
+          "subject",
+          "body",
+          "createdTimestampUtc"
+        ],
+        "title": "Ticket",
+        "type": "object"
+      },
+      "TicketIn": {
+        "properties": {
+          "body": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "loyaltyId": {
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loyaltyid"
+          },
+          "subject": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject",
+          "body"
+        ],
+        "title": "TicketIn",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Synthetic loyalty platform and PMS for the fictional hotel group. Not a real system.",
+    "title": "Mock customer API (SYNTHETIC)",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/_control/reset": {
+      "post": {
+        "operationId": "control_reset__control_reset_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-sim-time",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Sim-Time"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mock-fault",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mock-Fault"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Control Reset",
+        "tags": [
+          "control"
+        ]
+      }
+    },
+    "/_control/seed": {
+      "post": {
+        "operationId": "control_seed__control_seed_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dataset",
+            "required": false,
+            "schema": {
+              "default": "v1",
+              "title": "Dataset",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reset",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Reset",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-sim-time",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Sim-Time"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mock-fault",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mock-Fault"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Control Seed",
+        "tags": [
+          "control"
+        ]
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Healthz Healthz Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Healthz",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "readyz_readyz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Readyz",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/v1/adjustments": {
+      "get": {
+        "operationId": "find_adjustment_v1_adjustments_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "idempotencyKey",
+            "required": true,
+            "schema": {
+              "title": "Idempotencykey",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-sim-time",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Sim-Time"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mock-fault",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mock-Fault"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdjustmentList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Find Adjustment",
+        "tags": [
+          "adjustments"
+        ]
+      },
+      "post": {
+        "operationId": "submit_adjustment_v1_adjustments_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-sim-time",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Sim-Time"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mock-fault",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mock-Fault"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdjustmentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Adjustment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "Idempotency key reused with a different body"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Adjustment",
+        "tags": [
+          "adjustments"
+        ]
+      }
+    },
+    "/v1/adjustments/{adjustmentId}": {
+      "get": {
+        "operationId": "get_adjustment_v1_adjustments__adjustmentId__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "adjustmentId",
+            "required": true,
+            "schema": {
+              "title": "Adjustmentid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-sim-time",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Sim-Time"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mock-fault",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mock-Fault"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Adjustment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Adjustment",
+        "tags": [
+          "adjustments"
+        ]
+      }
+    },
+    "/v1/members": {
+      "get": {
+        "operationId": "find_members_v1_members_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "emailAddress",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Emailaddress"
+            }
+          },
+          {
+            "in": "query",
+            "name": "phoneNumber",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Phonenumber"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-sim-time",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Sim-Time"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mock-fault",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mock-Fault"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Find Members",
+        "tags": [
+          "members"
+        ]
+      }
+    },
+    "/v1/members/{loyaltyId}": {
+      "get": {
+        "operationId": "get_member_v1_members__loyaltyId__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "loyaltyId",
+            "required": true,
+            "schema": {
+              "title": "Loyaltyid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-sim-time",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Sim-Time"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mock-fault",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mock-Fault"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Member",
+        "tags": [
+          "members"
+        ]
+      }
+    },
+    "/v1/members/{loyaltyId}/ledger": {
+      "get": {
+        "operationId": "ledger_v1_members__loyaltyId__ledger_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "loyaltyId",
+            "required": true,
+            "schema": {
+              "title": "Loyaltyid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-sim-time",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Sim-Time"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mock-fault",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mock-Fault"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LedgerPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ledger",
+        "tags": [
+          "ledger"
+        ]
+      }
+    },
+    "/v1/posting-queue": {
+      "get": {
+        "operationId": "posting_queue_v1_posting_queue_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "confirmationNumber",
+            "required": true,
+            "schema": {
+              "title": "Confirmationnumber",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-sim-time",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Sim-Time"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mock-fault",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mock-Fault"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostingQueueList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Posting Queue",
+        "tags": [
+          "ledger"
+        ]
+      }
+    },
+    "/v1/stays": {
+      "get": {
+        "operationId": "find_stays_v1_stays_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "loyaltyId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Loyaltyid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "partnerConfirmation",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Partnerconfirmation"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-sim-time",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Sim-Time"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mock-fault",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mock-Fault"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StayList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Find Stays",
+        "tags": [
+          "stays"
+        ]
+      }
+    },
+    "/v1/stays/{confirmationNumber}": {
+      "get": {
+        "operationId": "get_stay_v1_stays__confirmationNumber__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "confirmationNumber",
+            "required": true,
+            "schema": {
+              "title": "Confirmationnumber",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-sim-time",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Sim-Time"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mock-fault",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mock-Fault"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StayList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Stay",
+        "tags": [
+          "stays"
+        ]
+      }
+    },
+    "/v1/tickets": {
+      "post": {
+        "operationId": "create_ticket_v1_tickets_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-sim-time",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Sim-Time"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mock-fault",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mock-Fault"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Ticket",
+        "tags": [
+          "tickets"
+        ]
+      }
+    }
+  }
+}

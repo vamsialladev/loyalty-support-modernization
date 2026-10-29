@@ -1,0 +1,17 @@
+# Seeded failure scenarios for demos (spec B.3: upstream timeout, rate limiting, temporary failure, completed but
+# response lost). Loaded only when MOCK_API_FAULTS=true AND MOCK_API_FAULT_RULES_FILE points here. The benchmark
+# runs without this file and injects faults per request with the X-Mock-Fault header instead (deterministic per case).
+# Suffix rules hit about 1% of records each; `times` limits a rule to its first N matches per process.
+rules:
+  - fault: timeout
+    stay_suffix: "17"
+    times: 1
+  - fault: rate_limited
+    member_suffix: "29"
+    times: 2
+  - fault: unavailable
+    stay_suffix: "43"
+    times: 1
+  - fault: commit_then_lost
+    stay_suffix: "61"
+    times: 1
