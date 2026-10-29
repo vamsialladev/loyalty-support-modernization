@@ -1,6 +1,8 @@
 # Decisions (ADR style)
 
-Each decision records context, decision, tradeoff and result. ADR-0001 to ADR-0010 are the binding resolutions
+Each decision records context, decision, tradeoff and result. From 2026-10-28 (project purpose) new ADRs also
+record the **options considered** and **what would change this decision**, so a new engineer can see how the
+choice was made, not only what it was. ADR-0001 to ADR-0010 are the binding resolutions
 from spec Part 0.6. Later ADRs are made during the build. A decision is changed only by a new ADR that supersedes it.
 
 ## ADR-0001: Claude Code is the primary implementer
@@ -36,6 +38,8 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **Tradeoff:** a FastAPI + worker + Postgres stack cannot use the free Streamlit hosting the other stages use
   (`docs/continuity.md` §12). Hosting options and costs go to the owner before anything is created (Appendix L1).
 - **Result:** applies from Milestone 4 (Compose) and Milestone 12 (IaC, validate only).
+- **What would change this decision:** a client mandating a different cloud or a fully managed platform; or the
+  M12 hosting options showing a cheaper option that still runs the worker and Postgres safely.
 
 ## ADR-0006: live model through an application-owned provider interface; default Claude Haiku 5.5
 - **Context:** Claude Code (dev tool) and the Claude API (runtime) are different access types (spec B.2). Every
@@ -45,6 +49,8 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   One alternative provider (Kimi, GLM or Qwen) only behind the same interface, with access, by explicit selection.
 - **Tradeoff:** an interface to maintain; in return no SDK in domain code and no silent provider switch.
 - **Result:** applies from Milestone 8.
+- **What would change this decision:** Haiku 5.5 failing the held-out thresholds while a larger model passes them
+  within the cost limit (H5); a client requiring a specific provider, region or enterprise endpoint.
 
 ## ADR-0007: at least 60 labelled evaluation cases
 - **Decision:** ≥60 labelled synthetic cases (supersedes the earlier 40), split dev / validation / held-out / stress.
@@ -54,6 +60,8 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **Decision:** embeddings, hybrid search or reranking only after a controlled comparison shows a benefit.
 - **Tradeoff:** stage 1 needed hybrid search for meaning-only questions; Stage 9 measures before adopting it.
 - **Result:** applies from Milestone 6.
+- **What would change this decision:** the M10 retrieval comparison showing citation or eligibility errors that a
+  hybrid variant fixes on held-out cases, at acceptable cost.
 
 ## ADR-0009: plain Python state machine for orchestration
 - **Decision:** no graph framework or extra agents without a demonstrated, documented benefit.
@@ -142,6 +150,9 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   points, permissions, approvals and execution are deterministic Python.
 - **Tradeoff:** the AI can't fix a wrong rule; in return a wrong or manipulated model output can't move points.
 - **Result:** applies to all arms (`docs/product-requirements.md` §3).
+- **What would change this decision:** nothing in this engagement. Moving eligibility or amounts to a model would
+  need a different risk appetite from the sponsor, audit and security, and evidence that a model is more accurate
+  than written rules; neither exists.
 
 ## ADR-0020: build vs buy
 - **Decision:** build the investigation workflow and benchmark (the point of the project is to measure them);
@@ -160,6 +171,8 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   interfaces; no direct database access to systems of record; adjustments only through the adjustment API with an
   idempotency key. Event-driven triggers are documented options (ENT-30), not the core.
 - **Tradeoff:** polling and request/response only; in return real systems can replace the mocks adapter by adapter.
+- **What would change this decision:** the client's systems exposing only events or files (then an event or batch
+  adapter behind the same interface), or volumes where polling becomes the bottleneck.
 
 ## ADR-0023: REST for the core; MCP as an optional read-only interface
 - **Decision:** the core app uses REST internally. An MCP server exposing read-only loyalty tools is built in

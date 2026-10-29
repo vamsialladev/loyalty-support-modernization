@@ -49,6 +49,23 @@ status.
 | STORY-01 | One headline sentence of measured results (A vs B vs C held-out, final-ledger accuracy, false approvals) | 0.7 | 4 | 19 | other | — | — | Planned (M19) |
 | STORY-02 | One 3-minute demo: messy multi-stay request with receipt image → cited investigation → supervisor approval → execution → injected timeout and reconciliation, no duplicate → benchmark slide incl. where AI did not help | 0.7 | 4 | 19 | other | — | — | Planned (M19) |
 
+## Project purpose (owner, 2026-10-28; `docs/project-purpose.md`)
+
+| ID | Requirement | Spec | Tier | M | Score | Implementation | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|
+| PURP-01 | Project purpose recorded and applied; `CLAUDE.md` section; ADRs record options considered and what would change the decision | Purpose | 4 | all | other | `docs/project-purpose.md`, `CLAUDE.md`, `docs/decisions.md` | `tests/test_repo_guidance.py::test_project_purpose_recorded` | Implemented and verified |
+| PURP-02 | Real-system swap guide updated every milestone | Purpose | 4 | all | other | `docs/real-system-swap-guide.md` (early draft) | `tests/test_repo_guidance.py::test_purpose_documents_exist` | Implemented but unverified |
+| PURP-03 | Onboarding guide updated every milestone | Purpose | 4 | all | other | `docs/onboarding.md` (early draft) | `tests/test_repo_guidance.py::test_purpose_documents_exist` | Implemented but unverified |
+| PURP-04 | Principal artifacts kept current: technical strategy, scaling and limits, tech-debt register, TCO | Purpose | 4 | all | other | `docs/technical-strategy.md`, `docs/scaling-and-limits.md`, `docs/tech-debt-register.md`, `docs/tco.md` (early drafts) | `tests/test_repo_guidance.py::test_purpose_documents_exist` | Implemented but unverified |
+| PURP-05 | One RFC per design-heavy milestone (6, 8, 10, 11) | Purpose | 4 | 6, 8, 10, 11 | other | `docs/rfcs/README.md` (template) | — | Planned (M6) |
+| PURP-06 | Executive brief, one page per phase | Purpose | 4 | all | other | `docs/executive-brief.md` (phase 1) | `tests/test_repo_guidance.py::test_purpose_documents_exist` | Implemented but unverified |
+| PURP-07 | Role coverage map: 17 roles, evidence-only status, interview questions, roles exercised per milestone | Purpose | 4 | all | other | `docs/role-coverage-map.md` | `tests/test_repo_guidance.py::test_role_coverage_map_lists_every_role` | Implemented but unverified |
+| PURP-08 | Public-data option: licence, terms, no personal data, credit, synthetic stays default | Purpose | 4 | 3 | other | `docs/data-sources.md` | `tests/test_repo_guidance.py::test_purpose_documents_exist` | Implemented but unverified |
+| PURP-09 | `portfolio/role-pitches/`: one file per role with pitch, verified evidence, interview questions | Purpose | 4 | 19 | other | — | — | Planned (M19) |
+| PURP-10 | `portfolio/engagement-method.md` and a pilot/discovery offer template; never presented as past client work | Purpose | 4 | 19 | other | — | — | Planned (M19) |
+| PURP-11 | `docs/using-at-a-company.md`: approvals, approved profile, real adapters, employer IP and personal-project policies | Purpose | 4 | 1 | other | `docs/using-at-a-company.md` | `tests/test_repo_guidance.py::test_purpose_documents_exist` | Implemented and verified |
+| EVAL-06 | Model-written paraphrase stress slice (labels from facts, outputs stored), reported separately from template text so template wording can't flatter any arm (owner, 2026-10-28) | Owner | 3 | 15 | bench | — | — | Planned (M15) |
+
 ## Appendix K: credentials and access (Tier 1, Milestone 1)
 
 | ID | Requirement | Spec | Tier | M | Score | Implementation | Evidence | Status |
@@ -321,7 +338,7 @@ rest are Tier 2.
 | KIT-04 | `docs/new-customer-playbook.md` | J | 4 | 17 | other | — | — | Planned (M17) |
 | KIT-05 | `docs/new-requirement-playbook.md` (12 steps + templates) | J | 4 | 17 | other | — | — | Planned (M17) |
 | KIT-06 | Redesign guidance and the explicit "no minutes" statements | J | 4 | 17 | other | — | — | Planned (M17) |
-| PERS-01 | Milestone teaching (what, why, verify, failure modes, one exercise) at every milestone | K.1 | 4 | all | personal | session reports | M1 teaching notes in the milestone report | Implemented but unverified |
+| PERS-01 | Milestone teaching (what, why, verify, failure modes, one exercise) at every milestone | K.1 | 4 | all | personal | session reports; `docs/owner-exercises.md` | M1 and M2 exercises answered by the owner (`docs/owner-exercises.md`) | Implemented but unverified |
 | PERS-02 | Owner exercises (product/ops, explanation, security, protocols) completed and recorded | K.2 | 4 | 18 | personal | — | — | Planned (M18) |
 | PERS-03 | Final practical assessment (5 tasks) | K.3 | 4 | 18 | personal | — | — | Planned (M18) |
 | PORT-01 | `portfolio/` files (summary, case study, demo script, walkthrough, talking points, eval report, security summary, tool evidence, cost/time, starter kit, diagrams, metadata, real screenshots) | L.1 | 4 | 19 | other | — | — | Planned (M19) |

@@ -58,6 +58,12 @@ Prerequisites: Python 3.12 and [uv](https://docs.astral.sh/uv/). Docker Desktop 
 Milestone 4 on. No API key is needed for any offline check.
 
 ## Documentation
+- **Start here:** [Project purpose](docs/project-purpose.md) · [Onboarding](docs/onboarding.md) ·
+  [Executive brief](docs/executive-brief.md) · [Role coverage map](docs/role-coverage-map.md)
+- **Principal view:** [Technical strategy](docs/technical-strategy.md) · [Scaling and limits](docs/scaling-and-limits.md) ·
+  [Tech-debt register](docs/tech-debt-register.md) · [TCO](docs/tco.md) · [RFCs](docs/rfcs/README.md) ·
+  [Real-system swap guide](docs/real-system-swap-guide.md) · [FDE tool map](docs/fde-tool-map.md) ·
+  [Data sources](docs/data-sources.md) · [Using this at a company](docs/using-at-a-company.md)
 - **Pre-registered before any arm was built (2026-10-28):** [Legacy defect catalog](docs/legacy-defect-catalog.md) ·
   [Hypotheses H1–H7](docs/hypotheses.md)
 - **Discovery:** [Customer discovery](docs/customer-discovery.md) ·

@@ -10,6 +10,18 @@ Site and repo conventions to match: `docs/continuity.md`.
 Shared standard for every coding assistant: `AGENTS.md` (Codex) and `.cursor/rules/project-standard.mdc` (Cursor)
 point to the same rules as this file. If they ever disagree, this file and the spec win; fix the other file.
 
+## Project purpose (owner, 2026-10-28; full text in `docs/project-purpose.md`)
+Stage 9 is the owner's reusable, end-to-end FDE engagement: it must work like a real company engagement from
+discovery to handover, connect to real tools through adapters, and teach a newly joined engineer how every role on
+an AI engagement handles each part. Apply the 11 lenses (business, data, AI, engineering, security and governance,
+operations, people, tools, reuse, principal engineering, every role) inside each milestone's existing work, without
+adding scope. **End every milestone** by updating, proportionately to what was built: `docs/onboarding.md`,
+`docs/real-system-swap-guide.md`, `docs/role-coverage-map.md` (roles exercised, with evidence only), the principal
+artifacts (`docs/technical-strategy.md`, `docs/scaling-and-limits.md`, `docs/tech-debt-register.md`, `docs/tco.md`),
+`docs/fde-tool-map.md` when tools change, an RFC in `docs/rfcs/` for Milestones 6, 8, 10, 11, and
+`docs/executive-brief.md` at the end of each phase. ADRs record the options considered and what would change the
+decision. Note what moves into the starter kit and what is customer-specific.
+
 ## Model and mode guidance (follow at the start of every milestone)
 - The owner uses **Opus for all milestones**; quality matters more than speed or usage.
 - **Before starting each milestone, say whether to use plan mode, then wait for the owner to confirm.**

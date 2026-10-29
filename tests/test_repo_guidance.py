@@ -102,3 +102,62 @@ def test_continuity_records_required_topics():
         "CI and eval conventions",
     ):
         assert topic in text, f"continuity.md does not cover {topic!r}"
+
+
+PURPOSE_DOCS = [
+    "project-purpose.md",
+    "real-system-swap-guide.md",
+    "onboarding.md",
+    "technical-strategy.md",
+    "scaling-and-limits.md",
+    "tech-debt-register.md",
+    "tco.md",
+    "rfcs/README.md",
+    "executive-brief.md",
+    "role-coverage-map.md",
+    "data-sources.md",
+    "using-at-a-company.md",
+    "fde-tool-map.md",
+    "owner-exercises.md",
+]
+
+ROLES = [
+    "Forward Deployed / Solutions Engineer",
+    "AI / Applied AI Engineer",
+    "ML Engineer / Applied Scientist",
+    "MLOps / LLMOps Engineer",
+    "Data Engineer",
+    "Backend / Platform Engineer",
+    "Site Reliability Engineer",
+    "Security Engineer",
+    "Solutions / Enterprise Architect",
+    "Staff / Principal Engineer",
+    "Engineering Manager / Tech Lead",
+    "Product Manager",
+    "Technical Program Manager",
+    "QA / Test Engineer",
+    "Customer Success / Support Lead",
+    "Responsible AI / Governance",
+    "Executive sponsor",
+]
+
+
+def test_project_purpose_recorded():
+    purpose = read("docs/project-purpose.md")
+    for phrase in ("reusable, end-to-end Forward Deployed Engineer project", "Principal engineering", "Showcase kits"):
+        assert phrase in purpose
+    claude = read("CLAUDE.md")
+    assert "## Project purpose" in claude and "docs/project-purpose.md" in claude
+    assert "What would change this decision" in read("docs/decisions.md")
+
+
+@pytest.mark.parametrize("name", PURPOSE_DOCS)
+def test_purpose_documents_exist(name):
+    assert len(read(f"docs/{name}").strip()) > 300, f"docs/{name} is missing or nearly empty"
+
+
+def test_role_coverage_map_lists_every_role():
+    text = read("docs/role-coverage-map.md")
+    rows = [line for line in text.splitlines() if line.startswith("| ") and not line.startswith("| Role")]
+    named = {line.split("|")[1].strip() for line in rows}
+    assert set(ROLES) <= named, f"missing roles: {set(ROLES) - named}"
