@@ -9,8 +9,8 @@ enforces that, so expected answers can't leak into any arm.
 | Field | Value |
 |---|---|
 | Reviewer | Vamsi Alla (project owner; not independent of the project, but independent of the label generator) |
-| Status | **Not started.** Waiting for Milestone 3 to generate the cases and fill `review-sheet.csv` |
-| Sample | 30 cases (plan below), seed recorded when drawn |
+| Status | **Sheet ready** (2026-10-29): `review-sheet.csv` holds the 30-case stratified sample from dataset v1. Waiting for the owner's review |
+| Sample | 30 cases (plan below); drawn with seed 20261102, stream `label-review` (`seed_data/generator/review_sheet.py`) |
 | Result | Not yet recorded |
 | Recorded by | Claude Code, after the owner returns the filled sheet |
 
