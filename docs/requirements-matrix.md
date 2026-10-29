@@ -43,7 +43,7 @@ status.
 | REUSE-04 | Stage 2 approval-UX conventions; explicit statement that stage 2 proposes and stage 9 executes with idempotency and reconciliation | 0.7 | 1 | 7 | core | — | — | Planned (M7) |
 | REUSE-05 | Stage 4–5 runbook, SLO, budget, handoff templates reused; only new content added | 0.7 | 2 | 12–13, 18 | other | — | — | Planned (M12) |
 | REUSE-06 | Stage 7 MCP conventions for loyalty read-only tools; extend vs. `protocols/mcp/` choice explained | 0.7 | 2 | 11 | proto | — | — | Planned (M11) |
-| REUSE-07 | Optional: synthetic legacy history queryable by stage 8 | 0.7 | 2 | 3 | other | — | — | Planned (M3) |
+| REUSE-07 | Optional: synthetic legacy history queryable by stage 8 | 0.7 | 2 | 3 | other | Not built (optional); history files are ready to load into stage 8 if wanted | — | Deferred: optional, waits for the owner's interest (backlog) |
 | REUSE-08 | Evaluate `hotel-ai-platform` (PII redaction, red-team corpus) for reuse; adopt or record why not | continuity | 1 | 9 | sec | — | — | Planned (M9) |
 | REUSE-09 | Protocol work connects to the loyalty domain and cites `agent-protocols-lab` instead of repeating it | continuity | 2 | 11, 16 | proto | — | — | Planned (M11) |
 | STORY-01 | One headline sentence of measured results (A vs B vs C held-out, final-ledger accuracy, false approvals) | 0.7 | 4 | 19 | other | — | — | Planned (M19) |
@@ -128,15 +128,15 @@ status.
 | CUST-01 | Two customers differ in policy rules, field mappings, waiting periods, approval limits | B.4 | 2 | 14 | core | — | — | Planned (M14) |
 | CUST-02 | Adapt through config and adapters, never a code copy; separate profiles and databases | B.4 | 2 | 14 | core | — | — | Planned (M14) |
 | CUST-03 | No tenant-isolation or multitenancy claim beyond what is implemented and tested | B.4 | 2 | 14 | sec | — | — | Planned (M14) |
-| DATA-01 | Reproducible generator: fixed seeds, configurable scale, referential integrity, realistic timestamps (same seed → same checksum) | B.5 | 1 | 3 | core | — | — | Planned (M3) |
-| DATA-02 | Generates members, stays, channels, ledger, policy versions, requests, notes, events, approvals, adjustments | B.5 | 1 | 3 | core | — | — | Planned (M3) |
-| DATA-03 | All B.5 scenarios incl. exact waiting-period boundary days and embedded injection text | B.5 | 1 | 3 | core | — | — | Planned (M3) |
-| DATA-04 | Scenario proportions documented as configurable assumptions | B.5 | 1 | 3 | core | — | — | Planned (M3) |
-| DATA-05 | Seed, reset, cleanup commands | B.5 | 1 | 3 | core | — | — | Planned (M3) |
-| DATA-06 | `docs/data-dictionary.md` documents every field | B.5 | 1 | 3 | core | — | — | Planned (M3) |
-| DATA-07 | Never derived from real records; fluency not claimed as realism | B.5 | 1 | 3 | core | — | — | Planned (M3) |
+| DATA-01 | Reproducible generator: fixed seeds, configurable scale, referential integrity, realistic timestamps (same seed → same checksum) | B.5 | 1 | 3 | core | `seed_data/generator/` (seed 20261102, `--scale`), `benchmarks/datasets/v1/manifest.json` | `tests/test_generator.py::test_committed_manifest_is_reproduced`, `tests/test_generator.py::test_same_seed_same_checksums_and_different_seed_differs` | Implemented and verified |
+| DATA-02 | Generates members, stays, channels, ledger, policy versions, requests, notes, events, approvals, adjustments | B.5 | 1 | 3 | core | `seed_data/generator/world.py`, `scenarios.py`, `history.py` (members, stays, channels, ledger, policies, requests, notes, events, approvals, adjustments) | `tests/test_generator.py::test_referential_integrity` | Implemented and verified |
+| DATA-03 | All B.5 scenarios incl. exact waiting-period boundary days and embedded injection text | B.5 | 1 | 3 | core | Scenario builders for D01-D25, K01-K06, S01-S05, B01-B02; exact boundary days (D04) | `tests/test_generator.py::test_every_catalog_item_is_seeded`, `tests/test_generator.py::test_waiting_period_boundary_in_eastern_time` | Implemented and verified |
+| DATA-04 | Scenario proportions documented as configurable assumptions | B.5 | 1 | 3 | core | `seed_data/generator/config/scenario_mix.yaml` (labelled assumptions) | `tests/test_generator.py::test_history_frequencies_match_the_configured_mix` | Implemented and verified |
+| DATA-05 | Seed, reset, cleanup commands | B.5 | 1 | 3 | core | `make data / data-reset / data-clean / data-verify`, `scripts/data.ps1` | `tests/test_generator.py::test_cli_verify_and_clean` | Implemented and verified |
+| DATA-06 | `docs/data-dictionary.md` documents every field | B.5 | 1 | 3 | core | `docs/data-dictionary.md` (generated from the models) | `tests/test_generator.py::test_data_dictionary_is_up_to_date` | Implemented and verified |
+| DATA-07 | Never derived from real records; fluency not claimed as realism | B.5 | 1 | 3 | core | Invented name lists and phrase banks in the repo; `docs/data-sources.md` | — | Implemented but unverified |
 | POL-01 | Per source: authoritative source, freshness, mapping, owner, conflict rule; validation of missing/conflicting/stale/changed data | B.6 | 1 | 2, 6 | core | Source register in `docs/legacy-discovery.md` §5; data validation in M6 | — | Planned (M6) |
-| POL-02 | Fictional versioned policies with IDs, effective dates, checksum, status, superseded versions; one set per customer | B.6, App. B | 1 | 3 | core | — | — | Planned (M3) |
+| POL-02 | Fictional versioned policies with IDs, effective dates, checksum, status, superseded versions; one set per customer | B.6, App. B | 1 | 3 | core | `policies/hg-demo/` (earning v1-v2, missing points requests v1-v2; rule parameters in front matter) | `tests/test_generator.py::test_labeler_recomputes_every_stored_label` | Implemented and verified |
 | POL-03 | Ingestion: validate, chunk, store source text, Postgres FTS baseline | B.6 | 1 | 6 | core | — | — | Planned (M6) |
 | POL-04 | Policy selected by business date (checkout); citations open exact excerpt and version; provenance and retrieval time | B.6 | 1 | 6 | core | — | — | Planned (M6) |
 | POL-05 | Controlled publishing with regression checks; changed policy/evidence invalidates pending approvals | B.6 | 1 | 6 | core | — | — | Planned (M6) |
@@ -234,11 +234,11 @@ rest are Tier 2.
 
 | ID | Requirement | Spec | Tier | M | Score | Implementation | Evidence | Status |
 |---|---|---|---|---|---|---|---|---|
-| EVAL-01 | ≥60 labelled cases; dev/validation/held-out/stress splits; grouped to prevent leakage; temporal/policy-family splits; versions and checksums | E.1 | 1 | 3 | bench | — | — | Planned (M3) |
-| EVAL-02 | Labels from scenario facts: policy, eligibility, points, existing credit, evidence, next action, clarification, escalation; "insufficient evidence" is valid | E.1 | 1 | 3 | bench | — | — | Planned (M3) |
-| EVAL-03 | Evaluated AI never the sole labeler; expected answers inaccessible to the app | E.1 | 1 | 3 | bench | — | — | Planned (M3) |
-| EVAL-04 | Label-review file or interface with reviewer status; disclose if no independent human reviewed. Owner agreed 2026-10-28 to review a stratified sample of about 30 labels | E.1 | 1 | 3 | bench | `evaluations/label-review/README.md` (instructions, sampling plan, status), `review-sheet.template.csv` | — | Planned (M3) |
-| EVAL-05 | Never tune on held-out; replace held-out if it becomes dev data | E.1 | 1 | 3–10 | bench | — | — | Planned (M3) |
+| EVAL-01 | ≥60 labelled cases; dev/validation/held-out/stress splits; grouped to prevent leakage; temporal/policy-family splits; versions and checksums | E.1 | 1 | 3 | bench | 280 cases: dev 100, validation 30, held-out 80, stress 30, fairness 40; member-grouped; temporal held-out; checksums in the manifest | `tests/test_generator.py::test_split_sizes_and_heldout_composition`, `tests/test_generator.py::test_no_member_stay_or_text_crosses_splits` | Implemented and verified |
+| EVAL-02 | Labels from scenario facts: policy, eligibility, points, existing credit, evidence, next action, clarification, escalation; "insufficient evidence" is valid | E.1 | 1 | 3 | bench | `evaluations/labeler.py`; `CaseLabel` fields incl. expected final ledger | `tests/test_generator.py::test_labels_validate_and_inputs_match` | Implemented and verified |
+| EVAL-03 | Evaluated AI never the sole labeler; expected answers inaccessible to the app | E.1 | 1 | 3 | bench | Labels by construction + independent labeler (ADR-0029); labels only under `benchmarks/datasets/v1/labels/` | `tests/test_generator.py::test_labeler_is_independent_of_generator_and_app`, `tests/test_generator.py::test_app_cannot_read_labels_or_generator_metadata` | Implemented and verified |
+| EVAL-04 | Label-review file or interface with reviewer status; disclose if no independent human reviewed. Owner agreed 2026-10-28 to review a stratified sample of about 30 labels | E.1 | 1 | 3 | bench | `evaluations/label-review/review-sheet.csv` (30 cases, status Sheet ready); owner review pending | `tests/test_generator.py::test_review_sheet_has_the_stratified_sample` | Implemented and verified |
+| EVAL-05 | Never tune on held-out; replace held-out if it becomes dev data | E.1 | 1 | 3–10 | bench | Held-out written with its own paraphrase families and dates; tuning discipline applies through M10 | `tests/test_generator.py::test_paraphrase_families_and_temporal_split` | Implemented but unverified |
 | LEG-01 | Baseline measurement plan, root-cause analysis, experiment plan, error analysis docs | E.2 | 1 | 2, 10 | bench | `docs/baseline-measurement-plan.md`, `docs/experiment-plan.md` done; root-cause analysis and error analysis in M10 | `tests/test_discovery_docs.py::test_document_covers_required_topics` (two of four) | Planned (M10) |
 | LEG-02 | Legacy arm instrumented (outcome, false approve/deny, escalation, missing info, times, steps, reopen, duplicates, overrides, errors); software metrics apart from human usability | E.2 | 1 | 5 | bench | — | — | Planned (M5) |
 | LEG-03 | Case-by-case RCA in the 11 categories with reproduction, expected vs actual, evidence, frequency, consequence, intervention; non-AI fixes named | E.2 | 1 | 10 | bench | — | — | Planned (M10) |
@@ -349,7 +349,7 @@ rest are Tier 2.
 | REPO-02 | README, lockfile, `.env.example`, Windows + macOS/Linux setup, command set, troubleshooting, hardware guidance, MIT licence, third-party notices, limitations list | M.2 | 1 | 1, 20 | other | `README.md`, `uv.lock`, `LICENSE`, `.env.example` (first versions) | — | Implemented but unverified |
 | REPO-03 | Clean install verified from a fresh clone | M.3 | 4 | 20 | other | — | — | Planned (M20) |
 | REPO-04 | Independent usability test, or recorded as pending | M.3 | 4 | 20 | other | — | — | Planned (M20) |
-| DEF-01 | Make targets (`up`, `migrate`, `seed`, `reset-demo`, `test`, `eval`, `benchmark`, `preflight`, `down`, `clean`) each with a `scripts/*.ps1` equivalent | App. B | 1 | 1–6 | core | `Makefile`, `scripts/test.ps1`, `scripts/preflight.ps1` (test, preflight so far) | verification log 2026-10-28 | Implemented but unverified |
+| DEF-01 | Make targets (`up`, `migrate`, `seed`, `reset-demo`, `test`, `eval`, `benchmark`, `preflight`, `down`, `clean`) each with a `scripts/*.ps1` equivalent | App. B | 1 | 1–6 | core | `Makefile`, `scripts/test.ps1`, `scripts/preflight.ps1`, `scripts/data.ps1` (test, preflight, data targets so far) | verification log 2026-10-29 | Implemented but unverified |
 | DEF-02 | Tooling: uv + lockfile, ruff, mypy, gitleaks, pip-audit, syft, Trivy, Terraform | App. B | 1 | 1, 12 | other | `pyproject.toml`, `uv.lock` (uv, ruff, mypy, pytest so far) | verification log 2026-10-28 | Implemented but unverified |
 | FINAL-01 | Final acceptance report (N.2) with every item classified | N.2 | 4 | 20 | other | — | — | Planned (M20) |
 
@@ -360,7 +360,7 @@ rest are Tier 2.
 | ENT-01 | AI system card | E1 | 2 | 8 | other | — | — | Planned (M8) |
 | ENT-02 | Use-case register entry and impact assessment, marked draft | E1 | 2 | 8 | other | — | — | Planned (M8) |
 | ENT-03 | Regulatory applicability assessment (documentation only, not legal advice) | E1 | 2 | 9 | other | — | — | Planned (M9) |
-| ENT-04 | Fairness slices (tier, region, channel, language, style) and counterfactual pairs | E1 | 2 | 10 | bench | — | — | Planned (M10) |
+| ENT-04 | Fairness slices (tier, region, channel, language, style) and counterfactual pairs | E1 | 2 | 10 | bench | Slice tags on every case and the separate fairness set (M3); reporting in M10 | — | Planned (M10) |
 | ENT-05 | UI labels AI-generated text and separates deterministic from model-written content | E1 | 2 | 8 | core | — | — | Planned (M8) |
 | ENT-06 | Anti-rubber-stamp UI: evidence and deterministic result before AI summary; review required; reasons for reject/override | E2 | 2 | 8 | core | — | — | Planned (M8) |
 | ENT-07 | Automation-bias measurement with seeded wrong recommendations | E2 | 2 | 10, 18 | bench | — | — | Planned (M10) |
@@ -405,27 +405,27 @@ rest are Tier 2.
 | ID | Requirement | Spec | Tier | M | Score | Implementation | Evidence | Status |
 |---|---|---|---|---|---|---|---|---|
 | LGF-01 | Defect catalog and hypotheses committed before arms B and C are built or benchmarked (Git history is the evidence) | F1 | 1 | 2–3 | bench | `docs/legacy-defect-catalog.md`, `docs/hypotheses.md` | pre-registration commit 2026-10-28 (no arm code exists); `tests/test_preregistration.py::test_documents_are_marked_preregistered` | Implemented and verified |
-| LGF-02 | Synthetic 12-month legacy operating history (volume, seasonality, handling times, outcomes, SLAs, backlog, event log, member text, notes, adjustment log, modeled satisfaction proxy) | F2 | 1 | 3 | bench | — | — | Planned (M3) |
+| LGF-02 | Synthetic 12-month legacy operating history (volume, seasonality, handling times, outcomes, SLAs, backlog, event log, member text, notes, adjustment log, modeled satisfaction proxy) | F2 | 1 | 3 | bench | `seed_data/generator/history.py` (12 months, SYNTHETIC, satisfaction proxy formula documented) | `tests/test_generator.py::test_history_frequencies_match_the_configured_mix` | Implemented and verified |
 | LGF-03 | `docs/legacy-defect-catalog.md` with all F3 columns and categories (data, config, search/UI, unstructured, unfixable, controls) | F3 | 1 | 2 | bench | `docs/legacy-defect-catalog.md` | `tests/test_preregistration.py::test_catalog_has_every_defect_with_all_columns` | Implemented and verified |
 | LGF-04 | `docs/kpi-tree.md` (four layers) | F4 | 1 | 2 | bench | `docs/kpi-tree.md` | `tests/test_discovery_docs.py::test_document_covers_required_topics` | Implemented and verified |
-| LGF-05 | `evaluations/financial_model.py` with labelled assumptions, outputs and sensitivity | F4 | 1 | 3, 10 | bench | — | — | Planned (M3) |
+| LGF-05 | `evaluations/financial_model.py` with labelled assumptions, outputs and sensitivity | F4 | 1 | 3, 10 | bench | `evaluations/financial_model.py` (inputs labelled, outputs labelled estimates, sensitivity); M10 adds measured AI cost | `tests/test_generator.py::test_financial_model_labels_everything_as_an_estimate` | Implemented and verified |
 | LGF-06 | `docs/hypotheses.md` H1–H7 with metric, slice, threshold, decision rule | F5 | 1 | 2 | bench | `docs/hypotheses.md` | `tests/test_preregistration.py::test_hypotheses_h1_to_h7_complete` | Implemented and verified |
 | LGF-16 | "A as-is" variant: legacy write path without shared safeguards, reported separately, excluded from H6, unreachable outside the benchmark runner | Owner (ADR-0018) | 1 | 10 | bench | pre-registered in catalog §2b, hypotheses §3a | — | Planned (M10) |
 | LGF-07 | Simulated member journey per arm (contacts, days, correct points, satisfaction proxy) | F6 | 1 | 10 | bench | — | — | Planned (M10) |
 | LGF-08 | End-to-end proof chain per held-out case per arm; final ledger-state accuracy as the primary metric | F7 | 1 | 10 | bench | — | — | Planned (M10) |
 | LGF-09 | Failure funnel per arm | F7 | 1 | 10 | bench | — | — | Planned (M10) |
 | LGF-10 | Simulated supervisor (deterministic review policy) plus an automation-bias variant, labelled simulated | F7 | 1 | 10 | bench | — | — | Planned (M10) |
-| LGF-11 | Day-one discovery analysis and dashboard page (Pareto, cost of failures, handling time, rework loops, SLA/backlog) | F8 | 1 | 3 | bench | — | — | Planned (M3) |
-| LGF-12 | One-page problem statement with the quantified synthetic baseline | F8 | 1 | 3 | bench | — | — | Planned (M3) |
-| LGF-13 | Opportunity sizing (impact vs effort) with predicted improvement per arm | F8 | 1 | 3 | bench | — | — | Planned (M3) |
+| LGF-11 | Day-one discovery analysis and dashboard page (Pareto, cost of failures, handling time, rework loops, SLA/backlog) | F8 | 1 | 3 | bench | `docs/day-one-discovery.md` + charts (report verified); dashboard page moves to M7 with the console (ADR-0034) | `tests/test_generator.py::test_committed_day_one_reports_trace_to_the_data` | Deferred: dashboard page needs the M7 console (ADR-0034); the report part is verified |
+| LGF-12 | One-page problem statement with the quantified synthetic baseline | F8 | 1 | 3 | bench | `docs/problem-statement.md` | `tests/test_generator.py::test_committed_day_one_reports_trace_to_the_data` | Implemented and verified |
+| LGF-13 | Opportunity sizing (impact vs effort) with predicted improvement per arm | F8 | 1 | 3 | bench | Opportunity sizing in `docs/day-one-discovery.md` (impact, effort, predicted arm from the catalog) | `tests/test_generator.py::test_committed_day_one_reports_trace_to_the_data` | Implemented and verified |
 | LGF-14 | Predicted vs actual improvement per intervention, explained | F8 | 1 | 10, 19 | bench | — | — | Planned (M10) |
-| LGF-15 | Bias guards (held-out hidden from C development, same defects for all arms, fair B fixes, every slice where A/B beat C, catalog review status, post-hoc changes logged) | F9 | 1 | 3–10 | bench | — | — | Planned (M3) |
+| LGF-15 | Bias guards (held-out hidden from C development, same defects for all arms, fair B fixes, every slice where A/B beat C, catalog review status, post-hoc changes logged) | F9 | 1 | 3–10 | bench | Same defects in every split for all arms; catalog change log; review status recorded; held-out isolation from arm C enforced in M8/M10 | — | Implemented but unverified |
 
 ## Appendices H, I, J, L
 
 | ID | Requirement | Spec | Tier | M | Score | Implementation | Evidence | Status |
 |---|---|---|---|---|---|---|---|---|
-| DOC-01 | Synthetic folios (PDF layouts), noisy receipt images, OTA emails; some disagree or carry injection; ground truth from the generator | H1 | 2 | 3 | core | — | — | Planned (M3) |
+| DOC-01 | Synthetic folios (PDF layouts), noisy receipt images, OTA emails; some disagree or carry injection; ground truth from the generator | H1 | 2 | 3 | core | `seed_data/generator/documents.py`: 22 case attachments + 60-document extraction set (folio PDFs x3 layouts, noisy receipts, OTA emails; some disagree, some carry injection) | `tests/test_generator.py::test_document_ground_truth_matches_records`, `tests/test_generator.py::test_documents_are_deterministic` | Implemented and verified |
 | DOC-02 | Extraction: OCR + rules baseline and model vision extraction (mock fixtures labelled) into a typed schema | H2 | 2 | 8 | core | — | — | Planned (M8) |
 | DOC-03 | Field confidence from verifiable signals only; no percentages | H2 | 2 | 8 | core | — | — | Planned (M8) |
 | DOC-04 | Review routing; extracted values are evidence only, never overwrite records or bypass approval | H2 | 2 | 8 | core | — | — | Planned (M8) |

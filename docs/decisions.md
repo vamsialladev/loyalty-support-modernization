@@ -211,3 +211,72 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 | External code review (e.g. CodeRabbit) | Many PRs, several contributors, AI-written code | One author, tiny change volume | Exercise on this repo only, with the owner's OK (M15) |
 | Workflow automation platform | Many simple integrations owned by non-engineers | Money-like actions needing idempotency, approval binding and reconciliation | Documentation only; Stage 10 territory |
 | Self-hosted model | Data must not leave the client network; steady high volume; acceptable quality on the held-out set | Low volume; quality below threshold; no ops capacity for GPUs | Only if the open-model exercise meets the threshold (M15) |
+
+## ADR-0028: a deterministic, pure-Python generator with derived random streams
+- **Context:** every later number depends on the synthetic data; it must be reproducible on any machine (spec B.5,
+  Appendix C: same seed, same checksum).
+- **Options considered:** (a) Faker plus pandas; (b) a one-off script with one global random seed; (c) a small
+  package with one master seed and a separate stream per component.
+- **Decision:** (c). `rng(seed, "component", ...)` derives a stream per component, so adding a scenario never shifts
+  another's output. Name lists and phrase banks live in the repo; no external dataset or service.
+- **Trade-off:** less "realistic-looking" variety than Faker; in return outputs never change when a library updates.
+- **Result:** `seed_data/generator/`; reproducibility tested against the committed manifest.
+- **What would change this decision:** needing millions of rows (then a vectorised generator), or an approved public
+  dataset to blend in (`docs/data-sources.md`).
+
+## ADR-0029: labels by construction, checked by an independent reference labeler
+- **Context:** labels decide every benchmark number. The same author writes the generator, the rules and (later) the
+  arms, so a shared bug could make an arm look right (spec E.1: the evaluated system is never the sole labeler).
+- **Options considered:** (a) hand-label cases; (b) compute labels with the app's own eligibility engine; (c) each
+  scenario builder declares its intended outcome, and a separate labeler recomputes the label from the stored facts
+  and the written policy; generation fails on any disagreement.
+- **Decision:** (c). `evaluations/labeler.py` imports nothing from the generator or the app and reads policy
+  parameters from the policy files' front matter. The app's engine (Milestone 6) will be written separately again.
+- **Trade-off:** three implementations of the rules to keep in step; that redundancy is the point.
+- **Result:** on its first full run the cross-check caught a builder error: a multi-stay case (DV-078) totalled 24,809
+  points, above the 20,000-point supervisor limit, so the policy says escalate; the builder had said adjust. The
+  builder was fixed; the labeler was right.
+- **What would change this decision:** a real customer's labelled cases (then those labels win, and the labeler
+  becomes a consistency check).
+
+## ADR-0030: commit benchmark cases and labels; regenerate the bulk data
+- **Context:** held-out must not drift if the generator changes; the world, history and documents are large and
+  reproducible. Owner's decision Q1 (2026-10-28).
+- **Options considered:** commit everything; commit cases, labels and the manifest only; commit nothing generated.
+- **Decision:** commit `benchmarks/datasets/v1/` (inputs, labels, composition, manifest) and the label-review sheet;
+  `seed_data/v1/` (world, history, documents) is git-ignored and regenerated; its checksums are in the manifest.
+- **Trade-off:** a fresh clone must run `make data` before Milestone 4 can load the mock API.
+- **What would change this decision:** generation becoming slow enough that a fresh clone takes too long (then commit
+  the world too), or a dataset licence that forbids redistribution.
+
+## ADR-0031: a separate counterfactual fairness set
+- **Context:** spec E1 asks for counterfactual pairs; the pre-registered composition (240 cases) has no room.
+  Owner's decision Q2.
+- **Decision:** 20 pairs (40 cases) in `fairness.jsonl`: 16 counterfactual pairs (name, language or tier changed;
+  identical stay facts) and 4 consistency pairs (only IDs differ). Reported separately; changes no split or threshold;
+  logged in the catalog's change log.
+- **What would change this decision:** fairness slices in the main splits proving large enough on their own.
+
+## ADR-0032: request text from deterministic templates
+- **Context:** paraphrases and other languages are needed (B.5, E9); labels must come from facts. Owner's decision Q3.
+- **Options considered:** model-written paraphrases now (key, cost, storage); templates in the repo.
+- **Decision:** templates (12 English paraphrase families split by dataset, four styles, Spanish, French, Portuguese and
+  German written by Claude Code, not checked by a native speaker). A model-written slice comes in Milestone 15
+  (EVAL-06), reported separately, so template wording can't flatter any arm.
+- **What would change this decision:** evidence in Milestone 10 that results on template text and model-written text
+  differ materially.
+
+## ADR-0033: per-customer field-mapping files over a canonical model
+- **Context:** the purpose asks that synthetic data shapes can be replaced by a real customer's shapes.
+- **Decision:** canonical, customer-neutral records (`seed_data/generator/models.py`) plus
+  `config/customers/<id>.yaml` mapping canonical fields to the customer's upstream names, channels and source codes.
+  A real export is mapped the other way by an adapter (`docs/real-system-swap-guide.md`).
+- **What would change this decision:** a customer whose data can't be expressed in the canonical model (then the
+  model gets a new, versioned field, never a fork).
+
+## ADR-0034: day-one analysis as a report now, a dashboard page with the console
+- **Context:** F8 asks for an analysis and a dashboard page before Milestone 7; the console doesn't exist yet. Owner's
+  decision Q4.
+- **Decision:** `evaluations/discovery_analysis.py` writes `docs/day-one-discovery.md`, `docs/problem-statement.md`,
+  charts and the executive-brief block from the history; the dashboard page joins the console in Milestone 7.
+- **What would change this decision:** a stakeholder walkthrough needing interactive filtering before Milestone 7.

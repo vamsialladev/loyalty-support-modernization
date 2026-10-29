@@ -8,8 +8,8 @@ points ledger right, with a supervisor approving every adjustment.**
 > Guest Rewards program. All data is synthetic. Independent portfolio project; no real customer, users or results.
 > Discovery and scoping (stage 0): [hotel-ai-discovery](https://github.com/vamsialladev/hotel-ai-discovery).
 
-**Status: Milestone 2 of 20 (discovery, architecture, pre-registered defect catalog and hypotheses).** There is no
-app to run yet. Results, a demo and a live link will
+**Status: Milestone 3 of 20 (synthetic data, labels, splits, legacy history, day-one analysis).** There is no app to
+run yet; the data layer runs: `scripts\data.ps1 -Action generate`. Results, a demo and a live link will
 appear here only when they exist and are measured. Progress: [docs/implementation-status.md](docs/implementation-status.md).
 
 ## What exists today
@@ -66,6 +66,9 @@ Milestone 4 on. No API key is needed for any offline check.
   [Data sources](docs/data-sources.md) · [Using this at a company](docs/using-at-a-company.md)
 - **Pre-registered before any arm was built (2026-10-28):** [Legacy defect catalog](docs/legacy-defect-catalog.md) ·
   [Hypotheses H1–H7](docs/hypotheses.md)
+- **Data (Milestone 3):** [Day-one discovery](docs/day-one-discovery.md) · [Problem statement](docs/problem-statement.md) ·
+  [Data dictionary](docs/data-dictionary.md) · [Benchmark composition](benchmarks/datasets/v1/composition.md) ·
+  [Label review](evaluations/label-review/README.md)
 - **Discovery:** [Customer discovery](docs/customer-discovery.md) ·
   [Stage 0 loyalty addendum](docs/stage0-loyalty-addendum.md) ·
   [Business requirements](docs/business-requirements.md) · [Product requirements](docs/product-requirements.md) ·

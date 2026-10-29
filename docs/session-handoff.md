@@ -1,46 +1,49 @@
 # Session handoff
 
-**Updated:** 2026-10-28, end of Milestone 2.
+**Updated:** 2026-10-29, end of Milestone 3.
 
 ## Where things stand
-- Milestones 1 and 2 are done and committed on `main` (local only; no remote exists).
-- **Pre-registration is committed:** `docs/legacy-defect-catalog.md` and `docs/hypotheses.md` at `1f8b8e6`,
-  owner-approved, with the "A as-is" variant. Any change from now on goes in their change logs and is a new
-  experiment (F9). No arm-B or arm-C code exists yet; keep it that way until Milestone 7 / 8.
-- No product code yet beyond `app/preflight.py` and `app/env_leaks.py`. 108 offline tests pass.
-- The owner's `.env` is still the unfilled template (fine until Milestone 4).
+- Milestones 1–3 are done and committed on `main` (local only; no remote exists). 151 offline tests pass.
+- **Pre-registration** (`1f8b8e6`) is untouched except three logged additions in the catalog's change log.
+- **Data layer:** `python -m seed_data.generator generate` rebuilds `seed_data/v1/` (git-ignored) in about 5 s warm;
+  `benchmarks/datasets/v1/` (cases, labels, manifest) is committed. Run `scripts\data.ps1 -Action generate` after a
+  fresh clone before anything needs `seed_data/v1/`.
+- **Waiting on the owner:** the 30-label review (`evaluations/label-review/review-sheet.csv`, instructions in the
+  README there). When it comes back: record counts in the README status table, `docs/verification-log.md` and
+  EVAL-04; fix any wrong label at its source (generator or policy), regenerate, log the change.
+- The owner's `.env` is still the unfilled template; Milestone 4 needs local values (`POSTGRES_PASSWORD`,
+  `MOCK_API_TOKEN`, `APP_SECRET_KEY`); preflight lists them.
 
 ## Start the next session with
 1. Read `CLAUDE.md`, `docs/MASTER-SPEC.md`, this file and `docs/implementation-status.md`.
-2. Run the checks:
+2. Run the checks and regenerate data:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 ```
 
-3. **Before Milestone 3, say whether to use plan mode and wait for the owner.** Recommendation: **plan mode yes**
-   (`docs/implementation-plan.md`): the generator, label rules and split design decide every later number.
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\data.ps1 -Action generate
+```
 
-## Milestone 3 scope (spec N.1 item 3; Appendices F2, H1; E.1)
-- Reproducible generator (fixed seed, same seed → same checksum) for members, stays, channels, ledger (incl.
-  pending, reversed and re-posted), policy versions, requests, notes, events, approvals, adjustments.
-- Seed exactly the pre-registered defects D01–D25, controls K01–K06, safety S01–S05 at the catalog's frequencies
-  (configurable). Fictional facts: catalog §1 (both properties `America/New_York`; policy v1/v2 on 2026-07-01).
-- 12-month legacy history 2025-11-01 to 2026-10-31 with the modelled satisfaction proxy (labelled).
-- Synthetic folios and receipt images (Appendix H1) with generator ground truth.
-- 240 labelled cases: dev 100, validation 30, held-out 80, stress 30, grouped by member; checksums recorded.
-- Fill `evaluations/label-review/review-sheet.csv` with the 30-case stratified sample (README sampling plan) and
-  set its status to "Sheet ready"; ask the owner to review.
-- Policies as Markdown with front matter (`policies/`), `docs/data-dictionary.md`, `evaluations/financial_model.py`,
-  day-one discovery analysis (Pareto, cost of failures, rework loops, SLA/backlog), one-page problem statement,
-  opportunity sizing.
-- A test that the application package never reads `evaluations/label-review/` or generator metadata.
+3. **Before Milestone 4, say whether to use plan mode and wait for the owner.** Recommendation: optional; plan mode
+   is worth it for the contract and idempotency-record design, which Milestone 6 builds on.
+
+## Milestone 4 scope (spec N.1 item 4; B.3, B.11, F.2)
+- Mock customer API (separate service): member, stay, ledger, posting-queue lookups; ticket creation; adjustment
+  submission with an idempotency key; status lookup; typed errors; pagination; deterministic failure injection
+  (header + seeded scenarios); reset and seed; persisted atomically with its idempotency record.
+- Versioned OpenAPI contracts and adapter interfaces; contract tests incl. malformed and schema-changed responses.
+- Postgres 16 + Alembic; Docker Compose (non-root, profiles); `docker compose up`, migrate, seed from `seed_data/v1/`
+  succeed from scratch (Appendix C, M3–4 part). "As of" queries so a case sees the world at its `received_at_utc`.
+- Pay down TD-05 (move generator libraries to a `data` dependency group) before the first Dockerfile.
+- Purpose lenses: swap-guide section for the mock API, onboarding section, role coverage (Backend / Platform).
 
 ## Open items for the owner
-- **Label review:** agreed 2026-10-28; the sheet is filled in Milestone 3. Record the result in
-  `evaluations/label-review/README.md`, `docs/verification-log.md` and EVAL-04.
+- Label review (above).
 - Optional check: start Claude Code inside this folder and ask it to read `.env`; it should be refused (ACC-03).
-- When ready (not urgent): approval to create the GitHub repo `vamsialladev/loyalty-support-modernization` and push.
+- When ready: approval to create the GitHub repo `vamsialladev/loyalty-support-modernization` and push.
+- Milestone 3 exercise: see the end of the milestone report.
 
 ## Blockers
-None for Milestones 3–7. Milestone 8's live run needs `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` in `.env`.
+None for Milestones 4–7. Milestone 8's live run needs `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` in `.env`.

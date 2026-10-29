@@ -207,4 +207,8 @@ to 6 of 25 defects, 4 fully and 2 in part (about 12% of history cases by the sec
 
 ## Change log (after pre-registration)
 
-None yet.
+| Date | Change | Reason | Effect on pre-registered items |
+|---|---|---|---|
+| 2026-10-28 | Added a separate **fairness set** of 40 cases (16 counterfactual pairs, 4 consistency pairs) outside the 240 | Owner's decision Q2 (Milestone 3 plan); spec E1 counterfactual pairs need room the 240 doesn't have (ADR-0031) | None: no split size, composition, defect, threshold or decision rule changed. Reported separately |
+| 2026-10-28 | Held-out claims are dated Sep–Oct 2026 (temporal split), except D15 cases, which are anchored to July 2026 by the policy change and use different checkout days (24–30 June) from dev (15–23 June) | Spec E.1 asks for temporal or policy-family splits; D15 can only occur in July | None: §10 already required both sides of the policy change |
+| 2026-10-28 | D19 has two variants: a vague date that only one stay fits (adjust), and a description two stays fit (ask which; the other stay is labelled `not_claimed`) | §6 says "nobody may guess when two stays fit"; the second variant makes that testable | None: D19's prediction (C fixes the context-resolvable variant; B asks) is unchanged. The `not_claimed` label is flagged for the owner's label review |

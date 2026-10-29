@@ -5,11 +5,11 @@
 
 | Role | Evidence in the repo | Milestone | Status | Questions this role would ask (and where the answer lives) |
 |---|---|---|---|---|
-| Forward Deployed / Solutions Engineer | `docs/customer-discovery.md`, `docs/stage0-loyalty-addendum.md`, `docs/continuity.md` | 1–2 | Shown (discovery only); integration, demo and handover planned (M4, M19, M18) | How did you scope it? (addendum §2) · What would make the client stop? (discovery §6) |
+| Forward Deployed / Solutions Engineer | `docs/customer-discovery.md`, `docs/stage0-loyalty-addendum.md`, `docs/continuity.md`, `docs/day-one-discovery.md`, `docs/problem-statement.md` | 1–3 | Shown (discovery, day-one analysis); integration, demo and handover planned (M4, M19, M18) | How did you scope it? (addendum §2) · What would make the client stop? (discovery §6) |
 | AI / Applied AI Engineer | `docs/product-requirements.md` §3 (AI boundary), ADR-0019 | 2 | Planned (M8) | What can the model never do? (product requirements §3) · How is the loop bounded? (M8) |
-| ML Engineer / Applied Scientist | `docs/hypotheses.md` (decision rule, paired bootstrap), `docs/experiment-plan.md` | 2 | Shown (experiment design); classical-ML baseline planned (M8) | How do you avoid tuning on held-out? (hypotheses §2) · What counts as inconclusive? (hypotheses §2) |
+| ML Engineer / Applied Scientist | `docs/hypotheses.md` (decision rule, paired bootstrap), `docs/experiment-plan.md`, grouped and temporal splits with leakage tests (`tests/test_generator.py`), `benchmarks/datasets/v1/composition.md` (re-weighting factors) | 2–3 | Shown (experiment design, dataset splits); classical-ML baseline planned (M8) | How do you avoid tuning on held-out? (hypotheses §2) · How do you prevent leakage between splits? (`test_no_member_stay_or_text_crosses_splits`) · Why re-weight held-out? (composition.md) |
 | MLOps / LLMOps Engineer | — | — | Planned (M10, M12) | How is a model change gated? (M10) |
-| Data Engineer | `docs/legacy-discovery.md` §5–6 (source register, data quality) | 2 | Planned (M3 generator) | Which system is the source of truth for points? (legacy discovery §5) |
+| Data Engineer | `seed_data/generator/` (deterministic generator, canonical models), `docs/data-dictionary.md`, `benchmarks/datasets/v1/manifest.json` (checksums), `config/customers/hg-demo.yaml` (field mapping), referential-integrity tests | 2–3 | Shown | Is the data reproducible? (`test_committed_manifest_is_reproduced`) · How would a real export replace it? (swap guide, M3 section) · Where is each field defined? (data dictionary) |
 | Backend / Platform Engineer | `docs/architecture.md` | 2 | Planned (M4, M6) | How do you prevent duplicate credits? (architecture §4; M6) |
 | Site Reliability Engineer | — | — | Planned (M12, M13) | What are the SLOs? (M12) |
 | Security Engineer | `security/threat-model.md`, `app/preflight.py`, `app/env_leaks.py`, `tests/test_secrets_hygiene.py` | 1–2 | Shown (secret hygiene, threat model draft); authorization and red team planned (M9) | Where could points move without approval? (threat model T01–T04) · How are secrets kept out of Git? (secrets tests) |
@@ -18,12 +18,15 @@
 | Engineering Manager / Tech Lead | `docs/implementation-plan.md`, `docs/registers.md`, `docs/onboarding.md` | 1–2 | Shown (plan, risks, dependencies, onboarding) | What's blocked and on whom? (registers §1) |
 | Product Manager | `docs/business-requirements.md`, `docs/product-requirements.md` | 2 | Shown | What are you not building? (business requirements §5) · How do you roll out? (§7) |
 | Technical Program Manager | `docs/implementation-plan.md`, `docs/implementation-status.md`, `docs/requirements-matrix.md` | 1–2 | Shown | Where are we against plan? (status) |
-| QA / Test Engineer | `tests/` (guidance, matrix, secrets, pre-registration, discovery docs) | 1–2 | Shown (document and config tests); product test strategy planned (M6–M7) | How do you know a test isn't passing for the wrong reason? (verification log, M1 row 14) |
+| QA / Test Engineer | `tests/` (guidance, matrix, secrets, pre-registration, discovery docs, generator: reproducibility, integrity, leakage, label independence) | 1–3 | Shown (document, config and data tests); product test strategy planned (M6–M7) | How do you know a test isn't passing for the wrong reason? (verification log, M1 row 14) · How are labels checked? (ADR-0029, `test_labeler_recomputes_every_stored_label`) |
 | Customer Success / Support Lead | — | — | Planned (M18) | How are agents trained? (M18) |
-| Responsible AI / Governance | `docs/governance.md`, pre-registration (`docs/hypotheses.md`) | 2 | Shown (governance, pre-registration); system card and fairness planned (M8, M10) | Who can approve an adjustment? (governance §2) |
+| Responsible AI / Governance | `docs/governance.md`, pre-registration (`docs/hypotheses.md`), fairness set of counterfactual pairs (`benchmarks/datasets/v1/fairness.jsonl`, ADR-0031), owner label review | 2–3 | Shown (governance, pre-registration, fairness data); fairness results and system card planned (M8, M10) | Who can approve an adjustment? (governance §2) · Do equivalent facts get the same outcome? (`test_fairness_pairs_get_the_same_outcome`; results in M10) |
 | Executive sponsor | `docs/executive-brief.md` | 2 | Shown (phase 1 brief) | What decision do you need from me? (executive brief) |
 
 ## Roles exercised by milestone
 - **M1:** Security Engineer, Engineering Manager / Tech Lead, Technical Program Manager, QA, Staff / Principal (ADRs).
 - **M2:** Forward Deployed Engineer, Product Manager, ML Engineer / Applied Scientist (experiment design), Solutions
   Architect, Security Engineer (threat model), Responsible AI (governance), Executive sponsor (brief).
+- **M3:** Data Engineer (generator, dictionary, checksums, mapping), ML Engineer / Applied Scientist (splits, leakage,
+  re-weighting), QA (data tests, label cross-check), Responsible AI (fairness set), Forward Deployed Engineer (day-one
+  analysis), Executive sponsor (phase 2 brief), Solutions Architect (swap path for real data).

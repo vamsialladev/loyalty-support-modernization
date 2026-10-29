@@ -11,7 +11,7 @@ in `docs/requirements-matrix.md`.
 - [ ] Claude Code deny rules for `.env` confirmed working in a session started in this folder (ACC-03)
 
 ## Product (Milestones 3–8)
-- [ ] Synthetic members, stays, ledger, policies, requests (DATA-*)
+- [x] Synthetic members, stays, ledger, policies, requests; reproducible by seed (DATA-01 to DATA-06)
 - [ ] Mock customer API with failure injection (MOCK-*)
 - [ ] Legacy arm A end to end in the browser (ARMA-01)
 - [ ] Deterministic eligibility and policy-by-date retrieval (ELIG-01, POL-04)
@@ -23,7 +23,9 @@ in `docs/requirements-matrix.md`.
 
 ## Evidence (Milestones 2–3, 10)
 - [x] Defect catalog and hypotheses committed before arms B and C (LGF-01; commit `1f8b8e6`)
-- [ ] ≥60 labelled cases in four splits (EVAL-01)
+- [x] ≥60 labelled cases in four splits: 240 + a 40-case fairness set, labels from facts, checked by an independent labeler (EVAL-01 to EVAL-04)
+- [x] Day-one discovery analysis and problem statement from the synthetic history (LGF-11 report, LGF-12, LGF-13)
+- [ ] Owner's review of 30 labels recorded (EVAL-04 follow-up)
 - [ ] A vs B vs C benchmark on held-out cases with final-ledger accuracy (LGF-08)
 - [ ] Business-value report chosen by the evidence (BIZ-04)
 

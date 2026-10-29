@@ -3,6 +3,27 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## Milestone 3 (2026-10-28 to 2026-10-29)
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | Purpose docs committed before any M3 code | `git log` | `f0b3c34`; 124 tests passed at that commit |
+| 2 | Libraries work on Windows (incl. time-zone data) | `python -c "import zoneinfo, PIL, reportlab, matplotlib, pydantic"` | `America/New_York` resolves (tzdata installed); Pillow 13.0, reportlab 5.1, pydantic 2.14.1 |
+| 3 | First full generation | `python -m seed_data.generator generate --root <scratch>` | Failed: case DV-079 found no valid checkout date (wasteful sampling for post-July stays). Fixed by sampling inside the valid range |
+| 4 | Second full generation | same | **The label cross-check failed on DV-078 (D16):** the labeler said escalate (24,809 points, above the 20,000-point supervisor limit in the policy); the builder intent said adjust. The labeler was right; the D16 builder now keeps multi-stay totals under the limit, and the limit rule has its own unit test |
+| 5 | Third full generation | same | Failed on a reportlab font name (`Times-Roman-Bold` → `Times-Bold`). Fixed |
+| 6 | Performance | `cProfile` at scale 0.2 | 54 s under the profiler on a cold machine; hot spots: `strptime` and PNG encoding. Switched to `fromisoformat` and `compress_level=1`. Warm full generation now about 5 s (first cold run about 70 s) |
+| 7 | History volume matches assumption A1 | generation counts | First run 4,022 cases (seasonality multipliers averaged 1.033). Normalised to average 1: 3,872 (A1 × 12 = 3,840) |
+| 8 | Lint and types | `ruff check`, `ruff format`, `mypy` (strict, 24 files) | 19 lint findings fixed (long lines, en dashes; S311 allowed for seeded generation; `RUF001` allowed on one Turkish name); 14 mypy errors fixed (covariant `Sequence`, misplaced ignores after formatting, reportlab has no stubs) |
+| 9 | Full suite | `scripts\test.ps1` | Exit 0: **151 passed**, coverage **97%** (gate 70%), about 27 s including a full generation in a temp folder |
+| 10 | Reproducibility | `scripts\data.ps1 -Action generate` twice | Manifest SHA-256 identical (`883095…6294`) |
+| 11 | Clean removes regenerated data only | `scripts\data.ps1 -Action clean` | `seed_data/v1` removed; `benchmarks/datasets/v1/manifest.json` kept |
+| 12 | Verify against the committed manifest | `scripts\data.ps1 -Action verify` | `verify: identical` |
+| 13 | Split sizes and held-out composition | `tests/test_generator.py` | dev 100, validation 30, held-out 80, stress 30, fairness 40; held-out controls 20, every defect ≥ 2 (D24, D25 ≥ 3) |
+| 14 | Documents match ground truth (one per type, opened) | viewed `ATT-DV-048-1.png`, `ATT-DV-004-1.pdf`, `ATT-DV-018-1.eml` | All fields match `labels/documents.jsonl` (confirmation, dates, member, totals); the receipt shows its planted crop, rotation and speckle |
+| 15 | Day-one analysis | `python -m evaluations.discovery_analysis` | 3,872 cases, 1,057 failures (27%). **First version overstated the non-AI share (79%):** it counted D16 as partly fixable by B because it read the catalog's "Partial" cell, while catalog §11 says D16 is C-only. Now read from §11: **61% predicted fixable without AI, 21% AI-only, 9% split** (D18, D22). Committed reports equal a regeneration from the data (test) |
+| 16 | Label-review sheet | open `review-sheet.csv` | 30 rows, template columns, strata 6/6/2/5/6/5, held-out rows within 10–20 (test) |
+
 ## Milestone 2 (2026-10-28)
 
 | # | Check | Command | Result |

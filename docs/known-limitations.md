@@ -2,6 +2,21 @@
 
 Kept current at every milestone. Each line says what is limited, why, and what would change it.
 
+## Added in Milestone 3 (2026-10-29)
+- **The history restates our assumptions.** Its outcomes come from the outcome model in
+  `seed_data/generator/config/scenario_mix.yaml`, so the day-one numbers (27% wrong; 61% of failures predicted
+  fixable without AI, 21% AI-only) demonstrate the method, not a finding.
+- **Labels were written by the same author as the generator and (later) the arms.** The independent labeler and the
+  owner's 30-label review reduce that risk; the review hasn't happened yet.
+- **Request text is templated** (ADR-0032); the Spanish, French, Portuguese and German templates are unchecked by
+  native speakers. A model-written slice comes in Milestone 15 (EVAL-06).
+- **D15 held-out cases are dated July 2026**, outside the Sep–Oct held-out window, because the policy change pins
+  them there (catalog change log).
+- **D19's two-stay variant labels the unclaimed stay `not_claimed`** (no credit without a claim). This is a judgement
+  call flagged for the label review.
+- **The day-one dashboard page is deferred to Milestone 7** (ADR-0034); only the report and charts exist.
+- **Generation speed depends on the machine:** about 5 s warm, about 70 s on a cold first run here.
+
 ## Added in Milestone 2 (2026-10-28)
 - **The discovery sessions are fictional.** Stakeholder answers, volumes (about 320 requests a month), handling time
   (about 14 minutes) and costs ($32 per hour, $0.008 per point) are assumptions A1–A7, not measurements.
