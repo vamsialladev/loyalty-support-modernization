@@ -159,8 +159,16 @@ def test_labeler_is_independent_of_generator_and_app() -> None:
 
 
 def test_app_cannot_read_labels_or_generator_metadata() -> None:
-    forbidden = ("benchmarks", "evaluations", "labels", "seed_data", "ground_truth", "label-review")
-    for package in ("app", "mock_customer_api", "worker"):
+    # The app and the mock API must never read ground truth or generator metadata. The mock API may read the
+    # operational folder seed_data/v1 (members, stays, ledger, queue), so "seed_data" is only forbidden in the app.
+    always = ("benchmarks", "evaluations", "labels/", "ground_truth", "label-review")
+    rules = {
+        "app": (*always, "seed_data"),
+        "mock_customer_api": always,
+        "worker": (*always, "seed_data"),
+        "customer_shapes": (*always, "seed_data"),
+    }
+    for package, forbidden in rules.items():
         for path in (ROOT / package).rglob("*.py") if (ROOT / package).exists() else []:
             source = path.read_text(encoding="utf-8")
             assert not (_imports(path) & {"evaluations", "seed_data", "benchmarks"}), path
