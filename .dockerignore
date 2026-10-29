@@ -1,0 +1,23 @@
+# Keep secrets, ground truth and generated data out of every image (ADR-0040; tests/test_compose.py checks this).
+.env
+.env.*
+.git
+.venv
+benchmarks/
+evaluations/
+seed_data/
+docs/
+tests/
+security/
+scripts/
+policies/
+portfolio/
+.claude/
+.cursor/
+**/__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.log
