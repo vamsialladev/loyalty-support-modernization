@@ -30,6 +30,11 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
   nights, 10 points per US dollar on the room rate, taxes and fees excluded; member numbers `GR-#####`).
 
 ## Open items for the owner
+- **Pending approval:** `docs/legacy-defect-catalog.md` and `docs/hypotheses.md` are uncommitted drafts. Commit them
+  (the pre-registration) only after the owner approves, before any arm-B or arm-C code.
+- **Label review:** the owner agreed (2026-10-28) to review ~30 labels. Instructions and sheet format are in
+  `evaluations/label-review/`; Milestone 3 fills `review-sheet.csv`; record the result in its README status table,
+  `docs/verification-log.md` and EVAL-04.
 - Optional check: start Claude Code inside this folder and ask it to read `.env`; it should be refused (ACC-03).
 - When ready (not urgent): approval to create the GitHub repo `vamsialladev/loyalty-support-modernization` and push.
 - Milestone 1 exercise (Part K.1): see the end of the milestone report.
