@@ -1,0 +1,373 @@
+"""The case workflow arm A uses: intake, queue, manual evidence, the rules checklist, notes, information requests,
+escalation, closing, and asking for a supervisor's approval (spec B.8, B.10, B.13).
+
+Shared by every arm: arm A plugs in its legacy screens and checklist; arms B and C will plug in theirs. Approval and
+execution live in `write_path.py`, the one path every arm uses. All checks run here, on the server: the browser and
+the scripted agent call the same functions with the same permissions.
+"""
+
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass, field
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.arms.legacy import intake, screens
+from app.arms.legacy.checklist import Checklist, Evidence, LedgerView, Outcome, evaluate
+from app.arms.legacy.keyword_index import KeywordIndex
+from app.arms.legacy.rules import LegacyRules
+from app.clock import utc_now
+from app.domain.case_states import CaseState, check_transition
+from app.domain.customer_records import LedgerEntry, Member, StayRecord
+from app.domain.roles import Identity, require_case_worker
+from app.persistence.models import AdjustmentRequestRow, Case, CaseEvidence, CaseNote, CaseRequest
+from app.ports.customer_systems import CustomerSystemError, CustomerSystems
+from app.services.instrumentation import record
+
+ARM_A = "A"
+REASON_MISSING_POINTS = "missing_points"
+
+# What an agent may close a case as, and the checklist outcome each code agrees with. A close that disagrees with
+# the checklist is an override: it needs a note and is logged as one (spec E.2 "overrides").
+CLOSE_CODES: dict[str, set[Outcome]] = {
+    "no_adjustment_credited": {Outcome.ALREADY_CREDITED},
+    "wait_until": {Outcome.WAIT},
+    "not_checked_out": {Outcome.NOT_CHECKED_OUT},
+    "deny_channel_ineligible": {Outcome.DENY_CHANNEL},
+    "deny_claim_window": {Outcome.DENY_CLAIM_WINDOW},
+    "deny_not_found": {Outcome.INCOMPLETE},  # member or stay not found on the legacy screens
+    "deny_other": set(),  # always an override
+}
+
+
+class WorkflowError(Exception):
+    """The action isn't possible in the case's current state or with its current evidence (shown to the user)."""
+
+
+class CaseNotFound(Exception):
+    pass
+
+
+@dataclass(frozen=True)
+class IntakeRequest:
+    received_at_utc: str
+    contact_channel: str
+    text: str
+    sender_email: str | None = None
+    form_member_number: str | None = None
+    form_confirmation: str | None = None
+    form_name: str | None = None
+    form_property: str | None = None
+    attachment_names: list[str] = field(default_factory=list)
+    request_ref: str | None = None
+
+
+# ---------- intake and queue ----------
+
+
+def create_case(
+    s: Session, who: Identity, request: IntakeRequest, *, customer_id: str = "hg-demo", source_ref: str | None = None
+) -> Case:
+    require_case_worker(who)
+    if not request.text.strip():
+        raise WorkflowError("the request text is empty")
+    now = utc_now()
+    case = Case(
+        reference="pending",
+        arm=ARM_A,
+        customer_id=customer_id,
+        queue=intake.route(request.text),
+        status=CaseState.NEW.value,
+        created_by=who.username,
+        received_at_utc=request.received_at_utc,
+        source_ref=source_ref,
+        created_at_utc=now,
+        updated_at_utc=now,
+    )
+    s.add(case)
+    s.flush()
+    case.reference = f"A-{case.id:06d}"
+    s.add(CaseRequest(case_id=case.id, **asdict(request)))
+    record(s, case, who, "case_created", queue=case.queue, channel=request.contact_channel)
+    s.commit()
+    return case
+
+
+def list_cases(
+    s: Session, who: Identity, *, queue: str = intake.POINTS_QUEUE, status: str | None = None, mine: bool = False
+) -> list[Case]:
+    require_case_worker(who)
+    query = select(Case).where(Case.queue == queue)
+    if status:
+        query = query.where(Case.status == status)
+    if mine:
+        query = query.where(Case.assigned_to == who.username)
+    return list(s.scalars(query.order_by(Case.received_at_utc, Case.id).limit(200)))
+
+
+def get_case(s: Session, who: Identity, case_id: int) -> Case:
+    require_case_worker(who)
+    case = s.get(Case, case_id)
+    if case is None:
+        raise CaseNotFound(case_id)
+    return case
+
+
+def requests_of(s: Session, case: Case) -> list[CaseRequest]:
+    return list(s.scalars(select(CaseRequest).where(CaseRequest.case_id == case.id).order_by(CaseRequest.id)))
+
+
+def notes_of(s: Session, case: Case) -> list[CaseNote]:
+    return list(s.scalars(select(CaseNote).where(CaseNote.case_id == case.id).order_by(CaseNote.id)))
+
+
+def adjustment_requests_of(s: Session, case: Case) -> list[AdjustmentRequestRow]:
+    query = select(AdjustmentRequestRow).where(AdjustmentRequestRow.case_id == case.id)
+    return list(s.scalars(query.order_by(AdjustmentRequestRow.id)))
+
+
+def move(case: Case, target: CaseState) -> None:
+    check_transition(CaseState(case.status), target)
+    case.status = target.value
+    case.version += 1
+    case.updated_at_utc = utc_now()
+
+
+def _require(case: Case, *states: CaseState) -> None:
+    if CaseState(case.status) not in states:
+        allowed = " or ".join(f"'{st}'" for st in states)
+        raise WorkflowError(f"this needs the case to be {allowed}; it is '{case.status}'")
+
+
+def start_work(s: Session, who: Identity, case: Case) -> None:
+    require_case_worker(who)
+    if case.queue != intake.POINTS_QUEUE:
+        raise WorkflowError("this case is in the billing queue, which the billing team works outside this tool")
+    _require(case, CaseState.NEW)
+    move(case, CaseState.INVESTIGATING)
+    case.assigned_to = who.username
+    record(s, case, who, "work_started")
+    s.commit()
+
+
+# ---------- the legacy screens, logged as steps ----------
+
+
+def log_search(s: Session, case: Case, who: Identity, screen: str, by: str, results: int) -> None:
+    """A search on one of the four screens (D14 step counts). Inputs are recorded by kind, never by value."""
+    record(s, case, who, f"search_{screen}", by=by, results=results)
+    s.commit()
+
+
+def _attach(s: Session, case: Case, who: Identity, kind: str, ref: str, snapshot: dict[str, Any]) -> None:
+    _require(case, CaseState.INVESTIGATING)
+    s.add(
+        CaseEvidence(
+            case_id=case.id,
+            kind=kind,
+            source_ref=ref,
+            snapshot=snapshot,
+            attached_by=who.username,
+            attached_at_utc=utc_now(),
+            sim_time_utc=case.received_at_utc,
+        )
+    )
+    record(s, case, who, "evidence_attached", kind=kind)
+    s.commit()
+
+
+def attach_member(s: Session, who: Identity, case: Case, systems: CustomerSystems, member_number: str) -> Member:
+    """Re-read on the server: what the browser sends is only the record's number, never its contents."""
+    require_case_worker(who)
+    found = screens.search_member(systems, member_number=member_number)
+    if not found:
+        raise WorkflowError("no member with that number")
+    _attach(s, case, who, "member", found[0].member_number, asdict(found[0]))
+    return found[0]
+
+
+def attach_stay(
+    s: Session, who: Identity, case: Case, systems: CustomerSystems, member_number: str, confirmation: str
+) -> StayRecord:
+    require_case_worker(who)
+    stay = screens.search_stay(systems, member_number=member_number, confirmation=confirmation)
+    if stay is None:
+        raise WorkflowError("no stay with that confirmation number on this member's profile")
+    _attach(s, case, who, "stay", stay.stay_id, asdict(stay))
+    return stay
+
+
+def attach_ledger(
+    s: Session, who: Identity, case: Case, systems: CustomerSystems, member_number: str, show_older: bool
+) -> LedgerView:
+    require_case_worker(who)
+    view = screens.ledger_view(
+        systems, member_number=member_number, as_of_utc=case.received_at_utc, show_older=show_older
+    )
+    _attach(s, case, who, "ledger", view.member_number, ledger_snapshot(view))
+    return view
+
+
+def attach_policy(s: Session, who: Identity, case: Case, index: KeywordIndex, ref: str) -> None:
+    require_case_worker(who)
+    section = index.get(ref)
+    if section is None:
+        raise WorkflowError("that policy section is not in the index")
+    _attach(s, case, who, "policy", section.ref, asdict(section))
+
+
+def ledger_snapshot(view: LedgerView) -> dict[str, Any]:
+    return {
+        "member_number": view.member_number,
+        "as_of_utc": view.as_of_utc,
+        "window_start_utc": view.window_start_utc,
+        "entries": [asdict(e) for e in view.entries],
+    }
+
+
+def evidence_rows(s: Session, case: Case) -> list[CaseEvidence]:
+    return list(s.scalars(select(CaseEvidence).where(CaseEvidence.case_id == case.id).order_by(CaseEvidence.id)))
+
+
+def current_evidence(s: Session, case: Case) -> Evidence:
+    """The latest member, stay and ledger the agent attached, plus every policy excerpt. Arm A handles one stay per
+    case: attaching another stay replaces the first (D16, ADR-0043)."""
+    latest: dict[str, CaseEvidence] = {}
+    policies: list[str] = []
+    for row in evidence_rows(s, case):
+        if row.kind == "policy":
+            if row.source_ref not in policies:
+                policies.append(row.source_ref)
+        else:
+            latest[row.kind] = row
+    ledger = None
+    if "ledger" in latest:
+        snap = latest["ledger"].snapshot
+        entries = tuple(LedgerEntry(**e) for e in snap["entries"])
+        ledger = LedgerView(snap["member_number"], snap["as_of_utc"], snap["window_start_utc"], entries)
+    return Evidence(
+        member=Member(**latest["member"].snapshot) if "member" in latest else None,
+        stay=StayRecord(**latest["stay"].snapshot) if "stay" in latest else None,
+        ledger=ledger,
+        policy_refs=tuple(policies),
+    )
+
+
+def checklist_for(s: Session, case: Case, rules: LegacyRules) -> Checklist:
+    return evaluate(current_evidence(s, case), case.received_at_utc, rules)
+
+
+def checklist_dict(checklist: Checklist) -> dict[str, Any]:
+    """JSON-native (lists, plain strings), the same before and after a database round trip."""
+    data = asdict(checklist)
+    data["outcome"] = checklist.outcome.value
+    data["lines"] = [asdict(line) for line in checklist.lines]
+    return data
+
+
+# ---------- the agent's decisions ----------
+
+
+def add_note(s: Session, who: Identity, case: Case, body: str) -> None:
+    require_case_worker(who)
+    if not body.strip():
+        raise WorkflowError("the note is empty")
+    s.add(CaseNote(case_id=case.id, author=who.username, body=body.strip(), created_at_utc=utc_now()))
+    record(s, case, who, "note_added")
+    s.commit()
+
+
+def request_adjustment(s: Session, who: Identity, case: Case, rules: LegacyRules) -> AdjustmentRequestRow:
+    """Ask a supervisor to approve exactly what the rules checklist computed. The agent never types an amount."""
+    require_case_worker(who)
+    _require(case, CaseState.INVESTIGATING)
+    checklist = checklist_for(s, case, rules)
+    if checklist.outcome is not Outcome.ADJUST or checklist.points_owed is None:
+        raise WorkflowError(f"the rules checklist does not allow an adjustment ({checklist.outcome.value})")
+    evidence = current_evidence(s, case)
+    assert evidence.member is not None and evidence.stay is not None  # guaranteed by Outcome.ADJUST
+    row = AdjustmentRequestRow(
+        case_id=case.id,
+        member_number=evidence.member.member_number,
+        stay_id=evidence.stay.stay_id,
+        points=checklist.points_owed,
+        reason_code=REASON_MISSING_POINTS,
+        checklist=checklist_dict(checklist),
+        requested_by=who.username,
+        requested_at_utc=utc_now(),
+        status="pending",
+    )
+    s.add(row)
+    move(case, CaseState.PENDING_APPROVAL)
+    s.flush()
+    record(s, case, who, "adjustment_requested", points=row.points, checklist_outcome=checklist.outcome.value)
+    s.commit()
+    return row
+
+
+def close_case(s: Session, who: Identity, case: Case, code: str, note: str, rules: LegacyRules) -> None:
+    """Resolve without an adjustment. A code the checklist doesn't support is an override and needs a note."""
+    require_case_worker(who)
+    _require(case, CaseState.INVESTIGATING)
+    if code not in CLOSE_CODES:
+        raise WorkflowError(f"unknown resolution '{code}'")
+    outcome = checklist_for(s, case, rules).outcome
+    override = outcome not in CLOSE_CODES[code]
+    if override and not note.strip():
+        raise WorkflowError(f"the checklist says '{outcome.value}': explain the override in a note")
+    if note.strip():
+        s.add(CaseNote(case_id=case.id, author=who.username, body=note.strip(), created_at_utc=utc_now()))
+    move(case, CaseState.RESOLVED)
+    case.resolution_code, case.resolution_note = code, note.strip() or None
+    record(s, case, who, "case_closed", resolution=code, checklist_outcome=outcome.value, override=override)
+    s.commit()
+
+
+def request_information(s: Session, who: Identity, case: Case, systems: CustomerSystems, message: str) -> str:
+    """Ask the member for something, through the ticketing system (simulated). Returns the ticket ID."""
+    require_case_worker(who)
+    _require(case, CaseState.INVESTIGATING)
+    if not message.strip():
+        raise WorkflowError("write the message to the member")
+    member = current_evidence(s, case).member
+    try:
+        ticket = systems.create_ticket(
+            subject=f"Your missing points request {case.reference}",
+            body=message.strip(),
+            member_number=member.member_number if member else None,
+        )
+    except CustomerSystemError as exc:
+        record(s, case, who, "system_error", operation="create_ticket", code=exc.code or type(exc).__name__)
+        s.commit()
+        raise WorkflowError("the ticketing system did not accept the message; try again") from exc
+    s.add(
+        CaseNote(
+            case_id=case.id, author=who.username, body=f"Asked the member: {message.strip()}", created_at_utc=utc_now()
+        )
+    )
+    move(case, CaseState.AWAITING_INFORMATION)
+    record(s, case, who, "information_requested", ticket=ticket.ticket_id)
+    s.commit()
+    return ticket.ticket_id
+
+
+def resume(s: Session, who: Identity, case: Case) -> None:
+    require_case_worker(who)
+    _require(case, CaseState.AWAITING_INFORMATION)
+    move(case, CaseState.INVESTIGATING)
+    record(s, case, who, "work_resumed")
+    s.commit()
+
+
+def escalate(s: Session, who: Identity, case: Case, reason: str) -> None:
+    require_case_worker(who)
+    _require(case, CaseState.INVESTIGATING)
+    if not reason.strip():
+        raise WorkflowError("give the reason for escalating")
+    s.add(CaseNote(case_id=case.id, author=who.username, body=f"Escalated: {reason.strip()}", created_at_utc=utc_now()))
+    move(case, CaseState.ESCALATED)
+    case.resolution_code, case.resolution_note = "escalated", reason.strip()
+    record(s, case, who, "case_escalated")
+    s.commit()
