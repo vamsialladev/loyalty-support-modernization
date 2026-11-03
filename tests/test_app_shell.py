@@ -35,6 +35,8 @@ def test_readyz_needs_migrations_and_customer_systems(monkeypatch: pytest.Monkey
     assert first.json()["database"] == "not_migrated" and first.json()["customer_systems"] == "unreachable"
     cfg = Config(str(ROOT / "alembic.ini"))
     cfg.set_main_option("sqlalchemy.url", url)
+    command.upgrade(cfg, "0001")  # a volume from an earlier milestone: migrated, but behind this code
+    assert client.get("/readyz").json()["database"] == "not_migrated"
     command.upgrade(cfg, "head")
     assert client.get("/readyz").json()["database"] == "ok"
 
@@ -60,13 +62,46 @@ def test_seed_command_migrates_then_calls_the_mock(
 
     def refused(url: str, **kw: Any) -> httpx.Response:
         return httpx.Response(
-            409,
-            json={"code": "already_seeded", "title": "Data is already loaded"},
+            401,
+            json={"code": "unauthorized", "title": "Missing or invalid bearer token"},
             headers={"content-type": "application/problem+json"},
         )
 
     monkeypatch.setattr(seed_cli.httpx, "post", refused)
     assert seed_cli.main([]) == 1
+
+
+def test_seed_on_a_loaded_mock_still_migrates_and_creates_accounts(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """An existing volume from an earlier milestone: mock data loaded, app database behind, no demo accounts."""
+    import app.seed as seed_cli
+    from app.adapters.local_demo_identity import LocalDemoIdentity
+    from app.persistence.database import make_engine, make_sessions
+
+    url = f"sqlite:///{(tmp_path / 'app.db').as_posix()}"
+    cfg = Config(str(ROOT / "alembic.ini"))
+    cfg.set_main_option("sqlalchemy.url", url)
+    command.upgrade(cfg, "0001")  # the Milestone 4 schema
+    monkeypatch.setenv("DATABASE_URL", url)
+    monkeypatch.setenv("MOCK_API_TOKEN", "fake-token-for-test")
+    monkeypatch.setenv("DEMO_USER_PASSWORD", "fake-demo-password-1234")
+
+    def already_loaded(url: str, **kw: Any) -> httpx.Response:
+        return httpx.Response(
+            409,
+            json={"code": "already_seeded", "title": "Data is already loaded; use reset to reload"},
+            headers={"content-type": "application/problem+json"},
+        )
+
+    monkeypatch.setattr(seed_cli.httpx, "post", already_loaded)
+    assert seed_cli.main([]) == 0
+    assert seed_cli.main([]) == 0, "running it a second time must also succeed"
+    out = capsys.readouterr()
+    assert "mock data already loaded, skipped" in out.out and "agent.ana" in out.out and out.err == ""
+    assert "fake-demo-password-1234" not in out.out
+    identity = LocalDemoIdentity(make_sessions(make_engine(url)))
+    assert identity.authenticate("agent.ana", "fake-demo-password-1234") is not None
 
 
 def test_domain_code_imports_no_web_database_http_or_model_sdk() -> None:

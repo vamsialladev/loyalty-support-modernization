@@ -4,8 +4,9 @@ API to load the dataset.
     docker compose exec app python -m app.seed --dataset demo          # 'demo' is an alias for v1
     docker compose exec app python -m app.seed --dataset demo --reset  # reload the mock systems from scratch
 
-Reads DATABASE_URL, MOCK_API_URL, MOCK_API_TOKEN and DEMO_USER_PASSWORD (the demo accounts are created only when it
-is set; ADR-0045). Prints counts and usernames only, never a password or token.
+Safe to run again: the migration and the demo accounts are repeatable, and data already loaded in the mock API counts
+as success (ADR-0052). Reads DATABASE_URL, MOCK_API_URL, MOCK_API_TOKEN and DEMO_USER_PASSWORD (the demo accounts are
+created only when it is set; ADR-0045). Prints counts and usernames only, never a password or token.
 """
 
 from __future__ import annotations
@@ -47,8 +48,11 @@ def main(argv: list[str] | None = None) -> int:
         headers={"Authorization": f"Bearer {os.environ['MOCK_API_TOKEN']}"},
         timeout=300,
     )
+    problem = resp.json() if resp.headers.get("content-type", "").startswith("application/") else {}
+    if resp.status_code == 409 and problem.get("code") == "already_seeded":
+        print("mock data already loaded, skipped")  # seeding twice is fine; --reset reloads on purpose
+        return 0
     if resp.status_code != 200:
-        problem = resp.json() if resp.headers.get("content-type", "").startswith("application/") else {}
         print(
             f"mock customer API refused the seed: {resp.status_code} {problem.get('code', '')} "
             f"{problem.get('title', '')}".strip(),

@@ -54,6 +54,7 @@ services:
       interval: 3s
       timeout: 3s
       retries: 30
+      start_period: 120s  # migrations run before the server starts; a slow cold start isn't a failure
     deploy:
       resources:
         limits: {cpus: "1.0", memory: 512M}
@@ -82,6 +83,7 @@ services:
       interval: 3s
       timeout: 3s
       retries: 30
+      start_period: 120s  # migrations run before the server starts; a slow cold start isn't a failure
     deploy:
       resources:
         limits: {cpus: "1.0", memory: 512M}

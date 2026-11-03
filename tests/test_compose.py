@@ -206,3 +206,25 @@ def test_update_local_env_leaves_every_reference_resolvable(tmp_path: Path, star
     after = dotenv_values(env, interpolate=False)
     for name, value in fake.items():
         assert after[name] == value, f"{name} was changed"
+
+
+# ---------- the upgrade path from an earlier milestone's volume (ADR-0052) ----------
+
+
+def test_services_that_migrate_at_start_get_a_start_period() -> None:
+    services = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))["services"]
+    for name in ("app", "mock-api"):
+        assert services[name]["healthcheck"]["start_period"] == "120s", name
+
+
+def test_stack_up_reports_the_cause_and_the_compose_check_covers_the_upgrade() -> None:
+    stack = (ROOT / "scripts/stack.ps1").read_text(encoding="utf-8")
+    assert "scripts/stack_diagnose.py" in stack and "$diagnosis -eq 3" in stack
+    check = (ROOT / "scripts/compose_check.ps1").read_text(encoding="utf-8")
+    for step in (
+        "downgrade 0001",
+        "a running app on an old schema",
+        "-Action seed",
+        "mock data already loaded, skipped",
+    ):
+        assert step in check, step

@@ -31,7 +31,21 @@ switch ($Action) {
             Write-Host "seed_data\v1 is missing: generating it first"
             uv run python -m seed_data.generator generate
         }
-        Invoke-Compose @("up", "--build", "-d", "--wait")
+        # The app and mock API containers migrate their own databases before they start serving. If the stack doesn't
+        # come up, or the app database still isn't current, say why instead of only "unhealthy" (ADR-0052).
+        & docker @compose up --build -d --wait
+        $upCode = $LASTEXITCODE
+        uv run python scripts/stack_diagnose.py --project $Project --env-file $EnvFile
+        $diagnosis = $LASTEXITCODE
+        if ($diagnosis -eq 3) {
+            Write-Host "Migrating the app database now."
+            Invoke-Compose @("exec", "-T", "app", "alembic", "upgrade", "head")
+            uv run python scripts/stack_diagnose.py --project $Project --env-file $EnvFile
+            $diagnosis = $LASTEXITCODE
+        }
+        if ($upCode -ne 0 -or $diagnosis -ne 0) {
+            throw "The stack is not ready; the cause is above. Full logs: scripts\stack.ps1 -Action logs"
+        }
     }
     "down" { Invoke-Compose @("down") }
     "migrate" { Invoke-Compose @("exec", "-T", "app", "alembic", "upgrade", "head") }

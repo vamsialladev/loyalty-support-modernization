@@ -63,6 +63,50 @@ Step "app role cannot connect to the mock database" {
     $out = & docker @compose exec -T -e "PGPASSWORD=$($values['APP_DB_PASSWORD'])" db psql -h 127.0.0.1 -U loyalty_app -d mock_customer_api -c "select 1" 2>&1
     $global:LASTEXITCODE = if ("$out" -match "permission denied|not permitted|FATAL") { 0 } else { 1 }
 }
+# The upgrade path (ADR-0052): a volume left by an earlier milestone has mock data loaded, the app database behind and
+# no demo accounts. Recreate that state on this stack, then run the same commands the owner runs.
+$stack = @("-ExecutionPolicy", "Bypass", "-File", "scripts\stack.ps1", "-EnvFile", $envFile, "-Project", $project)
+function Sql([string]$query) {
+    (& docker @compose exec -T db psql -U $values['POSTGRES_USER'] -d loyalty -tAc $query | Out-String).Trim()
+}
+Step "upgrade path: back to the Milestone 4 schema (revision 0001), mock data kept" {
+    & docker @compose exec -T app alembic downgrade 0001
+    $code = $LASTEXITCODE
+    & docker @compose rm -sf app
+    $global:LASTEXITCODE = $code
+}
+Step "upgrade path: stack.ps1 -Action up migrates and reports ready" {
+    powershell @stack -Action up
+    $code = $LASTEXITCODE
+    $version = Sql "select version_num from alembic_version"
+    Write-Host "app database revision: $version"
+    $global:LASTEXITCODE = if ($code -eq 0 -and $version -eq "0002") { 0 } else { 1 }
+}
+Step "upgrade path: a running app on an old schema is seen and migrated by stack.ps1 -Action up" {
+    & docker @compose exec -T app alembic downgrade 0001
+    powershell @stack -Action up
+    $code = $LASTEXITCODE
+    $version = Sql "select version_num from alembic_version"
+    Write-Host "app database revision: $version"
+    $global:LASTEXITCODE = if ($code -eq 0 -and $version -eq "0002") { 0 } else { 1 }
+}
+foreach ($round in 1, 2) {
+    Step "upgrade path: stack.ps1 -Action seed on loaded data, run $round of 2" {
+        $out = powershell @stack -Action seed | Out-String
+        Write-Host $out
+        $code = $LASTEXITCODE
+        $users = Sql "select count(*) from users"
+        Write-Host "demo accounts in the database: $users"
+        $global:LASTEXITCODE = if ($code -eq 0 -and $out -match "mock data already loaded, skipped" -and $users -eq "4") { 0 } else { 1 }
+    }
+}
+Step "upgrade path: a stopped app is named as the cause, not only 'unhealthy'" {
+    & docker @compose stop app
+    $out = uv run python scripts/stack_diagnose.py --project $project --env-file $envFile | Out-String
+    $code = $LASTEXITCODE
+    Write-Host $out
+    $global:LASTEXITCODE = if ($code -eq 1 -and $out -match "app: stopped with exit code") { 0 } else { 1 }
+}
 
 if (-not $Keep) { & docker @compose down -v --remove-orphans | Out-Null }
 Remove-Item $envFile -ErrorAction SilentlyContinue
