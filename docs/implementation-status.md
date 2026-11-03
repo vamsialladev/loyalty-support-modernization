@@ -1,8 +1,9 @@
 # Implementation status
 
-**Last updated:** 2026-10-29 · **Current milestone:** 5 of 20 complete · **Next:** Milestone 6 (eligibility, policy
+**Last updated:** 2026-11-03 · **Current milestone:** 5 of 20 complete · **Next:** Milestone 6 (eligibility, policy
 retrieval, state machine, approval binding, execution, reconciliation, durable worker), after the owner confirms the
-plan-mode choice (recommended: yes). **Waiting on the owner:** the 30-label review.
+plan-mode choice (recommended: yes). **Waiting on the owner:** the 30-label review, and a decision on the proposed
+fix for the evidence-free close (TD-17, `docs/backlog.md`).
 
 ## Completion scores (spec Part 0.5)
 Counted from `docs/requirements-matrix.md` by `uv run python scripts/matrix_scores.py`. Only "Implemented and
@@ -35,6 +36,12 @@ with progress noted in the matrix): sign-in (SEC-07), the shared write path (WP-
 | 4 | **Implemented and verified** (Appendix C, M3-4: `docker compose up`, migrate and seed succeed from scratch; contract tests pass) | `tests/test_mock_api.py` (41), `tests/test_compose.py`, `tests/test_app_shell.py`, `tests/test_mock_api_postgres.py` (6, real Postgres); `scripts\compose_check.ps1` passed; verification log, Milestone 4 |
 | 5 | **Implemented and verified** (Appendix C, M5: legacy arm A completes a case end to end in the browser) | `tests/browser/test_legacy_e2e.py` (2, offline and against the stack), `tests/test_legacy_rules.py` (26), `tests/test_legacy_screens.py` (14), `tests/test_case_workflow.py` (17), `tests/test_console_web.py` (16), `tests/test_scripted_agent.py` (8), `tests/test_arm_a_boundaries.py` (6); verification log, Milestone 5 |
 | 6–20 | Planned | `docs/implementation-plan.md` |
+
+## After Milestone 5 (2026-11-03)
+- Upgrade path from an existing volume: `/readyz` compares the database with this code's schema head, `stack.ps1 -Action
+  up` names the cause, `app.seed` is repeatable, and the compose check runs this path (ADR-0052).
+- Private GitHub repository and a first CI workflow (ADR-0053). From here on, work goes on branches with pull requests.
+- Open gap found by the owner: closing with no evidence (TD-17), fix proposed, not applied.
 
 ## Milestone 5 deliverables
 - **Arm A, legacy** (`app/arms/legacy/`, `config/legacy/`): rules configuration out of date only where the catalog

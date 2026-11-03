@@ -3,6 +3,27 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## After Milestone 5: upgrade path, A-000010, private repository (2026-11-03)
+
+**Reported by the owner:** on a volume from Milestone 4, `stack.ps1 -Action up` failed with `loyalty-app-1` unhealthy (logs
+showed only `/healthz` 200) until `-Action seed` ran; `-Action seed` then failed with `409 already_seeded`; and case
+A-000010 was closed as `deny_claim_window` with no evidence.
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | Reproduce on a real Milestone 4 stack | `git archive b238be7` into a scratch folder, its own compose project `loyalty-upg` and ports, `up`, `app.seed`; then this code's `stack.ps1 -Action up` and `-Action seed` on the same volume | App database at `0001` before; **seed failure reproduced** (`409 already_seeded`); **unhealthy not reproduced**: `up` passed, and the container's start command migrated to `0002` before any seed. So seed was not what fixed the owner's run |
+| 2 | The owner's run, after the fact | `docker inspect` on `loyalty-app-1`, `docker events --since ... --until ...`, read-only | Healthy now; Docker no longer holds that run's health events (0 returned). **Cause unproven**; a slow cold start is a hypothesis only (ADR-0052) |
+| 3 | Fault found by the reproduction | read `app/main.py`; new test | `/readyz` said the database was "ok" at any revision, including a Milestone 4 database. Now compared with this code's Alembic head; `tests/test_app_shell.py` checks `0001` is `not_migrated` |
+| 4 | Fixes on the throwaway stack | `stack.ps1 -Action up`, `-Action seed` twice, stop the app, `stack_diagnose.py` | `stack: ready`; seed exit 0 both times with `mock data already loaded, skipped` and 4 demo accounts; the stopped app is named as the cause. Stack, volume and images removed; the owner's stack was not touched |
+| 5 | New tests | `uv run pytest tests/test_stack_diagnose.py tests/test_app_shell.py tests/test_compose.py` | All passed. One existing assertion changed on purpose: `already_seeded` used to count as a refusal; the owner asked for success, so the refusal test now uses a 401 and a new test covers `already_seeded` |
+| 6 | Compose check with the upgrade path | `scripts\compose_check.ps1 -Browser` | "compose check passed": real-Postgres tests, Playwright 2 passed, back to revision 0001 with mock data kept, `up` reports ready at `0002`, a running app on an old schema is reported "not migrated" and migrated, seed twice with 4 accounts, a stopped app named as the cause |
+| 7 | A-000010, read-only | `psql` in `loyalty-db-1`: case, events, evidence, requests; mock database: stay | Evidence rows 0; event `case_closed` with `checklist_outcome: incomplete_evidence`, `override: true`. Stay ML-9701 checked out 2025-05-20, claim 2026-01-06: inside the 12-month window, so the denial was factually wrong. **Gap, not a legacy defect** (TD-17); nothing changed in the database |
+| 8 | Dependencies audit | `uvx pip-audit -r <uv export> --no-deps --disable-pip` | No known vulnerabilities |
+| 8a | Machine load during these runs | `Get-Process` CPU deltas, `Win32_OperatingSystem` | **722 MB of RAM free out of 32 GB**; a screen recorder at 2.3 cores, Teams, Zoom, and another project's server (`daypilot`, port 8011) at 0.6–0.9 of a core. Not touched. This made the full suite take 63 minutes (about 4 on a quiet machine) and supports, but does not prove, a slow start as the cause of the owner's "unhealthy" run |
+| 8b | Browser fixture under that load | full suite, then `pytest tests/browser` | Setup error twice: "server exited early" (message lost to my own output filter) during a concurrent compose check, then "did not come up" within 60 s. Fixture hardened: 180 s wait, 5 s per request, server output kept in a log file and quoted in any failure. Then **2 passed** in 317 s |
+| 8c | Full offline suite on the final code | `pytest --cov` (from Git Bash, so the 4 `sh` tests ran too) | **317 passed, 9 skipped** (the real-Postgres and role tests, which the compose check runs), coverage 95%; the only errors were the 2 browser setup errors from the old fixture (8b) |
+| 9 | Secret scan before the first push | `docker run ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --redact` | 35 commits scanned, no leaks. `git log --all --name-only`: no `.env` file ever committed (only `.env.example`) |
+
 ## Milestone 5 (2026-10-29)
 
 All work by Claude Code (Opus 5.5) on the owner-approved plan (decisions D1–D6). No value from `.env` was read or

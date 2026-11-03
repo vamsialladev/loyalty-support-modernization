@@ -171,6 +171,25 @@ platform's adjustment ID.
 | `benchmarks/agents/legacy_scripted.py` | The scripted legacy agent, "scripted, not human timing" (ADR-0048) |
 | `tests/browser/test_legacy_e2e.py` | The Playwright end-to-end test (Appendix C, Milestone 5) |
 
+**Existing volume from an earlier milestone?** Your data is kept; you don't need `-Action clean`. Run these in order:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\update-local-env.ps1
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\stack.ps1 -Action up
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\stack.ps1 -Action seed
+```
+
+`up` rebuilds the images; each service migrates its own database as it starts, and `up` then reports `stack: ready` or
+the actual cause (ADR-0052). `seed` is safe to repeat: it migrates, creates or resets the demo accounts, and prints
+`mock data already loaded, skipped` when the mock API has data. To reload the mock data on purpose use
+`-Action reset-demo`. The compose check runs this path on every run.
+
 **Rules to remember.** The browser only sends record numbers; the server re-reads every record before attaching it.
 The agent never types an amount. A supervisor never decides on their own request, and the server checks that, not
 the template. A write that times out goes to `Execution unknown` and is looked up by key before anything else.
@@ -201,6 +220,11 @@ benchmark would then measure).
 - **Sign-in says the username and password don't match:** run `scripts\stack.ps1 -Action seed` after
   `DEMO_USER_PASSWORD` is in `.env`; the seed creates the four demo accounts (it says "skipped" if the variable is
   missing).
+- **`up` says the stack is not ready:** the line above the error names the cause (a failed migration, a changed role
+  password, a slow start). A password message means `.env` no longer matches the volume: role passwords are stored when
+  the volume is created. `scripts\stack.ps1 -Action logs` shows everything.
+- **A case was closed by mistake:** there is no reopen until Milestone 6. Open a new case with the same details from
+  "New case"; the closed one stays as the audit record.
 - **The queue is empty:** run `scripts\stack.ps1 -Action demo-cases`.
 - **"Request refused: the form expired":** the page's CSRF token belongs to an older session (you signed in again
   in another tab). Reload the page.

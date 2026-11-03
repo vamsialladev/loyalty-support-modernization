@@ -77,6 +77,14 @@ already-credited late claims look missing, a defect outside the catalog. So "Sho
 checklist refuses a ledger view that doesn't cover the checkout date (ADR-0050). The window costs steps, never
 accuracy.
 
+**Open gap, not a legacy defect (found by the owner on 2026-11-03, TD-17).** `cases.close_case` lets an agent close with
+a rule-based code (for example `deny_claim_window`) while the checklist says `incomplete_evidence`, as long as a note
+is present. No catalog defect covers this and spec B.8 rules out making the tool incompetent on purpose, so it is a
+gap in the Milestone 5 build, not intended behaviour. Case A-000010 shows the harm: denied on the claim window with no
+evidence attached, when its stay (checkout 2025-05-20, claim 2026-01-06) was inside the window. The scripted agent
+never takes this path, so no pre-registered prediction depends on it. Proposed fix, awaiting the owner:
+`docs/backlog.md`.
+
 ## 2b. The scripted legacy agent and the A-as-is variant
 - **Scripted agent** (`benchmarks/agents/legacy_scripted.py`, ADR-0048): works arm A through the same services and
   permissions as the browser. Its reading policy is fixed in its docstring. Output is labelled **"scripted, not human

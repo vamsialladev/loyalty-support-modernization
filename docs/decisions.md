@@ -502,6 +502,42 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **Result:** tests cover the window, the expansion and the refusal of a view that does not cover checkout.
 - **What would change this decision:** none; it keeps arm A inside the pre-registered catalog.
 
+## ADR-0052: upgrading an existing volume: a truthful readiness check, repeatable seed, named causes
+- **Context:** the owner's stack, on a volume from Milestone 4, reported "loyalty-app-1 unhealthy" on `up`, then seed
+  failed with `409 already_seeded`. A real Milestone 4 stack (commit `b238be7`) upgraded on a throwaway volume
+  reproduced the seed failure but **not** the unhealthy one: the container's own start command had migrated to `0002`
+  before any seed ran, so seed was not what fixed it. Docker no longer holds the owner's health events, so that
+  run's cause is unproven; a cold start outlasting the health retries fits (it became healthy by itself, and the
+  machine later had 722 MB of 32 GB free and took 63 minutes for a 4-minute test suite), but that is a hypothesis. The reproduction also found a real fault: `/readyz` said the database was "ok" at any revision.
+- **Options considered:** make `/healthz` fail until migrated (a false "unhealthy" again, with no cause); a one-shot
+  migration container; keep migrate-on-start and make every status truthful.
+- **Decision:** keep migrate-on-start (a failed migration stops the container). `/readyz` compares the database with
+  this code's Alembic head. Health checks get a 120 s `start_period`, so a slow start isn't a failure.
+  `stack.ps1 -Action up` runs `scripts/stack_diagnose.py` afterwards, which names the cause from container state,
+  health output, logs and `/readyz` (credentials masked), and migrates when the running app's database is behind.
+  `app.seed` treats `already_seeded` as success, still migrating and creating demo accounts; other refusals still fail.
+- **Trade-off:** one more script, and cause detection is pattern matching: an unknown failure falls back to the last
+  log lines rather than a diagnosis.
+- **Result:** unit tests per cause; the compose check now recreates the earlier state (revision 0001, mock data kept)
+  and runs the owner's commands, including seeding twice.
+- **What would change this decision:** a hosted deployment, where migrations belong in a release step with their own
+  failure handling, not in container start (Milestone 12).
+
+## ADR-0053: a private repository and a first CI workflow before Milestone 6
+- **Context:** the owner approved creating `vamsialladev/loyalty-support-modernization` as private. No workflow existed
+  (TD-02; the full CI is Milestone 12), so "enable CI" meant writing one. Milestone 6's concurrency work benefits from
+  real-Postgres tests on every change.
+- **Options considered:** push now with CI waiting for Milestone 12; a first workflow now, with the full pipeline left
+  to Milestone 12.
+- **Decision:** `.github/workflows/ci.yml`: ruff, format, mypy, the offline suite with the coverage gate and browser
+  tests, the real-Postgres mock API tests, `pip-audit`, and gitleaks over the full history. Not included until
+  Milestone 12: image builds, the compose check, SBOM, Trivy, lychee. From here on, work goes on branches with pull
+  requests (ADR-0013). The repository stays private until the owner says otherwise.
+- **Trade-off:** private repositories use the free Actions allowance, and GitHub secret scanning isn't available on a
+  free private repository, which is why gitleaks runs in CI.
+- **What would change this decision:** making the repository public, which turns on free secret scanning and push
+  protection (steps in `docs/session-handoff.md`).
+
 ## ADR-0051: how the "A as-is" variant will run (built in Milestone 10)
 - **Context:** ADR-0018 pre-registered the variant; Milestone 5 builds the write path it replaces.
 - **Options considered:** a configuration flag in the app; a separate implementation in the benchmark tooling.

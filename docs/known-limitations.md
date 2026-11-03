@@ -2,6 +2,14 @@
 
 Kept current at every milestone. Each line says what is limited, why, and what would change it.
 
+## Added after Milestone 5 (2026-11-03)
+- **A case can be closed with a rule-based code and no evidence** by writing any note (TD-17, a gap, not a legacy defect;
+  proposed fix in `docs/backlog.md`).
+- **There is no reopen yet.** `Resolved`, `Escalated` and `Rejected` are final until Milestone 6 (spec B.10).
+- **The owner's "unhealthy" run has no proven cause** (ADR-0052). The reproduction didn't fail, and Docker no longer holds
+  that run's health events. Any repeat now prints its cause.
+- **CI is a first version** (ADR-0053): no image builds or compose check; those run locally until Milestone 12.
+
 ## Added in Milestone 5 (2026-10-29)
 - **Approvals are not yet bound to an evidence snapshot**, and concurrent executes are not locked (TD-12, TD-13). The
   thin shared write path refuses a second credit for a stay and reconciles uncertain outcomes by key, but the
@@ -71,5 +79,5 @@ Kept current at every milestone. Each line says what is limited, why, and what w
   tool's milestone.
 - **`make` is not installed on the owner's Windows machine.** The Makefile is untested there; the
   `scripts\*.ps1` equivalents are what was run.
-- **No remote repository and no CI yet.** Checks ran locally only. CI arrives with the GitHub repo (owner's OK).
+- **No remote repository and no CI yet.** Checks ran locally only. (Superseded 2026-11-03: private repository and a first CI workflow, ADR-0053.)
 - **Local tools missing:** gitleaks, Terraform, Trivy, syft, AWS CLI, Supabase CLI (see `docs/tool-access-matrix.md`).

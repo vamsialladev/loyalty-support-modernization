@@ -9,7 +9,7 @@ are in `docs/verification-log.md` (2026-10-28). This file grows into the full Pa
 |---|---|
 | Repository | `C:\projects\project1\loyalty-support-modernization`, local Git, branch renamed `master` → `main` (ADR-0013) |
 | Existing commits | 3 (spec and env template; Appendix L; spec update for the current site); `docs/MASTER-SPEC.md` had no uncommitted changes |
-| Remote | none. Creating the GitHub repo and pushing need the owner's OK |
+| Remote | **Private** `vamsialladev/loyalty-support-modernization`, created and pushed 2026-11-03 with the owner's OK (ADR-0053). Making it public needs the owner's OK |
 | `.env` | present, untracked, now Git-ignored. Byte-identical to `.env.example`, so every value is still empty (checked with `cmp`, file not opened) |
 | Earlier implementation | none; only `docs/MASTER-SPEC.md`, `.env.example` |
 | Parent folder | `C:\projects\project1` holds the other stages' working copies and the local video kit; its `CLAUDE.md`, `HANDOFF.md`, `PROGRESS.md` belong to the portfolio project and are ignored here |
@@ -21,7 +21,7 @@ are in `docs/verification-log.md` (2026-10-28). This file grows into the full Pa
 | Developer-assistant access | Claude Code in this folder (the owner's subscription) | Active. Grants nothing at runtime |
 | Runtime model access | Claude API key in `.env` (`ANTHROPIC_API_KEY`) for live mode | **Not set.** App runs on the offline mock provider; live runs are NOT RUN until set |
 | Customer-system access | Real loyalty, PMS or CRM systems | **None, by design.** Only the synthetic mock API (Milestone 4) |
-| Deployment access | GitHub push, AWS, Supabase, Vercel | **None granted.** `gh` is signed in, but pushing needs the owner's explicit OK; no cloud credentials |
+| Deployment access | GitHub push, AWS, Supabase, Vercel | **GitHub push to this private repository only**, approved by the owner on 2026-11-03; each later push still needs the owner's OK. No cloud credentials |
 
 ## 3. Local tools
 
@@ -38,7 +38,7 @@ are in `docs/verification-log.md` (2026-10-28). This file grows into the full Pa
 | ffmpeg | demo video | Available | on PATH |
 | Cursor | Cursor exercise | Installed (`cursor` on PATH) | exercise in Milestone 15 |
 | make | `make` targets | **Missing** | every target has a `scripts\*.ps1` equivalent |
-| gitleaks | secret scanning (K2.6) | **Missing** | runs in CI (Milestone 12); local install optional (backlog) |
+| gitleaks | secret scanning (K2.6) | Via Docker image `ghcr.io/gitleaks/gitleaks:v8.30.1` | runs in CI and on demand; no local install needed. Pre-commit hook in Milestone 12 |
 | Terraform | IaC validate (F.2) | **Missing** | needed by Milestone 12 (free install; `fmt`/`validate` only, never `apply`) |
 | Trivy, syft | container/IaC scan, SBOM | **Missing** | CI actions in Milestone 12; local optional |
 | AWS CLI | AWS path | **Missing** | not needed until an approved deploy; SSO profile only |

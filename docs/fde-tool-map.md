@@ -7,11 +7,12 @@
 | Capability | Tool | Connection | Access needed | Data touched | Status | If unavailable |
 |---|---|---|---|---|---|---|
 | Coding assistance | Claude Code | Local CLI / desktop app in this repo | Owner's subscription (developer-assistant access only) | Repo files (synthetic) | Exercised (M1–M2) | Work continues by hand; nothing in the app depends on it |
-| Version control | Git, GitHub CLI | Local Git; `gh` with the vamsialladev account | Push needs the owner's OK | Repo | Git exercised; GitHub configured (no remote yet) | Local commits only |
+| Version control | Git, GitHub CLI | Local Git; `gh` with the vamsialladev account | Push needs the owner's OK | Repo | Exercised: private repository `vamsialladev/loyalty-support-modernization`, pushed 2026-11-03 with the owner's OK (ADR-0053) | Local commits only |
 | Dependency management | uv | Local CLI, `uv.lock` | None | Packages from PyPI | Exercised | `pip` with the lockfile exported |
 | Lint, format, types | ruff, mypy | Local and (later) CI | None | Code | Exercised | — |
 | Testing | pytest | Local and (later) CI | None | Synthetic data | Exercised | — |
-| Secret hygiene | preflight, env-leak check; gitleaks (planned) | Local; CI from M12 | None | `.env` (values never printed) | Preflight and leak check exercised; gitleaks blocked (not installed) | Leak check still runs |
+| Continuous integration | GitHub Actions (`.github/workflows/ci.yml`) | Runs on every push to `main` and every pull request; read-only token | The repository; free private-repo allowance | Repo and synthetic data; no secrets | Exercised (first version, ADR-0053); full pipeline in M12 | The same commands run locally: `scripts\test.ps1`, `scripts\compose_check.ps1` |
+| Secret hygiene | preflight, env-leak check; gitleaks | Local; gitleaks in CI as a pinned container, full history | None | `.env` (values never printed); Git history | All exercised (no local gitleaks install needed: Docker image) | Leak check still runs |
 | Synthetic data and documents | Python generator; reportlab (PDF), Pillow (images), matplotlib (charts) | Local libraries, pinned in `uv.lock` | None | Synthetic records only | Exercised (M3) | — (core dependency; no external service) |
 | Containers | Docker Desktop, Docker Compose | Local daemon; `docker-compose.yml`, `scripts\stack.ps1` | None | Synthetic data | Exercised (M4) | In-process contract tests still run on SQLite; Postgres tests show SKIPPED with the reason |
 | Database | PostgreSQL 16 (`postgres:16.15-alpine`), SQLAlchemy 2, Alembic | Compose service; per-system roles and databases (ADR-0036) | Local role passwords in `.env` | Synthetic members, stays, ledger | Exercised (M4) | SQLite for in-process tests only |
