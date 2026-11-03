@@ -23,6 +23,8 @@ A-000010 was closed as `deny_claim_window` with no evidence.
 | 8b | Browser fixture under that load | full suite, then `pytest tests/browser` | Setup error twice: "server exited early" (message lost to my own output filter) during a concurrent compose check, then "did not come up" within 60 s. Fixture hardened: 180 s wait, 5 s per request, server output kept in a log file and quoted in any failure. Then **2 passed** in 317 s |
 | 8c | Full offline suite on the final code | `pytest --cov` (from Git Bash, so the 4 `sh` tests ran too) | **317 passed, 9 skipped** (the real-Postgres and role tests, which the compose check runs), coverage 95%; the only errors were the 2 browser setup errors from the old fixture (8b) |
 | 9 | Secret scan before the first push | `docker run ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --redact` | 35 commits scanned, no leaks. `git log --all --name-only`: no `.env` file ever committed (only `.env.example`) |
+| 10 | Create the private repository | `gh repo create vamsialladev/loyalty-support-modernization --private`; `gh repo view --json visibility` | `PRIVATE`. Second scan just before pushing: gitleaks no leaks; env-leak check 0 of 8 values |
+| 11 | First push | `git push -u origin ci/first-run` | **Refused:** `push declined due to email privacy restrictions`. All commits carry the Gmail address; other repositories use the noreply address. History not rewritten; the owner decides (`docs/session-handoff.md`). **CI has not run** |
 
 ## Milestone 5 (2026-10-29)
 

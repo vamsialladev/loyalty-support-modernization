@@ -9,7 +9,7 @@ are in `docs/verification-log.md` (2026-10-28). This file grows into the full Pa
 |---|---|
 | Repository | `C:\projects\project1\loyalty-support-modernization`, local Git, branch renamed `master` → `main` (ADR-0013) |
 | Existing commits | 3 (spec and env template; Appendix L; spec update for the current site); `docs/MASTER-SPEC.md` had no uncommitted changes |
-| Remote | **Private** `vamsialladev/loyalty-support-modernization`, created and pushed 2026-11-03 with the owner's OK (ADR-0053). Making it public needs the owner's OK |
+| Remote | **Private** `vamsialladev/loyalty-support-modernization`, created 2026-11-03 with the owner's OK (ADR-0053). First push blocked by the account's email-privacy setting (`docs/session-handoff.md`). Making it public needs the owner's OK |
 | `.env` | present, untracked, now Git-ignored. Byte-identical to `.env.example`, so every value is still empty (checked with `cmp`, file not opened) |
 | Earlier implementation | none; only `docs/MASTER-SPEC.md`, `.env.example` |
 | Parent folder | `C:\projects\project1` holds the other stages' working copies and the local video kit; its `CLAUDE.md`, `HANDOFF.md`, `PROGRESS.md` belong to the portfolio project and are ignored here |

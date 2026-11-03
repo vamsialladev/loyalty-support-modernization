@@ -40,7 +40,8 @@ with progress noted in the matrix): sign-in (SEC-07), the shared write path (WP-
 ## After Milestone 5 (2026-11-03)
 - Upgrade path from an existing volume: `/readyz` compares the database with this code's schema head, `stack.ps1 -Action
   up` names the cause, `app.seed` is repeatable, and the compose check runs this path (ADR-0052).
-- Private GitHub repository and a first CI workflow (ADR-0053). From here on, work goes on branches with pull requests.
+- Private GitHub repository created and a first CI workflow written (ADR-0053); **the first push is blocked by the account's
+  email-privacy setting, so CI has not run** (`docs/session-handoff.md`).
 - Open gap found by the owner: closing with no evidence (TD-17), fix proposed, not applied.
 
 ## Milestone 5 deliverables
