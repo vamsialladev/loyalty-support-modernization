@@ -3,6 +3,33 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## Milestone 5 (2026-10-29)
+
+All work by Claude Code (Opus 5.5) on the owner-approved plan (decisions D1–D6). No value from `.env` was read or
+printed; tests and the compose check use generated throwaway values.
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | State before work | `scripts\test.ps1` equivalent (ruff, format, mypy, `pytest -p no:cacheprovider`) | All clean; **211 passed, 13 skipped** (real-Postgres and Docker tests) |
+| 2 | Dependencies | `uv add --group api jinja2~=3.1.6 python-multipart~=0.0.32 argon2-cffi~=25.1.0`; `uv add --group dev pytest-playwright~=0.10.0 playwright~=1.64.1` | Resolved and locked (`uv.lock`) |
+| 3 | htmx vendored and verified | download `htmx.org-2.0.11.tgz` from the npm registry; compare SHA-512 with the registry's `dist.integrity` | Match; `dist/htmx.min.js` extracted unchanged, SHA-256 `d6fdc75f…f717` recorded in `app/web/static/vendor/README.md` and checked by a test |
+| 4 | Chromium for Playwright | `uv run playwright install chromium` | Installed (exit 0) |
+| 5 | Frozen keyword index | `uv run python scripts/build_legacy_index.py`, then `--check` | Built from Missing Points Requests v1 and Earning v2 (the policies in force on 2026-03-15), 11 sections; `--check` matches |
+| 6 | First in-process smoke of the console | a scratch script driving the routes with TestClient | **Failed first:** every page answered 422 "missing query parameter s". Cause: the dependency aliases were defined inside a function while the module uses postponed annotations, so FastAPI couldn't resolve them. Fixed by moving them to module level. Then DV-001 went New → Resolved with adjustment `ADJ-…` and one 14,840-point `adjustment` entry in the mock ledger |
+| 7 | Idempotency key design | review while writing the tests | **Bug found before any test ran:** a key built from the approval's row number repeats after an app database reset, and the mock platform would answer 409. Fixed: the key uses a random ID stored with the approval (ADR-0044) |
+| 8 | Workflow and write path | `uv run pytest tests/test_case_workflow.py` | First run: 1 failed. The D20 test picked a case whose out-of-scope item is a noise complaint, which doesn't mention a refund, so the legacy rule correctly left it in the points queue. **The test was wrong, not the rule:** it now picks the refund variant (the routing keyword was not widened, which would tune arm A toward its predictions). Then **17 passed** |
+| 9 | Screens on seeded data | `uv run pytest tests/test_legacy_screens.py` | 12 passed; the D18 test was hard-coded to one case, made generic over the three dev D18 cases: **14 passed** |
+| 10 | Scripted agent | `uv run pytest tests/test_scripted_agent.py` | First run: 2 failed, both real. (a) The simulated supervisor rejected K01: the stored checklist lines were a tuple and the review expected a list; the checklist is now stored as plain JSON. (b) The English check (three common English words) took "Missing points. Beach Resort, December 16-17, 2025." for another language, an unregistered failure; it now looks for unmistakable Spanish, French, Portuguese or German words, checked on the dev split only (3 of 3 non-English found, 0 of 99 English flagged). The full-dev test passed during (a) because "Rejected" counts as a resting state, so it now also asserts that no adjustment is rejected. Then **8 passed**; all 102 dev contacts end in a resting state, no `system_error` event, no label file opened |
+| 11 | Console over HTTP | `uv run pytest tests/test_console_web.py` | **16 passed** (sessions, CSRF, revocation, expiry, deactivation, the requester's forged approve refused, a form "role" ignored, banner and headers on every page, escaping, every visible control) |
+| 12 | Boundaries | `uv run pytest tests/test_arm_a_boundaries.py` | **6 passed** (legacy layer pure, `app/` never imports `benchmarks/`, loader never opens labels, migration 0002 = models, htmx hash, no inline script or style) |
+| 13 | Playwright, offline | `uv run pytest tests/browser` | **2 passed**: DV-001 through the four screens to 14,840 points, approved and executed by `supervisor.sam`, the ledger shows exactly that adjustment; htmx loaded under the CSP, an HTMX search request was observed, no console errors. The requester sees no Approve button and a forged POST with a valid CSRF token gets 403 |
+| 14 | Full offline checks | `scripts\test.ps1` | **Failed first:** `tests/test_generator.py::test_app_cannot_read_labels_or_generator_metadata` (an existing guard) flagged `app/demo_cases.py`, which named the benchmark folder. The guard is right: the loader moved to `benchmarks/intake.py`; the test was not changed. Then exit 0: ruff and mypy clean, **299 passed, 13 skipped**, coverage 92% (gate 70%) |
+| 15 | Matrix scores | `uv run python scripts/matrix_scores.py` | 369 requirements; core 25/108, benchmarks 14/64, security 5/55 verified |
+| 16 | Compose check next to the owner's running stack | `scripts\compose_check.ps1 -Browser` | The owner's `loyalty` stack holds ports 5432/8020/8010 and another session may use it, so it was **not** stopped. The compose file now takes `DB_HOST_PORT`, `MOCK_API_HOST_PORT`, `APP_HOST_PORT` (defaults unchanged) and the check uses 15432/18020/18010 |
+| 17 | Compose check, real Postgres and built images | same | Every step passed (up from an empty volume, migrate, seed incl. demo accounts, `/readyz` ready, live adapter checks, no labels in either image, 9 real-Postgres tests, app role refused by the mock database) **except the browser step, which failed intermittently**: 1 of 3 runs. With full output: the self-approval test clicked "Attach this view" while the HTMX swap to "Show older entries" was still in flight, so it attached the default 90-day view; the checklist correctly refused it (ADR-0050) and "Request adjustment" stayed disabled. **A test race, not an app bug.** Offline it passed 3 of 3 (faster swap) |
+| 18 | Fix and re-check | wait for the swapped-in "all entries" view (as the first test already did) and for checklist outcome `adjust` before clicking; `scripts\compose_check.ps1 -Browser` twice | "compose check passed" both times; Playwright 2 passed each time, against real Postgres and the built images |
+| 19 | Final offline checks (after the HTTP every-control test and the race fix) | `scripts\test.ps1` | Exit 0: ruff and mypy clean, **300 passed, 13 skipped**, coverage **94.5%** (gate 70%) |
+
 ## Milestone 4 follow-up: blank `${NAME}` expansion in the owner's `.env` (2026-10-29)
 
 **Reported by the owner** after running `scripts\update-local-env.ps1` on their `.env`: (1) preflight called

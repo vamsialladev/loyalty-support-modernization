@@ -19,7 +19,10 @@ search, job queue, audit), a deterministic domain core, and a bounded AI layer b
 
 ## What to standardize (candidates for other teams)
 The approval-binding hash and idempotency-from-approval pattern; pre-registered evaluation with A vs B vs C arms;
-preflight that never prints secrets; the "rules decide, AI explains" boundary.
+preflight that never prints secrets; the "rules decide, AI explains" boundary. From Milestone 5: one shared
+`WritePath` that every arm (and every future UI) must go through, so safeguards cannot differ by front end; the
+browser sends record numbers only and the server re-reads records before they become evidence; one event log for
+both audit and instrumentation.
 
 ## What not to build
 A general agent framework; a vector database before a measured need; multitenancy inside one database; a workflow
@@ -32,3 +35,4 @@ automation platform; anything that lets a model move points.
 | Postgres is enough (search, queue, audit) | Queue latency or full-text relevance misses targets in the M12 load test or M10 retrieval comparison |
 | Per-customer deployments are simpler than multitenancy | Operating cost per customer dominates TCO at 10+ customers |
 | A deterministic rules engine can express every customer's policy | Cedarpoint's rules (M14) need code changes, not configuration |
+| A legacy baseline modelled from a defect catalog is fair (Milestone 5) | A reviewer finds an arm A limit that isn't in the catalog, or a catalog defect that arm A can't actually exhibit; either is logged as a new experiment (F9) |

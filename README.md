@@ -8,15 +8,19 @@ points ledger right, with a supervisor approving every adjustment.**
 > Guest Rewards program. All data is synthetic. Independent portfolio project; no real customer, users or results.
 > Discovery and scoping (stage 0): [hotel-ai-discovery](https://github.com/vamsialladev/hotel-ai-discovery).
 
-**Status: Milestone 4 of 20 (mock customer systems, contracts, Postgres, Docker Compose).** There is no case workflow
-yet; the data layer and the local stack run: `scripts\data.ps1 -Action generate`, then `scripts\stack.ps1 -Action up`. Results, a demo and a live link will
-appear here only when they exist and are measured. Progress: [docs/implementation-status.md](docs/implementation-status.md).
+**Status: Milestone 5 of 20 (the legacy workflow, arm A, runs end to end in the browser).** An agent signs in,
+finds the evidence on four legacy screens, gets a rules checklist, and asks for a points adjustment; a different
+supervisor approves and executes it against the synthetic loyalty platform. Arms B and C, and any measured results,
+come later and will appear here only when they exist and are measured.
+Progress: [docs/implementation-status.md](docs/implementation-status.md).
 
 ## What exists today
 - The build specification: [docs/MASTER-SPEC.md](docs/MASTER-SPEC.md)
 - How this stage fits the published engagement: [docs/continuity.md](docs/continuity.md)
 - Every requirement with its tier, milestone and status: [docs/requirements-matrix.md](docs/requirements-matrix.md)
 - A configuration check that never prints secrets: `python -m app.preflight`
+- The legacy console (arm A) and where each of its pre-registered limits lives: [docs/legacy-discovery.md](docs/legacy-discovery.md);
+  how to run it: [docs/onboarding.md](docs/onboarding.md) §4c
 
 ## Run the checks (Windows PowerShell)
 
@@ -54,8 +58,9 @@ cp .env.example .env
 make preflight PROFILE=portfolio
 ```
 
-Prerequisites: Python 3.12 and [uv](https://docs.astral.sh/uv/). Docker Desktop and Node.js are needed from
-Milestone 4 on. No API key is needed for any offline check.
+Prerequisites: Python 3.12 and [uv](https://docs.astral.sh/uv/). Docker Desktop is needed for the local stack, and
+the browser tests need Chromium once: `uv run playwright install chromium` (they show SKIPPED without it). No API
+key is needed for any offline check.
 
 ## Documentation
 - **Start here:** [Project purpose](docs/project-purpose.md) · [Onboarding](docs/onboarding.md) ·

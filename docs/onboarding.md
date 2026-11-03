@@ -124,6 +124,61 @@ seeds it, runs live checks and the real-Postgres tests, and tears it down.
 **First task here.** Add a fault (for example a 502 from a proxy) to `faults.py`, handle it in the adapter, and add a
 contract test. Then explain whether a 502 after a write is safe to retry.
 
+## 4c. The legacy console, arm A (Milestone 5)
+
+**What it is.** The "before" picture: a credible legacy support tool that a supervisor-approved adjustment goes
+through end to end. It is competent; its only weaknesses are the pre-registered defects, each one mapped to a file
+and a test in `docs/legacy-discovery.md` §2a. Read that table before changing anything in `app/arms/legacy/`.
+
+**Run it in the browser.**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\update-local-env.ps1
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\stack.ps1 -Action up
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\stack.ps1 -Action seed
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\stack.ps1 -Action demo-cases
+```
+
+Open http://127.0.0.1:8010 and sign in as `agent.ana` with the `DEMO_USER_PASSWORD` from your `.env` (open the file
+yourself; no tool prints it). For evidence "as of" each request's date, set `MOCK_API_SIM_CLOCK=true` in `.env` and
+run `-Action up` again; the banner then shows each case's simulated time.
+
+**Walk one case (a K01 control).** Open the oldest case, "Start work", then use the four screens in the case
+navigation: Member search (exact name and email, or member number) → Attach; Stay search (exact confirmation) →
+Attach; Ledger (tick "Show older entries" if the stay is more than 90 days old) → Attach; Policy search ("missing
+points") → Attach. The rules checklist on the case page now says `adjust` with the points. Request the adjustment,
+sign out, sign in as `supervisor.sam`, open Approvals, approve, execute. The case ends `Resolved` with the
+platform's adjustment ID.
+
+| Path | What |
+|---|---|
+| `app/arms/legacy/` | Arm A: rules config loader, checklist, the four screens, keyword index, intake routing |
+| `config/legacy/hg-demo-legacy-rules.yaml` | The legacy configuration, out of date exactly where the catalog says |
+| `app/services/cases.py` | Case workflow every arm shares (intake, evidence, notes, decisions) |
+| `app/services/write_path.py` | The shared write path: approval, execution, reconciliation (thin until Milestone 6) |
+| `app/services/sessions.py`, `app/adapters/local_demo_identity.py` | Sign-in, sessions and CSRF (ADR-0045) |
+| `app/web/` | The Jinja2 + HTMX console; `static/vendor/README.md` says where htmx came from |
+| `app/persistence/models.py`, `migrations/versions/0002_*` | The app's business tables (ADR-0046) |
+| `benchmarks/agents/legacy_scripted.py` | The scripted legacy agent, "scripted, not human timing" (ADR-0048) |
+| `tests/browser/test_legacy_e2e.py` | The Playwright end-to-end test (Appendix C, Milestone 5) |
+
+**Rules to remember.** The browser only sends record numbers; the server re-reads every record before attaching it.
+The agent never types an amount. A supervisor never decides on their own request, and the server checks that, not
+the template. A write that times out goes to `Execution unknown` and is looked up by key before anything else.
+
+**First task here.** Add a "Rate code" column to the ledger screen's attached-evidence summary, with a test. Then
+explain why adding a nickname list to `screens.search_member` would be wrong *in arm A* (hint: D18, and what the
+benchmark would then measure).
+
 ## 5. Common failure modes so far
 - **`ModuleNotFoundError: app`** when running pytest outside `uv run`: use `uv run pytest`.
 - **Preflight says NOT READY:** expected with an empty `.env`; it lists exactly which settings are missing.
@@ -143,6 +198,17 @@ contract test. Then explain whether a 502 after a write is safe to retry.
 - **A Postgres test shows SKIPPED:** `TEST_MOCK_API_DATABASE_URL` isn't set; the compose check sets it on its own stack.
 - **Generation feels slow:** the first run on a cold machine took about 70 s (later runs about 5 s). Use
   `--scale 0.1 --no-documents` while iterating.
+- **Sign-in says the username and password don't match:** run `scripts\stack.ps1 -Action seed` after
+  `DEMO_USER_PASSWORD` is in `.env`; the seed creates the four demo accounts (it says "skipped" if the variable is
+  missing).
+- **The queue is empty:** run `scripts\stack.ps1 -Action demo-cases`.
+- **"Request refused: the form expired":** the page's CSRF token belongs to an older session (you signed in again
+  in another tab). Reload the page.
+- **The checklist says "Ledger view attached, covering the checkout date: Fail":** the 90-day view starts after the
+  stay's checkout; tick "Show older entries" and attach again (ADR-0050).
+- **A browser test shows SKIPPED:** Chromium isn't installed; run `uv run playwright install chromium`.
+- **"Customer system error" in the console:** the mock API is down or the token differs; check
+  `http://127.0.0.1:8020/readyz` and `scripts\stack.ps1 -Action logs`.
 
 ## 6. First tasks to try
 1. Run the checks and read the preflight output for each profile.

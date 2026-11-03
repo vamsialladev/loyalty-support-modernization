@@ -19,7 +19,9 @@ deployment.
 | Fictional discovery sessions | Real stakeholder interviews | `docs/customer-discovery.md` interview guide | Documentation (M2) |
 | Synthetic data generator | Exports or APIs from the loyalty platform, PMS, posting queue, CRM | Canonical model + per-customer mapping file | Built (M3) |
 | Mock customer API | The loyalty platform, PMS and CRM APIs | `CustomerSystems` port + adapter; versioned OpenAPI contract | Built (M4) |
-| Local demo auth / local Keycloak | The client's IdP (OIDC) | `IdentityProvider` port (ADR-0003) | Planned (M9) |
+| Local demo auth (`app/adapters/local_demo_identity.py`) / local Keycloak | The client's IdP (OIDC, SSO) | `IdentityProvider` port (`app/ports/identity.py`, ADR-0003, ADR-0045) | Local demo adapter built (M5); OIDC planned (M9) |
+| Arm A legacy console (`app/arms/legacy/`, `config/legacy/`) | The client's current support tool: its search screens, rules configuration and policy index | Observation of the real tool replaces the modelled limits (ADR-0043) | Built (M5) |
+| App case tables (`app/persistence/`) | The client's CRM or case system, if it must stay the system of record for cases | `create_ticket` on the port today; a case-sync adapter if the client requires it | Built (M5) |
 | Mock model provider | The approved model endpoint (Claude API or an enterprise endpoint) | Provider interface (ADR-0006) | Planned (M8) |
 
 ## Configuration and secrets (Milestone 1)
@@ -79,3 +81,30 @@ deployment.
 - **First checks against a real sandbox:** contract tests adapted to the vendor; every failure type in the fault table
   provoked or simulated (timeouts, 429, 503, lost responses); idempotency proven by sending the same key twice;
   lookup-by-reference latency measured; rate limits measured, not assumed.
+
+## Sign-in, the legacy tool and the case system (Milestone 5)
+- **Identity.** Stand-in: local demo accounts with argon2id hashes and server-side sessions
+  (`app/adapters/local_demo_identity.py`, `app/services/sessions.py`). Real system: the client's IdP over OIDC.
+  - **What changes:** an OIDC adapter implements `IdentityProvider` (`authenticate` becomes the code flow, `lookup`
+    maps the token's subject to a user row); roles come from IdP groups mapped to `agent` / `supervisor`. Sessions,
+    CSRF, the permission rules in `app/domain/roles.py` and every service stay the same.
+  - **Access needed:** an app registration (client ID, secret or certificate, redirect URI), the group claims for the
+    two roles, and a test tenant with one agent and two supervisors (separation of duties needs two).
+  - **Who approves:** the identity team and security; the support lead confirms who holds which role.
+  - **First checks:** the role tests in `tests/test_console_web.py` against the IdP's test users; the requester
+    still cannot approve when both accounts are supervisors.
+- **The legacy tool itself (arm A).** In a real engagement arm A is not built: it is the client's existing tool,
+  observed. Stand-in: `app/arms/legacy/` with `config/legacy/hg-demo-legacy-rules.yaml` and a frozen keyword index.
+  - **What changes:** record what the real tool's searches, rules configuration and policy index actually do (screen
+    recordings, a configuration export, a sample of searches); the scripted agent's reading policy is rewritten from
+    those observations and the benchmark runs on the client's data shape. Any difference from the modelled defects
+    is logged as a new experiment (spec F9).
+  - **Access needed:** read-only access to the support tool for an observer, a configuration export from its
+    administrator, and permission to time a sample of real cases (timing protocol, E.7) with consent.
+  - **Who approves:** the support lead and the tool's owner; privacy for any recording of real cases.
+- **Cases and tickets.** The app owns its case tables; messages to members go out as tickets through the port
+  (`create_ticket`). If the client's CRM must remain the system of record for cases, add a case-sync adapter that
+  mirrors status changes to it; the write path still runs here.
+- **Starter kit vs customer-specific.** Reusable: the console shell (banner, CSP, CSRF, sessions), the
+  `IdentityProvider` port, the case workflow and event log, the `WritePath` protocol, the scripted-agent pattern.
+  Customer-specific: the legacy rules file, the keyword index, the scripted agent's reading policy, intake routing.

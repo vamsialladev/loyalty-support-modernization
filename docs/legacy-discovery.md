@@ -5,15 +5,28 @@
 > any real company's software. Requirements ARMA-02, DISC-07, POL-01.
 
 ## 1. Known functionality: what the legacy workflow does well
-- Finds members by exact member number, and by exact name plus email.
-- Finds stays by exact hotel confirmation number within a member's stays.
-- Shows the posted ledger for the last 90 days.
-- Applies written eligibility rules automatically (channel, waiting period, claim window, checkout status).
-- Calculates points correctly from room revenue (10 per US dollar, taxes and fees excluded).
-- Requires a supervisor's approval before an adjustment.
+Built in Milestone 5 as the arm A console (`app/web/`, `app/arms/legacy/`, `app/services/`). **Implemented and
+verified** by `tests/test_legacy_rules.py`, `tests/test_legacy_screens.py`, `tests/test_case_workflow.py`,
+`tests/test_console_web.py` and the Playwright test `tests/browser/test_legacy_e2e.py`.
+- A points queue with status and "assigned to me" filters, a billing queue, and a "New case" form for phone requests.
+- Finds members by exact member number, and by exact first name, last name and email together.
+- Finds stays by exact hotel confirmation number within the found member's stays.
+- Shows the posted ledger, newest first and grouped by posting date: the last 90 days by default, with a working
+  "Show older entries" (ADR-0050).
+- Keyword policy search over the legacy index.
+- A rules checklist the legacy engine computes from the evidence the agent attached by hand (member, stay, ledger
+  view, policy excerpt): checked out, claim window, channel, not already credited, waiting period, approval limit.
+- Calculates points correctly from room revenue (floor of 10 per US dollar; taxes and fees excluded). The agent
+  cannot type an amount.
+- Manual notes, information requests to the member (a ticket), escalation with a reason, closing with a reason code;
+  closing against the checklist is an override that needs a note.
+- Supervisor approval or rejection with a reason; a supervisor never decides on their own request; agents never
+  decide. Execution of the simulated adjustment, with reconciliation when the outcome is uncertain.
+- An audit timeline of every step; the same log feeds the E.2 instrumentation.
 - Handles the straightforward cases correctly (controls K01–K06: about half of history cases).
 
-It is not made incompetent, insecure or incomplete on purpose. Authentication and authorization work.
+It is not made incompetent, insecure or incomplete on purpose. Sign-in, sessions, CSRF protection and authorization
+work (ADR-0045).
 
 ## 2. Limitations, by kind (spec B.8)
 
@@ -25,6 +38,53 @@ It is not made incompetent, insecure or incomplete on purpose. Authentication an
 | Operational delays | Late postings after property interface outages; claims routed to the billing queue | D06, D20 |
 | UI friction | Four separate screens; exact-match search; ledger grouping hides re-posts | D12, D13, D14, D07 |
 | Not fixable by tools | Missing upstream records; conflicting records | D24, D25 |
+
+## 2a. How each limitation is built (Milestone 5)
+
+Every limit comes from the pre-registered catalog and nowhere else (ADR-0043). Where it lives, and the test that pins
+it:
+
+| ID | Built behaviour in arm A | Where | Test |
+|---|---|---|---|
+| D01 | Stays on a duplicate profile never appear: stay search covers only the found profile; no duplicate candidates | `screens.search_stay`, `screens.search_member` | `test_legacy_screens.py::test_d01_d02_...[D01]` |
+| D02 | A merged profile shows its `merged_into` number, which the screen never follows | `screens.search_member`, `search_stay` | `...[D02]` |
+| D03 | A blank booking channel is not in the eligible list, so it is denied (the reservation source code is not used) | `config/legacy/hg-demo-legacy-rules.yaml`, `checklist.evaluate` | `test_legacy_rules.py::test_d03_...` |
+| D04 | Waiting period and claim window compare UTC calendar dates, not Eastern business dates | `rules.py` (`date_basis: utc`), `checklist.utc_day` | `test_d04_...` |
+| D05 | Partner (`TRV-`) confirmations are not searchable on the stay screen, though the platform has them | `screens.search_stay` | `test_d05_...` |
+| D06 | No screen reads the posting queue | `screens` (never calls `get_pending_postings`) | `test_d06_...` |
+| D07 | The ledger screen lists a re-post under its own date without the stay's confirmation; the checklist nets by stay, so the reversal shows and the re-post doesn't | `screens.ledger_view` | `test_d07_...` (screen and checklist) |
+| D08 | Mountain Lodge still waits 30 days after 2026-07-01; Beach Resort was updated to 14 | rules YAML | `test_d08_...` |
+| D09 | v2's OTA rule never configured; the keyword index holds only what was in force on 2026-03-15 | rules YAML, `keyword_index.py`, `scripts/build_legacy_index.py` | `test_d09_...`, `test_index_holds_only_...` |
+| D10 | Intake opens one case per contact and no screen warns about another case for the same stay. **In arm A the shared write path refuses the second credit** (ADR-0044); only the A-as-is variant lets it through (ADR-0051) | `benchmarks/intake.py`, `write_path.SharedWritePath._duplicate` | `test_case_workflow.py::test_d10_...` |
+| D11 | Not built as a limit: approval binding is a shared-write-path safeguard (Milestone 6). Until then approvals are not bound to an evidence snapshot in any arm (TD-12) | `write_path.py` | Milestone 6 |
+| D12 | Exact-term keyword search: every word must appear; no stemming, no synonyms | `keyword_index.KeywordIndex.search` | `test_keyword_search_is_exact_term_d12` |
+| D13 | Exact member number (case-sensitive), or exact first name + last name + email | `screens.search_member` | `test_d13_...`, `test_name_and_email_...` |
+| D14 | Evidence is on four separate screens, each attached to the case by hand | `app/web/templates/screen_*.html` | Playwright test; step counts in `case_events` |
+| D15 | The rules revision in force on the day the case is worked applies, whatever the stay's checkout date | `LegacyRules.revision_on` | `test_d15_...` |
+| D16 | One stay per case: attaching another stay replaces the first | `cases.current_evidence` | scripted agent policy |
+| D17 | No fuzzy or prefix match on confirmation numbers | `screens.search_stay` | `test_d17_...` |
+| D18 | No nickname list, accent folding or married-name match | `screens.search_member` | `test_d18_...` (3 dev cases) |
+| D19 | The stay screen needs a confirmation number; dates alone don't find a stay | `screens.search_stay` | scripted agent policy |
+| D20 | Any message containing "refund" goes to the billing queue, which this tool doesn't work | `intake.route` | `test_d20_...` (rules, workflow, scripted agent) |
+| D21 | v2's corporate travel exception (`CORP*`) never configured | rules YAML | `test_d21_...` |
+| D22 | Attachments are listed by file name only; there is no viewer | `case.html` | — |
+| D23 | No language handling; the scripted agent asks for English | `benchmarks/agents/legacy_scripted.py` | `test_scripted_agent.py::test_non_english_...` |
+| D24 | A missing stay record is "not found" | `screens.search_stay` | scripted agent policy |
+| D25 | When the PMS holds two records for one confirmation, the screen shows the first one returned | `screens.search_stay` | `test_d25_...` |
+
+**What is deliberately *not* a limitation.** The 90-day ledger default would have hidden old postings and made
+already-credited late claims look missing, a defect outside the catalog. So "Show older entries" works, and the
+checklist refuses a ledger view that doesn't cover the checkout date (ADR-0050). The window costs steps, never
+accuracy.
+
+## 2b. The scripted legacy agent and the A-as-is variant
+- **Scripted agent** (`benchmarks/agents/legacy_scripted.py`, ADR-0048): works arm A through the same services and
+  permissions as the browser. Its reading policy is fixed in its docstring. Output is labelled **"scripted, not human
+  timing"**: step counts and elapsed software time, never handling time. Milestone 5 runs it for mechanics only;
+  arm A's accuracy is measured in Milestone 10, after the thresholds file is committed.
+- **A as-is** (ADR-0018, ADR-0051): the same scripted agent with a benchmark-only write path (approval as a status
+  flag, no duplicate check, a fresh key per attempt), against a disposable database, interleaving D10/S05 pairs.
+  Built in Milestone 10, reported next to arm A, excluded from H1–H6. Nothing in `app/` can import it (tested).
 
 ## 3. System inventory (synthetic stand-ins)
 

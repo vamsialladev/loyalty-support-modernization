@@ -38,3 +38,15 @@ Nothing here is load-tested yet (the load test is Milestone 12); every figure is
 | Ledger reads | Indexed by member and posting time; cursor pages of up to 100 | Members with very long histories (a ledger page per 100 entries) | Date-window filters (the policy only needs 12 months) |
 | One Postgres server for both systems | Separate databases and roles (ADR-0036) | The two databases competing for one server's memory and I/O | Separate instances in any hosted deployment |
 | Seed | Bulk insert of about 14,000 rows in 1,000-row chunks | Seconds now; minutes at 100x | `COPY` instead of inserts if seed time matters |
+
+## Console and write path (Milestone 5)
+
+Not load-tested (Milestone 12). **Estimates** and design limits only.
+
+| Dimension | Today | What breaks first at 10x / 100x (estimate) | Planned response |
+|---|---|---|---|
+| Customer-system calls per case | Arm A makes about 6–10 calls per case (four screens, attach re-reads, the duplicate check's ledger read) | The customer platform's rate limit, long before the app | Arm B consolidates reads (Milestone 7); cache only where authorization allows (B.12) |
+| Execution | Synchronous in the request; one upstream write per approval | Slow upstream writes hold web workers; double clicks race | Durable jobs with leases and row locks (Milestone 6) |
+| Case event log | One row per step, unique (case, step) | Step numbering by `max(step) + 1` can collide under concurrent actions on one case | Optimistic `version` checks in Milestone 6; the unique constraint already refuses the collision rather than corrupting the order |
+| Sessions | One row per sign-in, never cleaned up | Table growth over months | A retention job with the other retention rules (spec C.3) |
+| Scripted agent | Not measured in Milestone 5 (mechanics only) | Not a production path | Benchmark runs in Milestone 10 report their own timings, labelled "scripted, not human timing" |

@@ -2,6 +2,24 @@
 
 Kept current at every milestone. Each line says what is limited, why, and what would change it.
 
+## Added in Milestone 5 (2026-10-29)
+- **Approvals are not yet bound to an evidence snapshot**, and concurrent executes are not locked (TD-12, TD-13). The
+  thin shared write path refuses a second credit for a stay and reconciles uncertain outcomes by key, but the
+  binding hash, invalidation, row locks and durable jobs are Milestone 6. No benchmark runs before then.
+- **Sign-in is local demo sign-in**: four accounts share one local password; no login rate limit, lockout or recovery
+  yet (TD-15, Milestone 9). Fine for local synthetic data; not for a hosted demo.
+- **Arm A has not been scored.** The scripted agent ran over the dev split for mechanics only. Arm A's accuracy on
+  held-out cases is measured in Milestone 10, after the thresholds file is committed.
+- **The scripted agent is one reading of the legacy tool**, fixed in its docstring. A human using the same screens
+  might do better or worse; only the timing protocol with real participants measures that (E.7).
+- **The legacy limits are modelled, not observed.** They come from the pre-registered catalog, not from a real
+  company's tool; a real engagement would observe the client's tool instead (swap guide, Milestone 5 section).
+- **The browser test covers the happy path and self-approval only.** Escalation, rejection, reconciliation and
+  reopening are tested at service level; their browser tests are Milestone 7 (TEST-05).
+- **The console is a first version**: basic accessibility only (labels, keyboard, focus, AA colours); the full
+  UI-03 pass, the metrics page and the day-one dashboard are Milestone 7.
+- **The "app is a placeholder" limitation from Milestone 4 no longer applies.**
+
 ## Added in Milestone 4 (2026-10-29)
 - **No load test**: concurrency is proven for correctness (20 requests, one key), not for throughput (Milestone 12).
 - **The mock API is a simplification**: real platforms differ in pagination, idempotency windows, lookup lag and

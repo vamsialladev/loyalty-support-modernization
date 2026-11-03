@@ -359,3 +359,159 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   a renamed field while tolerating new ones.
 - **What would change this decision:** a customer API with a different error or paging style: its adapter maps that
   style to the same typed errors.
+
+## ADR-0043: arm A's limits live in a legacy layer over a full-capability port
+- **Context:** spec B.8 wants a credible legacy workflow whose limits are real, not sabotage, and the owner's
+  Milestone 5 brief allows limits only from the pre-registered catalog. The limits must sit somewhere a reviewer can
+  see each one and its defect ID.
+- **Options considered:** (a) weaken the mock customer API (exact-only search, no posting queue); (b) a legacy layer
+  in the app (`app/arms/legacy/`) over the unchanged port; (c) a separate legacy service.
+- **Decision:** (b). The mock stays a capable customer system (it can follow merges, search partner confirmations and
+  show the posting queue); the legacy screens use only what the legacy tool offered: exact member and stay lookups,
+  stays only within the found profile, the first PMS record per confirmation, a ledger view that lists re-posts
+  without their stay, no posting-queue screen, a keyword index frozen on 2026-03-15, a rules file that is out of date
+  in the catalogued ways, keyword routing of "refund" to billing, and one stay per case. Each behaviour names its
+  defect ID in code and in `docs/legacy-discovery.md`. Everything else is correct: points, claim window, approval
+  limit, authentication and authorization.
+- **Trade-off:** one more layer to read. In return arms B and C use the same port and data, so no arm gets better
+  source records (spec B.8), and each fix in arm B is visible as a diff against this layer.
+- **Result:** 26 rule tests and 14 screen tests pin each behaviour on synthetic records and on the seeded data.
+- **What would change this decision:** a real customer's legacy tool to compare against; its observed behaviour
+  would replace these modelled limits, logged as a new experiment (F9).
+
+## ADR-0044: a thin shared write path in Milestone 5, completed in Milestone 6
+- **Context:** arm A needs supervisor approval and a simulated adjustment now. The write path's design (approval
+  binding, concurrency, reconciliation, durable jobs) is Milestone 6's plan-mode work. Owner's decisions D1 and D1b.
+- **Options considered:** execute straight through the port with only separation of duties; build all of Milestone 6
+  now; a thin version behind the interface Milestone 6 completes.
+- **Decision:** the thin version (`app/services/write_path.py`, `WritePath` protocol): only a supervisor decides
+  or executes, never on their own request; the idempotency key is derived from the approval's stored random ID; a
+  cross-case duplicate check runs before submitting; an uncertain outcome moves the case to `Execution unknown` and
+  a status lookup by key runs before anything else. The duplicate check looks at **adjustments only** (this app's,
+  from any case, and upstream `ADJ` ledger entries for the stay). It never interprets postings, reversals, re-posts
+  or the posting queue: otherwise the platform would quietly fix D06 and D07 for arm A, which the catalog
+  pre-registered as arm B fixes. Milestone 6 decides eligibility revalidation (WP-07) as "re-run the same arm's own
+  evaluator on fresh reads" and records it in its RFC.
+- **Trade-off:** until Milestone 6 an approval is not bound to an evidence snapshot (D11 could occur in the console),
+  concurrent executes are not locked, and execution runs inside the request. No benchmark runs before Milestone 10,
+  so no result is affected. Tracked as TD-12 and TD-13.
+- **Result:** tests show the requester and agents are refused, a second case for the same stay is refused and
+  escalated, a ledger adjustment from elsewhere blocks execution, `commit_then_lost` is reconciled with one credit,
+  and a failed lookup leaves the case unknown until a later check (the next execute reconciles first, never
+  resubmits). Found while building: a key built from the approval's row number would repeat after an app database
+  reset and get a 409 from the platform, so the key uses a random ID stored with the approval.
+- **What would change this decision:** a real platform that deduplicates by business meaning, or Milestone 6's RFC
+  choosing a different invalidation model.
+
+## ADR-0045: local demo sign-in, server sessions and CSRF ahead of Milestone 9
+- **Context:** the browser flow needs real roles, and arm A must not be insecure (spec B.8). Spec C.4 and SEC-07
+  belong to Milestone 9. Owner's decision D2.
+- **Options considered:** a role picker with no password; signed cookie sessions; server-side sessions behind the
+  `IdentityProvider` port (ADR-0003).
+- **Decision:** the local demo adapter (`app/adapters/local_demo_identity.py`): argon2id hashes (`argon2-cffi`),
+  the same verification time for unknown usernames, server-side sessions storing only the token's SHA-256, 8-hour
+  expiry, logout revokes, HttpOnly SameSite=Strict cookies (Secure in hosted profiles), a CSRF token per session on
+  every POST and a double-submit token on the login form, role read from the user record on every request. Four
+  demo accounts share `DEMO_USER_PASSWORD` from `.env`, generated by `scripts/update-local-env.ps1`, never printed;
+  tests generate their own. Strict CSP (`script-src 'self'`, htmx vendored), `X-Frame-Options: DENY`, no stack
+  traces in error pages.
+- **Trade-off:** no login rate limit, lockout, recovery or deactivation screen yet (Milestone 9). A shared demo
+  password is acceptable only for local synthetic data; the public demo (C.8) needs per-user accounts.
+- **Result:** 16 HTTP tests (session needed, same refusal for unknown user and wrong password, CSRF, revocation,
+  expiry, deactivation, a forged approve by the requester refused, a form "role" ignored, headers, escaping).
+- **What would change this decision:** the OIDC profile in Milestone 9, which replaces the adapter, not the
+  session or permission code behind it.
+
+## ADR-0046: the app's business tables start in Milestone 5, with B.10 state names
+- **Context:** the browser flow needs durable cases, evidence, approvals and an audit trail; spec B.12 bans in-memory
+  state for critical work. Owner's decision D3.
+- **Options considered:** wait for Milestone 6; start the tables now with the final state names.
+- **Decision:** Alembic revision 0002 (`app/persistence/models.py`): users, sessions, cases (B.10 state names and a
+  `version` column), case requests, case evidence (server-side snapshots), notes, adjustment requests, approvals,
+  execution attempts and one case-event log for audit and instrumentation. Every B.10 state exists; the transition
+  table allows what arm A uses and Milestone 6 completes it.
+- **Trade-off:** Milestone 6 adds columns (binding hash, expiry), tables (jobs, idempotency records) and an
+  append-only role; a migration rather than a fresh schema.
+- **Result:** a test compares the migration with the table definitions (no drift) and downgrades it.
+- **What would change this decision:** a Milestone 6 design that needs a different case model; it would supersede
+  this with a new revision, not edit 0002.
+
+## ADR-0047: the legacy keyword index is a committed file, frozen on 2026-03-15
+- **Context:** D09 says the legacy index was built on 2026-03-15 and never rebuilt; D12 says search is exact-term.
+  Postgres full-text search is arm B's improvement (Milestone 6).
+- **Options considered:** Postgres FTS with stemming switched off; an in-memory index built at start-up; a committed
+  JSON file built by a script.
+- **Decision:** `scripts/build_legacy_index.py --as-of 2026-03-15` writes
+  `app/arms/legacy/data/keyword-index-hg-demo-2026-03-15.json` with each source's SHA-256. Search requires every
+  query word in a section (a short stopword list, no stemming, no synonyms). `--check` fails if the file is stale
+  against the policy files, and a test runs it.
+- **Trade-off:** a second retrieval path to keep, deliberately weaker than arm B's.
+- **Result:** the index holds Missing Points Requests v1 and Earning v2 only; "missing points" finds §1 and §3;
+  "didn't get my points", "retro credit" and "stay not counted" find nothing.
+- **What would change this decision:** none expected; it reproduces a frozen legacy artifact on purpose.
+
+## ADR-0048: a scripted legacy agent and a simulated supervisor, with no scoring before thresholds
+- **Context:** Appendix B wants arm A benchmarked by a scripted agent labelled "scripted, not human timing"; spec
+  E.3/E.6 want thresholds committed before any run; F7 wants a documented simulated supervisor.
+- **Options considered:** drive the browser with Playwright; call the services directly; a separate simplified
+  model of arm A.
+- **Decision:** `benchmarks/agents/legacy_scripted.py` calls the same services as the browser with ordinary
+  accounts (`scripted-agent`, `scripted-supervisor`) and the same permissions. Its reading policy is fixed in its
+  docstring: form fields first, then exactly formatted IDs in the text, the sign-off name with the sender's email,
+  one stay per case, the ledger expanded to cover checkout, "missing points" as the policy query; a non-English
+  message gets a request for English; attachments are never read; nothing is guessed. The simulated supervisor
+  approves only a checklist that passed every line. The demo loader opens one case per contact (D10) and reads only
+  the request file. Milestone 5 runs it for mechanics only and records no accuracy anywhere.
+- **Trade-off:** service calls measure the software path, not screen latency; real handling time needs the timing
+  protocol with people (E.7).
+- **Result:** every one of the 100 dev cases (102 contacts) ends in a resting state with no system error, no
+  rejected adjustment and no label file opened. Two findings fixed while building: the first English check (three
+  common English words) took terse English like "Missing points. Beach Resort, ..." for another language, which
+  would have added an unregistered failure, so it now looks for unmistakable Spanish, French, Portuguese or German
+  words (dev split only: all 3 non-English requests found, no English request flagged); and the simulated
+  supervisor rejected every adjustment because the stored checklist lines were a tuple, not a list, until the
+  checklist was stored as plain JSON.
+- **What would change this decision:** Milestone 10 needing screen-level timings, which would add a Playwright
+  driver next to this one, still labelled scripted.
+
+## ADR-0049: Playwright through pytest, offline on SQLite and against the stack
+- **Context:** Appendix C, Milestone 5: "Legacy arm A completes a case end to end in the browser". Owner's
+  decision D5.
+- **Options considered:** Playwright for Node; Playwright for Python with `pytest-playwright`; Selenium.
+- **Decision:** Playwright for Python (`playwright` 1.64, `pytest-playwright` 0.10) in the dev group, Chromium
+  installed once with `uv run playwright install chromium`. `tests/browser/test_legacy_e2e.py` starts the mock API
+  and the app with uvicorn on SQLite copies (offline, part of `scripts\test.ps1`, skipped with a reason if Chromium
+  is missing), or targets the Compose stack when `E2E_BASE_URL` is set (`scripts\compose_check.ps1 -Browser`, real
+  Postgres). htmx 2.0.11 is vendored after matching the npm tarball's published SHA-512.
+- **Trade-off:** a 150 MB browser download per machine; SQLite in the offline run (the stack run covers Postgres).
+- **Result:** the agent works DV-001 through the four screens to a 14,840-point request; another supervisor approves
+  and executes; the ledger shows exactly that adjustment; htmx loads under the CSP with no console errors. A second
+  test shows the requester gets no Approve button and a forged POST with a valid CSRF token gets 403.
+- **What would change this decision:** the React frontend (Milestone 15), which would add Node-based tests for that
+  frontend only.
+
+## ADR-0050: the legacy ledger view shows 90 days by default, with "Show older entries"
+- **Context:** `docs/legacy-discovery.md` said the legacy tool "shows the posted ledger for the last 90 days". A hard
+  cut-off would hide old postings, so already-credited claims filed late would look missing: a defect that is not
+  in the pre-registered catalog. Owner's decision D4.
+- **Options considered:** a hard 90-day view; 90 days with a working "Show older entries"; the full ledger always.
+- **Decision:** 90 days by default plus "Show older entries". The checklist refuses a ledger view that starts after
+  the stay's checkout date, so the window costs steps (D14-type friction) and never accuracy. The scripted agent
+  expands the view whenever the default starts after checkout.
+- **Trade-off:** one more click on older claims; it shows up in step counts only.
+- **Result:** tests cover the window, the expansion and the refusal of a view that does not cover checkout.
+- **What would change this decision:** none; it keeps arm A inside the pre-registered catalog.
+
+## ADR-0051: how the "A as-is" variant will run (built in Milestone 10)
+- **Context:** ADR-0018 pre-registered the variant; Milestone 5 builds the write path it replaces.
+- **Options considered:** a configuration flag in the app; a separate implementation in the benchmark tooling.
+- **Decision:** a separate `WritePath` implementation in `benchmarks/variants/a_as_is/` (Milestone 10): approval as
+  a status flag, no duplicate check, no re-check, a fresh idempotency key per attempt, so a retry after
+  `commit_then_lost` is a new request. The runner injects it into the scripted agent only against a disposable
+  `loyalty_bench_*` database. Because a strictly sequential run lets the second D10 case see the first credit in the
+  ledger, the runner interleaves D10 and S05 pairs (both investigated and approved before either executes), as two
+  agents would. Reported next to arm A, excluded from H1–H6.
+- **Trade-off:** the interleaving is a modelling choice; it is stated with the results.
+- **Result:** a test now proves nothing in `app/` imports `benchmarks/`; Milestone 10 adds the test that no route,
+  setting or profile can select the variant.
+- **What would change this decision:** none planned; the variant exists only to measure what the write path prevents.
