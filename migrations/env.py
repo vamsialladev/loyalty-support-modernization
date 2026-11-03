@@ -1,14 +1,16 @@
-"""Alembic environment for the app's database. Business tables arrive in Milestone 6 (spec B.11)."""
+"""Alembic environment for the app's database (spec B.11). Tables: `app/persistence/models.py` (ADR-0046)."""
 
 import os
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from app.persistence.models import Base
+
 config = context.config
 url = config.get_main_option("sqlalchemy.url") or os.environ["DATABASE_URL"]
 config.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
-target_metadata = None
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:

@@ -1,4 +1,4 @@
-"""App baseline: an empty schema under Alembic's control. Cases, approvals, jobs and audit arrive in Milestone 6.
+"""App baseline: an empty schema under Alembic's control. Business tables start in revision 0002 (Milestone 5).
 
 Revision ID: 0001
 Revises:
