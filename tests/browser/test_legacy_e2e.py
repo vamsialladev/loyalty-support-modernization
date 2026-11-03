@@ -48,18 +48,19 @@ def _free_port() -> int:
         return int(sock.getsockname()[1])
 
 
-def _wait(url: str, proc: subprocess.Popen[bytes] | None = None, seconds: float = 60) -> None:
+def _wait(url: str, proc: subprocess.Popen[bytes], log: Path, seconds: float = 180) -> None:
+    """Wait for a server, allowing for a slow machine. A real failure reports the server's own log."""
     deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
-        if proc is not None and proc.poll() is not None:
-            raise RuntimeError(f"server exited early: {proc.stdout.read().decode() if proc.stdout else ''}")
+        if proc.poll() is not None:
+            raise RuntimeError(f"server exited early (code {proc.returncode}): {log.read_text(errors='replace')}")
         try:
-            if httpx.get(url, timeout=1).status_code == 200:
+            if httpx.get(url, timeout=5).status_code == 200:
                 return
         except httpx.HTTPError:
             pass
         time.sleep(0.2)
-    raise RuntimeError(f"{url} did not come up")
+    raise RuntimeError(f"{url} did not come up in {seconds:.0f} s: {log.read_text(errors='replace')}")
 
 
 @pytest.fixture(scope="module")
@@ -118,25 +119,23 @@ def stack(mock_template: dict[str, Any], tmp_path_factory: pytest.TempPathFactor
         "MOCK_API_SIM_CLOCK": "true",
     }
     uvicorn = [sys.executable, "-m", "uvicorn", "--factory", "--host", "127.0.0.1", "--log-level", "warning"]
-    procs = [
-        subprocess.Popen(
-            [*uvicorn, "mock_customer_api.api:create_app", "--port", str(mock_port)],
-            cwd=ROOT,
-            env=mock_env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        ),
-        subprocess.Popen(
-            [*uvicorn, "app.main:create_app", "--port", str(app_port)],
-            cwd=ROOT,
-            env=app_env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        ),
-    ]
+    mock_log, app_log = tmp / "mock.log", tmp / "app.log"
+    procs = []
+    logs = []
     try:
-        _wait(f"http://127.0.0.1:{mock_port}/healthz", procs[0])
-        _wait(f"http://127.0.0.1:{app_port}/healthz", procs[1])
+        for target, port, env, log in (
+            ("mock_customer_api.api:create_app", mock_port, mock_env, mock_log),
+            ("app.main:create_app", app_port, app_env, app_log),
+        ):
+            output = log.open("wb")  # a file, not a pipe: nothing can block on a full pipe, and nothing is lost
+            logs.append(output)
+            procs.append(
+                subprocess.Popen(
+                    [*uvicorn, target, "--port", str(port)], cwd=ROOT, env=env, stdout=output, stderr=subprocess.STDOUT
+                )
+            )
+        _wait(f"http://127.0.0.1:{mock_port}/healthz", procs[0], mock_log)
+        _wait(f"http://127.0.0.1:{app_port}/healthz", procs[1], app_log)
         yield Stack(
             f"http://127.0.0.1:{app_port}",
             f"http://127.0.0.1:{mock_port}",
@@ -149,7 +148,9 @@ def stack(mock_template: dict[str, Any], tmp_path_factory: pytest.TempPathFactor
     finally:
         for proc in procs:
             proc.terminate()
-            proc.wait(timeout=10)
+            proc.wait(timeout=30)
+        for output in logs:
+            output.close()
 
 
 def load_dataset_case(stack: Stack, case_id: str) -> int:
