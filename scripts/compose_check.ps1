@@ -1,8 +1,9 @@
-# Appendix C (Milestones 3-4): from an empty volume, `docker compose up`, migrate and seed must succeed; then the
+﻿# Appendix C (Milestones 3-4): from an empty volume, `docker compose up`, migrate and seed must succeed; then the
 # live checks, the image contents check and the real-Postgres tests run. Uses a throwaway env file and a separate
 # Compose project ("loyalty-check"), so your .env and your own database volume are never touched.
-# Usage:  powershell -ExecutionPolicy Bypass -File scripts\compose_check.ps1 [-Keep]
-param([switch]$Keep)
+# -Browser (Milestone 5) also runs the Playwright end-to-end test of legacy arm A against the running stack.
+# Usage:  powershell -ExecutionPolicy Bypass -File scripts\compose_check.ps1 [-Keep] [-Browser]
+param([switch]$Keep, [switch]$Browser)
 # Docker writes progress to stderr; PowerShell 5.1 would turn that into errors under "Stop". Exit codes are checked.
 $ErrorActionPreference = "Continue"
 Set-Location (Split-Path -Parent $PSScriptRoot)
@@ -18,7 +19,9 @@ function Step([string]$name, [scriptblock]$block) {
 
 if (Test-Path $envFile) { Remove-Item $envFile }
 powershell -ExecutionPolicy Bypass -File scripts\update-local-env.ps1 -Path $envFile | Out-Null
-Add-Content -Path $envFile -Value "MOCK_API_FAULTS=true`nMOCK_API_SIM_CLOCK=true" -Encoding ascii
+# Its own host ports, so the check runs next to your own stack (which keeps 5432 / 8020 / 8010).
+$dbPort = 15432; $mockPort = 18020; $appPort = 18010
+Add-Content -Path $envFile -Value "MOCK_API_FAULTS=true`nMOCK_API_SIM_CLOCK=true`nDB_HOST_PORT=$dbPort`nMOCK_API_HOST_PORT=$mockPort`nAPP_HOST_PORT=$appPort" -Encoding ascii
 $values = @{}
 Get-Content $envFile | Where-Object { $_ -match "^([A-Z0-9_]+)=([^#\s]*)" } | ForEach-Object { $values[$Matches[1]] = $Matches[2] }
 
@@ -28,11 +31,11 @@ if (-not (Test-Path "seed_data\v1\members.jsonl")) { Step "generate seed_data/v1
 Step "docker compose up --build (wait for health)" { & docker @compose up --build -d --wait }
 Step "migrate and seed (python -m app.seed --dataset demo)" { & docker @compose exec -T app python -m app.seed --dataset demo }
 Step "app /readyz is ready" {
-    $r = Invoke-RestMethod -Uri "http://127.0.0.1:8010/readyz" -TimeoutSec 10
+    $r = Invoke-RestMethod -Uri "http://127.0.0.1:$appPort/readyz" -TimeoutSec 10
     Write-Host ($r | ConvertTo-Json -Compress)
     $global:LASTEXITCODE = if ($r.status -eq "ready") { 0 } else { 1 }
 }
-Step "live adapter checks against the running mock API" { uv run python scripts/live_smoke.py --env-file $envFile }
+Step "live adapter checks against the running mock API" { uv run python scripts/live_smoke.py --env-file $envFile --mock-url "http://127.0.0.1:$mockPort" }
 foreach ($image in @("$project-mock-api", "$project-app")) {
     Step "no labels, generator or data inside $image" {
         # No double quotes inside: PowerShell 5.1 strips them when passing arguments to native programs.
@@ -40,10 +43,21 @@ foreach ($image in @("$project-mock-api", "$project-app")) {
     }
 }
 Step "real-Postgres integration tests (incl. stored role passwords, blank password refused)" {
-    $env:TEST_MOCK_API_DATABASE_URL = "postgresql+psycopg://mock_api:$($values['MOCK_API_DB_PASSWORD'])@127.0.0.1:5432/mock_customer_api_test"
+    $env:TEST_MOCK_API_DATABASE_URL = "postgresql+psycopg://mock_api:$($values['MOCK_API_DB_PASSWORD'])@127.0.0.1:$dbPort/mock_customer_api_test"
     $env:TEST_DB_ROLES_CONTAINER = "$project-db-1"
     uv run pytest -m postgres -q -p no:cacheprovider
     Remove-Item Env:TEST_MOCK_API_DATABASE_URL, Env:TEST_DB_ROLES_CONTAINER
+}
+if ($Browser) {
+    Step "Playwright: legacy arm A end to end in the browser, against the stack (real Postgres)" {
+        $env:E2E_BASE_URL = "http://127.0.0.1:$appPort"
+        $env:E2E_MOCK_API_URL = "http://127.0.0.1:$mockPort"
+        $env:E2E_DATABASE_URL = "postgresql+psycopg://loyalty_app:$($values['APP_DB_PASSWORD'])@127.0.0.1:$dbPort/loyalty"
+        $env:E2E_MOCK_API_TOKEN = $values['MOCK_API_TOKEN']
+        $env:E2E_DEMO_PASSWORD = $values['DEMO_USER_PASSWORD']
+        uv run pytest tests/browser -m browser -p no:cacheprovider -rA --tb=short
+        Remove-Item Env:E2E_BASE_URL, Env:E2E_MOCK_API_URL, Env:E2E_DATABASE_URL, Env:E2E_MOCK_API_TOKEN, Env:E2E_DEMO_PASSWORD
+    }
 }
 Step "app role cannot connect to the mock database" {
     $out = & docker @compose exec -T -e "PGPASSWORD=$($values['APP_DB_PASSWORD'])" db psql -h 127.0.0.1 -U loyalty_app -d mock_customer_api -c "select 1" 2>&1

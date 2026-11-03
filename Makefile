@@ -5,7 +5,7 @@ PROFILE ?= portfolio
 SEED ?= 20261102
 SCALE ?= 1.0
 
-.PHONY: install test lint typecheck preflight leaks scores data data-reset data-clean data-verify discovery dictionary up down migrate seed reset-demo clean logs test-integration compose-check contract
+.PHONY: install test lint typecheck preflight leaks scores data data-reset data-clean data-verify discovery dictionary up down migrate seed reset-demo demo-cases clean logs test-integration compose-check contract
 
 install:
 	uv sync
@@ -63,6 +63,10 @@ seed:
 
 reset-demo:
 	docker compose exec -T app python -m app.seed --dataset demo --reset
+
+# Twenty dev-split requests into the console's queue (request text only, never labels). Runs on the host.
+demo-cases:
+	uv run python -m benchmarks.intake --split dev --limit 20
 
 clean:
 	docker compose down -v --remove-orphans

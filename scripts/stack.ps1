@@ -1,8 +1,8 @@
-# Local stack commands. Same as the make targets up / down / migrate / seed / reset-demo / clean / logs.
+# Local stack commands. Same as the make targets up / down / migrate / seed / reset-demo / demo-cases / clean / logs.
 # Usage:  powershell -ExecutionPolicy Bypass -File scripts\stack.ps1 -Action up
 # -EnvFile and -Project let a check run against throwaway values without touching your .env or your volume.
 param(
-    [ValidateSet("up", "down", "migrate", "seed", "reset-demo", "clean", "logs", "status", "verify-roles")]
+    [ValidateSet("up", "down", "migrate", "seed", "reset-demo", "demo-cases", "clean", "logs", "status", "verify-roles")]
     [string]$Action = "up",
     [string]$EnvFile = ".env",
     [string]$Project = "loyalty"
@@ -37,6 +37,12 @@ switch ($Action) {
     "migrate" { Invoke-Compose @("exec", "-T", "app", "alembic", "upgrade", "head") }
     "seed" { Invoke-Compose @("exec", "-T", "app", "python", "-m", "app.seed", "--dataset", "demo") }
     "reset-demo" { Invoke-Compose @("exec", "-T", "app", "python", "-m", "app.seed", "--dataset", "demo", "--reset") }
+    "demo-cases" {
+        # Puts 20 dev-split requests in the console's queue (request text only, never labels; ADR-0048). Runs on the
+        # host because the images carry no benchmarks/ folder.
+        uv run python -m benchmarks.intake --split dev --limit 20 --env-file $EnvFile
+        if ($LASTEXITCODE -ne 0) { throw "loading demo cases failed ($LASTEXITCODE)" }
+    }
     "clean" { Invoke-Compose @("down", "-v", "--remove-orphans") }
     "logs" { Invoke-Compose @("logs", "--tail", "100") }
     "status" { Invoke-Compose @("ps") }

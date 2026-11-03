@@ -40,6 +40,16 @@ def test_dockerfiles_copy_only_service_code_and_run_as_non_root(dockerfile: Path
         assert ":" in image and not image.endswith(":latest"), f"unpinned image {image}"
 
 
+ROLE_SECRETS = (
+    "POSTGRES_PASSWORD",
+    "APP_DB_PASSWORD",
+    "MOCK_API_DB_PASSWORD",
+    "MOCK_API_TOKEN",
+    "APP_SECRET_KEY",
+    "DEMO_USER_PASSWORD",
+)
+
+
 def test_compose_binds_locally_pins_images_and_requires_secrets() -> None:
     compose = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))
     services = compose["services"]
@@ -52,7 +62,7 @@ def test_compose_binds_locally_pins_images_and_requires_secrets() -> None:
         assert services[name]["read_only"] is True
     assert services["mock-api"]["volumes"] == ["./seed_data/v1:/seed_data/v1:ro"]
     raw = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
-    for secret in ("POSTGRES_PASSWORD", "APP_DB_PASSWORD", "MOCK_API_DB_PASSWORD", "MOCK_API_TOKEN", "APP_SECRET_KEY"):
+    for secret in ROLE_SECRETS:
         assert f"${{{secret}:?" in raw, f"compose must refuse to start without {secret}"
 
 
@@ -82,7 +92,6 @@ def test_fault_rules_reference_known_faults() -> None:
 
 # ---------- blank role passwords (verification log, M4 env fix) ----------
 
-ROLE_SECRETS = ("POSTGRES_PASSWORD", "APP_DB_PASSWORD", "MOCK_API_DB_PASSWORD", "MOCK_API_TOKEN", "APP_SECRET_KEY")
 SH = shutil.which("sh")
 POWERSHELL = shutil.which("powershell") or shutil.which("pwsh")
 
