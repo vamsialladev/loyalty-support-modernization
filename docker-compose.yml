@@ -1,4 +1,6 @@
-# Local stack (spec F.2): Postgres 16, the mock customer API, the app placeholder. Ports bind to 127.0.0.1 only.
+# Local stack (spec F.2): Postgres 16, the mock customer API, the app. Ports bind to 127.0.0.1 only; the host ports
+# default to 5432 / 8020 / 8010 and can be moved with DB_HOST_PORT, MOCK_API_HOST_PORT, APP_HOST_PORT (the compose
+# check uses other ports so it can run next to your own stack).
 #   docker compose up --build -d
 #   docker compose exec app python -m app.seed --dataset demo
 # Values come from .env (see .env.example); `python -m app.preflight` checks them without printing them.
@@ -18,7 +20,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./infrastructure/postgres/init:/docker-entrypoint-initdb.d:ro
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${DB_HOST_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 3s
@@ -42,7 +44,7 @@ services:
     volumes:
       - ./seed_data/v1:/seed_data/v1:ro
     ports:
-      - "127.0.0.1:8020:8020"
+      - "127.0.0.1:${MOCK_API_HOST_PORT:-8020}:8020"
     depends_on:
       db: {condition: service_healthy}
     read_only: true
@@ -66,8 +68,11 @@ services:
       MOCK_API_TOKEN: ${MOCK_API_TOKEN:?set MOCK_API_TOKEN in .env}
       APP_SECRET_KEY: ${APP_SECRET_KEY:?set APP_SECRET_KEY in .env}
       APP_PROFILE: ${APP_PROFILE:-portfolio}
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:?set DEMO_USER_PASSWORD in .env}
+      MOCK_API_SIM_CLOCK: ${MOCK_API_SIM_CLOCK:-false}
+      PUBLIC_DEMO_MODE: ${PUBLIC_DEMO_MODE:-false}
     ports:
-      - "127.0.0.1:8010:8010"
+      - "127.0.0.1:${APP_HOST_PORT:-8010}:8010"
     depends_on:
       mock-api: {condition: service_healthy}
     read_only: true

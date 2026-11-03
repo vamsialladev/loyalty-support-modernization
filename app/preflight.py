@@ -106,6 +106,7 @@ VARS: dict[str, Var] = {
         Var("APP_DB_PASSWORD", _min_len(8), "at least 8 characters", secret=True),
         Var("MOCK_API_DB_PASSWORD", _min_len(8), "at least 8 characters", secret=True),
         Var("MOCK_API_URL", _url("http", "https"), "an http(s) URL"),
+        Var("DEMO_USER_PASSWORD", _min_len(12), "at least 12 characters", secret=True),
         Var("MOCK_API_FAULTS", _bool, "true or false"),
         Var("MOCK_API_SIM_CLOCK", _bool, "true or false"),
         Var("AI_PROVIDER", _enum(*PROVIDERS), "one of " + ", ".join(PROVIDERS)),
@@ -179,6 +180,7 @@ _LOCAL_DB = (
     "DATABASE_URL",
     "MOCK_API_DATABASE_URL",
     "MOCK_API_TOKEN",
+    "DEMO_USER_PASSWORD",
 )
 _OIDC = ("OIDC_ISSUER_URL", "OIDC_CLIENT_ID", "OIDC_CLIENT_SECRET")
 

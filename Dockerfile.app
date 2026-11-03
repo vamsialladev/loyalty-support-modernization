@@ -1,4 +1,4 @@
-# App image (placeholder until Milestone 5): health, readiness, migrations and the quickstart seed command.
+# App image: the arm A console, health, readiness, migrations and the quickstart seed command.
 # No labels, generator or data inside (ADR-0040). Non-root user.
 FROM ghcr.io/astral-sh/uv:0.13.5 AS uv
 
@@ -13,6 +13,7 @@ RUN uv sync --frozen --no-default-groups --group api --no-install-project
 
 COPY customer_shapes ./customer_shapes
 COPY config/customers ./config/customers
+COPY config/legacy ./config/legacy
 COPY alembic.ini ./
 COPY migrations ./migrations
 COPY app ./app
