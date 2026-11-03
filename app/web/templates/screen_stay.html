@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Stay search{% endblock %}
+{% block main %}
+{% set screen = "stay" %}{% include "_case_nav.html" %}
+<h1>Stay search</h1>
+<p class="muted">Enter the hotel confirmation number exactly (for example <code>BR-1234</code>). Only this member's stays
+  are searched.</p>
+<form method="get" action="/cases/{{ case.id }}/stay" hx-get="/cases/{{ case.id }}/stay" hx-target="#results"
+      hx-select="#results" hx-swap="outerHTML" hx-push-url="true" class="search">
+  <label for="member_number">Member number</label>
+  <input id="member_number" name="member_number" value="{{ form.member_number }}" {% if not can_search %}disabled{% endif %}>
+  <label for="confirmation">Hotel confirmation number</label>
+  <input id="confirmation" name="confirmation" value="{{ form.confirmation }}" {% if not can_search %}disabled{% endif %}>
+  <button type="submit" {% if not can_search %}disabled{% endif %}>Search stays</button>
+</form>
+<section id="results" aria-live="polite">
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  {% if searched and not error %}
+    {% if result %}
+    <dl class="record">
+      <dt>Confirmation</dt><dd>{{ result.stay_id }}</dd>
+      <dt>Property</dt><dd>{{ result.property }}</dd>
+      <dt>Guest</dt><dd>{{ result.guest_name }}</dd>
+      <dt>Arrival</dt><dd>{{ result.arrival_date }} ({{ result.nights }} nights)</dd>
+      <dt>Checkout (UTC)</dt><dd>{{ result.checkout_at_utc }}</dd>
+      <dt>Status</dt><dd>{{ result.status }}</dd>
+      <dt>Booking channel</dt><dd>{{ result.channel or "(blank)" }}</dd>
+      <dt>Rate code</dt><dd>{{ result.rate_code }}</dd>
+      <dt>Room revenue</dt><dd>${{ "%.2f"|format(result.room_revenue_cents / 100) }}</dd>
+    </dl>
+    <form method="post" action="/cases/{{ case.id }}/stay/attach">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="member_number" value="{{ form.member_number }}">
+      <input type="hidden" name="confirmation" value="{{ result.stay_id }}">
+      <button type="submit">Attach to case</button>
+    </form>
+    {% else %}
+    <p class="empty">No stay with that confirmation number on this member's profile.</p>
+    {% endif %}
+  {% endif %}
+</section>
+{% endblock %}

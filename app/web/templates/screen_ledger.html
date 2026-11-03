@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Ledger{% endblock %}
+{% block main %}
+{% set screen = "ledger" %}{% include "_case_nav.html" %}
+<h1>Points ledger</h1>
+<p class="muted">Posted points, newest first, grouped by posting date. The last {{ default_days }} days are shown unless
+  you choose older entries.</p>
+<form method="get" action="/cases/{{ case.id }}/ledger" hx-get="/cases/{{ case.id }}/ledger" hx-target="#results"
+      hx-select="#results" hx-swap="outerHTML" hx-push-url="true" class="search">
+  <label for="member_number">Member number</label>
+  <input id="member_number" name="member_number" value="{{ form.member_number }}" {% if not can_search %}disabled{% endif %}>
+  <label class="check"><input type="checkbox" name="show_older" value="true" {% if form.show_older %}checked{% endif %} {% if not can_search %}disabled{% endif %}> Show older entries</label>
+  <button type="submit" {% if not can_search %}disabled{% endif %}>Show ledger</button>
+</form>
+<section id="results" aria-live="polite">
+  {% if view %}
+    <p>Member {{ view.member_number }} · as of {{ view.as_of_utc }} ·
+      {% if view.window_start_utc %}from {{ view.window_start_utc }}{% else %}all entries{% endif %}</p>
+    {% if groups %}
+    <table class="grid">
+      <caption>Ledger entries</caption>
+      <thead><tr><th scope="col">Posted (UTC)</th><th scope="col">Type</th><th scope="col">Confirmation</th><th scope="col" class="num">Points</th></tr></thead>
+      {% for day, entries in groups %}
+      <tbody>
+        <tr class="group"><th scope="rowgroup" colspan="4">{{ day }}</th></tr>
+        {% for e in entries %}
+        <tr><td>{{ e.posted_at_utc }}</td><td>{{ e.kind }}</td><td>{{ e.stay_id or "—" }}</td><td class="num">{{ e.points }}</td></tr>
+        {% endfor %}
+      </tbody>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p class="empty">No ledger entries in this window.</p>
+    {% endif %}
+    <form method="post" action="/cases/{{ case.id }}/ledger/attach">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="member_number" value="{{ view.member_number }}">
+      {% if form.show_older %}<input type="hidden" name="show_older" value="true">{% endif %}
+      <button type="submit">Attach this view to the case</button>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}

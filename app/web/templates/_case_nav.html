@@ -1,0 +1,10 @@
+<nav class="case-nav" aria-label="Case screens">
+  <a href="/cases/{{ case.id }}" {% if screen == "case" %}aria-current="page"{% endif %}>Case {{ case.reference }}</a>
+  <a href="/cases/{{ case.id }}/member" {% if screen == "member" %}aria-current="page"{% endif %}>Member search</a>
+  <a href="/cases/{{ case.id }}/stay" {% if screen == "stay" %}aria-current="page"{% endif %}>Stay search</a>
+  <a href="/cases/{{ case.id }}/ledger" {% if screen == "ledger" %}aria-current="page"{% endif %}>Ledger</a>
+  <a href="/cases/{{ case.id }}/policy" {% if screen == "policy" %}aria-current="page"{% endif %}>Policy search</a>
+</nav>
+{% if not can_search %}
+<p class="notice">Searches and attachments are available while the case is "Investigating". It is "{{ case.status }}".</p>
+{% endif %}

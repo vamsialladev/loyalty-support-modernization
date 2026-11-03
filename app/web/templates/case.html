@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Case {{ case.reference }}{% endblock %}
+{% block main %}
+{% set screen = "case" %}{% include "_case_nav.html" %}
+<h1>Case {{ case.reference }} <span class="status" data-testid="case-status">{{ case.status }}</span></h1>
+{% if message %}<p class="ok" role="status" data-testid="message">{{ message }}</p>{% endif %}
+<p class="muted">Queue: {{ case.queue }} · assigned to {{ case.assigned_to or "nobody" }} · received {{ case.received_at_utc }}
+  {% if case.resolution_code %}· resolution: <span data-testid="resolution">{{ case.resolution_code }}</span>{% endif %}</p>
+{% if case.resolution_note %}<p class="muted">{{ case.resolution_note }}</p>{% endif %}
+
+<section class="card" aria-labelledby="req-h">
+  <h2 id="req-h">Member's request</h2>
+  {% for r in requests %}
+  <article class="request">
+    <p class="muted">{{ r.contact_channel }} · {{ r.received_at_utc }}{% if r.sender_email %} · from {{ r.sender_email }}{% endif %}</p>
+    {% if r.form_name or r.form_member_number or r.form_confirmation %}
+    <p class="muted">Form: {% if r.form_name %}name {{ r.form_name }}{% endif %}
+      {% if r.form_member_number %} · member {{ r.form_member_number }}{% endif %}
+      {% if r.form_confirmation %} · confirmation {{ r.form_confirmation }}{% endif %}</p>
+    {% endif %}
+    <pre class="message">{{ r.text }}</pre>
+    {% if r.attachment_names %}<p class="muted">Attachments (not viewable in this tool): {{ r.attachment_names|join(", ") }}</p>{% endif %}
+  </article>
+  {% endfor %}
+</section>
+
+{% if case.status == "New" %}
+<section class="card">
+  {% if case.queue == "points" %}
+  <form method="post" action="/cases/{{ case.id }}/start">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button type="submit">Start work</button>
+  </form>
+  {% else %}
+  <p class="notice">This case is in the billing queue, which the billing team works outside this tool.</p>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="card" aria-labelledby="ev-h">
+  <h2 id="ev-h">Attached evidence</h2>
+  <dl class="record">
+    <dt>Member</dt>
+    <dd>{% if evidence.member %}{{ evidence.member.member_number }} · {{ evidence.member.first_name }} {{ evidence.member.last_name }} · {{ evidence.member.status }}{% else %}none{% endif %}</dd>
+    <dt>Stay</dt>
+    <dd>{% if evidence.stay %}{{ evidence.stay.stay_id }} · {{ evidence.stay.property }} · checkout {{ evidence.stay.checkout_at_utc }} · channel {{ evidence.stay.channel or "(blank)" }}{% else %}none{% endif %}</dd>
+    <dt>Ledger view</dt>
+    <dd>{% if evidence.ledger %}{{ evidence.ledger.entries|length }} entries, {% if evidence.ledger.window_start_utc %}from {{ evidence.ledger.window_start_utc }}{% else %}all entries{% endif %}{% else %}none{% endif %}</dd>
+    <dt>Policy</dt>
+    <dd>{% for ref, section in policy_sections.items() %}{% if section %}{{ section.title }} §{{ section.section_id }} {{ section.heading }}{% else %}{{ ref }}{% endif %}{% if not loop.last %}; {% endif %}{% else %}none{% endfor %}</dd>
+  </dl>
+</section>
+
+<section class="card" aria-labelledby="ck-h">
+  <h2 id="ck-h">Rules checklist</h2>
+  <table class="grid checklist">
+    <caption class="sr-only">Rules checklist</caption>
+    <thead><tr><th scope="col">Check</th><th scope="col">Result</th><th scope="col">Detail</th></tr></thead>
+    <tbody>
+    {% for line in checklist.lines %}
+      <tr><td>{{ line.label }}</td><td class="{{ 'pass' if line.passed else 'fail' }}">{{ "Pass" if line.passed else "Fail" }}</td><td>{{ line.detail }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p>Outcome: <strong data-testid="checklist-outcome">{{ checklist.outcome.value }}</strong>
+    {% if checklist.points_owed is not none %} · points to credit: <strong data-testid="points-owed">{{ checklist.points_owed }}</strong>{% endif %}
+    {% if checklist.wait_until %} · claimable from {{ checklist.wait_until }}{% endif %}
+    {% if checklist.rules_revision %} · {{ checklist.rules_revision }}{% endif %}</p>
+</section>
+
+{% if case.status == "Investigating" %}
+<section class="card" aria-labelledby="act-h">
+  <h2 id="act-h">Decide</h2>
+  <form method="post" action="/cases/{{ case.id }}/request-adjustment">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button type="submit" {% if checklist.outcome.value != "adjust" %}disabled aria-disabled="true"{% endif %}>Request adjustment of {{ checklist.points_owed or 0 }} points</button>
+  </form>
+  <form method="post" action="/cases/{{ case.id }}/close">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="code">Close without an adjustment</label>
+    <select id="code" name="code">
+      {% for code in close_codes %}<option value="{{ code }}">{{ code }}</option>{% endfor %}
+    </select>
+    <label for="close-note">Note (required when it disagrees with the checklist)</label>
+    <textarea id="close-note" name="note" rows="2"></textarea>
+    <button type="submit">Close case</button>
+  </form>
+  <form method="post" action="/cases/{{ case.id }}/request-info">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="info-msg">Ask the member for information</label>
+    <textarea id="info-msg" name="message" rows="2"></textarea>
+    <button type="submit">Send request</button>
+  </form>
+  <form method="post" action="/cases/{{ case.id }}/escalate">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="esc-reason">Escalate (reason)</label>
+    <textarea id="esc-reason" name="reason" rows="2"></textarea>
+    <button type="submit">Escalate</button>
+  </form>
+</section>
+{% elif case.status == "Awaiting information" %}
+<section class="card">
+  <form method="post" action="/cases/{{ case.id }}/resume">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button type="submit">Member replied: resume investigation</button>
+  </form>
+</section>
+{% endif %}
+
+{% if adjustments %}
+<section class="card" aria-labelledby="adj-h">
+  <h2 id="adj-h">Adjustment</h2>
+  {% for a in adjustments %}
+  <div class="adjustment">
+    <p>{{ a.row.points }} points for stay {{ a.row.stay_id }} on {{ a.row.member_number }} · requested by {{ a.row.requested_by }}
+      · status <span data-testid="adjustment-status">{{ a.row.status }}</span></p>
+    {% if a.approval %}<p class="muted">{{ a.approval.decision|capitalize }} by {{ a.approval.decided_by }}{% if a.approval.reason %}: {{ a.approval.reason }}{% endif %}</p>{% endif %}
+    {% for t in a.attempts %}
+    <p class="muted">Attempt {{ loop.index }}: {{ t.outcome }}{% if t.upstream_adjustment_id %} · <span data-testid="adjustment-id">{{ t.upstream_adjustment_id }}</span>{% endif %}{% if t.error_code %} · {{ t.error_code }}{% endif %} · key {{ t.idempotency_key }}</p>
+    {% endfor %}
+    {% if a.refusal %}
+      {% if case.status in ["Pending approval", "Approved", "Execution unknown"] %}<p class="notice" data-testid="refusal">{{ a.refusal|capitalize }}.</p>{% endif %}
+    {% else %}
+      {% if case.status == "Pending approval" and a.row.status == "pending" %}
+      <form method="post" action="/adjustments/{{ a.row.id }}/decide">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <label for="reason-{{ a.row.id }}">Reason (required to reject)</label>
+        <textarea id="reason-{{ a.row.id }}" name="reason" rows="2"></textarea>
+        <button type="submit" name="decision" value="approve">Approve</button>
+        <button type="submit" name="decision" value="reject" class="secondary">Reject</button>
+      </form>
+      {% elif case.status == "Approved" and a.row.status == "approved" %}
+      <form method="post" action="/adjustments/{{ a.row.id }}/execute">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button type="submit">Execute adjustment</button>
+      </form>
+      {% elif case.status == "Execution unknown" %}
+      <form method="post" action="/adjustments/{{ a.row.id }}/check-status">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button type="submit">Check status with the loyalty platform</button>
+      </form>
+      {% endif %}
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+
+<section class="card" aria-labelledby="notes-h">
+  <h2 id="notes-h">Notes</h2>
+  {% for n in notes %}<p><strong>{{ n.author }}</strong> · {{ n.created_at_utc }}<br>{{ n.body }}</p>{% else %}<p class="empty">No notes yet.</p>{% endfor %}
+  <form method="post" action="/cases/{{ case.id }}/notes">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="note-body">Add a note</label>
+    <textarea id="note-body" name="body" rows="2" required></textarea>
+    <button type="submit">Add note</button>
+  </form>
+</section>
+
+<section class="card" aria-labelledby="tl-h">
+  <h2 id="tl-h">Timeline</h2>
+  <ol class="timeline">
+    {% for e in events %}<li>Step {{ e.step }} · {{ e.at_utc }} · {{ e.actor }} · {{ e.action }}</li>{% endfor %}
+  </ol>
+</section>
+{% endblock %}

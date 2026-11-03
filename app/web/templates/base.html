@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="htmx-config" content='{"includeIndicatorStyles": false, "allowEval": false, "allowScriptTags": false}'>
+  <title>{% block title %}Console{% endblock %} · Guest Rewards support (SYNTHETIC)</title>
+  <link rel="stylesheet" href="/static/console.css">
+  <script src="/static/vendor/htmx-2.0.11.min.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="banner" role="note" aria-label="Environment" data-testid="banner">
+    <strong>SYNTHETIC DATA</strong>
+    <span>profile: {{ banner.profile }}</span>
+    <span>AI mode: {{ banner.ai_mode }}</span>
+    <span>customer: {{ banner.customer }}</span>
+    <span>simulated time: {{ banner.sim_time }}</span>
+  </div>
+  <header class="top">
+    <span class="brand">Guest Rewards support · legacy console (arm A)</span>
+    {% if user %}
+    <nav aria-label="Main">
+      <a href="/queue">Queue</a>
+      <a href="/cases/new">New case</a>
+      {% if user.role == Role.SUPERVISOR %}<a href="/approvals">Approvals</a>{% endif %}
+    </nav>
+    <form method="post" action="/logout" class="signout">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <span>{{ user.display_name }}</span>
+      <button type="submit" class="link">Sign out</button>
+    </form>
+    {% endif %}
+  </header>
+  <main id="main" tabindex="-1">
+    {% block main %}{% endblock %}
+  </main>
+  <footer>Independent portfolio simulation: a fictional hotel group and synthetic data. Not a real system.</footer>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Approvals{% endblock %}
+{% block main %}
+<h1>Adjustments waiting for approval</h1>
+{% if rows %}
+<table class="grid">
+  <caption class="sr-only">Pending adjustments</caption>
+  <thead><tr><th scope="col">Case</th><th scope="col">Stay</th><th scope="col" class="num">Points</th><th scope="col">Requested by</th><th scope="col">You can decide?</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td><a href="/cases/{{ r.case.id }}">{{ r.case.reference }}</a></td>
+      <td>{{ r.row.stay_id }}</td>
+      <td class="num">{{ r.row.points }}</td>
+      <td>{{ r.row.requested_by }}</td>
+      <td>{{ "Yes: open the case" if not r.refusal else r.refusal|capitalize }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">Nothing is waiting for approval.</p>
+{% endif %}
+{% endblock %}

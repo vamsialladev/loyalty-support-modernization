@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Policy search{% endblock %}
+{% block main %}
+{% set screen = "policy" %}{% include "_case_nav.html" %}
+<h1>Policy search</h1>
+<p class="muted">Keyword search: every word must appear in the section. Index built {{ built_as_of }}.</p>
+<form method="get" action="/cases/{{ case.id }}/policy" hx-get="/cases/{{ case.id }}/policy" hx-target="#results"
+      hx-select="#results" hx-swap="outerHTML" hx-push-url="true" class="search">
+  <label for="q">Keywords</label>
+  <input id="q" name="q" value="{{ q }}" {% if not can_search %}disabled{% endif %}>
+  <button type="submit" {% if not can_search %}disabled{% endif %}>Search policies</button>
+</form>
+<section id="results" aria-live="polite">
+  {% if searched %}
+    {% if hits %}
+    <ol class="hits">
+      {% for h in hits %}
+      <li>
+        <h2>{{ h.title }} · §{{ h.section_id }} {{ h.heading }}</h2>
+        <p>{{ h.text }}</p>
+        <form method="post" action="/cases/{{ case.id }}/policy/attach">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="ref" value="{{ h.ref }}">
+          <button type="submit">Attach to case</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p class="empty">No section contains all of these words.</p>
+    {% endif %}
+  {% endif %}
+</section>
+{% endblock %}

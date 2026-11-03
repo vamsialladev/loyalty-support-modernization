@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}New case{% endblock %}
+{% block main %}
+<section class="card">
+  <h1>New case</h1>
+  <p class="muted">For a request that arrived by phone or another channel outside the web form.</p>
+  <form method="post" action="/cases">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="received_at_utc">Received (UTC)</label>
+    <input id="received_at_utc" name="received_at_utc" placeholder="2026-07-20T14:00:00Z" required>
+    <label for="contact_channel">Channel</label>
+    <select id="contact_channel" name="contact_channel">
+      <option value="phone_note">Phone</option>
+      <option value="email">Email</option>
+      <option value="web_form">Web form</option>
+    </select>
+    <label for="sender_email">Member's email (if given)</label>
+    <input id="sender_email" name="sender_email" type="email">
+    <label for="form_name">Member's name (if given)</label>
+    <input id="form_name" name="form_name">
+    <label for="form_member_number">Member number (if given)</label>
+    <input id="form_member_number" name="form_member_number">
+    <label for="form_confirmation">Confirmation number (if given)</label>
+    <input id="form_confirmation" name="form_confirmation">
+    <label for="text">What the member said</label>
+    <textarea id="text" name="text" rows="5" required></textarea>
+    <button type="submit">Create case</button>
+  </form>
+</section>
+{% endblock %}

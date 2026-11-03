@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Queue{% endblock %}
+{% block main %}
+<h1>{{ "Points queue" if queue == "points" else "Billing queue" }}</h1>
+{% if queue == "billing" %}
+<p class="muted">Messages that mention a refund are routed here. The billing team works them outside this tool.</p>
+{% endif %}
+<form method="get" action="/queue" class="filters" aria-label="Filter the queue">
+  <label for="queue">Queue</label>
+  <select id="queue" name="queue">
+    <option value="points" {% if queue == "points" %}selected{% endif %}>Points</option>
+    <option value="billing" {% if queue == "billing" %}selected{% endif %}>Billing</option>
+  </select>
+  <label for="status">Status</label>
+  <select id="status" name="status">
+    <option value="">Any</option>
+    {% for st in states %}<option value="{{ st }}" {% if st == status %}selected{% endif %}>{{ st }}</option>{% endfor %}
+  </select>
+  <label class="check"><input type="checkbox" name="mine" value="true" {% if mine %}checked{% endif %}> Assigned to me</label>
+  <button type="submit">Filter</button>
+</form>
+{% if rows %}
+<table class="grid">
+  <caption class="sr-only">Cases</caption>
+  <thead><tr><th scope="col">Case</th><th scope="col">Received (UTC)</th><th scope="col">Status</th><th scope="col">Assigned</th></tr></thead>
+  <tbody>
+  {% for c in rows %}
+    <tr>
+      <td><a href="/cases/{{ c.id }}">{{ c.reference }}</a></td>
+      <td>{{ c.received_at_utc }}</td>
+      <td><span class="status">{{ c.status }}</span></td>
+      <td>{{ c.assigned_to or "—" }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">No cases match these filters.</p>
+{% endif %}
+{% endblock %}
