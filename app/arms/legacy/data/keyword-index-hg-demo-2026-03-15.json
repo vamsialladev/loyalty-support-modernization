@@ -1,0 +1,98 @@
+{
+  "built_as_of": "2026-03-15",
+  "synthetic": true,
+  "note": "Arm A legacy keyword index, frozen on its build date (defect D09). Never rebuilt in the simulation.",
+  "sources": [
+    {
+      "policy_id": "guest-rewards-earning",
+      "version": 2,
+      "file": "policies/hg-demo/guest-rewards-earning-v2.md",
+      "sha256": "05acddb7d8d1ed3ae72cd53f6bf2576656ecce81e03421d7617d3f1d6e40bb5e"
+    },
+    {
+      "policy_id": "missing-points-requests",
+      "version": 1,
+      "file": "policies/hg-demo/missing-points-requests-v1.md",
+      "sha256": "c96cdb8dbcbc650f9b36ee213e7739786255739c90f3aad16fa61a66dc754805"
+    }
+  ],
+  "sections": [
+    {
+      "policy_id": "guest-rewards-earning",
+      "title": "Guest Rewards Loyalty Program — Earning",
+      "section_id": "1",
+      "heading": "Tiers and benefits",
+      "text": "| Tier | Nights per year | Late check-out | Welcome amenity | Room upgrade | |---|---|---|---|---| | Silver | 5+ | 1:00 PM (free) | Bottled water | No | | Gold | 15+ | 2:00 PM (free) | Drink voucher | Subject to availability | | Platinum | 40+ | 4:00 PM (guaranteed) | Bottle of wine | Guaranteed one category |"
+    },
+    {
+      "policy_id": "guest-rewards-earning",
+      "title": "Guest Rewards Loyalty Program — Earning",
+      "section_id": "2",
+      "heading": "Earning points",
+      "text": "Members earn 10 points per US dollar spent on the room rate. Points are rounded down to a whole number."
+    },
+    {
+      "policy_id": "guest-rewards-earning",
+      "title": "Guest Rewards Loyalty Program — Earning",
+      "section_id": "3",
+      "heading": "What does not earn points",
+      "text": "Taxes, resort fees and pet fees do not earn points."
+    },
+    {
+      "policy_id": "guest-rewards-earning",
+      "title": "Guest Rewards Loyalty Program — Earning",
+      "section_id": "4",
+      "heading": "Verifying membership",
+      "text": "Always confirm the member number in the guest's profile. Never grant tier benefits based on a verbal claim alone."
+    },
+    {
+      "policy_id": "missing-points-requests",
+      "title": "Guest Rewards — Missing Points Requests",
+      "section_id": "1",
+      "heading": "Purpose",
+      "text": "How support agents handle a member's request for points they believe are missing from a completed stay."
+    },
+    {
+      "policy_id": "missing-points-requests",
+      "title": "Guest Rewards — Missing Points Requests",
+      "section_id": "2",
+      "heading": "Which version applies",
+      "text": "Use the version of this policy in force on the stay's checkout date, in the property's local time (Eastern)."
+    },
+    {
+      "policy_id": "missing-points-requests",
+      "title": "Guest Rewards — Missing Points Requests",
+      "section_id": "3",
+      "heading": "Timing",
+      "text": "A member may claim missing points no earlier than **30 days** after checkout, and no later than **12 months** after checkout. Before 30 days, tell the member the date from which they can claim. After 12 months, the claim is declined."
+    },
+    {
+      "policy_id": "missing-points-requests",
+      "title": "Guest Rewards — Missing Points Requests",
+      "section_id": "4.1",
+      "heading": "Booking channels",
+      "text": "Stays booked directly (hotel website, app, front desk) or by phone earn points. Stays booked through online travel agencies (OTAs) or travel agents do not earn points."
+    },
+    {
+      "policy_id": "missing-points-requests",
+      "title": "Guest Rewards — Missing Points Requests",
+      "section_id": "5",
+      "heading": "Already credited",
+      "text": "If the ledger already shows the points for the stay, no adjustment is made. Show the member the posting."
+    },
+    {
+      "policy_id": "missing-points-requests",
+      "title": "Guest Rewards — Missing Points Requests",
+      "section_id": "6",
+      "heading": "Approval",
+      "text": "Every adjustment needs a supervisor's approval. A supervisor may approve up to 20,000 points per case; above that, escalate to the loyalty manager."
+    },
+    {
+      "policy_id": "missing-points-requests",
+      "title": "Guest Rewards — Missing Points Requests",
+      "section_id": "7",
+      "heading": "Escalation",
+      "text": "If the stay record is missing or records disagree, escalate to the property for confirmation. Do not adjust on the member's documents alone."
+    }
+  ]
+}

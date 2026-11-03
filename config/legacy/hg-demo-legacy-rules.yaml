@@ -1,0 +1,29 @@
+# Arm A: the legacy rules engine's configuration for the fictional hotel group (SYNTHETIC).
+# This is the legacy system's OWN configuration, not the published policy. It is deliberately out of date in the
+# ways pre-registered in docs/legacy-defect-catalog.md, and correct everywhere else (ADR-0043). Every deviation from
+# the policy names its defect ID. Arm B (Milestone 7) gets the corrected configuration.
+#
+# The legacy engine applies the revision in force on the day the case is worked (the claim date), never the policy
+# version in force on the stay's checkout date (D15), and compares UTC calendar dates (D04).
+
+customer_id: hg-demo
+synthetic: true
+
+points_per_usd_room_revenue: 10    # correct: floor(room revenue x 10), taxes and fees excluded
+claim_window_months: 12            # correct
+supervisor_limit_points: 20000     # correct: above this, escalate to the loyalty manager
+date_basis: utc                    # D04: UTC dates, not the property's Eastern business date
+
+revisions:
+  - effective_from: 2025-01-01     # matches Missing Points Requests v1
+    waiting_period_days:
+      beach-resort: 30
+      mountain-lodge: 30
+    eligible_channels: [direct, phone]   # a blank channel is not in the list, so it is ineligible (D03)
+
+  - effective_from: 2026-07-01     # the v2 roll-out, done by hand and incompletely
+    waiting_period_days:
+      beach-resort: 14             # updated
+      mountain-lodge: 30           # D08: never updated from v1
+    eligible_channels: [direct, phone]   # D09: v2's OTA rule (section 4.2) never added
+    # D21: v2's corporate travel exception (section 7.3, CORP* rate codes) never added
