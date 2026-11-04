@@ -239,6 +239,152 @@ def test_closing_against_the_checklist_is_an_override_that_needs_a_note(arm: Arm
         assert closed.detail["checklist_outcome"] == "adjust"
 
 
+RULE_BASED_CODES = [
+    "no_adjustment_credited",
+    "wait_until",
+    "not_checked_out",
+    "deny_channel_ineligible",
+    "deny_claim_window",
+]
+
+
+@pytest.mark.parametrize("code", RULE_BASED_CODES)
+def test_a_rule_based_close_is_refused_while_evidence_is_incomplete_whatever_the_note(arm: ArmA, code: str) -> None:
+    """The A-000010 path (TD-17, ADR-0054): a rule-based denial with nothing attached and a note to get it through."""
+    with arm.sessions() as s:
+        (case,) = arm.load(s, K01)
+        svc.start_work(s, arm.who("agent.ana"), case)
+        with pytest.raises(svc.WorkflowError, match="evidence is incomplete"):
+            svc.close_case(
+                s, arm.who("agent.ana"), case, code, "A long and confident note, with no evidence.", arm.rules
+            )
+        assert case.status == CaseState.INVESTIGATING and case.resolution_code is None
+        assert "case_closed" not in [e.action for e in events(s, case)]
+
+
+def test_a_rule_based_close_is_refused_with_part_of_the_evidence(arm: ArmA) -> None:
+    with arm.sessions() as s:
+        (case,) = arm.load(s, K01)
+        who = arm.who("agent.ana")
+        svc.start_work(s, who, case)
+        svc.attach_member(s, who, case, arm.systems(case.received_at_utc), MEMBER)
+        with pytest.raises(svc.WorkflowError, match="evidence is incomplete"):
+            svc.close_case(s, who, case, "deny_claim_window", "Member found, the rest not checked.", arm.rules)
+
+
+def test_a_rule_based_close_that_agrees_with_complete_evidence_needs_no_note(arm: ArmA) -> None:
+    """Not every close got harder: the fix only refuses a close with nothing behind it."""
+    with arm.sessions() as s:
+        (case,) = arm.load(s, arm.scenario("K05"))
+        who = arm.who("agent.ana")
+        svc.start_work(s, who, case)
+        systems = arm.systems(case.received_at_utc)
+        facts = arm.labels[case.source_ref]
+        member, stay = facts["claimant_member_number"], facts["facts"]["claimed_stay_ids"][0]
+        svc.attach_member(s, who, case, systems, member)
+        svc.attach_stay(s, who, case, systems, member, stay)
+        svc.attach_ledger(s, who, case, systems, member, show_older=True)
+        svc.attach_policy(s, who, case, arm.index, "missing-points-requests#3")
+        assert svc.checklist_for(s, case, arm.rules).outcome is Outcome.NOT_CHECKED_OUT
+        svc.close_case(s, who, case, "not_checked_out", "", arm.rules)
+        closed = events(s, case)[-1]
+        assert closed.detail["override"] is False and closed.detail["checklist_outcome"] == "not_checked_out"
+
+
+def test_a_rule_based_close_against_complete_evidence_stays_an_override(arm: ArmA) -> None:
+    with arm.sessions() as s:
+        (case,) = arm.load(s, K01)
+        investigate(arm, s, case)
+        with pytest.raises(svc.WorkflowError, match="override"):
+            svc.close_case(s, arm.who("agent.ana"), case, "deny_claim_window", "", arm.rules)
+        svc.close_case(s, arm.who("agent.ana"), case, "deny_claim_window", "Supervisor said to deny.", arm.rules)
+        closed = events(s, case)[-1]
+        assert closed.detail["override"] is True and closed.detail["checklist_outcome"] == "adjust"
+
+
+def test_deny_not_found_needs_a_logged_search(arm: ArmA) -> None:
+    with arm.sessions() as s:
+        (case,) = arm.load(s, K01)
+        who = arm.who("agent.ana")
+        svc.start_work(s, who, case)
+        with pytest.raises(svc.WorkflowError, match="search the member screen first"):
+            svc.close_case(s, who, case, "deny_not_found", "Could not find this member.", arm.rules)
+        assert case.status == CaseState.INVESTIGATING
+
+
+def test_deny_not_found_is_allowed_after_a_member_search_that_found_nothing(arm: ArmA) -> None:
+    with arm.sessions() as s:
+        (case,) = arm.load(s, K01)
+        who = arm.who("agent.ana")
+        svc.start_work(s, who, case)
+        svc.log_search(s, case, who, "member", "member number", 0)
+        svc.close_case(s, who, case, "deny_not_found", "", arm.rules)
+        closed = events(s, case)[-1]
+        assert case.resolution_code == "deny_not_found" and closed.detail["override"] is False
+
+
+def test_deny_not_found_is_refused_when_the_latest_search_found_the_record(arm: ArmA) -> None:
+    """A typo followed by the right number: the first empty search doesn't count any more."""
+    with arm.sessions() as s:
+        (case,) = arm.load(s, K01)
+        who = arm.who("agent.ana")
+        svc.start_work(s, who, case)
+        svc.log_search(s, case, who, "member", "member number", 0)
+        svc.log_search(s, case, who, "member", "member number", 1)
+        with pytest.raises(svc.WorkflowError, match="search the member screen first"):
+            svc.close_case(s, who, case, "deny_not_found", "", arm.rules)
+
+
+def test_deny_not_found_looks_at_the_screen_of_the_missing_record(arm: ArmA) -> None:
+    with arm.sessions() as s:
+        (case,) = arm.load(s, K01)
+        who = arm.who("agent.ana")
+        systems = arm.systems(case.received_at_utc)
+        svc.start_work(s, who, case)
+        svc.log_search(s, case, who, "member", "member number", 0)  # a typo, before the right number
+        svc.attach_member(s, who, case, systems, MEMBER)
+        with pytest.raises(svc.WorkflowError, match="search the stay screen first"):
+            svc.close_case(s, who, case, "deny_not_found", "", arm.rules)
+        svc.log_search(s, case, who, "stay", "confirmation number", 0)
+        svc.close_case(s, who, case, "deny_not_found", "", arm.rules)
+        assert case.resolution_code == "deny_not_found"
+
+
+def test_deny_not_found_is_refused_when_member_and_stay_are_attached(arm: ArmA) -> None:
+    with arm.sessions() as s:
+        (case,) = arm.load(s, K01)
+        investigate(arm, s, case)
+        svc.log_search(s, case, arm.who("agent.ana"), "stay", "confirmation number", 0)
+        with pytest.raises(svc.WorkflowError, match="both attached"):
+            svc.close_case(s, arm.who("agent.ana"), case, "deny_not_found", "Was not there at first.", arm.rules)
+
+
+@pytest.mark.parametrize("note", ["", "too short", " " * 30, "x" * 19 + "   "])
+def test_deny_other_refuses_a_note_under_20_characters(arm: ArmA, note: str) -> None:
+    with arm.sessions() as s:
+        (case,) = arm.load(s, K01)
+        svc.start_work(s, arm.who("agent.ana"), case)
+        with pytest.raises(svc.WorkflowError, match="at least 20 characters"):
+            svc.close_case(s, arm.who("agent.ana"), case, "deny_other", note, arm.rules)
+        assert case.status == CaseState.INVESTIGATING
+
+
+def test_deny_other_with_20_characters_is_a_logged_override_even_without_evidence(arm: ArmA) -> None:
+    with arm.sessions() as s:
+        (case,) = arm.load(s, K01)
+        svc.start_work(s, arm.who("agent.ana"), case)
+        svc.close_case(s, arm.who("agent.ana"), case, "deny_other", "x" * 20, arm.rules)
+        closed = events(s, case)[-1]
+        assert case.resolution_code == "deny_other"
+        assert closed.detail["override"] is True and closed.detail["checklist_outcome"] == "incomplete_evidence"
+
+
+def test_the_console_only_offers_the_codes_the_evidence_allows() -> None:
+    assert svc.close_codes_for(Outcome.INCOMPLETE) == ["deny_not_found", "deny_other"]
+    assert svc.close_codes_for(Outcome.ADJUST) == list(svc.CLOSE_CODES)
+    assert set(RULE_BASED_CODES) | set(svc.EVIDENCE_FREE_CODES) == set(svc.CLOSE_CODES)  # no new code slips past
+
+
 def test_request_information_sends_a_ticket_and_waits_for_the_member(arm: ArmA) -> None:
     with arm.sessions() as s:
         (case,) = arm.load(s, K01)

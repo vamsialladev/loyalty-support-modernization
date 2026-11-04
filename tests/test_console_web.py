@@ -198,6 +198,26 @@ def test_an_upstream_failure_shows_a_safe_error(arm: ArmA) -> None:
     assert ARM_A_TOKEN not in resp.text and "Traceback" not in resp.text
 
 
+def test_an_evidence_free_close_is_neither_offered_nor_accepted(arm: ArmA) -> None:
+    """The A-000010 path (TD-17, ADR-0054): the page hides it and a forged POST with a valid CSRF token is refused."""
+    with arm.sessions() as s:
+        case_row = arm.load(s, "DV-001")[0]
+    b = browser(arm, "agent.ana")
+    case = f"/cases/{case_row.id}"
+    page = b.post(f"{case}/start").text
+    assert 'value="deny_not_found"' in page and 'value="deny_other"' in page
+    assert 'value="deny_claim_window"' not in page
+    forged = b.post(f"{case}/close", code="deny_claim_window", note="Outside the twelve-month claim window.")
+    assert forged.status_code == 409 and "evidence is incomplete" in forged.text
+    no_search = b.post(f"{case}/close", code="deny_not_found")
+    assert no_search.status_code == 409 and "search the member screen first" in no_search.text
+    assert "together" in b.get(f"{case}/member", first_name="Clara").text  # a rejected input is not a search
+    assert "search the member screen first" in b.post(f"{case}/close", code="deny_not_found").text
+    assert "No member matches exactly" in b.get(f"{case}/member", member_number="GR-00000").text
+    closed = b.post(f"{case}/close", code="deny_not_found")
+    assert field(closed.text, "case-status") == "Resolved" and field(closed.text, "resolution") == "deny_not_found"
+
+
 def test_every_visible_control_works_over_http(arm: ArmA) -> None:
     """Spec B.13: every visible control has implemented behaviour. Drives each form and screen through the routes."""
     with arm.sessions() as s:
@@ -231,6 +251,8 @@ def test_every_visible_control_works_over_http(arm: ArmA) -> None:
     assert field(b.post(f"{case}/notes", body="Checked all four screens.").text, "message") == "Note added."
     refused = b.post(f"{case}/close", code="deny_other")
     assert refused.status_code == 409 and "override" in refused.text
+    short = b.post(f"{case}/close", code="deny_other", note="too short")
+    assert short.status_code == 409 and "at least 20 characters" in short.text
     info = b.post(f"{case}/request-info", message="Please confirm your stay dates.")
     assert field(info.text, "case-status") == "Awaiting information"
     assert field(b.post(f"{case}/resume").text, "case-status") == "Investigating"
