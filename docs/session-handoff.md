@@ -1,40 +1,30 @@
 # Session handoff
 
-**Updated:** 2026-11-03, after Milestone 5, ready to start Milestone 6.
+**Updated:** 2026-11-04, after Milestone 5 and the close fix, ready to start Milestone 6.
 
 ## Where things stand
-- Milestones 1–5 are done and committed on local `main`. The **private** GitHub repository exists but is **empty: the first
-  push is blocked** (next section). CI has therefore not run yet.
-  https://github.com/vamsialladev/loyalty-support-modernization (ADR-0053). Once `main` is up, **work on a branch and open a
-  pull request**; CI runs on both (ADR-0013). Never push without the owner's OK. Push with:
+- Milestones 1–5 are done and on `main` in the **private** GitHub repository, with CI green.
+  https://github.com/vamsialladev/loyalty-support-modernization (ADR-0053). **Work on a branch and open a pull request**; CI
+  runs on both (ADR-0013). Never push without the owner's OK. Push with:
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (two accounts are signed in to `gh`; check
   `gh auth status` shows `vamsialladev` active).
+- This repo's `user.email` is the noreply address, so the account's email block won't refuse new commits. Earlier commits
+  keep the Gmail address, as the owner chose, so every cited hash stays valid.
 - Legacy arm A runs end to end in the browser. Upgrading an existing volume works and is checked by the compose check
   (ADR-0052); `docs/onboarding.md` §4c has the commands.
 - Latest results: `docs/verification-log.md`, section "After Milestone 5".
 
 ## Decisions waiting on the owner
-0. **First push (blocking).** GitHub refused it: `push declined due to email privacy restrictions`. All commits here use
-   `vamsialla.dev@gmail.com`; the other repositories use `339370878+vamsialladev@users.noreply.github.com`.
-   - Recommended: at https://github.com/settings/emails untick "Block command line pushes that expose my email", push,
-     tick it again, and set this repo's `user.email` to the noreply address for new commits. Every cited hash stays valid.
-     The Gmail address stays in these commits' metadata (it is already on vamsialla.com).
-   - Alternative: rewrite all commits to the noreply address. That changes every hash, including the pre-registration
-     commit `1f8b8e6` that the docs cite as evidence, so it needs the owner's explicit OK and a logged remapping.
-   - Then: push branch `ci/first-run` (already created locally), wait for CI, push `main` once green, delete the branch.
-     Fix anything CI finds first (Linux has not been tried yet).
-1. **The evidence-free close (TD-17).** A case can be closed with a rule-based code and no evidence by writing any note.
-   It is a gap, not a legacy defect. The proposed fix is in `docs/backlog.md`; it needs no catalog change. **Not applied.**
-   If approved, do it first, on its own branch, before Milestone 6.
-2. **Label review:** the 30-label sheet (`evaluations/label-review/`).
+1. **Label review:** the 30-label sheet (`evaluations/label-review/`).
 
 ## Known and open
-- **Case A-000010** (owner's local database) stays closed as `deny_claim_window`. There is no reopen until Milestone 6.
-  To redo the work now, use "New case" with the same details (see `docs/onboarding.md` failure modes); no credit was made,
-  so the duplicate check won't interfere.
+- **Case A-000010** (owner's local database) stays closed as `deny_claim_window`, as the audit record of the wrong denial
+  (ADR-0054); the close fix applies to new closes only. There is no reopen until Milestone 6. To redo the work now, use
+  "New case" with the same details (see `docs/onboarding.md` failure modes); no credit was made, so the duplicate check
+  won't interfere. The owner's stack needs `-Action up` first to pick up the fix.
 - **The owner's "unhealthy" run has no proven cause** (ADR-0052). If it happens again, `stack.ps1 -Action up` prints it.
-- **The owner's stack:** the last `up` predates these fixes. Run `-Action up` once to pick up the new `/readyz` and health
-  settings; nothing else is needed.
+- **The owner's stack:** the last `up` predates these fixes. Run `-Action up` once to pick up the new `/readyz`, the health
+  settings and the close fix; nothing else is needed.
 - **Making the repository public** stays the owner's decision. When approved: `gh repo edit
   vamsialladev/loyalty-support-modernization --visibility public --accept-visibility-change-consequences`, then turn on
   secret scanning and push protection (free on public repositories) under Settings → Advanced Security.

@@ -324,6 +324,7 @@ def install_console(
                     "refusal": approval_refusal(active.identity, row.requested_by),
                 }
             )
+        checklist = svc.checklist_for(s, case, rules)
         return render(
             request,
             "case.html",
@@ -331,11 +332,11 @@ def install_console(
             case=case,
             requests=svc.requests_of(s, case),
             evidence=svc.current_evidence(s, case),
-            checklist=svc.checklist_for(s, case, rules),
+            checklist=checklist,
             notes=svc.notes_of(s, case),
             adjustments=adjustments,
             events=events(s, case),
-            close_codes=list(svc.CLOSE_CODES),
+            close_codes=svc.close_codes_for(checklist.outcome),
             message=DONE_MESSAGES.get(done, ""),
             policy_sections={ref: index.get(ref) for ref in svc.current_evidence(s, case).policy_refs},
             can_search=can_search(case),

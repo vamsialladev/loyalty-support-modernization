@@ -8,8 +8,8 @@ Its policy, fixed before any benchmark run (Milestone 10 scores it; nothing here
 1. A case in the billing queue is not worked (D20): the points claim waits there.
 2. A message that isn't in English gets a reply asking for English (D23).
 3. Member: the web form's member number, or a `GR-#####` number in the text, searched exactly; otherwise the web
-   form's name (or the sign-off line) with the sender's email, searched exactly (D13, D18). Not found: deny as
-   "not found".
+   form's name (or the sign-off line) with the sender's email, searched exactly (D13, D18). A search that found
+   nothing: deny as "not found". Nothing to search with, or several candidates: ask the member (ADR-0054).
 4. Stay: the web form's confirmation, or the first `BR-####` / `ML-####` in the text, searched exactly within the
    member's stays (D16, D17, D05). None given: ask the member for it. Not found: deny as "not found" (D24).
 5. Ledger: the default 90-day view; if it starts after the checkout date, show older entries (ADR-0050).
@@ -58,6 +58,7 @@ SCRIPTED_SUPERVISOR = "scripted-supervisor"
 POLICY_QUERY = "missing points"
 ASK_ENGLISH = "Thank you for your message. Please write to us in English so that we can help with your request."
 ASK_CONFIRMATION = "Please send the hotel confirmation number for the stay (for example BR-1234 or ML-1234)."
+ASK_MEMBER = "Please send your membership number (for example GR-12345) so that we can find your account."
 
 _MEMBER = re.compile(r"\bGR-\d{5}\b")
 _STAY = re.compile(r"\b(?:BR|ML)-\d{4}\b")
@@ -166,6 +167,10 @@ class ScriptedLegacyAgent:
 
         member = self._find_member(case, requests, systems, text, path)
         if member is None:
+            if not svc.latest_search_found_nothing(s, case, "member"):
+                path.append("asked_for_member_number")
+                svc.request_information(s, agent, case, systems, ASK_MEMBER)
+                return
             path.append("member_not_found")
             svc.close_case(s, agent, case, "deny_not_found", "Member not found by exact search.", self.rules)
             return

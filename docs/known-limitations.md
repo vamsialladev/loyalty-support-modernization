@@ -2,9 +2,10 @@
 
 Kept current at every milestone. Each line says what is limited, why, and what would change it.
 
-## Added after Milestone 5 (2026-11-03)
-- **A case can be closed with a rule-based code and no evidence** by writing any note (TD-17, a gap, not a legacy defect;
-  proposed fix in `docs/backlog.md`).
+## Added after Milestone 5 (2026-11-03 to 2026-11-04)
+- **A note's length is not its quality** (ADR-0054). `deny_other` with 20 characters can still close a case wrongly, and
+  a rule-based code against complete evidence is still an override with any non-empty note. Both are logged as overrides
+  for review. Evidence-free rule-based closes are now refused (TD-17, closed).
 - **There is no reopen yet.** `Resolved`, `Escalated` and `Rejected` are final until Milestone 6 (spec B.10).
 - **The owner's "unhealthy" run has no proven cause** (ADR-0052). The reproduction didn't fail, and Docker no longer holds
   that run's health events. Any repeat now prints its cause.

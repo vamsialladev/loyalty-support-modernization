@@ -13,6 +13,7 @@ from sqlalchemy import select
 
 from app.domain.case_states import TERMINAL, CaseState
 from app.persistence.models import Case, CaseEvent
+from app.services import cases as svc
 from app.services.instrumentation import events
 from benchmarks.agents.legacy_scripted import (
     LABEL,
@@ -125,6 +126,33 @@ def test_every_dev_case_reaches_a_resting_state_without_errors(arm: ArmA, monkey
         assert [r.case_reference for r in runs if r.final_status == CaseState.REJECTED] == []
         errors = list(s.scalars(select(CaseEvent).where(CaseEvent.action == "system_error")))
         assert errors == []
+
+
+def _intake(text: str, **form: str) -> Any:
+    from app.services.cases import IntakeRequest
+
+    return IntakeRequest(received_at_utc="2026-06-18T12:00:00Z", contact_channel="web_form", text=text, **form)
+
+
+def test_with_nothing_to_search_it_asks_instead_of_denying(arm: ArmA) -> None:
+    """ADR-0054: "not found" needs a search that found nothing. No number, name or email means no search."""
+    with arm.sessions() as s:
+        agent = agent_for(arm, s)
+        case = svc.create_case(s, agent.agent, _intake("My points are missing from my last stay."))
+        run = agent.run(case)
+        assert run.path == ["asked_for_member_number"] and run.final_status == CaseState.AWAITING_INFORMATION
+        assert run.resolution_code is None
+
+
+def test_a_search_that_found_nothing_is_still_denied_as_not_found(arm: ArmA) -> None:
+    with arm.sessions() as s:
+        agent = agent_for(arm, s)
+        request = _intake("My points are missing.", form_member_number="GR-00000")
+        case = svc.create_case(s, agent.agent, request)
+        run = agent.run(case)
+        assert run.path == ["member_not_found"] and run.resolution_code == "deny_not_found"
+        assert [e.detail["results"] for e in events(s, case) if e.action == "search_member"] == [0]
+        assert events(s, case)[-1].detail["override"] is False
 
 
 def test_reading_helpers() -> None:

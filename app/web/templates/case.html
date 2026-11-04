@@ -81,7 +81,8 @@
     <select id="code" name="code">
       {% for code in close_codes %}<option value="{{ code }}">{{ code }}</option>{% endfor %}
     </select>
-    <label for="close-note">Note (required when it disagrees with the checklist)</label>
+    {% if checklist.outcome.value == "incomplete_evidence" %}<p class="muted">The evidence is incomplete, so only these two apply: deny_not_found needs a search that found nothing; deny_other is a logged override.</p>{% endif %}
+    <label for="close-note">Note (required when it disagrees with the checklist; deny_other needs at least 20 characters)</label>
     <textarea id="close-note" name="note" rows="2"></textarea>
     <button type="submit">Close case</button>
   </form>

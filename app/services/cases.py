@@ -24,22 +24,27 @@ from app.domain.customer_records import LedgerEntry, Member, StayRecord
 from app.domain.roles import Identity, require_case_worker
 from app.persistence.models import AdjustmentRequestRow, Case, CaseEvidence, CaseNote, CaseRequest
 from app.ports.customer_systems import CustomerSystemError, CustomerSystems
-from app.services.instrumentation import record
+from app.services.instrumentation import events, record
 
 ARM_A = "A"
 REASON_MISSING_POINTS = "missing_points"
 
 # What an agent may close a case as, and the checklist outcome each code agrees with. A close that disagrees with
-# the checklist is an override: it needs a note and is logged as one (spec E.2 "overrides").
+# the checklist is an override: it needs a note and is logged as one (spec E.2 "overrides"). ADR-0054: rule-based
+# codes need the evidence their rule reads, and "not found" needs the search that found nothing.
+DENY_NOT_FOUND = "deny_not_found"
+DENY_OTHER = "deny_other"
+MIN_DENY_OTHER_NOTE = 20
 CLOSE_CODES: dict[str, set[Outcome]] = {
     "no_adjustment_credited": {Outcome.ALREADY_CREDITED},
     "wait_until": {Outcome.WAIT},
     "not_checked_out": {Outcome.NOT_CHECKED_OUT},
     "deny_channel_ineligible": {Outcome.DENY_CHANNEL},
     "deny_claim_window": {Outcome.DENY_CLAIM_WINDOW},
-    "deny_not_found": {Outcome.INCOMPLETE},  # member or stay not found on the legacy screens
-    "deny_other": set(),  # always an override
+    DENY_NOT_FOUND: {Outcome.INCOMPLETE},  # member or stay not found on the legacy screens
+    DENY_OTHER: set(),  # always an override
 }
+EVIDENCE_FREE_CODES = (DENY_NOT_FOUND, DENY_OTHER)  # the only codes open while the evidence is incomplete
 
 
 class WorkflowError(Exception):
@@ -307,16 +312,54 @@ def request_adjustment(s: Session, who: Identity, case: Case, rules: LegacyRules
     return row
 
 
+def close_codes_for(outcome: Outcome) -> list[str]:
+    """The codes the console offers. `close_case` enforces the same rule on the server."""
+    return list(EVIDENCE_FREE_CODES) if outcome is Outcome.INCOMPLETE else list(CLOSE_CODES)
+
+
+def missing_record(evidence: Evidence) -> str | None:
+    """Which screen's record is still missing: the member first, because the stay search needs one."""
+    if evidence.member is None:
+        return "member"
+    return "stay" if evidence.stay is None else None
+
+
+def latest_search_found_nothing(s: Session, case: Case, screen: str) -> bool:
+    """True when the most recent logged search on this screen returned no records. An outage or a rejected search
+    input logs no search, so neither can stand in for "not found"."""
+    action = f"search_{screen}"
+    searches = [e for e in events(s, case) if e.action == action]
+    return bool(searches) and searches[-1].detail["results"] == 0
+
+
+def _check_close_allowed(s: Session, case: Case, code: str, note: str, outcome: Outcome) -> None:
+    if code == DENY_OTHER:
+        if len(note.strip()) < MIN_DENY_OTHER_NOTE:
+            raise WorkflowError(
+                f"{DENY_OTHER} is a logged override: explain it in a note of at least {MIN_DENY_OTHER_NOTE} characters"
+            )
+    elif code == DENY_NOT_FOUND:
+        missing = missing_record(current_evidence(s, case))
+        if missing is None:
+            raise WorkflowError("the member and the stay are both attached, so neither was 'not found'")
+        if not latest_search_found_nothing(s, case, missing):
+            raise WorkflowError(f"search the {missing} screen first: '{code}' needs a search that found nothing")
+    elif outcome is Outcome.INCOMPLETE:
+        raise WorkflowError(f"the evidence is incomplete: attach what the checklist needs before closing as '{code}'")
+    elif outcome not in CLOSE_CODES[code] and not note.strip():
+        raise WorkflowError(f"the checklist says '{outcome.value}': explain the override in a note")
+
+
 def close_case(s: Session, who: Identity, case: Case, code: str, note: str, rules: LegacyRules) -> None:
-    """Resolve without an adjustment. A code the checklist doesn't support is an override and needs a note."""
+    """Resolve without an adjustment, under the rules in `_check_close_allowed` (ADR-0054). A code the checklist
+    doesn't support is an override and is logged as one."""
     require_case_worker(who)
     _require(case, CaseState.INVESTIGATING)
     if code not in CLOSE_CODES:
         raise WorkflowError(f"unknown resolution '{code}'")
     outcome = checklist_for(s, case, rules).outcome
+    _check_close_allowed(s, case, code, note, outcome)
     override = outcome not in CLOSE_CODES[code]
-    if override and not note.strip():
-        raise WorkflowError(f"the checklist says '{outcome.value}': explain the override in a note")
     if note.strip():
         s.add(CaseNote(case_id=case.id, author=who.username, body=note.strip(), created_at_utc=utc_now()))
     move(case, CaseState.RESOLVED)
