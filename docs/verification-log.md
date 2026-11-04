@@ -3,6 +3,25 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## First push and the close fix (2026-11-04)
+
+All work by Claude Code (Opus 5.5) on the owner's instructions. The owner unticked GitHub's email block for the first
+push; commits up to `ca58fdc` keep the Gmail address, so every cited hash stays valid.
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | First CI run, on a throwaway branch | `git push -u origin ci/first-run`; Actions run 41871746872 | Push accepted. **Green first time, on Linux:** lint, types, tests (318 passed, 10 skipped, coverage 95%, including the browser tests), real-Postgres mock API tests (6 passed), gitleaks (no leaks), pip-audit (no known vulnerabilities) |
+| 2 | `main` on GitHub | `git push -u origin main:main`; `gh repo edit --default-branch main`; Actions run 41873750792 | `main` = `ca58fdc`, all 3 jobs green. Default branch `main`, visibility `PRIVATE`. `ci/first-run` deleted locally and on GitHub. This repo's `user.email` set to the noreply address |
+| 3 | Close rules, per rule | `uv run pytest tests/test_case_workflow.py tests/test_console_web.py tests/test_scripted_agent.py` | All passed. New tests: every rule-based code refused with a long note and no evidence; refused with part of the evidence; a close that agrees with complete evidence needs no note; a rule-based code against complete evidence stays an override; `deny_not_found` with no search, after an empty search, when a later search found the record, on the missing record's screen, and with both records attached; `deny_other` under and at 20 characters; a forged POST with a valid CSRF token gets 409; a rejected search input doesn't count as a search |
+| 4 | Scripted agent over the dev split, mechanics only | a temporary test printing how each run ended, deleted afterwards | 102 runs, **0 took the new "ask for the member number" path**, 16 `deny_not_found` (4 member, 12 stay), each after a logged empty search. No labels read for this count, nothing scored, held-out split not touched |
+| 5 | Catalog and hypotheses unchanged | `git diff --stat -- docs/legacy-defect-catalog.md docs/hypotheses.md` | No difference, so no change-log entry (F9) |
+| 6 | Full offline suite on the fix | `uv run pytest --cov` (PowerShell) | **337 passed, 13 skipped**, coverage 95% (94.69%), including the 2 browser tests; ruff and mypy clean. The skips are the real-Postgres and role tests plus the 4 `sh` tests, which need Git Bash |
+| 7 | Not run for this fix | `scripts\compose_check.ps1` | Skipped: nothing in the stack changed. **So the new close rules have run on SQLite only.** The rules read `case_events.detail` as JSON through SQLAlchemy, with no Postgres-specific query |
+
+**Case A-000010 stays as the audit record of the wrong denial** (ADR-0054). The fix applies to new closes only and no row
+was changed. It lives in the owner's local database, so it isn't evidence anyone else can read; row 7 of the next section
+records what it held.
+
 ## After Milestone 5: upgrade path, A-000010, private repository (2026-11-03)
 
 **Reported by the owner:** on a volume from Milestone 4, `stack.ps1 -Action up` failed with `loyalty-app-1` unhealthy (logs
