@@ -538,6 +538,32 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **What would change this decision:** making the repository public, which turns on free secret scanning and push
   protection (steps in `docs/session-handoff.md`).
 
+## ADR-0054: a close needs the evidence its code claims (TD-17)
+- **Context:** the owner closed case A-000010 as `deny_claim_window` with no evidence attached, and the tool accepted it
+  because the override path took any note. The stay was inside the 12-month window, so the denial was wrong. No
+  catalog defect covers this, and spec B.8 rules out making arm A incompetent on purpose: it was a gap in the
+  Milestone 5 build.
+- **Options considered:** log the close and rely on review (the harm has already happened by then); remove overrides
+  (real agents have reasons the rules don't cover, and spec E.2 counts overrides); check each code against what it
+  claims.
+- **Decision (approved by the owner, 2026-11-04):** in `cases.close_case`, on the server:
+  - While the checklist says `incomplete_evidence`, every rule-based code is refused, whatever the note says:
+    `no_adjustment_credited`, `wait_until`, `not_checked_out`, `deny_channel_ineligible`, `deny_claim_window`.
+  - `deny_not_found` needs a logged search that found nothing. It looks at the first record still missing (member,
+    then stay), and the **latest** search on that screen must have returned 0. A rejected input or an outage logs no
+    search, so neither counts. With member and stay both attached, it is refused.
+  - `deny_other` stays open, is always logged as an override, and needs a note of at least 20 characters after
+    trimming.
+  - The console offers only `deny_not_found` and `deny_other` while evidence is incomplete.
+  - The scripted agent asks the member when it has nothing to search with, or several candidates, instead of denying.
+- **Trade-off:** a length check can't judge a note, so `deny_other` can still close a case wrongly; those closes stay
+  countable as overrides for review. A rule-based code against **complete** evidence is still an override with any
+  non-empty note, because the owner's rule covers incomplete evidence only.
+- **Result:** no catalog or hypothesis change, so no change-log entry. On the dev split, 0 of 102 scripted runs changed
+  path. Existing rows are not rewritten: A-000010 stays closed as the audit record of the wrong denial.
+- **What would change this decision:** override review (Milestone 7 metrics or UAT) showing `deny_other` is being used to
+  get around the evidence rule, which would call for supervisor review of those closes.
+
 ## ADR-0051: how the "A as-is" variant will run (built in Milestone 10)
 - **Context:** ADR-0018 pre-registered the variant; Milestone 5 builds the write path it replaces.
 - **Options considered:** a configuration flag in the app; a separate implementation in the benchmark tooling.

@@ -225,6 +225,9 @@ benchmark would then measure).
   the volume is created. `scripts\stack.ps1 -Action logs` shows everything.
 - **A case was closed by mistake:** there is no reopen until Milestone 6. Open a new case with the same details from
   "New case"; the closed one stays as the audit record.
+- **"The evidence is incomplete" or "search the member screen first" when closing:** expected (ADR-0054). Attach the
+  evidence, or run the search that finds nothing before `deny_not_found`. `deny_other` needs a note of at least 20
+  characters and is counted as an override.
 - **The queue is empty:** run `scripts\stack.ps1 -Action demo-cases`.
 - **"Request refused: the form expired":** the page's CSRF token belongs to an older session (you signed in again
   in another tab). Reload the page.

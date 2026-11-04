@@ -77,13 +77,22 @@ already-credited late claims look missing, a defect outside the catalog. So "Sho
 checklist refuses a ledger view that doesn't cover the checkout date (ADR-0050). The window costs steps, never
 accuracy.
 
-**Open gap, not a legacy defect (found by the owner on 2026-11-03, TD-17).** `cases.close_case` lets an agent close with
-a rule-based code (for example `deny_claim_window`) while the checklist says `incomplete_evidence`, as long as a note
-is present. No catalog defect covers this and spec B.8 rules out making the tool incompetent on purpose, so it is a
-gap in the Milestone 5 build, not intended behaviour. Case A-000010 shows the harm: denied on the claim window with no
-evidence attached, when its stay (checkout 2025-05-20, claim 2026-01-06) was inside the window. The scripted agent
-never takes this path, so no pre-registered prediction depends on it. Proposed fix, awaiting the owner:
-`docs/backlog.md`.
+**Fixed gap, not a legacy defect (found by the owner on 2026-11-03, TD-17, ADR-0054).** `cases.close_case` used to let an
+agent close with a rule-based code (for example `deny_claim_window`) while the checklist said `incomplete_evidence`, as
+long as a note was present. No catalog defect covers this and spec B.8 rules out making the tool incompetent on
+purpose, so it was a gap in the Milestone 5 build, not intended behaviour. The rule since 2026-11-04:
+- Rule-based codes are refused while evidence is incomplete, whatever the note says.
+- `deny_not_found` needs a logged search that found nothing: the latest search on the screen of the first missing record
+  (member, then stay).
+- `deny_other` stays as a logged override, with a note of at least 20 characters.
+
+The catalog and hypotheses did not change, so there is no change-log entry. The scripted agent never used the old
+path; 0 of its 102 dev runs changed.
+
+**Case A-000010 stays as the audit record of the wrong denial.** It was denied on the claim window with no evidence
+attached, when its stay (checkout 2025-05-20, claim 2026-01-06) was inside the window. The fix applies to new closes
+only and rewrites no rows, so the case keeps its `case_closed` event (`checklist_outcome: incomplete_evidence`,
+`override: true`). This is the owner's local database, not a committed record.
 
 ## 2b. The scripted legacy agent and the A-as-is variant
 - **Scripted agent** (`benchmarks/agents/legacy_scripted.py`, ADR-0048): works arm A through the same services and
