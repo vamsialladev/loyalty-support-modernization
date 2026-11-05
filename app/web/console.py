@@ -59,6 +59,8 @@ DONE_MESSAGES = {
     "escalated": "Case escalated.",
     "reopened": "Case reopened.",
     "approved": "Adjustment approved. It can now be executed.",
+    "invalidated": "The evidence or policy changed, or the approval expired, so it can't stand. The case is back under "
+    "investigation: check the evidence and request again.",
     "rejected": "Adjustment rejected.",
     "applied": "Adjustment applied in the loyalty platform.",
     "unknown": "The outcome is still unknown; check the status again shortly.",
@@ -121,7 +123,7 @@ def install_console(
     app.state.sessions, app.state.identity = factory, identity
     rules = LegacyRules.load(settings.customer_id)
     index = KeywordIndex.load()
-    write_path = SharedWritePath(settings.customer_id)
+    write_path = SharedWritePath(settings.customer_id, secret_key=settings.secret_key or None)
     customer = CustomerConfig.load(settings.customer_id)
 
     # ---------- plumbing ----------
@@ -633,21 +635,24 @@ def install_console(
         case = request_case(s, active, request_id)
         if decision not in ("approve", "reject"):
             raise svc.WorkflowError("choose approve or reject")
-        write_path.decide(s, active.identity, request_id, approve=decision == "approve", reason=reason)
-        return back_to(case, "approved" if decision == "approve" else "rejected")
+        systems = systems_for(svc.read_time(case))
+        result = write_path.decide(
+            s, active.identity, request_id, systems, approve=decision == "approve", reason=reason
+        )
+        return back_to(case, result.status)
 
     @app.post("/adjustments/{request_id}/execute", response_model=None)
     def execute(s: DB, active: User, request_id: int, csrf: Csrf = "") -> Response:
         check_csrf(active, csrf)
         case = request_case(s, active, request_id)
-        result = write_path.execute(s, active.identity, request_id, systems_for(case.received_at_utc))
+        result = write_path.execute(s, active.identity, request_id, systems_for(svc.read_time(case)))
         return back_to(case, result.status)
 
     @app.post("/adjustments/{request_id}/check-status", response_model=None)
     def check_status(s: DB, active: User, request_id: int, csrf: Csrf = "") -> Response:
         check_csrf(active, csrf)
         case = request_case(s, active, request_id)
-        result = write_path.check_status(s, active.identity, request_id, systems_for(case.received_at_utc))
+        result = write_path.check_status(s, active.identity, request_id, systems_for(svc.read_time(case)))
         return back_to(case, result.status)
 
     # ---------- configuration: policy versions (administrators) and exact excerpts ----------

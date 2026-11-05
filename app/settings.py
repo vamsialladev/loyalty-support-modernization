@@ -21,6 +21,7 @@ class AppSettings:
     profile: str = "portfolio"
     sim_clock: bool = False
     public_demo_mode: bool = False
+    secret_key: str = ""
 
     @property
     def cookie_secure(self) -> bool:
@@ -37,4 +38,5 @@ class AppSettings:
             profile=os.environ.get("APP_PROFILE", "portfolio"),
             sim_clock=_flag("MOCK_API_SIM_CLOCK"),
             public_demo_mode=_flag("PUBLIC_DEMO_MODE"),
+            secret_key=os.environ.get("APP_SECRET_KEY", ""),
         )

@@ -249,7 +249,7 @@ class ScriptedLegacyAgent:
         request = svc.request_adjustment(s, agent, case, self.rules)
         approve, reason = simulated_review(request.checklist)
         path.append("supervisor:" + ("approved" if approve else "rejected"))
-        self.write_path.decide(s, self.supervisor, request.id, approve=approve, reason=reason)
+        self.write_path.decide(s, self.supervisor, request.id, systems, approve=approve, reason=reason)
         if not approve:
             return
         result = self.write_path.execute(s, self.supervisor, request.id, systems)

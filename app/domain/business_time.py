@@ -3,12 +3,20 @@
 from __future__ import annotations
 
 from calendar import monthrange
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 
 def parse_utc(timestamp: str) -> datetime:
     return datetime.fromisoformat(timestamp.replace("Z", "+00:00")).astimezone(UTC)
+
+
+def format_utc(moment: datetime) -> str:
+    return moment.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def add_hours(timestamp: str, hours: int) -> str:
+    return format_utc(parse_utc(timestamp) + timedelta(hours=hours))
 
 
 def business_date(timestamp: str, timezone: str) -> date:

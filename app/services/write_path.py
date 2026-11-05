@@ -11,9 +11,11 @@ behind the `WritePath` interface Milestone 6 completes (ADR-0044):
   quietly fix arm A's pre-registered defects D06 and D07.
 - **Uncertain outcome -> `Execution unknown` -> status lookup by key before anything else**; never a blind retry.
 
-Not yet (Milestone 6): the approval-binding hash and its invalidation, row locks or versioned updates against
-concurrent executes, the durable worker, the kill switch, the reconciliation job and the append-only audit role.
-Until then execution runs synchronously in the request, and an approval is not bound to an evidence snapshot.
+- **Approval binding (ADR-0059):** an approval is an HMAC over the exact action, with an expiry. Approving re-reads the
+  evidence first; executing recomputes the binding and re-reads again. Any change ends the approval.
+
+Not yet (later steps of Milestone 6): row locks against concurrent executes, the durable worker, the kill switch and the
+reconciliation job. Until then execution runs synchronously in the request.
 
 The "A as-is" benchmark variant (Milestone 10, ADR-0051) implements `WritePath` without these safeguards and is
 never reachable from the console, the API or any deployment profile.
@@ -21,20 +23,28 @@ never reachable from the console, the API or any deployment profile.
 
 from __future__ import annotations
 
+import os
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date
 from typing import Protocol
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.clock import utc_now
+from app.domain.approval_binding import BoundAction, binding_holds, binding_mac
+from app.domain.business_time import add_hours, parse_utc
 from app.domain.case_states import CaseState
 from app.domain.customer_records import AdjustmentRequest
 from app.domain.roles import Identity, NotPermitted, approval_refusal
 from app.persistence.models import AdjustmentRequestRow, Approval, Case, ExecutionAttempt
 from app.ports.customer_systems import CustomerSystemError, CustomerSystems, UncertainOutcome
+from app.services import approvals, policies
+from app.services.arm_review import FreshReview, review_for
 from app.services.cases import WorkflowError, move
+from app.services.customer_config import customer_config
 from app.services.instrumentation import record
 
 IN_FLIGHT_OR_DONE = ("executing", "executed", "execution_unknown")
@@ -42,13 +52,21 @@ IN_FLIGHT_OR_DONE = ("executing", "executed", "execution_unknown")
 
 @dataclass(frozen=True)
 class ExecutionResult:
-    status: str  # applied | unknown | not_applied | refused_duplicate | rejected_upstream
+    status: str  # applied | unknown | not_applied | refused_duplicate | rejected_upstream | invalidated
     message: str
     upstream_adjustment_id: str | None = None
 
 
+@dataclass(frozen=True)
+class DecisionResult:
+    status: str  # approved | rejected | invalidated
+    message: str
+
+
 class WritePath(Protocol):
-    def decide(self, s: Session, who: Identity, request_id: int, *, approve: bool, reason: str) -> None: ...
+    def decide(
+        self, s: Session, who: Identity, request_id: int, systems: CustomerSystems, *, approve: bool, reason: str
+    ) -> DecisionResult: ...
 
     def execute(self, s: Session, who: Identity, request_id: int, systems: CustomerSystems) -> ExecutionResult: ...
 
@@ -72,6 +90,12 @@ def load_request(s: Session, request_id: int) -> tuple[AdjustmentRequestRow, Cas
 
 def approval_of(s: Session, row: AdjustmentRequestRow) -> Approval | None:
     return s.scalars(select(Approval).where(Approval.adjustment_request_id == row.id)).first()
+
+
+def _lock(s: Session, case: Case, row: AdjustmentRequestRow) -> None:
+    """Lock the case and read it and its request again. Every change to a case in flight happens under this lock."""
+    s.refresh(case, with_for_update=True)
+    s.refresh(row)
 
 
 def _permit(who: Identity, row: AdjustmentRequestRow) -> None:
@@ -98,30 +122,119 @@ def attempts_of(s: Session, row: AdjustmentRequestRow) -> list[ExecutionAttempt]
     return list(s.scalars(query.order_by(ExecutionAttempt.id)))
 
 
+INVALIDATED_MESSAGE = "This approval can't stand ({reason}). The case is back under investigation."
+
+
 class SharedWritePath:
-    def __init__(self, customer_id: str = "hg-demo") -> None:
+    def __init__(
+        self,
+        customer_id: str = "hg-demo",
+        *,
+        secret_key: str | None = None,
+        clock: Callable[[], str] = utc_now,
+    ) -> None:
         self.customer_id = customer_id
+        self._secret_key = secret_key
+        self._clock = clock
+
+    @property
+    def _secret(self) -> str:
+        secret = self._secret_key or os.environ.get("APP_SECRET_KEY", "")
+        if not secret:
+            raise WorkflowError("APP_SECRET_KEY is not set, so approvals can't be bound")
+        return secret
+
+    # ---------- the binding ----------
+
+    def _bound_action(self, row: AdjustmentRequestRow, approval: Approval) -> BoundAction:
+        return BoundAction(
+            self.customer_id,
+            row.id,
+            approval.uid,
+            row.member_number,
+            row.stay_id,
+            row.points,
+            row.reason_code,
+            tuple(row.policy_refs or ()),
+            row.evidence_hash or "",
+            approval.decided_by,
+            approval.expires_at_utc or "",
+        )
+
+    def _fresh_review(self, s: Session, case: Case, row: AdjustmentRequestRow, systems: CustomerSystems) -> FreshReview:
+        return review_for(case).review(s, case, row.stay_id, systems, case.sim_now_utc or self._clock())
+
+    def _why_stale(self, s: Session, row: AdjustmentRequestRow, review: FreshReview) -> tuple[str, dict[str, object]]:
+        """Why this request no longer matches the world, or ("", {}) if it still does."""
+        if row.evidence_hash is None or row.policy_refs is None or row.checkout_day is None:
+            return "not_bound", {}
+        if not review.still_adjust:
+            return "outcome_changed", {"outcome": review.outcome}
+        if review.points != row.points:
+            return "amount_changed", {"bound": row.points, "now": review.points}
+        if review.evidence_hash != row.evidence_hash:
+            return "evidence_changed", {}
+        in_force = policies.claim_policy_refs(s, self.customer_id, date.fromisoformat(row.checkout_day))
+        if in_force != row.policy_refs:
+            return "policy_changed", {"bound": row.policy_refs, "in_force": in_force}
+        return "", {}
+
+    def _why_unusable(self, row: AdjustmentRequestRow, approval: Approval) -> str:
+        """Checks that need no customer system: the stored approval itself."""
+        if not binding_holds(self._bound_action(row, approval), self._secret, approval.binding_mac):
+            return "binding_mismatch"
+        if parse_utc(self._clock()) >= parse_utc(approval.expires_at_utc or self._clock()):
+            return "expired"
+        return ""
 
     # ---------- decision ----------
 
-    def decide(self, s: Session, who: Identity, request_id: int, *, approve: bool, reason: str) -> None:
+    def decide(
+        self, s: Session, who: Identity, request_id: int, systems: CustomerSystems, *, approve: bool, reason: str
+    ) -> DecisionResult:
         row, case = load_request(s, request_id)
         _permit(who, row)
         if row.status != "pending" or CaseState(case.status) is not CaseState.PENDING_APPROVAL:
             raise WorkflowError("this adjustment has already been decided")
-        if not approve and not reason.strip():
-            raise WorkflowError("give the reason for rejecting")
-        decision = "approved" if approve else "rejected"
-        s.add(
-            Approval(
-                adjustment_request_id=row.id,
-                uid=uuid.uuid4().hex,
-                decided_by=who.username,
-                decision=decision,
-                reason=reason.strip() or None,
-                decided_at_utc=utc_now(),
-            )
+        if not approve:
+            if not reason.strip():
+                raise WorkflowError("give the reason for rejecting")
+            self._store_decision(s, who, row, case, "rejected", reason)
+            return DecisionResult("rejected", "Adjustment rejected.")
+        try:
+            review = self._fresh_review(s, case, row, systems)
+        except CustomerSystemError as exc:
+            record(s, case, who, "system_error", operation="approval_recheck", code=exc.code or type(exc).__name__)
+            s.commit()
+            raise WorkflowError("the evidence could not be read again, so nothing was approved; try again") from exc
+        _lock(s, case, row)  # after the reads, so no lock is held across a call to a customer system
+        if row.status != "pending" or CaseState(case.status) is not CaseState.PENDING_APPROVAL:
+            raise WorkflowError("this adjustment has already been decided or was invalidated")
+        stale, detail = self._why_stale(s, row, review)
+        if stale:
+            approvals.invalidate(s, who, row, case, stale, **detail)
+            s.commit()
+            return DecisionResult("invalidated", INVALIDATED_MESSAGE.format(reason=stale))
+        self._store_decision(s, who, row, case, "approved", reason)
+        return DecisionResult("approved", "Adjustment approved.")
+
+    def _store_decision(
+        self, s: Session, who: Identity, row: AdjustmentRequestRow, case: Case, decision: str, reason: str
+    ) -> None:
+        approve = decision == "approved"
+        now = self._clock()
+        approval = Approval(
+            adjustment_request_id=row.id,
+            uid=uuid.uuid4().hex,
+            decided_by=who.username,
+            decision=decision,
+            reason=reason.strip() or None,
+            decided_at_utc=now,
         )
+        if approve:
+            approval.expires_at_utc = add_hours(now, customer_config(self.customer_id).approval_ttl_hours)
+            approval.binding_mac = binding_mac(self._bound_action(row, approval), self._secret)
+        s.add(approval)
         row.status = decision
         move(case, CaseState.APPROVED if approve else CaseState.REJECTED)
         if not approve:
@@ -161,6 +274,11 @@ class SharedWritePath:
             or approval.decision != "approved"
         ):
             raise WorkflowError("only an approved adjustment can be executed")
+        unusable = self._why_unusable(row, approval)
+        if unusable:
+            approvals.invalidate(s, who, row, case, unusable)
+            s.commit()
+            return ExecutionResult("invalidated", INVALIDATED_MESSAGE.format(reason=unusable))
         key = idempotency_key(self.customer_id, approval)
         attempt = ExecutionAttempt(
             adjustment_request_id=row.id, idempotency_key=key, started_by=who.username, started_at_utc=utc_now()
@@ -180,6 +298,18 @@ class SharedWritePath:
             record(s, case, who, "execution_refused_duplicate")
             s.commit()
             return ExecutionResult("refused_duplicate", f"Not executed: {duplicate}. The case was escalated.")
+
+        try:
+            review = self._fresh_review(s, case, row, systems)
+        except CustomerSystemError as exc:
+            record(s, case, who, "system_error", operation="execution_recheck", code=exc.code or type(exc).__name__)
+            s.commit()
+            raise WorkflowError("the evidence could not be read again, so nothing was executed; try again") from exc
+        stale, detail = self._why_stale(s, row, review)
+        if stale:
+            approvals.invalidate(s, who, row, case, stale, **detail)
+            s.commit()
+            return ExecutionResult("invalidated", INVALIDATED_MESSAGE.format(reason=stale))
 
         attempt.outcome = "submitted"
         s.add(attempt)

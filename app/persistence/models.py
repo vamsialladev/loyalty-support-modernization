@@ -54,6 +54,9 @@ class Case(Base):
     source_ref: Mapped[str | None] = mapped_column(String(64), default=None)
     resolution_code: Mapped[str | None] = mapped_column(String(48), default=None)
     resolution_note: Mapped[str | None] = mapped_column(Text, default=None)
+    # The business time to read at, when a test or the benchmark moved it past `received_at_utc` (RFC-0001, fault 5).
+    # Nothing in the console or the API can set it.
+    sim_now_utc: Mapped[str | None] = mapped_column(String(20), default=None)
     version: Mapped[int] = mapped_column(Integer, default=1)
     created_at_utc: Mapped[str] = mapped_column(String(20))
     updated_at_utc: Mapped[str] = mapped_column(String(20))
@@ -115,8 +118,14 @@ class AdjustmentRequestRow(Base):
     checklist: Mapped[dict[str, Any]] = mapped_column(JSON)
     requested_by: Mapped[str] = mapped_column(String(64))
     requested_at_utc: Mapped[str] = mapped_column(String(20))
-    # pending | approved | rejected | executing | executed | execution_unknown | refused_duplicate
+    # pending | approved | rejected | invalidated | executing | executed | execution_unknown | refused_duplicate
     status: Mapped[str] = mapped_column(String(32))
+    # What the proposal rests on (ADR-0059). Empty on rows from before Milestone 6, which must be requested again.
+    evidence_hash: Mapped[str | None] = mapped_column(String(64), default=None)
+    policy_refs: Mapped[list[str] | None] = mapped_column(JSON, default=None)
+    checkout_day: Mapped[str | None] = mapped_column(String(10), default=None)
+    invalidated_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
+    invalidated_reason: Mapped[str | None] = mapped_column(String(48), default=None)
 
 
 class Approval(Base):
@@ -130,6 +139,8 @@ class Approval(Base):
     decision: Mapped[str] = mapped_column(String(16))  # approved | rejected
     reason: Mapped[str | None] = mapped_column(Text, default=None)
     decided_at_utc: Mapped[str] = mapped_column(String(20))
+    expires_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
+    binding_mac: Mapped[str | None] = mapped_column(String(64), default=None)
 
     __table_args__ = (UniqueConstraint("adjustment_request_id", name="uq_approvals_one_decision"),)
 

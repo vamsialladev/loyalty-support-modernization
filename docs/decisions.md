@@ -674,3 +674,28 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   The close rules from ADR-0054 now also run on real Postgres.
 - **What would change this decision:** a real customer needing evidence beyond this role, which would mean anchoring a hash
   chain outside the database, or a separate audit store.
+
+## ADR-0059: an approval is an HMAC over the exact action, and any change ends it
+- **Context:** an approval was a status flag (D11, TD-12). Spec B.10 binds it to member, stay, amount, policy version,
+  evidence snapshot, approver and expiry. The re-check must not quietly fix arm A's defects (ADR-0044). The owner chose a
+  keyed hash (D3), a 24-hour expiry (D5), and detecting changed evidence at approve and execute (D9).
+- **Options considered:** per choice in RFC-0001. For the evidence hash: every field the app holds (an unrelated stay's
+  posting would end an approval); only the facts about this stay that the arm actually read (chosen).
+- **Decision:** a request stores its evidence hash, the policy versions in force on the checkout date, and that date.
+  Approving re-reads the evidence through the arm's own evaluator, then locks the case and compares under the lock; a
+  change ends the request instead of approving it. The approval stores its expiry and an HMAC over 11 fields, with a key
+  derived from `APP_SECRET_KEY`. Executing checks the HMAC and expiry first, then re-reads and compares again. Publishing
+  ends affected requests in its own transaction. Ended requests stay as they are; the case goes to `Investigating`, and a
+  new request gets a new approval and a new key. Each case's simulated read time, `sim_now_utc`, can only be moved by tests
+  and the benchmark, which lets a re-check see a posting that landed after the claim.
+- **Trade-off:** a re-check costs about 3 more reads at approve and at execute. Rotating `APP_SECRET_KEY` ends every open
+  approval, which fails safe. The HMAC stops someone who can write to the database but lacks the secret; it doesn't stop
+  someone who has both.
+- **Result:** every bound field changes the binding; editing any of them in the database ends the approval with nothing
+  submitted; pre-Milestone-6 approvals must be approved again; the expiry boundary holds; a planted late posting (D11)
+  stops execution on the real mock API; an unrelated stay's posting doesn't. On real Postgres: publishing ends affected
+  approvals atomically, a publish that fails part way changes nothing, and publish racing approve ends consistent. While
+  writing that race test I found `decide` wrote without a lock after its reads, so a publish could be overwritten; it now
+  locks and re-checks first.
+- **What would change this decision:** a real platform pushing change events, which would allow ending approvals at once
+  instead of at the next approve or execute (D9).
