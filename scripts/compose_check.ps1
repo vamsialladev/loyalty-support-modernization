@@ -45,9 +45,10 @@ foreach ($image in @("$project-mock-api", "$project-app")) {
 Step "real-Postgres integration tests (incl. stored role passwords, blank password refused)" {
     $env:TEST_MOCK_API_DATABASE_URL = "postgresql+psycopg://mock_api:$($values['MOCK_API_DB_PASSWORD'])@127.0.0.1:$dbPort/mock_customer_api_test"
     $env:TEST_APP_DATABASE_URL = "postgresql+psycopg://loyalty_app:$($values['APP_DB_PASSWORD'])@127.0.0.1:$dbPort/loyalty_test"
+    $env:TEST_APP_OWNER_DATABASE_URL = "postgresql+psycopg://loyalty_owner:$($values['APP_OWNER_DB_PASSWORD'])@127.0.0.1:$dbPort/loyalty_test"
     $env:TEST_DB_ROLES_CONTAINER = "$project-db-1"
     uv run pytest -m postgres -p no:cacheprovider -rs
-    Remove-Item Env:TEST_MOCK_API_DATABASE_URL, Env:TEST_APP_DATABASE_URL, Env:TEST_DB_ROLES_CONTAINER
+    Remove-Item Env:TEST_MOCK_API_DATABASE_URL, Env:TEST_APP_DATABASE_URL, Env:TEST_APP_OWNER_DATABASE_URL, Env:TEST_DB_ROLES_CONTAINER
 }
 if ($Browser) {
     Step "Playwright: legacy arm A end to end in the browser, against the stack (real Postgres)" {
@@ -72,7 +73,7 @@ function Sql([string]$query) {
     (& docker @compose exec -T db psql -U $values['POSTGRES_USER'] -d loyalty -tAc $query | Out-String).Trim()
 }
 Step "upgrade path: back to the Milestone 4 schema (revision 0001), mock data kept" {
-    & docker @compose exec -T app alembic downgrade 0001
+    & docker @compose run --rm migrate alembic downgrade 0001
     $code = $LASTEXITCODE
     & docker @compose rm -sf app
     $global:LASTEXITCODE = $code
@@ -85,7 +86,7 @@ Step "upgrade path: stack.ps1 -Action up migrates and reports ready" {
     $global:LASTEXITCODE = if ($code -eq 0 -and $version -eq $head) { 0 } else { 1 }
 }
 Step "upgrade path: a running app on an old schema is seen and migrated by stack.ps1 -Action up" {
-    & docker @compose exec -T app alembic downgrade 0001
+    & docker @compose run --rm migrate alembic downgrade 0001
     powershell @stack -Action up
     $code = $LASTEXITCODE
     $version = Sql "select version_num from alembic_version"
@@ -101,6 +102,23 @@ foreach ($round in 1, 2) {
         Write-Host "demo accounts in the database: $users"
         $global:LASTEXITCODE = if ($code -eq 0 -and $out -match "mock data already loaded, skipped" -and $users -eq "6") { 0 } else { 1 }
     }
+}
+# A volume from before Milestone 6: one app role that owns everything, and no owner role (ADR-0058).
+Step "upgrade path: a volume with one app role is split by stack.ps1 -Action up, and the audit rights hold" {
+    foreach ($query in @(
+        "DROP DATABASE loyalty_test",
+        "REASSIGN OWNED BY loyalty_owner TO loyalty_app",
+        "DROP OWNED BY loyalty_owner",
+        "DROP ROLE loyalty_owner"
+    )) { Sql $query | Out-Null }
+    Write-Host "owner before: $(Sql "select tableowner from pg_tables where tablename = 'cases'")"
+    powershell @stack -Action up
+    $code = $LASTEXITCODE
+    $owner = Sql "select tableowner from pg_tables where tablename = 'cases'"
+    $canUpdate = Sql "select has_table_privilege('loyalty_app', 'case_events', 'UPDATE')"
+    $canInsert = Sql "select has_table_privilege('loyalty_app', 'case_events', 'INSERT')"
+    Write-Host "owner after: $owner; loyalty_app can update case_events: $canUpdate; can insert: $canInsert"
+    $global:LASTEXITCODE = if ($code -eq 0 -and $owner -eq "loyalty_owner" -and $canUpdate -eq "f" -and $canInsert -eq "t") { 0 } else { 1 }
 }
 Step "upgrade path: a stopped app is named as the cause, not only 'unhealthy'" {
     & docker @compose stop app

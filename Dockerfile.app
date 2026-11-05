@@ -1,4 +1,4 @@
-# App image: the arm A console, health, readiness, migrations and the quickstart seed command.
+# App image: the console, health, readiness, the migrate service's command and the quickstart seed command.
 # No labels, generator or data inside (ADR-0040). Non-root user.
 FROM ghcr.io/astral-sh/uv:0.13.5 AS uv
 
@@ -23,4 +23,4 @@ COPY app ./app
 RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin svc
 USER 10001
 EXPOSE 8010
-CMD ["sh", "-c", "alembic upgrade head && exec uvicorn --factory app.main:create_app --host 0.0.0.0 --port 8010"]
+CMD ["uvicorn", "--factory", "app.main:create_app", "--host", "0.0.0.0", "--port", "8010"]

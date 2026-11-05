@@ -19,9 +19,9 @@ from app.arms.legacy.checklist import Checklist, Evidence, LedgerView, Outcome, 
 from app.arms.legacy.keyword_index import KeywordIndex
 from app.arms.legacy.rules import LegacyRules
 from app.clock import utc_now
-from app.domain.case_states import CaseState, check_transition
+from app.domain.case_states import TERMINAL, CaseState, check_transition
 from app.domain.customer_records import LedgerEntry, Member, StayRecord
-from app.domain.roles import Identity, require_case_reader, require_case_worker
+from app.domain.roles import Identity, NotPermitted, Role, require_case_reader, require_case_worker
 from app.persistence.models import AdjustmentRequestRow, Case, CaseEvidence, CaseNote, CaseRequest
 from app.ports.customer_systems import CustomerSystemError, CustomerSystems
 from app.services.instrumentation import events, record
@@ -35,6 +35,8 @@ REASON_MISSING_POINTS = "missing_points"
 DENY_NOT_FOUND = "deny_not_found"
 DENY_OTHER = "deny_other"
 MIN_DENY_OTHER_NOTE = 20
+MIN_REOPEN_REASON = 20
+CREDIT_STATUSES = ("executed", "execution_conflict")  # a credit was applied, or something was under this approval's key
 CLOSE_CODES: dict[str, set[Outcome]] = {
     "no_adjustment_credited": {Outcome.ALREADY_CREDITED},
     "wait_until": {Outcome.WAIT},
@@ -413,4 +415,35 @@ def escalate(s: Session, who: Identity, case: Case, reason: str) -> None:
     move(case, CaseState.ESCALATED)
     case.resolution_code, case.resolution_note = "escalated", reason.strip()
     record(s, case, who, "case_escalated")
+    s.commit()
+
+
+def reopen(s: Session, who: Identity, case: Case, reason: str) -> None:
+    """Send a resolved, escalated or rejected case back to `Investigating` (spec B.10; ADR-0055, D6). The earlier events
+    stay as they are; the new event keeps what the case said before. Reopening grants nothing: any credit still needs a
+    new request, a different supervisor and the duplicate checks."""
+    require_case_worker(who)
+    current = CaseState(case.status)
+    if current not in TERMINAL:
+        raise WorkflowError(f"only a resolved, escalated or rejected case can be reopened; this one is '{current}'")
+    if len(reason.strip()) < MIN_REOPEN_REASON:
+        raise WorkflowError(f"give the reason for reopening, in at least {MIN_REOPEN_REASON} characters")
+    credited = any(row.status in CREDIT_STATUSES for row in adjustment_requests_of(s, case))
+    if credited and who.role is not Role.SUPERVISOR:
+        raise NotPermitted("a credit was applied on this case, so only a supervisor can reopen it")
+    previous_resolution, previous_note = case.resolution_code, case.resolution_note
+    s.add(CaseNote(case_id=case.id, author=who.username, body=f"Reopened: {reason.strip()}", created_at_utc=utc_now()))
+    move(case, CaseState.INVESTIGATING)
+    case.assigned_to = who.username
+    case.resolution_code, case.resolution_note = None, None
+    record(
+        s,
+        case,
+        who,
+        "case_reopened",
+        previous_status=current.value,
+        previous_resolution=previous_resolution,
+        previous_note=previous_note,
+        reason=reason.strip(),
+    )
     s.commit()

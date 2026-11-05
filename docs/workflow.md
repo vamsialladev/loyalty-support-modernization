@@ -70,7 +70,7 @@ flowchart LR
     L -->|timeout or lost response| N[Execution unknown] --> O[Reconcile by status lookup] --> M
 ```
 
-## 3. Case states (spec B.10; full diagram and tests in Milestone 6)
+## 3. Case states (spec B.10; every pair tested in `tests/test_state_machine.py`)
 
 ```mermaid
 stateDiagram-v2
@@ -84,15 +84,19 @@ stateDiagram-v2
     PendingApproval --> Approved: another supervisor
     PendingApproval --> Rejected: with reason
     PendingApproval --> Investigating: evidence or policy changed
-    Approved --> PendingApproval: approval invalidated
+    Approved --> Investigating: approval invalidated or expired
     Approved --> Executing
+    Approved --> Escalated: another credit found
     Executing --> Resolved: confirmed
     Executing --> ExecutionUnknown: timeout or lost response
+    Executing --> Approved: refused, nothing applied
+    Executing --> Escalated: key conflict or a different record
     ExecutionUnknown --> Resolved: reconciliation finds it applied
-    ExecutionUnknown --> Approved: reconciliation finds it not applied
-    Rejected --> Investigating: reopened
+    ExecutionUnknown --> Approved: reconciliation confirms it absent
+    ExecutionUnknown --> Escalated: reconciliation finds a different record
+    Rejected --> Investigating: reopened with reason
     Resolved --> Investigating: reopened with reason
-    Escalated --> Investigating: property answered
+    Escalated --> Investigating: reopened with reason
 ```
 
 ## 4. System boundaries and ownership

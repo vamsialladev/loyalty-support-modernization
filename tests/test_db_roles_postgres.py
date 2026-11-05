@@ -15,7 +15,7 @@ import pytest
 
 CONTAINER = os.environ.get("TEST_DB_ROLES_CONTAINER", "")
 HOST, PORT = os.environ.get("TEST_DB_ROLES_HOST", "127.0.0.1:5432").rsplit(":", 1)
-ROLES = {"loyalty_app": "loyalty", "mock_api": "mock_customer_api"}
+ROLES = {"loyalty_app": "loyalty", "loyalty_owner": "loyalty", "mock_api": "mock_customer_api"}
 
 pytestmark = [
     pytest.mark.postgres,
@@ -27,7 +27,7 @@ def test_each_role_has_a_stored_scram_password() -> None:
     # Inside the container, over the local socket as the bootstrap superuser; only booleans come back.
     sql = (
         "select rolname || '=' || coalesce(rolpassword like 'SCRAM-SHA-256$%', false) "
-        "from pg_authid where rolname in ('loyalty_app', 'mock_api') order by 1"
+        "from pg_authid where rolname in ('loyalty_app', 'loyalty_owner', 'mock_api') order by 1"
     )
     result = subprocess.run(
         ["docker", "exec", CONTAINER, "sh", "-c", 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tA -c "$0"', sql],
@@ -37,7 +37,7 @@ def test_each_role_has_a_stored_scram_password() -> None:
         check=False,
     )
     assert result.returncode == 0, result.stderr
-    assert result.stdout.split() == ["loyalty_app=true", "mock_api=true"]
+    assert result.stdout.split() == ["loyalty_app=true", "loyalty_owner=true", "mock_api=true"]
 
 
 @pytest.mark.parametrize(("role", "database"), ROLES.items())

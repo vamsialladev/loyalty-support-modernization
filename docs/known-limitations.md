@@ -6,7 +6,9 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **A note's length is not its quality** (ADR-0054). `deny_other` with 20 characters can still close a case wrongly, and
   a rule-based code against complete evidence is still an override with any non-empty note. Both are logged as overrides
   for review. Evidence-free rule-based closes are now refused (TD-17, closed).
-- **There is no reopen yet.** `Resolved`, `Escalated` and `Rejected` are final until Milestone 6 (spec B.10).
+- **Reopening keeps the history but is a person's judgment.** A length check can't judge a reason (`cases.reopen`).
+- **Audit history is append-only for the app role only.** The owner role, a superuser and anyone with the backups can
+  still rewrite it. It isn't tamper-proof (ADR-0058).
 - **The owner's "unhealthy" run has no proven cause** (ADR-0052). The reproduction didn't fail, and Docker no longer holds
   that run's health events. Any repeat now prints its cause.
 - **CI is a first version** (ADR-0053): no image builds or compose check; those run locally until Milestone 12.
@@ -15,7 +17,7 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **Approvals are not yet bound to an evidence snapshot**, and concurrent executes are not locked (TD-12, TD-13). The
   thin shared write path refuses a second credit for a stay and reconciles uncertain outcomes by key, but the
   binding hash, invalidation, row locks and durable jobs are Milestone 6. No benchmark runs before then.
-- **Sign-in is local demo sign-in**: four accounts share one local password; no login rate limit, lockout or recovery
+- **Sign-in is local demo sign-in**: six accounts share one local password; no login rate limit, lockout or recovery
   yet (TD-15, Milestone 9). Fine for local synthetic data; not for a hosted demo.
 - **Arm A has not been scored.** The scripted agent ran over the dev split for mechanics only. Arm A's accuracy on
   held-out cases is measured in Milestone 10, after the thresholds file is committed.
