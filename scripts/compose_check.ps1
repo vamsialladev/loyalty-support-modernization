@@ -61,6 +61,14 @@ if ($Browser) {
         Remove-Item Env:E2E_BASE_URL, Env:E2E_MOCK_API_URL, Env:E2E_DATABASE_URL, Env:E2E_MOCK_API_TOKEN, Env:E2E_DEMO_PASSWORD
     }
 }
+Step "worker: SIGTERM stops it cleanly, with exit code 0, and it comes back" {
+    & docker @compose stop worker
+    $exit = (& docker inspect "$project-worker-1" --format "{{.State.ExitCode}}" | Out-String).Trim()
+    Write-Host "worker exit code after SIGTERM: $exit"
+    & docker @compose up -d --wait worker
+    $code = $LASTEXITCODE
+    $global:LASTEXITCODE = if ($exit -eq "0" -and $code -eq 0) { 0 } else { 1 }
+}
 Step "app role cannot connect to the mock database" {
     $out = & docker @compose exec -T -e "PGPASSWORD=$($values['APP_DB_PASSWORD'])" db psql -h 127.0.0.1 -U loyalty_app -d mock_customer_api -c "select 1" 2>&1
     $global:LASTEXITCODE = if ("$out" -match "permission denied|not permitted|FATAL") { 0 } else { 1 }

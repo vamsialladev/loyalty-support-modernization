@@ -108,5 +108,36 @@ services:
       resources:
         limits: {cpus: "1.0", memory: 512M}
 
+  # Runs the durable jobs (ADR-0060). Stops claiming on SIGTERM and finishes the job in hand; a hard kill is recovered by
+  # the job's lease. `stop_grace_period` is longer than one job's upstream timeouts and retries.
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    command: ["python", "-m", "app.worker"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://loyalty_app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/loyalty
+      MOCK_API_URL: http://mock-api:8020
+      MOCK_API_TOKEN: ${MOCK_API_TOKEN:?set MOCK_API_TOKEN in .env}
+      APP_SECRET_KEY: ${APP_SECRET_KEY:?set APP_SECRET_KEY in .env}
+      APP_PROFILE: ${APP_PROFILE:-portfolio}
+      MOCK_API_SIM_CLOCK: ${MOCK_API_SIM_CLOCK:-false}
+      WORKER_HEALTH_FILE: /tmp/worker-alive
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      mock-api: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp]
+    stop_grace_period: 40s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(0 if time.time() - os.path.getmtime('/tmp/worker-alive') < 90 else 1)"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 120s
+    deploy:
+      resources:
+        limits: {cpus: "1.0", memory: 512M}
+
 volumes:
   pgdata:

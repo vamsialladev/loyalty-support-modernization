@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, sessionmaker
 
+from app import correlation
 from app.adapters.local_demo_identity import LocalDemoIdentity
 from app.adapters.mock_customer_api import MockCustomerApiAdapter
 from app.arms.legacy import intake, screens
@@ -130,7 +131,10 @@ def install_console(
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next: Callable[[Request], Any]) -> Response:
-        response: Response = await call_next(request)
+        correlation_id = correlation.new_id()  # made here, never taken from the request
+        with correlation.correlated(correlation_id):
+            response: Response = await call_next(request)
+        response.headers["X-Correlation-ID"] = correlation_id
         response.headers["Content-Security-Policy"] = CSP
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "same-origin"

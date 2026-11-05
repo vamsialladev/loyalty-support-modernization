@@ -22,6 +22,7 @@ class AppSettings:
     sim_clock: bool = False
     public_demo_mode: bool = False
     secret_key: str = ""
+    worker_health_file: str = ""
 
     @property
     def cookie_secure(self) -> bool:
@@ -39,4 +40,5 @@ class AppSettings:
             sim_clock=_flag("MOCK_API_SIM_CLOCK"),
             public_demo_mode=_flag("PUBLIC_DEMO_MODE"),
             secret_key=os.environ.get("APP_SECRET_KEY", ""),
+            worker_health_file=os.environ.get("WORKER_HEALTH_FILE", ""),
         )
