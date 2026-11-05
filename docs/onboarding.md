@@ -221,10 +221,26 @@ the app:
 powershell -ExecutionPolicy Bypass -File scripts\stack.ps1 -Action up
 ```
 
+You should see `stack: ready`. If you ran this before the fix, it stopped at `app database: unreachable`. Running it again on
+the fixed code grants the missing right; your data was never at risk.
+
 Then load the initial policy set and the two new demo accounts (`admin.ada`, `auditor.abe`; same demo password):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\stack.ps1 -Action seed
+```
+
+Check it worked:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8010/readyz
+```
+
+`status` should be `ready`. To test this upgrade path itself, without touching your stack (it builds a volume with the real
+Milestone 5 code, under its own project and ports; the compose check runs it too):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\upgrade_check_m5.ps1
 ```
 
 **To undo the split** on a local volume, if you ever need an older checkout: as the database admin, run `REASSIGN OWNED BY
@@ -315,6 +331,12 @@ The kill switch is on the Configuration page; sign in as `admin.ada`. `auditor.a
 - **"Adjustments are switched off":** an administrator turned the switch off. Investigation still works. See Configuration.
 - **"no single published policy covers a checkout":** the policies aren't loaded, so run `scripts\stack.ps1 -Action seed`; or the
   stay really is before any policy, so escalate.
+- **`app database: unreachable` while every container says healthy:** "healthy" for the app means the process answers;
+  `/readyz` is what checks the database. The reason is in `scripts\stack.ps1 -Action logs`, after `readiness: database check
+  failed`. `permission denied for database "loyalty"` means the role lost `CONNECT`: on the fixed code, `stack.ps1 -Action up` grants it
+  back (ADR-0058).
+- **The worker is `unhealthy`:** it can't reach the database, or hasn't yet. Its log says `claim failed`, at most about once a
+  minute once it has backed off. Nothing is lost: jobs wait.
 - **`permission denied` from Postgres in the app's logs:** the app role can't change audit history or the schema, by design
   (ADR-0058). If a migration is what failed, run `scripts\stack.ps1 -Action migrate`, not `alembic` inside the app container.
 - **`deadlock detected`:** should not happen. If it does, look for a new `FOR UPDATE` on `cases`: use `key_share=True`

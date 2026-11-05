@@ -95,12 +95,20 @@ Step "After: the seed loads the policies and the new accounts, and the old case 
     Write-Host "accounts $users, policy versions $versions, cases $cases"
     $global:LASTEXITCODE = if ($code -eq 0 -and $users -eq "6" -and [int]$versions -ge 4 -and $cases -eq "1") { 0 } else { 1 }
 }
-Step "After: the worker reaches the database, and says so in its health" {
+# A quiet log isn't proof: a tail can scroll a failure away. A job the worker must claim is. No handler knows this kind, so
+# a worker that really claimed it marks it dead with `unknown_kind`; a worker that can't reach the database leaves it queued.
+Step "After: the worker really claims a job, its whole log has no failed claim, and it reports healthy" {
+    $probe = "INSERT INTO jobs (kind, dedupe_key, payload, status, attempts, max_attempts, run_after_utc, created_at_utc) VALUES ('upgrade_check_probe', 'upgrade_check_probe:system', '{}', 'queued', 0, 1, '2000-01-01T00:00:00Z', '2000-01-01T00:00:00Z')"
+    Sql $probe | Out-Null
+    $claimed = ""
+    for ($i = 0; $i -lt 60 -and $claimed -ne "dead|unknown_kind"; $i++) {
+        Start-Sleep -Seconds 2
+        $claimed = Sql "select status || '|' || coalesce(last_error, '') from jobs where kind = 'upgrade_check_probe'"
+    }
     $health = (& docker inspect "$project-worker-1" --format "{{.State.Health.Status}}" | Out-String).Trim()
-    $logs = (& docker @new logs --tail 40 worker 2>&1 | Out-String)
-    $claimFailed = $logs -match "claim failed"
-    Write-Host "worker health $health; claim failed in its log: $claimFailed"
-    $global:LASTEXITCODE = if ($health -eq "healthy" -and -not $claimFailed) { 0 } else { 1 }
+    $failures = (& docker logs "$project-worker-1" 2>&1 | Select-String -SimpleMatch "claim failed" | Measure-Object).Count
+    Write-Host "worker probe job: $claimed; health $health; failed claims in its whole log: $failures"
+    $global:LASTEXITCODE = if ($claimed -eq "dead|unknown_kind" -and $health -eq "healthy" -and $failures -eq 0) { 0 } else { 1 }
 }
 Step "Safe to repeat: stack.ps1 -Action up again on the upgraded volume" {
     powershell @stack -Action up

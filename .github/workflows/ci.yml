@@ -66,10 +66,22 @@ jobs:
           python-version: "3.12"
           enable-cache: true
       - run: uv sync --frozen
+      - name: A Milestone 5 database, where loyalty_app is the owner; the role split must keep its login (ADR-0058)
+        run: |
+          SUPER="postgresql://mock_api:ci-only-throwaway@127.0.0.1:5432"
+          psql "$SUPER/mock_customer_api_test" -c "CREATE ROLE loyalty_app LOGIN PASSWORD 'ci-only-throwaway'" \
+            -c "CREATE DATABASE loyalty_m5 OWNER loyalty_app"
+          psql "$SUPER/loyalty_m5" -c "REVOKE CONNECT ON DATABASE loyalty_m5 FROM PUBLIC" \
+            -c "GRANT CONNECT ON DATABASE loyalty_m5 TO loyalty_app"
+          BEFORE=$(psql "$SUPER/loyalty_m5" -tAc "select datacl from pg_database where datname = 'loyalty_m5'")
+          test "$BEFORE" = "{=T/loyalty_app,loyalty_app=CTc/loyalty_app}" || { echo "not the Milestone 5 state: $BEFORE"; exit 1; }
+          psql "$SUPER/loyalty_m5" -v owner_pw=ci-only-throwaway -f infrastructure/postgres/sql/app-owner.sql
+          test "$(psql "postgresql://loyalty_app:ci-only-throwaway@127.0.0.1:5432/loyalty_m5" -tAc "select current_user")" = loyalty_app
+          test "$(psql "$SUPER/loyalty_m5" -tAc "select pg_get_userbyid(datdba) from pg_database where datname = 'loyalty_m5'")" = loyalty_owner
       - name: The app's throwaway database and its two roles, from the same script the stack uses
         run: |
           psql "postgresql://mock_api:ci-only-throwaway@127.0.0.1:5432/mock_customer_api_test" \
-            -c "CREATE ROLE loyalty_app LOGIN PASSWORD 'ci-only-throwaway'" -c "CREATE DATABASE loyalty_test"
+            -c "CREATE DATABASE loyalty_test"
           psql "postgresql://mock_api:ci-only-throwaway@127.0.0.1:5432/loyalty_test" \
             -v owner_pw=ci-only-throwaway -f infrastructure/postgres/sql/app-owner.sql
       - run: uv run pytest -m postgres -rs

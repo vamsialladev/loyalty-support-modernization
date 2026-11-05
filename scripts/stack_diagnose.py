@@ -108,7 +108,10 @@ def readiness_problems(readyz: dict[str, Any] | None) -> tuple[int, list[str]]:
         messages.append("app database: not migrated to the current schema.")
     elif database != "ok":
         code = PROBLEM
-        messages.append(f"app database: {database}.")
+        messages.append(
+            f"app database: {database}. The reason is in the app's log, after 'readiness: database check failed': "
+            "scripts\\stack.ps1 -Action logs"
+        )
     systems = readyz.get("customer_systems")
     if systems == "not_seeded":
         messages.append("mock customer API: no data loaded yet. Run scripts\\stack.ps1 -Action seed.")

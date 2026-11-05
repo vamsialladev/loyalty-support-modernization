@@ -250,3 +250,18 @@ def test_stack_up_reports_the_cause_and_the_compose_check_covers_the_upgrade() -
         "mock data already loaded, skipped",
     ):
         assert step in check, step
+
+
+def test_the_real_milestone_5_upgrade_runs_in_the_compose_check_and_ci() -> None:
+    check = (ROOT / "scripts/compose_check.ps1").read_text(encoding="utf-8")
+    assert "scripts\\upgrade_check_m5.ps1" in check
+    upgrade = (ROOT / "scripts/upgrade_check_m5.ps1").read_text(encoding="utf-8")
+    assert '$lastMilestone5Commit = "68deba1"' in upgrade and "git worktree add --detach" in upgrade
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    assert "{=T/loyalty_app,loyalty_app=CTc/loyalty_app}" in workflow
+
+
+def test_the_upgrade_checks_worker_step_needs_a_real_claim_and_the_whole_log() -> None:
+    upgrade = (ROOT / "scripts/upgrade_check_m5.ps1").read_text(encoding="utf-8")
+    assert "upgrade_check_probe" in upgrade and "dead|unknown_kind" in upgrade
+    assert "--tail" not in upgrade, "a tail can scroll a failed claim away"

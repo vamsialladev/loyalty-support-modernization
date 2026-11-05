@@ -427,3 +427,42 @@ def test_a_worker_that_cannot_reach_the_database_does_not_report_healthy(
     monkeypatch.setattr(worker, "run_once", no_database)
     worker.run_forever()
     assert not health.exists()
+
+
+def test_repeated_claim_failures_back_off_up_to_a_cap(
+    factory: sessionmaker[Session], clock: TestClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    worker = Worker(factory, {}, clock=clock, poll_seconds=1.0)
+    waits: list[float] = []
+
+    def no_database() -> bool:
+        if len(waits) == 9:
+            worker.request_stop()
+        raise RuntimeError("permission denied for database")
+
+    monkeypatch.setattr(worker, "run_once", no_database)
+    monkeypatch.setattr(worker._stop, "wait", lambda seconds: waits.append(seconds))
+    worker.run_forever()
+    assert waits == [2.0, 4.0, 8.0, 16.0, 32.0, 60.0, 60.0, 60.0, 60.0, 60.0]
+
+
+def test_a_successful_claim_resets_the_backoff(
+    factory: sessionmaker[Session], clock: TestClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    worker = Worker(factory, {}, clock=clock, poll_seconds=1.0)
+    waits: list[float] = []
+    results = iter([RuntimeError("down"), RuntimeError("down"), False, RuntimeError("down"), False])
+
+    def flaky() -> bool:
+        result = next(results, None)
+        if result is None:
+            worker.request_stop()
+            return False
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    monkeypatch.setattr(worker, "run_once", flaky)
+    monkeypatch.setattr(worker._stop, "wait", lambda seconds: waits.append(seconds))
+    worker.run_forever()
+    assert waits[:4] == [2.0, 4.0, 1.0, 2.0]

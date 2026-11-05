@@ -138,6 +138,10 @@ Step "upgrade path: a stopped app is named as the cause, not only 'unhealthy'" {
 
 if (-not $Keep) { & docker @compose down -v --remove-orphans | Out-Null }
 Remove-Item $envFile -ErrorAction SilentlyContinue
+# The real upgrade: a volume built by the Milestone 5 code, then this checkout (its own project, ports and env file).
+Step "upgrade path: a volume built by the real Milestone 5 code upgrades to ready" {
+    powershell -ExecutionPolicy Bypass -File scripts\upgrade_check_m5.ps1
+}
 if ($failed.Count -gt 0) { Write-Host "compose check FAILED: $($failed -join '; ')"; exit 1 }
 Write-Host "compose check passed."
 exit 0
