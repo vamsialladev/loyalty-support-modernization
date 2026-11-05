@@ -2,7 +2,11 @@
 
 One short RFC per design-heavy milestone (PURP-05): **M6** approvals, idempotency and reconciliation; **M8** AI loop
 and harness; **M10** benchmark design; **M11** protocols. Written before the code, in plan mode, and linked from the
-ADRs they produce. None exist yet.
+ADRs they produce.
+
+| RFC | Title | Milestone | Status |
+|---|---|---|---|
+| [RFC-0001](RFC-0001-write-path-integrity.md) | Approvals, idempotency, reconciliation and durable jobs | 6 | Accepted 2026-11-04 |
 
 ## Template
 

@@ -180,8 +180,8 @@ status.
 | WP-10 | Emergency switch disables adjustments, keeps investigation; tested under concurrency | B.10 | 1 | 6 | core | — | — | Planned (M6) |
 | WP-11 | Audit history, append-only DB role, integrity guarantees stated honestly | B.10 | 1 | 6 | sec | — | — | Planned (M6) |
 | DB-01 | Alembic migrations for users/roles, cases, evidence, policies/chunks, recommendations, approvals, execution attempts, idempotency, jobs, audit, eval runs, feedback | B.11 | 1 | 4, 6 | core | Mock API schema migrated (`mock_customer_api/migrations/`); app revision 0002: users, sessions, cases, requests, evidence, notes, adjustment requests, approvals, execution attempts, case events (ADR-0046); policies, recommendations, idempotency, jobs, eval runs, feedback in M6+ | `tests/test_arm_a_boundaries.py::test_migration_0002_matches_the_table_definitions` | Planned (M6) |
-| API-01 | APIs: cases CRUD/list, view, start investigation, supply info, recommendations/citations, approve/reject, execute, status, audit, metrics, feedback | B.11 | 1 | 6, 7 | core | — | — | Planned (M6) |
-| API-02 | Pagination, validation, consistent errors, OpenAPI docs, duplicate-investigation prevention | B.11 | 1 | 6 | core | — | — | Planned (M6) |
+| API-01 | APIs: cases CRUD/list, view, start investigation, supply info, recommendations/citations, approve/reject, execute, status, audit, metrics, feedback | B.11 | 1 | 7 | core | — | — | Planned (M7) |
+| API-02 | Pagination, validation, consistent errors, OpenAPI docs, duplicate-investigation prevention | B.11 | 1 | 7 | core | — | — | Planned (M7) |
 | JOB-01 | Postgres job queue: leases, heartbeats, abandoned recovery, bounded retries with backoff, dead jobs, duplicate prevention, graceful shutdown, correlation IDs | B.12, App. B | 1 | 6 | core | — | — | Planned (M6) |
 | JOB-02 | No in-memory background tasks for critical work; transaction boundaries and failure semantics documented | B.12 | 1 | 6 | core | — | — | Planned (M6) |
 | JOB-03 | Retries and restarts never duplicate business effects; caching only with defined invalidation | B.12 | 1 | 6 | core | — | — | Planned (M6) |
