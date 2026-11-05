@@ -1,48 +1,47 @@
 # Session handoff
 
-**Updated:** 2026-11-04, after Milestone 5 and the close fix, ready to start Milestone 6.
+**Updated:** 2026-11-05, after Milestone 6, ready to start Milestone 7.
 
 ## Where things stand
-- Milestones 1–5 and the close fix (ADR-0054) are on `main` in the **private** GitHub repository. CI was green on merge
-  commit `0a199a0`: 340 passed, 10 skipped, coverage 95%, real-Postgres mock API tests 6 passed, no leaks, no known
-  vulnerabilities (run 41880671275). https://github.com/vamsialladev/loyalty-support-modernization (ADR-0053).
-- **Work on a branch and open a pull request**; CI runs on both (ADR-0013). Merge with a merge commit, not squash or
-  rebase, so cited hashes stay valid. Never push without the owner's OK. Push with:
-  `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (two accounts are signed in to `gh`; check
-  `gh auth status` shows `vamsialladev` active).
-- This repo's `user.email` is the noreply address, so the account's email block won't refuse new commits. Earlier commits
-  keep the Gmail address, as the owner chose, so every cited hash stays valid.
-- Legacy arm A runs end to end in the browser. Upgrading an existing volume works and is checked by the compose check
-  (ADR-0052); `docs/onboarding.md` §4c has the commands.
-- Latest results: `docs/verification-log.md`, section "First push and the close fix".
+- Milestones 1-6 are on `main` in the **private** GitHub repository, merged through pull requests #3 to #10. Latest
+  results: `docs/verification-log.md`, section "Milestone 6".
+- **Work on a branch and open a pull request.** Merge with a merge commit, not squash or rebase, so cited hashes stay valid.
+  **The permission to push and merge covered Milestone 6's pull requests only (D10). Ask again for Milestone 7.** Push with:
+  `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (two accounts are signed in to `gh`).
+- This repo's `user.email` is the noreply address. Run gitleaks before pushing; the command is in `docs/fde-tool-map.md`.
+- Commit messages from PowerShell: use `git commit -F <file>`. A here-string with double quotes gets mangled (it happened on
+  step 7). Anything with backslashes goes through the editor tools, never a shell heredoc (it put a tab in the log on step 2).
 
 ## Waiting on the owner
-1. **Label review:** the 30-label sheet (`evaluations/label-review/`).
-2. **Email block:** tick "Block command line pushes that expose my email" again at https://github.com/settings/emails, if
-   not already done. New commits use the noreply address, so it won't block them.
-3. **Milestone 6 plan mode:** confirm before it starts (see below).
+1. **Upgrade your stack (D4).** Exact commands: `docs/onboarding.md` §4d. In short: `update-local-env.ps1`, preflight,
+   `stack.ps1 -Action up`, `stack.ps1 -Action seed`. Your data stays. Not run for you: `.env` and your volume are yours.
+2. **Label review:** the 30-label sheet (`evaluations/label-review/`).
+3. **The Milestone 6 exercise** (below), and optionally redoing A-000010 with the new Reopen button.
+4. **The Codex exercise**, whenever convenient: `docs/exercises/codex-reconciliation-review.md`. It needs your Codex account.
+5. **The email block:** tick "Block command line pushes that expose my email" again, if not done already.
+
+## The Milestone 6 exercise (K.1)
+A supervisor approves an adjustment. The worker's submission times out; two lookups find nothing after the settle window, so the
+job resubmits with the same key. That works. Then suppose it had instead run out of attempts, the approval expired, and an agent
+requested again, which creates a new approval and a new key. **Why is the same-key retry safe while the new-key path isn't, and
+what would you ask a real vendor to size that risk?** Then, if you like, a small change: turn the switch off on the Configuration
+page, try Execute on an approved case, and read what the page and the job do.
 
 ## Known and open
-- **The new close rules have run on SQLite only** (verification log, row 7). Milestone 6's real-Postgres test file is the
-  natural place to add one close-rule test.
-- **Slow CI browser install:** one run's `playwright install --with-deps chromium` ran for 8 min 41 s before a newer push
-  cancelled it; cause unknown, not seen on the 2 runs since. The job's 30-minute limit is the only guard. Also, `gh run
-  view` can lag: it showed "queued" for a run whose log shows it had finished. Check the log before treating a run as
-  stuck.
-- **Case A-000010** (owner's local database) stays closed as `deny_claim_window`, as the audit record of the wrong denial
-  (ADR-0054); the close fix applies to new closes only. There is no reopen until Milestone 6. To redo the work now, use
-  "New case" with the same details (see `docs/onboarding.md` failure modes); no credit was made, so the duplicate check
-  won't interfere. The owner's stack needs `-Action up` first to pick up the fix.
-- **The owner's "unhealthy" run has no proven cause** (ADR-0052). If it happens again, `stack.ps1 -Action up` prints it.
-- **The owner's stack:** the last `up` predates these fixes. Run `-Action up` once to pick up the new `/readyz`, the health
-  settings and the close fix; nothing else is needed.
+- **Local test runs are slow under load.** The offline suite took 35 min 6 s here, against about 3 min on CI, at 99-100% CPU.
+  Another project's server and a screen recorder were using 3-4 cores. The compose check once failed on a health check because of
+  it (ADR-0052, updated). Close heavy apps first if you can.
+- **The whole offline suite didn't run locally after step 3**, because of that load: each step ran the affected files and the
+  compose check locally, with the whole suite on CI before merging. Every step's CI was green before its merge.
+- **Exactly-once isn't promised:** RFC-0001, risks; `docs/known-limitations.md`.
+- **The owner's "unhealthy" run has no proven cause**, though the same symptom has now been seen under load (ADR-0052, updated).
 - **Making the repository public** stays the owner's decision. When approved: `gh repo edit
-  vamsialladev/loyalty-support-modernization --visibility public --accept-visibility-change-consequences`, then turn on
-  secret scanning and push protection (free on public repositories) under Settings → Advanced Security.
+  vamsialladev/loyalty-support-modernization --visibility public --accept-visibility-change-consequences`, then turn on secret
+  scanning and push protection.
 
 ## Start the next session with
 1. Read `CLAUDE.md`, `docs/MASTER-SPEC.md`, this file and `docs/implementation-status.md`.
-2. Run the checks (regenerate data first after a fresh clone; install Chromium once):
+2. Run the checks, one at a time (regenerate data first after a fresh clone; install Chromium once):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\data.ps1 -Action generate
@@ -60,26 +59,14 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 powershell -ExecutionPolicy Bypass -File scripts\compose_check.ps1 -Browser
 ```
 
-Don't run the last two at the same time. Close heavy apps first if you can: with a recorder, a video call and little
-free memory, the suite took 63 minutes instead of about 4 (verification log).
+3. **Before Milestone 7, say whether to use plan mode and wait for the owner.** `CLAUDE.md` lists it as optional.
 
-3. **Before Milestone 6, say whether to use plan mode and wait for the owner.** Recommendation: **yes** (`CLAUDE.md`:
-   approvals, idempotency, reconciliation). Milestone 6 also writes its RFC in `docs/rfcs/`.
-
-## Milestone 6 scope (spec N.1 item 6; Appendix C)
-- Deterministic eligibility (ELIG-01) and policy retrieval by checkout date over Postgres full-text search (POL-*).
-- The full state machine (**reopening**, every transition tested), approval binding hash with expiry and invalidation
-  (WP-03, WP-06), revalidation before execution (WP-07: re-run the arm's own evaluator on fresh reads, the
-  constraint from ADR-0044), row locks or versioned updates (WP-08), the reconciliation job (MOCK-09), the durable
-  worker (JOB-*), the kill switch (WP-10), the append-only audit role (WP-11).
-- Appendix C: real-Postgres tests for idempotency atomicity, concurrent execute, duplicate prevention,
-  timeout-after-commit reconciliation, lease recovery, approval invalidation. The CI `postgres` job only runs
-  `tests/test_mock_api_postgres.py` today; add the new file to it.
-- Pays down TD-12 and TD-13. Arm A keeps calling the same `WritePath` and gains the safeguards without code changes.
-- Reopening must keep the audit trail: A-000010's `case_closed` event stays as the record of the wrong denial, and a
-  reopened case's next close goes through the ADR-0054 rules in `cases.close_case`.
-- Check first: `case_events` is the audit log the append-only role will protect, and the close rules read it
-  (`cases.latest_search_found_nothing`), so the app role still needs to read it.
+## Milestone 7 scope (spec N.1 item 7; Appendix C)
+- Arm B: corrected rules through `app/domain/eligibility.py`, consolidated evidence, better search (synonyms, D12), validation.
+- It plugs in through `app/services/arm_review.py::review_for`, with arm B's view of the evidence in the hash.
+- The complete server-rendered console (UI-01, B.13), and the JSON API moved here (API-01, API-02).
+- Playwright: the happy path and the self-approval block for arm B, plus reopening and reconciliation in the browser (TEST-05).
+- `docs/executive-brief.md` at the end of the core-build phase.
 
 ## Blockers
-None for Milestones 6–7. Milestone 8's live run needs `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` in `.env`.
+None for Milestone 7. Milestone 8's live run needs `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` in `.env`.

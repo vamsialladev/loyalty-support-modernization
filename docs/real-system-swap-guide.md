@@ -108,3 +108,35 @@ deployment.
 - **Starter kit vs customer-specific.** Reusable: the console shell (banner, CSP, CSRF, sessions), the
   `IdentityProvider` port, the case workflow and event log, the `WritePath` protocol, the scripted-agent pattern.
   Customer-specific: the legacy rules file, the keyword index, the scripted agent's reading policy, intake routing.
+
+## Policies, the write path and the worker (Milestone 6)
+- **Policies.** Stand-in: fictional Markdown files in `policies/<customer>/`, loaded at their stated status, then published
+  through the Configuration page.
+  - **What changes:** a real customer's policy owner supplies the text. Rule values go in the front matter by hand, reviewed
+    by that owner: nothing extracts rules from prose. If their policies live in a CMS, add a loader that produces the same
+    document format. The rule fields in `policy_publishing._RULE_CHECKS` and the engine are the contract.
+  - **Access needed:** read access to the policy source; a named owner for each document.
+  - **Who approves:** the policy owner and the business owner; a second person for publishing if their governance requires it.
+  - **First checks:** write their golden cases with the policy owner, from real past decisions (with consent), before any
+    version is published.
+- **The real platform's write API: the questions that decide whether this design holds.** Ask them before relying on it:
+
+| Question | Why it matters here | If the answer is bad |
+|---|---|---|
+| Does the credit API honour an idempotency key, and for how long? | Same-key retries rest on it | Shorten our retry horizon below it. With no keys at all, a retry after a lost response can't be safe: stop at `Execution unknown` and have a person check |
+| Can a transaction be looked up by our reference? | Reconciliation rests on it | Store our key in any searchable reference field. If nothing is searchable, reconcile by reading the ledger and matching stay and amount, with a person confirming |
+| How long can a lookup lag after a write? | Sets `settle_seconds` (today an assumed 60) | Measure it in the sandbox. Raise the window to well past the worst case seen |
+| Does a `200` mean committed? | The outcome table assumes it | If it can mean "accepted", treat it as uncertain and reconcile |
+| Can a credit be conditional on the ledger's state? | Would close the gap between re-check and submit (RFC-0001) | Usually no: the gap stays a stated risk, with its size measured by the over-credit rate in a pilot |
+| Are write rate limits separate from read limits? | Re-checks spend read quota | A per-customer limiter |
+
+- **Job queue.** Stand-in: none needed; it's the real one, a table in the app's Postgres. If a customer mandates a queue product,
+  `jobs.py` is the seam: the handlers don't know where jobs come from. Keep enqueue transactional with the state change, or add
+  an outbox (Stage 10's territory).
+- **Database roles.** The owner and runtime roles (ADR-0058) map to separate secrets in a real secret manager. Only the release
+  step gets the owner's. **Who approves:** the DBA or platform team, and security.
+- **Kill switch.** It's the real one. **Who holds it:** decide with the customer who the administrators are and who is on call,
+  and put it in the incident runbook (M13). Note the stated limit: one submission per worker can land after it's off.
+- **Starter kit vs customer-specific.** Reusable: `jobs.py`, `worker.py`, `approval_binding.py`, `kill_switch.py`, the four-step
+  execution, the outcome table, `app-owner.sql`, the publishing flow. Customer-specific: rule fields and golden cases, policy
+  text, `settle_seconds` and approval expiry, each arm's `ArmReview`, the adjustment's business fields.

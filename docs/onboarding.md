@@ -233,6 +233,51 @@ loyalty_owner TO loyalty_app`. Or start clean with `scripts\stack.ps1 -Action cl
 **To redo case A-000010:** sign in as an agent or supervisor, open the case, and use "Reopen" with a reason of at least 20
 characters. Its `case_closed` event stays as the record of the wrong denial. The next close follows the ADR-0054 rules.
 
+## 4e. The write path, in one page (Milestone 6)
+
+Read `docs/rfcs/RFC-0001-write-path-integrity.md` first, then ADR-0055 to ADR-0061.
+
+**What happens when a supervisor clicks Execute:**
+1. The web request locks the case, checks the switch and the stored approval, and queues a job in the same transaction.
+2. The worker claims it, then re-reads the evidence through the arm's own evaluator and checks the ledger. No lock is held.
+3. It locks the case, re-checks, records the attempt and `Executing`, and commits. From here a crash means "unknown".
+4. It looks at the switch once more, then submits with a key derived from the approval.
+5. It locks the case and records what came back.
+
+**Where things live:**
+
+| Path | What |
+|---|---|
+| `app/domain/eligibility.py`, `policy.py`, `case_states.py`, `approval_binding.py` | The pure rules. No database, web or HTTP |
+| `app/services/write_path.py` | Decide, execute, reconcile. The file to read most carefully |
+| `app/services/jobs.py`, `job_handlers.py`, `app/worker.py` | The queue, what the jobs do, and the process |
+| `app/services/approvals.py`, `arm_review.py` | Ending approvals; each arm's re-check |
+| `app/services/policies.py`, `policy_publishing.py` | Storing, finding and publishing policy versions |
+| `app/services/kill_switch.py` | The emergency switch |
+| `infrastructure/postgres/sql/app-owner.sql` | The two database roles |
+| `tests/test_execution_postgres.py`, `test_worker_postgres.py`, `test_write_path_postgres.py`, `test_audit_postgres.py` | The Appendix C proof. They need a real database |
+
+**Running the real-Postgres tests:** they only run through the compose check, which makes its own throwaway stack and never
+touches yours. Don't run it beside `scripts\test.ps1`.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\compose_check.ps1 -Browser
+```
+
+**Operating it:**
+
+```powershell
+docker compose exec worker python -m app.worker --list-dead
+```
+
+```powershell
+docker compose exec worker python -m app.worker --requeue 12
+```
+
+The kill switch is on the Configuration page; sign in as `admin.ada`. `auditor.abe` reads cases and changes nothing.
+
+**Starter kit vs customer-specific:** see the swap guide's Milestone 6 section.
+
 ## 5. Common failure modes so far
 - **`ModuleNotFoundError: app`** when running pytest outside `uv run`: use `uv run pytest`.
 - **Preflight says NOT READY:** expected with an empty `.env`; it lists exactly which settings are missing.
@@ -249,17 +294,31 @@ characters. Its `case_closed` event stays as the record of the wrong denial. The
 - **The mock API's `/readyz` says `not_seeded`:** run `scripts\stack.ps1 -Action seed` (generate `seed_data/v1`
   first if the seed reports `seed_data_missing`).
 - **Port 5432, 8010 or 8020 already in use:** another stack (or the compose check with `-Keep`) is running; stop it.
-- **A Postgres test shows SKIPPED:** `TEST_MOCK_API_DATABASE_URL` isn't set; the compose check sets it on its own stack.
+- **A Postgres test shows SKIPPED:** the `TEST_*_DATABASE_URL` settings aren't set; the compose check sets them on its own
+  stack.
 - **Generation feels slow:** the first run on a cold machine took about 70 s (later runs about 5 s). Use
   `--scale 0.1 --no-documents` while iterating.
 - **Sign-in says the username and password don't match:** run `scripts\stack.ps1 -Action seed` after
-  `DEMO_USER_PASSWORD` is in `.env`; the seed creates the four demo accounts (it says "skipped" if the variable is
+  `DEMO_USER_PASSWORD` is in `.env`; the seed creates the demo accounts (it says "skipped" if the variable is
   missing).
 - **`up` says the stack is not ready:** the line above the error names the cause (a failed migration, a changed role
   password, a slow start). A password message means `.env` no longer matches the volume: role passwords are stored when
   the volume is created. `scripts\stack.ps1 -Action logs` shows everything.
-- **A case was closed by mistake:** there is no reopen until Milestone 6. Open a new case with the same details from
-  "New case"; the closed one stays as the audit record.
+- **A case was closed by mistake:** use "Reopen" on the case, with a reason of at least 20 characters. The old events stay.
+  If a credit was applied, only a supervisor can reopen it, and the stay can't be credited again.
+- **Execute does nothing and the page says "The worker has this":** the `worker` container isn't running. Check
+  `scripts\stack.ps1 -Action status`. Nothing is lost; the job waits.
+- **A case sits in `Execution unknown`:** the outcome really is unknown. "Check status" asks the platform. "Not found" needs 2
+  lookups and 60 seconds before it counts. If its job went dead, it stays here until a person requeues it: that's on purpose.
+- **"This approval can't stand":** the evidence or policy changed, or 24 hours passed, or `APP_SECRET_KEY` changed. Check the
+  evidence and request again. A new request gets a new approval and a new key.
+- **"Adjustments are switched off":** an administrator turned the switch off. Investigation still works. See Configuration.
+- **"no single published policy covers a checkout":** the policies aren't loaded, so run `scripts\stack.ps1 -Action seed`; or the
+  stay really is before any policy, so escalate.
+- **`permission denied` from Postgres in the app's logs:** the app role can't change audit history or the schema, by design
+  (ADR-0058). If a migration is what failed, run `scripts\stack.ps1 -Action migrate`, not `alembic` inside the app container.
+- **`deadlock detected`:** should not happen. If it does, look for a new `FOR UPDATE` on `cases`: use `key_share=True`
+  (verification log, Milestone 6, row 36).
 - **"The evidence is incomplete" or "search the member screen first" when closing:** expected (ADR-0054). Attach the
   evidence, or run the search that finds nothing before `deny_not_found`. `deny_other` needs a note of at least 20
   characters and is counted as an override.
@@ -276,3 +335,5 @@ characters. Its `case_closed` event stays as the record of the wrong denial. The
 1. Run the checks and read the preflight output for each profile.
 2. Pick one `Planned` row in the matrix and find where the spec defines it.
 3. Read one ADR and write down what would make you reverse it.
+4. Read `app/services/write_path.py::execute`, and for each commit ask what happens if the process dies right after it. Then
+   check your answers against `tests/test_execution_postgres.py`.

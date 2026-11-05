@@ -45,7 +45,7 @@ are in `docs/verification-log.md` (2026-10-28). This file grows into the full Pa
 | Supabase CLI | Supabase profile | **Missing** | Milestone 15 |
 | PostgreSQL client `psql` | debugging | **Missing** | not required; `docker compose exec db psql` works |
 | PowerShell 7 `pwsh` | — | Missing | Windows PowerShell 5.1 is used; scripts target 5.1 |
-| Codex CLI | Codex exercise | **Missing** | owner installs and signs in (Milestone 6 or 13) |
+| Codex CLI | Codex exercise (kit ready: `docs/exercises/codex-reconciliation-review.md`) | **Missing** | owner installs and signs in, then runs the kit (Milestone 6 or 13) |
 
 ## 4. Accounts and services
 

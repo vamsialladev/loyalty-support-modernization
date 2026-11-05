@@ -22,7 +22,10 @@ The approval-binding hash and idempotency-from-approval pattern; pre-registered 
 preflight that never prints secrets; the "rules decide, AI explains" boundary. From Milestone 5: one shared
 `WritePath` that every arm (and every future UI) must go through, so safeguards cannot differ by front end; the
 browser sends record numbers only and the server re-reads records before they become evidence; one event log for
-both audit and instrumentation.
+both audit and instrumentation. From Milestone 6: an approval as an HMAC over the exact action; a re-check that uses each
+arm's own view; an idempotency key from the approval; four execution steps with no lock across an external call; a database
+index behind every "only one" rule; "unknown" as a real state that nothing may hide; a kill switch that reads as a lock, not a
+flag. **Reading this as a standard:** `docs/rfcs/RFC-0001-write-path-integrity.md`.
 
 ## What not to build
 A general agent framework; a vector database before a measured need; multitenancy inside one database; a workflow
@@ -35,4 +38,7 @@ automation platform; anything that lets a model move points.
 | Postgres is enough (search, queue, audit) | Queue latency or full-text relevance misses targets in the M12 load test or M10 retrieval comparison |
 | Per-customer deployments are simpler than multitenancy | Operating cost per customer dominates TCO at 10+ customers |
 | A deterministic rules engine can express every customer's policy | Cedarpoint's rules (M14) need code changes, not configuration |
+| A Postgres queue is enough for durable work (Milestone 6) | The M12 load test shows claiming or heartbeats limiting the primary database at the volumes in `docs/scaling-and-limits.md` |
+| A re-check plus idempotency makes a double credit vanishingly unlikely (Milestone 6) | A real vendor's lookup lag outlasts the settle window, or it forgets keys sooner than our retries end (RFC-0001, open questions) |
+| Append-only by database role is enough for this stage (Milestone 6) | A real customer's auditors need evidence against an insider with database access: then a hash chain anchored outside, or a separate audit store |
 | A legacy baseline modelled from a defect catalog is fair (Milestone 5) | A reviewer finds an arm A limit that isn't in the catalog, or a catalog defect that arm A can't actually exhibit; either is logged as a new experiment (F9) |
