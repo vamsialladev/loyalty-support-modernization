@@ -25,7 +25,7 @@ from tests.arm_a import ArmA, make_arm_a
 
 K01 = "DV-001"  # Clara Kowalski, GR-85640, BR-6638, 14,840 points
 MEMBER, STAY = "GR-85640", "BR-6638"
-WP = SharedWritePath()
+WP = SharedWritePath(settle_seconds=0)  # the settle window has its own tests in test_execution.py
 
 
 @pytest.fixture
@@ -195,7 +195,9 @@ def test_reconciled_as_not_applied_returns_to_approved_and_reuses_the_key(arm: A
         (case,) = arm.load(s, K01)
         request_id = to_approved(arm, s, case)
         lost = Flaky(arm.systems(case.received_at_utc), lose_submit=True)
-        assert WP.execute(s, arm.who("supervisor.sam"), request_id, lost).status == "not_applied"
+        assert WP.execute(s, arm.who("supervisor.sam"), request_id, lost).status == "unknown"  # one lookup isn't enough
+        assert case.status == CaseState.EXECUTION_UNKNOWN
+        assert WP.check_status(s, arm.who("supervisor.sam"), request_id, lost).status == "not_applied"
         assert case.status == CaseState.APPROVED
         assert WP.execute(s, arm.who("supervisor.sam"), request_id, arm.systems(case.received_at_utc)).status == (
             "applied"

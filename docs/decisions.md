@@ -727,3 +727,33 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   undo a job; the engine now uses SQLAlchemy's documented recipe.
 - **What would change this decision:** a load test showing the queue limits the primary database (Milestone 12), or a need for
   fan-out across services (Stage 10).
+
+## ADR-0061: execution goes through the worker in four steps, with one live credit per stay and a kill switch
+- **Context:** the thin write path (ADR-0044) ran in the web request, with no lock across executes (TD-13). RFC-0001 lists
+  seven faults to fix. The owner chose execution through the worker (D1) and a database-backed switch (D7).
+- **Options considered:** per topic in RFC-0001. For stopping two approvals racing on one stay: a re-check under the lock
+  alone (a bug in the check means two credits); a partial unique index behind the check (chosen). For the switch: an
+  environment variable (needs a restart, and web and worker could disagree); a database row (chosen).
+- **Decision:** `execute` has four steps, and no lock is held across a call to a customer system. (1) Reads: the stored
+  approval, the duplicate check, the arm's re-check. (2) Claim: lock the case, re-check, record the attempt and `Executing`,
+  commit. From here, a process death means an unknown outcome. (3) A last look at the switch, then submit with the key. (4)
+  Lock and record. The console only queues the job. A job finding a case in `Executing`, or flagged recovered, moves it to
+  `Execution unknown` and reconciles: it never resubmits. Outcomes follow RFC-0001's table: an unreadable `200` counts as
+  may-have-applied (fault 1); a `409` or a different record escalates and keeps the stay blocked (faults 2, 3); "not found"
+  needs 2 lookups and a settle window, an assumed 60 seconds (fault 4). After a confirmed absence the job retries with the
+  same key, up to 3 submissions per approval, then leaves it `Approved` for a person. The sweep queues stranded cases but
+  never restarts a dead job. The scripted agent still calls `execute` directly: same code, no worker process.
+- **What the kill switch guarantees:** once turning it off has committed, no new claim passes. Queued jobs wait, using no
+  attempts. Reads and reconciliation keep working. If the row is missing, adjustments stop. **What it doesn't:** a worker past
+  its last check can land a submission, at most one per worker. The test measures this rather than assuming none.
+- **Trade-off:** the page polls, and adds about a second of queue wait. A posting landing between the re-check and the submit
+  isn't caught, and a real platform's late arrival after the settle window could still produce a second credit under a new key
+  (RFC-0001, risks). Exactly-once needs the platform's cooperation, and this doesn't pretend otherwise.
+- **Result:** on real Postgres and over the real adapter: 10 concurrent executes credit once; two approvals racing for a stay
+  credit once, even with the duplicate check switched off; timeout-after-commit reconciles with one credit and no resubmit; a
+  failure before the upstream commit leaves nothing and the same key then applies once; a real process killed before and
+  after the submit recovers with one credit; 6 jobs and 3 workers with the switch thrown mid-run end with each stay credited
+  exactly once. **Found by the first real-Postgres run, invisible on SQLite:** `record()` deadlocked 11 of 12 threads, because
+  an insert referencing a case holds a key-share lock that `FOR UPDATE` conflicts with (now `FOR NO KEY UPDATE`), and the unique
+  index's refusal surfaced during a flush, outside the `try` (widened).
+- **What would change this decision:** a real platform's measured lookup lag and key retention (swap guide), or a load test.

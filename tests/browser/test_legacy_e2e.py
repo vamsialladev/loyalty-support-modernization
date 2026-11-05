@@ -138,6 +138,14 @@ def stack(mock_template: dict[str, Any], tmp_path_factory: pytest.TempPathFactor
             )
         _wait(f"http://127.0.0.1:{mock_port}/healthz", procs[0], mock_log)
         _wait(f"http://127.0.0.1:{app_port}/healthz", procs[1], app_log)
+        worker_log = tmp / "worker.log"
+        output = worker_log.open("wb")
+        logs.append(output)
+        procs.append(
+            subprocess.Popen(
+                [sys.executable, "-m", "app.worker"], cwd=ROOT, env=app_env, stdout=output, stderr=subprocess.STDOUT
+            )
+        )
         yield Stack(
             f"http://127.0.0.1:{app_port}",
             f"http://127.0.0.1:{mock_port}",
@@ -246,7 +254,9 @@ def test_legacy_arm_completes_a_case_end_to_end_in_the_browser(chromium: Any, st
     page.get_by_role("button", name="Approve").click()
     expect(status(page)).to_have_text("Approved")
     page.get_by_role("button", name="Execute adjustment").click()
-    expect(status(page)).to_have_text("Resolved")
+    expect(page.get_by_test_id("message")).to_contain_text("Queued for the worker")
+    # The worker does it; the page updates by itself through htmx (ADR-0055, D1). A slow machine gets a minute.
+    expect(status(page)).to_have_text("Resolved", timeout=60_000)
     expect(page.get_by_test_id("resolution")).to_have_text("adjusted")
     adjustment_id = page.get_by_test_id("adjustment-id").first.inner_text()
     page.close()

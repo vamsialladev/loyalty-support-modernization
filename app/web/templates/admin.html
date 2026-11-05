@@ -3,6 +3,19 @@
 {% block main %}
 <h1>Configuration</h1>
 
+<section class="card" aria-labelledby="ks-h">
+  <h2 id="ks-h">Emergency switch for adjustments</h2>
+  <p data-testid="switch-state">Adjustments are <strong>{{ "switched off" if switch_engaged else "on" }}</strong>{% if switch and switch.changed_by %} · changed by {{ switch.changed_by }} at {{ switch.changed_at_utc }}: {{ switch.reason }}{% endif %}</p>
+  <p class="muted">Off stops new submissions at once. Investigation and status checks keep working. A submission already on its way can still land.</p>
+  <form method="post" action="/admin/kill-switch">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="engage" value="{{ 'off' if switch_engaged else 'on' }}">
+    <label for="ks-reason">Reason (at least 10 characters)</label>
+    <textarea id="ks-reason" name="reason" rows="2" required></textarea>
+    <button type="submit">{{ "Turn adjustments back on" if switch_engaged else "Switch adjustments off" }}</button>
+  </form>
+</section>
+
 <section class="card" aria-labelledby="pol-h">
   <h2 id="pol-h">Policy versions</h2>
   <p class="muted">A draft applies to no stay. Publishing runs the checks, supersedes the version before it and logs who did it.</p>

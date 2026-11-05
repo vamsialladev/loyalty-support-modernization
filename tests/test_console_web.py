@@ -15,7 +15,10 @@ from app.domain.case_states import CaseState
 from app.main import create_app
 from app.persistence.models import Case, User, UserSession
 from app.services import cases as svc
+from app.services.job_handlers import build_handlers
+from app.services.write_path import SharedWritePath
 from app.settings import AppSettings
+from app.worker import Worker
 from tests.arm_a import ArmA, Browser, field, make_arm_a
 from tests.conftest import ARM_A_TOKEN
 
@@ -270,8 +273,14 @@ def test_every_visible_control_works_over_http(arm: ArmA) -> None:
     assert rejected.status_code == 409 and "reason" in rejected.text
     assert sup.post("/adjustments/1/decide", decision="maybe").status_code == 409
     assert field(sup.post("/adjustments/1/decide", decision="approve").text, "case-status") == "Approved"
-    done = sup.post("/adjustments/1/execute")
-    assert field(done.text, "case-status") == "Resolved" and field(done.text, "message").startswith("Adjustment")
+    queued = sup.post("/adjustments/1/execute")
+    assert field(queued.text, "case-status") == "Approved" and field(queued.text, "message").startswith("Queued")
+    assert "Execute adjustment" not in queued.text and 'data-testid="execution-waiting"' in queued.text
+    assert 'hx-trigger="every 2s"' in queued.text
+    write_path = SharedWritePath(settle_seconds=0)
+    Worker(arm.sessions, build_handlers(write_path, arm.factory())).drain()
+    done = sup.get(case)
+    assert field(done.text, "case-status") == "Resolved" and "execution-waiting" not in done.text
     assert sup.post("/adjustments/1/check-status").status_code == 409  # nothing uncertain to check
     assert sup.get("/cases/999").status_code == 404
     assert sup.client.get("/", follow_redirects=False).headers["location"] == "/queue"

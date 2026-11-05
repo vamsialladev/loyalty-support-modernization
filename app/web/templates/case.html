@@ -4,6 +4,12 @@
 {% set screen = "case" %}{% include "_case_nav.html" %}
 <h1>Case {{ case.reference }} <span class="status" data-testid="case-status">{{ case.status }}</span></h1>
 {% if message %}<p class="ok" role="status" data-testid="message">{{ message }}</p>{% endif %}
+{% if switch_engaged %}<p class="notice" role="status" data-testid="switch-notice">Adjustments are switched off by an administrator. Investigation still works.</p>{% endif %}
+{% if polling %}
+<p class="notice" role="status" data-testid="execution-waiting" hx-get="/cases/{{ case.id }}" hx-trigger="every 2s" hx-target="#main" hx-select="#main" hx-swap="outerHTML">
+  {% if job_active %}The worker has this ({{ job_active.status }}, attempt {{ job_active.attempts }}).{% else %}Waiting for a result.{% endif %} <a href="/cases/{{ case.id }}">Refresh</a>
+</p>
+{% endif %}
 <p class="muted">Queue: {{ case.queue }} · assigned to {{ case.assigned_to or "nobody" }} · received {{ case.received_at_utc }}
   {% if case.resolution_code %}· resolution: <span data-testid="resolution">{{ case.resolution_code }}</span>{% endif %}</p>
 {% if case.resolution_note %}<p class="muted">{{ case.resolution_note }}</p>{% endif %}
@@ -143,7 +149,7 @@
         <button type="submit" name="decision" value="approve">Approve</button>
         <button type="submit" name="decision" value="reject" class="secondary">Reject</button>
       </form>
-      {% elif case.status == "Approved" and a.row.status == "approved" %}
+      {% elif case.status == "Approved" and a.row.status == "approved" and not job_active %}
       <form method="post" action="/adjustments/{{ a.row.id }}/execute">
         <input type="hidden" name="csrf" value="{{ csrf }}">
         <button type="submit">Execute adjustment</button>

@@ -106,6 +106,10 @@ def active_job(s: Session, key: str) -> Job | None:
     return s.scalars(select(Job).where(Job.dedupe_key == key, Job.status.in_((QUEUED, RUNNING)))).first()
 
 
+def active_case_job(s: Session, case_id: int) -> Job | None:
+    return s.scalars(select(Job).where(Job.case_id == case_id, Job.status.in_((QUEUED, RUNNING)))).first()
+
+
 def enqueue(
     s: Session,
     kind: str,

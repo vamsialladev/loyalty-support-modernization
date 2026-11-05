@@ -276,8 +276,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     from app.persistence.database import make_engine, make_sessions
+    from app.services.systems import mock_systems_factory
     from app.settings import AppSettings
-    from app.web.console import mock_systems_factory
     from benchmarks.intake import load_case, read_split
 
     settings = AppSettings.from_env()

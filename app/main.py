@@ -20,8 +20,9 @@ from sqlalchemy import text
 
 from app import __version__
 from app.persistence.database import make_engine, make_sessions
+from app.services.systems import SystemsFactory, mock_systems_factory
 from app.settings import AppSettings
-from app.web.console import SystemsFactory, install_console, mock_systems_factory
+from app.web.console import install_console
 
 ROOT = Path(__file__).resolve().parent.parent
 

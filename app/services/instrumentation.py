@@ -36,6 +36,10 @@ def actor_kind(who: Identity) -> str:
 def record(s: Session, case: Case, who: Identity, action: str, **detail: Any) -> CaseEvent:
     if correlation_id := correlation.current():
         detail["correlation_id"] = correlation_id
+    # Serializes one case's events, so two writers can't take the same next step. The lock ends with the transaction.
+    # FOR NO KEY UPDATE, not FOR UPDATE: an insert that references the case holds a key-share lock on it, and two of
+    # those waiting to upgrade to FOR UPDATE deadlock (found on real Postgres, ADR-0061).
+    s.execute(select(Case.id).where(Case.id == case.id).with_for_update(key_share=True))
     step = (s.scalar(select(func.max(CaseEvent.step)).where(CaseEvent.case_id == case.id)) or 0) + 1
     event = CaseEvent(
         case_id=case.id,

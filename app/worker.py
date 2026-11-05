@@ -30,7 +30,7 @@ from app.services.jobs import ClaimedJob, Clock, Defer, GiveUp, Retry
 
 log = logging.getLogger("app.worker")
 Handler = Callable[[Session, ClaimedJob], None]
-Sweep = Callable[[Session], None]
+Sweep = Callable[[Session], object]
 DEFAULT_LEASE_SECONDS = 60.0  # longer than any single upstream call's timeouts and retries
 DEFAULT_POLL_SECONDS = 1.0
 DEFAULT_SWEEP_SECONDS = 30.0
@@ -58,7 +58,7 @@ class Worker:
         self.poll_seconds, self.sweep, self.sweep_seconds = poll_seconds, sweep, sweep_seconds
         self.clock, self.health_file = clock, health_file
         self._stop = threading.Event()
-        self._last_sweep = 0.0
+        self._last_sweep: float | None = None
 
     def request_stop(self) -> None:
         """Stop claiming. The job in hand finishes first."""
@@ -138,7 +138,9 @@ class Worker:
             self.health_file.touch()
 
     def _maybe_sweep(self) -> None:
-        if self.sweep is None or time.monotonic() - self._last_sweep < self.sweep_seconds:
+        if self.sweep is None:
+            return
+        if self._last_sweep is not None and time.monotonic() - self._last_sweep < self.sweep_seconds:
             return
         self._last_sweep = time.monotonic()
         try:
@@ -170,8 +172,14 @@ class Worker:
 
 
 def build_handlers(settings: Any) -> tuple[dict[str, Handler], Sweep | None]:
-    """The real handlers. The write path joins here."""
-    return {}, None
+    """The write path's jobs, reading the customer systems the same way the console does."""
+    from app.services.job_handlers import build_handlers as write_path_handlers
+    from app.services.job_handlers import sweep_stranded
+    from app.services.systems import mock_systems_factory
+    from app.services.write_path import SharedWritePath
+
+    write_path = SharedWritePath(settings.customer_id, secret_key=settings.secret_key or None)
+    return write_path_handlers(write_path, mock_systems_factory(settings)), sweep_stranded
 
 
 OPERATOR = Identity(0, "worker-cli", "Worker command line", Role.ADMINISTRATOR)
