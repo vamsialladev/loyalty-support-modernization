@@ -48,7 +48,7 @@ def invalidate_for_policy_change(s: Session, who: Identity, customer_id: str) ->
     ).all()
     ended = []
     for row in rows:
-        case = s.get(Case, row.case_id, with_for_update=True, populate_existing=True)
+        case = s.get(Case, row.case_id, with_for_update={"key_share": True}, populate_existing=True)
         assert case is not None
         if case.status not in OPEN_CASE_STATES or row.status not in OPEN_STATUSES:
             continue  # it moved on while we waited for the lock

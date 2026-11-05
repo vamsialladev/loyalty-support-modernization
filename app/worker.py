@@ -30,7 +30,7 @@ from app.services.jobs import ClaimedJob, Clock, Defer, GiveUp, Retry
 
 log = logging.getLogger("app.worker")
 Handler = Callable[[Session, ClaimedJob], None]
-Sweep = Callable[[Session], None]
+Sweep = Callable[[Session], object]
 DEFAULT_LEASE_SECONDS = 60.0  # longer than any single upstream call's timeouts and retries
 DEFAULT_POLL_SECONDS = 1.0
 DEFAULT_SWEEP_SECONDS = 30.0
@@ -172,8 +172,14 @@ class Worker:
 
 
 def build_handlers(settings: Any) -> tuple[dict[str, Handler], Sweep | None]:
-    """The real handlers. The write path joins here."""
-    return {}, None
+    """The write path's jobs, reading the customer systems the same way the console does."""
+    from app.services.job_handlers import build_handlers as write_path_handlers
+    from app.services.job_handlers import sweep_stranded
+    from app.services.systems import mock_systems_factory
+    from app.services.write_path import SharedWritePath
+
+    write_path = SharedWritePath(settings.customer_id, secret_key=settings.secret_key or None)
+    return write_path_handlers(write_path, mock_systems_factory(settings)), sweep_stranded
 
 
 OPERATOR = Identity(0, "worker-cli", "Worker command line", Role.ADMINISTRATOR)

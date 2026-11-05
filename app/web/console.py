@@ -13,7 +13,6 @@ from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Annotated, Any
 
-import httpx
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -23,23 +22,20 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app import correlation
 from app.adapters.local_demo_identity import LocalDemoIdentity
-from app.adapters.mock_customer_api import MockCustomerApiAdapter
 from app.arms.legacy import intake, screens
 from app.arms.legacy.keyword_index import KeywordIndex
 from app.arms.legacy.rules import LegacyRules
 from app.domain.case_states import CaseState, InvalidTransition
 from app.domain.roles import NotPermitted, Role, approval_refusal, require_administrator, require_case_worker
 from app.persistence.models import Case
-from app.ports.customer_systems import CustomerSystemError, CustomerSystems
+from app.ports.customer_systems import CustomerSystemError
 from app.services import cases as svc
-from app.services import policies, policy_publishing, sessions
+from app.services import jobs, kill_switch, policies, policy_publishing, sessions
 from app.services.customer_config import CustomerConfig
 from app.services.instrumentation import events, system_events
+from app.services.systems import SystemsFactory
 from app.services.write_path import SharedWritePath, approval_of, attempts_of, load_request, pending_approvals
 from app.settings import AppSettings
-from customer_shapes import CustomerShape
-
-SystemsFactory = Callable[[str | None], CustomerSystems]
 
 WEB_DIR = Path(__file__).resolve().parent
 SESSION_COOKIE = "lsm_session"
@@ -63,6 +59,7 @@ DONE_MESSAGES = {
     "invalidated": "The evidence or policy changed, or the approval expired, so it can't stand. The case is back under "
     "investigation: check the evidence and request again.",
     "rejected": "Adjustment rejected.",
+    "queued": "Queued for the worker. This page updates by itself when the result is in.",
     "applied": "Adjustment applied in the loyalty platform.",
     "unknown": "The outcome is still unknown; check the status again shortly.",
     "not_applied": "Reconciled: nothing was applied. It can be executed again with the same key.",
@@ -96,23 +93,6 @@ def _signed_in(request: Request, s: DB) -> sessions.ActiveSession:
 
 User = Annotated[sessions.ActiveSession, Depends(_signed_in)]
 Csrf = Annotated[str, Form()]
-
-
-def mock_systems_factory(settings: AppSettings) -> SystemsFactory:
-    """One shared HTTP client; each case's reads use its received time when the simulated clock is on (ADR-0037)."""
-    shape = CustomerShape.load(settings.customer_id)
-    client = httpx.Client(base_url=settings.mock_api_url, timeout=2.0)
-
-    def make(sim_time: str | None) -> CustomerSystems:
-        return MockCustomerApiAdapter(
-            settings.mock_api_url,
-            settings.mock_api_token,
-            shape,
-            client=client,
-            sim_time=sim_time if settings.sim_clock else None,
-        )
-
-    return make
 
 
 def install_console(
@@ -358,7 +338,15 @@ def install_console(
             message=DONE_MESSAGES.get(done, ""),
             policy_sections={ref: index.get(ref) for ref in svc.current_evidence(s, case).policy_refs},
             can_search=can_search(case),
+            job_active=jobs.active_case_job(s, case.id),
+            polling=_polling(s, case),
+            switch_engaged=kill_switch.is_engaged(s),
         )
+
+    def _polling(s: Session, case: Case) -> bool:
+        """While a result is on its way, the page refreshes itself."""
+        waiting = CaseState(case.status) in (CaseState.EXECUTING, CaseState.EXECUTION_UNKNOWN)
+        return waiting or jobs.active_case_job(s, case.id) is not None
 
     @app.post("/cases/{case_id}/start", response_model=None)
     def start(
@@ -649,8 +637,7 @@ def install_console(
     def execute(s: DB, active: User, request_id: int, csrf: Csrf = "") -> Response:
         check_csrf(active, csrf)
         case = request_case(s, active, request_id)
-        result = write_path.execute(s, active.identity, request_id, systems_for(svc.read_time(case)))
-        return back_to(case, result.status)
+        return back_to(case, write_path.request_execution(s, active.identity, request_id).status)
 
     @app.post("/adjustments/{request_id}/check-status", response_model=None)
     def check_status(s: DB, active: User, request_id: int, csrf: Csrf = "") -> Response:
@@ -670,7 +657,17 @@ def install_console(
             active,
             versions=policies.version_rows(s, settings.customer_id),
             system_events=system_events(s),
+            switch=kill_switch.state(s),
+            switch_engaged=kill_switch.is_engaged(s),
         )
+
+    @app.post("/admin/kill-switch", response_model=None)
+    def set_kill_switch(
+        s: DB, active: User, engage: Annotated[str, Form()], reason: Annotated[str, Form()] = "", csrf: Csrf = ""
+    ) -> Response:
+        check_csrf(active, csrf)
+        kill_switch.set_engaged(s, active.identity, engage == "on", reason)
+        return RedirectResponse("/admin", status_code=303)
 
     @app.post("/admin/policies/draft", response_model=None)
     def policy_draft(s: DB, active: User, source: Annotated[str, Form()], csrf: Csrf = "") -> Response:

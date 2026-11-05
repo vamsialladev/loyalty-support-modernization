@@ -12,6 +12,8 @@ from typing import Any
 from sqlalchemy import JSON, ForeignKey, Index, Integer, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+LIVE_CREDIT = "status IN ('executing', 'execution_unknown', 'executed', 'execution_conflict')"
+
 
 class Base(DeclarativeBase):
     pass
@@ -118,7 +120,8 @@ class AdjustmentRequestRow(Base):
     checklist: Mapped[dict[str, Any]] = mapped_column(JSON)
     requested_by: Mapped[str] = mapped_column(String(64))
     requested_at_utc: Mapped[str] = mapped_column(String(20))
-    # pending | approved | rejected | invalidated | executing | executed | execution_unknown | refused_duplicate
+    # pending | approved | rejected | invalidated | executing | executed | execution_unknown | execution_conflict
+    # | refused_duplicate
     status: Mapped[str] = mapped_column(String(32))
     # What the proposal rests on (ADR-0059). Empty on rows from before Milestone 6, which must be requested again.
     evidence_hash: Mapped[str | None] = mapped_column(String(64), default=None)
@@ -126,6 +129,17 @@ class AdjustmentRequestRow(Base):
     checkout_day: Mapped[str | None] = mapped_column(String(10), default=None)
     invalidated_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
     invalidated_reason: Mapped[str | None] = mapped_column(String(48), default=None)
+
+    # One live credit per stay, enforced by the database even if the code has a bug (ADR-0061).
+    __table_args__ = (
+        Index(
+            "uq_adjustment_requests_live_stay",
+            "stay_id",
+            unique=True,
+            postgresql_where=text(LIVE_CREDIT),
+            sqlite_where=text(LIVE_CREDIT),
+        ),
+    )
 
 
 class Approval(Base):
@@ -153,7 +167,8 @@ class ExecutionAttempt(Base):
     started_by: Mapped[str] = mapped_column(String(64))
     started_at_utc: Mapped[str] = mapped_column(String(20))
     finished_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
-    # submitted | applied | unknown | not_applied | rejected_upstream | refused_duplicate | lookup
+    # submitted | applied | unknown | busy | held | conflict | rejected_upstream | refused_duplicate
+    # | lookup | lookup_failed | absent | not_applied
     outcome: Mapped[str] = mapped_column(String(32))
     upstream_adjustment_id: Mapped[str | None] = mapped_column(String(64), default=None)
     error_code: Mapped[str | None] = mapped_column(String(64), default=None)
@@ -259,3 +274,14 @@ class Job(Base):
             sqlite_where=text("status IN ('queued', 'running')"),
         ),
     )
+
+
+class SystemSwitch(Base):
+    """The emergency switch for adjustments (`app/services/kill_switch.py`). No row at all counts as "off"."""
+
+    __tablename__ = "system_switches"
+    name: Mapped[str] = mapped_column(String(32), primary_key=True)
+    engaged: Mapped[bool] = mapped_column(default=False)
+    reason: Mapped[str | None] = mapped_column(Text, default=None)
+    changed_by: Mapped[str | None] = mapped_column(String(64), default=None)
+    changed_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
