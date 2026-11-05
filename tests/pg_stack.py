@@ -40,6 +40,7 @@ needs_postgres = pytest.mark.skipif(
 )
 # Everything a case writes. The owner clears them between tests; the runtime role can't.
 CASE_TABLES = (
+    "jobs",
     "case_events",
     "system_events",
     "execution_attempts",

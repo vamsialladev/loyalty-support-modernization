@@ -19,6 +19,7 @@ from typing import Any, TypeVar
 
 import httpx
 
+from app import correlation
 from app.domain.customer_records import (
     AdjustmentRequest,
     AdjustmentResult,
@@ -144,7 +145,8 @@ class MockCustomerApiAdapter:
     # ---------- plumbing ----------
 
     def _headers(self, extra: dict[str, str] | None) -> dict[str, str]:
-        headers = {"Authorization": f"Bearer {self._token}", "X-Correlation-ID": uuid.uuid4().hex}
+        correlation_id = correlation.current() or uuid.uuid4().hex
+        headers = {"Authorization": f"Bearer {self._token}", "X-Correlation-ID": correlation_id}
         if self.sim_time:
             headers["X-Sim-Time"] = self.sim_time
         if self.fault:

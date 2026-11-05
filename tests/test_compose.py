@@ -59,7 +59,7 @@ def test_compose_binds_locally_pins_images_and_requires_secrets() -> None:
         for port in svc.get("ports", []):
             assert str(port).startswith("127.0.0.1:"), f"{name} exposes {port} beyond localhost"
         assert "limits" in svc["deploy"]["resources"], f"{name} has no resource limits"
-    for name in ("mock-api", "app"):
+    for name in ("mock-api", "app", "migrate", "worker"):
         assert services[name]["read_only"] is True
     assert services["mock-api"]["volumes"] == ["./seed_data/v1:/seed_data/v1:ro"]
     raw = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
@@ -234,7 +234,7 @@ def test_only_the_migrate_service_holds_the_owner_password() -> None:
 
 def test_services_that_migrate_at_start_get_a_start_period() -> None:
     services = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))["services"]
-    for name in ("app", "mock-api"):
+    for name in ("app", "mock-api", "worker"):
         assert services[name]["healthcheck"]["start_period"] == "120s", name
         assert services[name]["healthcheck"]["timeout"] == "10s", name  # a 3 s limit failed on a busy machine
 

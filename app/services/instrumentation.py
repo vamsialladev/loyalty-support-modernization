@@ -17,19 +17,25 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app import correlation
 from app.clock import utc_now_precise
 from app.domain.roles import Identity
 from app.persistence.models import Case, CaseEvent, SystemEvent
 
 SCRIPTED_PREFIX = "scripted-"
+SYSTEM_PREFIX = "system-"
 
 
 def actor_kind(who: Identity) -> str:
     """Scripted benchmark actors are ordinary accounts with the same roles; their usernames mark them (ADR-0048)."""
+    if who.username.startswith(SYSTEM_PREFIX):
+        return "system"
     return "scripted" if who.username.startswith(SCRIPTED_PREFIX) else "human"
 
 
 def record(s: Session, case: Case, who: Identity, action: str, **detail: Any) -> CaseEvent:
+    if correlation_id := correlation.current():
+        detail["correlation_id"] = correlation_id
     step = (s.scalar(select(func.max(CaseEvent.step)).where(CaseEvent.case_id == case.id)) or 0) + 1
     event = CaseEvent(
         case_id=case.id,

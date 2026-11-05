@@ -37,6 +37,15 @@ def test_legacy_arm_imports_no_web_database_http_or_model_sdk() -> None:
         assert not (top & BANNED), f"{path.name} imports {top & BANNED}"
 
 
+def test_the_worker_is_a_process_of_its_own_and_uses_no_in_memory_queue() -> None:
+    """JOB-02: critical work lives in the jobs table, never in a background task inside the web process."""
+    names = {n for path in (ROOT / "app/web").rglob("*.py") for n in imports(path)}
+    assert "app.worker" not in names and "fastapi.BackgroundTasks" not in names
+    for path in (ROOT / "app").rglob("*.py"):
+        text = path.read_text(encoding="utf-8")
+        assert "BackgroundTasks" not in text and "queue.Queue" not in text and "create_task" not in text, path.name
+
+
 def test_nothing_in_the_app_imports_the_benchmark_tooling() -> None:
     for path in (ROOT / "app").rglob("*.py"):
         assert not [n for n in imports(path) if n.split(".")[0] in {"benchmarks", "evaluations"}], path

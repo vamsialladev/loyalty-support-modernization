@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import JSON, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, ForeignKey, Index, Integer, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -225,3 +225,37 @@ class PolicyChunk(Base):
     text: Mapped[str] = mapped_column(Text)
 
     __table_args__ = (UniqueConstraint("policy_version_id", "section_id", name="uq_policy_chunks_section"),)
+
+
+class Job(Base):
+    """One unit of durable background work (spec B.12; `app/services/jobs.py`). The payload holds IDs only."""
+
+    __tablename__ = "jobs"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    kind: Mapped[str] = mapped_column(String(48))
+    dedupe_key: Mapped[str] = mapped_column(String(80))
+    case_id: Mapped[int | None] = mapped_column(ForeignKey("cases.id"), default=None)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(16))  # queued | running | succeeded | dead
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer)
+    run_after_utc: Mapped[str] = mapped_column(String(20))
+    lease_owner: Mapped[str | None] = mapped_column(String(64), default=None)
+    lease_token: Mapped[str | None] = mapped_column(String(32), default=None)
+    lease_expires_utc: Mapped[str | None] = mapped_column(String(20), default=None)
+    heartbeat_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
+    last_error: Mapped[str | None] = mapped_column(String(64), default=None)
+    correlation_id: Mapped[str | None] = mapped_column(String(32), default=None)
+    created_at_utc: Mapped[str] = mapped_column(String(20))
+    finished_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
+
+    __table_args__ = (
+        Index("ix_jobs_claim", "status", "run_after_utc"),
+        Index(
+            "uq_jobs_active",
+            "dedupe_key",
+            unique=True,
+            postgresql_where=text("status IN ('queued', 'running')"),
+            sqlite_where=text("status IN ('queued', 'running')"),
+        ),
+    )

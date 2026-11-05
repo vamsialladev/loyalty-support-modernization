@@ -699,3 +699,31 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   locks and re-checks first.
 - **What would change this decision:** a real platform pushing change events, which would allow ending approvals at once
   instead of at the next approve or execute (D9).
+
+## ADR-0060: a durable job queue in Postgres, at least once, with leases on the database's clock
+- **Context:** spec B.12 and Appendix B want leases, heartbeats, recovery, bounded retries, dead jobs, duplicate prevention,
+  graceful shutdown and correlation IDs, with no in-memory work. Appendix B names `FOR UPDATE SKIP LOCKED`. The owner chose
+  to route all execution through it (D1).
+- **Options considered:** an external queue (a second system to keep consistent with Postgres, which needs an outbox: Stage
+  10); a task library (a dependency hiding the very behaviour this stage must prove); a table in the app's own database.
+- **Decision:** the `jobs` table and `app/services/jobs.py`. It enqueues in the caller's transaction, so a job commits or
+  rolls back with the state change that needs it. A partial unique index allows one active job per kind and case. Leases
+  use the database's clock, so workers with different clocks agree. Each claim gets a new token, so a worker that lost its
+  lease can record nothing. Attempts are counted at claim, so a crash uses one. After `max_attempts` a job goes dead and
+  stays visible, until a person requeues it with `python -m app.worker --requeue`. `Defer` waits without using an attempt.
+  A signal stops claiming and lets the job in hand finish, and `stop_grace_period` allows for that. A hard kill is recovered
+  through the lease.
+- **Failure semantics:** **at least once.** A job can run twice, because a worker can die after doing the work and before
+  recording it. So every handler must be safe to repeat. This queue doesn't provide exactly-once effects and doesn't claim
+  to; the write path gets its safety from the state machine and the idempotency key.
+- **Trade-off:** the queue shares the primary database, so its limit is that database's write capacity (estimates in
+  `docs/scaling-and-limits.md`, measured in Milestone 12). Workers poll once a second, so a job can wait about a second.
+  Timestamps are text, compared as text, which works only because they all have one format. Dead jobs are listed by a
+  command, with alerts in Milestone 12.
+- **Result:** on SQLite with a test clock: order, due times, backoff, bounds, `Defer`, lost-lease writes refused. On real
+  Postgres as the runtime role: 8 workers claim 50 jobs each exactly once, `SKIP LOCKED` doesn't wait, 20 concurrent enqueues
+  add one, a real process killed mid-job is recovered, a heartbeat keeps a slow job. The compose check sends a real SIGTERM
+  and checks exit code 0. Found while building: the SQLite driver's savepoints released as commits, so a rollback didn't
+  undo a job; the engine now uses SQLAlchemy's documented recipe.
+- **What would change this decision:** a load test showing the queue limits the primary database (Milestone 12), or a need for
+  fan-out across services (Stage 10).
