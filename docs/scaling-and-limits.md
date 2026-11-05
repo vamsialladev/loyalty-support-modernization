@@ -46,7 +46,29 @@ Not load-tested (Milestone 12). **Estimates** and design limits only.
 | Dimension | Today | What breaks first at 10x / 100x (estimate) | Planned response |
 |---|---|---|---|
 | Customer-system calls per case | Arm A makes about 6–10 calls per case (four screens, attach re-reads, the duplicate check's ledger read) | The customer platform's rate limit, long before the app | Arm B consolidates reads (Milestone 7); cache only where authorization allows (B.12) |
-| Execution | Synchronous in the request; one upstream write per approval | Slow upstream writes hold web workers; double clicks race | Durable jobs with leases and row locks (Milestone 6) |
-| Case event log | One row per step, unique (case, step) | Step numbering by `max(step) + 1` can collide under concurrent actions on one case | Optimistic `version` checks in Milestone 6; the unique constraint already refuses the collision rather than corrupting the order |
+| Execution | **Milestone 6: moved to the worker;** see the next section. One upstream write per approval | — | Done |
+| Case event log | One row per step, unique (case, step) | **Milestone 6:** step numbers are now taken under the case lock, tested with 12 concurrent writers | Done |
 | Sessions | One row per sign-in, never cleaned up | Table growth over months | A retention job with the other retention rules (spec C.3) |
 | Scripted agent | Not measured in Milestone 5 (mechanics only) | Not a production path | Benchmark runs in Milestone 10 report their own timings, labelled "scripted, not human timing" |
+
+## Queue and database (Milestone 6)
+
+**Nothing here is measured under load; every figure is an estimate.** The Milestone 12 load test replaces them. What is measured:
+8 workers claimed 50 jobs each exactly once (`tests/test_worker_postgres.py`). That proves correctness, not throughput.
+
+| Dimension | Today | What breaks first at 10x / 100x (estimate) | Planned response |
+|---|---|---|---|
+| Job volume | About 320 requests a month (A1); only a fraction reach execution. One worker handles one job at a time | Not the queue. At 100x (about 32,000 a month, about 1,100 a day) a single worker still has room if each job takes seconds; **the customer platform's rate limit comes first** | More worker processes. `SKIP LOCKED` lets them share without waiting. Honour `Retry-After` (built) |
+| Calls per execution | About 4 reads to re-check, 1 write, plus lookups if uncertain | Upstream rate limits, as above. Approve and execute each add a re-check | Arm B consolidates reads (M7); a per-customer limiter if a vendor's limits need one |
+| Jobs table growth | One row per job, never deleted | Claim query slows once finished rows dominate. The claim index includes status, so this is slow rot, not a cliff | The retention job (spec C.3) deletes finished jobs |
+| Polling | Each idle worker runs one claim query a second | Trivial at a few workers; visible at hundreds | Back off when idle, or `LISTEN/NOTIFY` |
+| Row locks | One short lock per case, none across a network call | Contention only on one case, which real traffic rarely hits | None needed unless a case gets very busy |
+| Case event log | Step numbers are taken under the case lock, one writer at a time per case | Fine: the serialization is per case, not global. Table growth is the limit | Partition by month if a customer keeps years online |
+| Audit retention | `case_events` and `system_events` can't be deleted by the app role | Unbounded growth by design | A retention job run as the owner role, with its own audit (M12, spec C.3) |
+| Primary database | One Postgres holds business data, search, queue and audit | **The first real limit is write capacity shared by all four.** Estimate: far above this volume; unknown until measured | Measure in M12. Move the queue out only if the measurement says so |
+
+**First thing that breaks, overall (estimate):** supervisor approval capacity, then the customer platform's rate limits, then
+the primary database. The queue itself is unlikely to be first.
+
+**Team size:** the write path takes care to change. A second engineer can add an arm without touching it, because arms plug in
+through `arm_review.review_for`.

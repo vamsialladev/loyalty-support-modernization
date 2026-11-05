@@ -6,6 +6,14 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **A note's length is not its quality** (ADR-0054). `deny_other` with 20 characters can still close a case wrongly, and
   a rule-based code against complete evidence is still an override with any non-empty note. Both are logged as overrides
   for review. Evidence-free rule-based closes are now refused (TD-17, closed).
+- **Exactly-once isn't promised.** A posting can land between the re-check and the submit, a platform's lag can outlast the
+  settle window, and a platform can forget keys (RFC-0001, risks). These are stated, and a pilot must measure them.
+- **The settle window (60 s) and approval expiry (24 h) are assumptions** (TD-21).
+- **Changed evidence is noticed at approve and execute, not when it changes** (TD-18). Nothing stale executes.
+- **Search needs every word to match, in English** (`docs/retrieval.md`). Rule values come from front matter, so search can't
+  change what a stay is owed.
+- **The kill switch can't recall a submission already on its way:** at most one per worker (ADR-0061).
+- **Arm B and C don't exist yet.** The eligibility engine is tested but not used by the console until Milestone 7.
 - **Reopening keeps the history but is a person's judgment.** A length check can't judge a reason (`cases.reopen`).
 - **Audit history is append-only for the app role only.** The owner role, a superuser and anyone with the backups can
   still rewrite it. It isn't tamper-proof (ADR-0058).

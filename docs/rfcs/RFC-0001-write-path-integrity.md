@@ -3,6 +3,8 @@ Status: accepted      Milestone: 6      Author: Claude Code (Opus 5.5), for the 
 
 Approved by the owner on 2026-11-04, with the ten recommended choices (D1–D10) below. Decisions: ADR-0055 onward.
 Everything here is a simulation with synthetic data. "Live" in this document means the local stack.
+**Built as described on 2026-11-04;** results are in `docs/verification-log.md`, Milestone 6. Differences while building: `FOR NO
+KEY UPDATE`, not `FOR UPDATE`, on the case row (a real-Postgres test deadlocked), and the case-row lock sits in `record()` too.
 
 ## Context
 
