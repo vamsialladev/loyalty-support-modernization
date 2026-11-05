@@ -39,7 +39,7 @@ jobs:
           uvx pip-audit==2.10.1 -r requirements-audit.txt --no-deps --disable-pip
 
   postgres:
-    name: Real-Postgres mock API tests
+    name: Real-Postgres tests
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
@@ -56,6 +56,7 @@ jobs:
           --health-interval 3s --health-timeout 3s --health-retries 20
     env:
       TEST_MOCK_API_DATABASE_URL: postgresql+psycopg://mock_api:ci-only-throwaway@127.0.0.1:5432/mock_customer_api_test
+      TEST_APP_DATABASE_URL: postgresql+psycopg://mock_api:ci-only-throwaway@127.0.0.1:5432/loyalty_test
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: astral-sh/setup-uv@v10.3.3
@@ -64,7 +65,9 @@ jobs:
           python-version: "3.12"
           enable-cache: true
       - run: uv sync --frozen
-      - run: uv run pytest -m postgres tests/test_mock_api_postgres.py -rs
+      - name: The app's throwaway database
+        run: psql "postgresql://mock_api:ci-only-throwaway@127.0.0.1:5432/mock_customer_api_test" -c "CREATE DATABASE loyalty_test"
+      - run: uv run pytest -m postgres -rs
 
   secrets:
     name: Secret scan of the full history

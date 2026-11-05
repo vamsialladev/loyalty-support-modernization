@@ -1,0 +1,80 @@
+# Dated outcomes that must stay true when a policy version is published (SYNTHETIC; spec B.6, POL-05; ADR-0057).
+# Written from the policy text, not from the eligibility engine. Every case is dated before 2026-11-01, so a future-dated
+# version passes, and a version that changes what an earlier date means is refused until this file is changed in review.
+
+stay_defaults:
+  record_id: G-R1
+  stay_id: BR-0001
+  property: beach-resort
+  member_on_booking: true
+  arrival_date: "2026-01-01"
+  nights: 2
+  checkout_at_utc: "2026-08-01T16:00:00Z"
+  status: checked_out
+  source_code: WEB
+  rate_code: BAR
+  room_revenue_cents: 45099
+  member_number: GR-00001
+  channel: direct
+  posted_at_utc_default: "2026-08-02T00:00:00Z"
+
+cases:
+  - name: v2, on time, nothing posted
+    stay: {}
+    received_at_utc: "2026-09-01T12:00:00Z"
+    action: adjust
+    points_owed: 4509
+  - name: v2, the day before the 14-day wait ends
+    stay: {}
+    received_at_utc: "2026-08-14T12:00:00Z"
+    action: wait_until
+  - name: v2, the day the 14-day wait ends
+    stay: {}
+    received_at_utc: "2026-08-15T12:00:00Z"
+    action: adjust
+  - name: v2, already credited
+    stay: {}
+    received_at_utc: "2026-09-01T12:00:00Z"
+    credited: [4509]
+    action: no_adjustment_credited
+  - name: v2, a posting is pending
+    stay: {}
+    received_at_utc: "2026-09-01T12:00:00Z"
+    pending_until: ["2026-09-05T12:00:00Z"]
+    action: no_adjustment_pending
+  - name: v2, OTA with the member number on the booking
+    stay: {channel: ota, source_code: OTA-FEED}
+    received_at_utc: "2026-09-01T12:00:00Z"
+    action: adjust
+  - name: v2, OTA without the member number on the booking
+    stay: {channel: ota, source_code: OTA-FEED, member_on_booking: false}
+    received_at_utc: "2026-09-01T12:00:00Z"
+    action: deny
+  - name: v2, travel agent on a corporate rate
+    stay: {channel: travel_agent, source_code: GDS-TA, rate_code: CORP-1}
+    received_at_utc: "2026-09-01T12:00:00Z"
+    action: adjust
+  - name: v2, travel agent on another rate
+    stay: {channel: travel_agent, source_code: GDS-TA}
+    received_at_utc: "2026-09-01T12:00:00Z"
+    action: deny
+  - name: v1, inside the 30-day wait
+    stay: {checkout_at_utc: "2026-06-01T16:00:00Z"}
+    received_at_utc: "2026-06-20T12:00:00Z"
+    action: wait_until
+  - name: v1, after the 30-day wait
+    stay: {checkout_at_utc: "2026-06-01T16:00:00Z"}
+    received_at_utc: "2026-07-05T12:00:00Z"
+    action: adjust
+  - name: v1, OTA earns nothing
+    stay: {checkout_at_utc: "2026-06-01T16:00:00Z", channel: ota, source_code: OTA-FEED}
+    received_at_utc: "2026-07-05T12:00:00Z"
+    action: deny
+  - name: more than 12 months after checkout
+    stay: {checkout_at_utc: "2025-06-01T16:00:00Z"}
+    received_at_utc: "2026-06-05T12:00:00Z"
+    action: deny
+  - name: a checkout no policy covers
+    stay: {checkout_at_utc: "2024-06-01T16:00:00Z"}
+    received_at_utc: "2024-08-01T12:00:00Z"
+    action: escalate

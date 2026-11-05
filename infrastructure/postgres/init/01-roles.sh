@@ -21,12 +21,15 @@ ALTER DATABASE loyalty OWNER TO loyalty_app;
 ALTER SCHEMA public OWNER TO loyalty_app;
 CREATE DATABASE mock_customer_api OWNER mock_api;
 CREATE DATABASE mock_customer_api_test OWNER mock_api;
+CREATE DATABASE loyalty_test OWNER loyalty_app;
 REVOKE CONNECT ON DATABASE loyalty FROM PUBLIC;
 REVOKE CONNECT ON DATABASE mock_customer_api FROM PUBLIC;
 REVOKE CONNECT ON DATABASE mock_customer_api_test FROM PUBLIC;
+REVOKE CONNECT ON DATABASE loyalty_test FROM PUBLIC;
 GRANT CONNECT ON DATABASE loyalty TO loyalty_app;
 GRANT CONNECT ON DATABASE mock_customer_api TO mock_api;
 GRANT CONNECT ON DATABASE mock_customer_api_test TO mock_api;
+GRANT CONNECT ON DATABASE loyalty_test TO loyalty_app;
 EOSQL
 
 for db in mock_customer_api mock_customer_api_test; do

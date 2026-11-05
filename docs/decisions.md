@@ -522,6 +522,9 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   and runs the owner's commands, including seeding twice.
 - **What would change this decision:** a hosted deployment, where migrations belong in a release step with their own
   failure handling, not in container start (Milestone 12).
+- **Update (2026-11-04, Milestone 6):** the unhealthy failure was seen happening for the first time, on the compose check
+  at 99-100% CPU with 1.1 to 3.6 GB free: `mock-api` answered but its health check failed. The check starts Python inside
+  a 3-second limit, now 10 seconds. This supports the slow-machine hypothesis for the owner's run; it doesn't prove it.
 
 ## ADR-0053: a private repository and a first CI workflow before Milestone 6
 - **Context:** the owner approved creating `vamsialladev/loyalty-support-modernization` as private. No workflow existed
@@ -626,3 +629,24 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   disagreement. Every action in the labeler's vocabulary was reached except `request_info` at stay level, which the case
   verdict test covers. The validation, held-out and stress splits weren't opened.
 - **What would change this decision:** a held-out disagreement in Milestone 10, which would be reported, not tuned away.
+
+## ADR-0057: policies are stored per section, searched with an expression index, and published through checks
+- **Context:** spec B.6 wants versions selected by business date, citations that open the exact excerpt, Postgres full-text
+  search as the baseline and a controlled publishing workflow. Appendix B says chunks are stored with a `tsvector`.
+- **Options considered:** a stored `tsvector` column (Appendix B's default); an expression GIN index; publishing without
+  outcome checks, relying on review; running the golden outcomes through the labeler.
+- **Decision:** one chunk per `##` section. A GIN **expression** index instead of a stored column: the search uses the same
+  expression, and the model stays portable, so the migration-drift test keeps working on SQLite. This is a recorded
+  change from Appendix B's default. Publishing checks the set of versions as it would stand: rule fields, the next
+  version number, no gap or overlap in dates, and 14 hand-written dated outcomes in `config/policy-regression/`. A
+  version that changes what an earlier date means is therefore refused until that file is changed in review. Two
+  new roles: administrator (publishing) and auditor (read-only), with two demo accounts. Events with no case go to a
+  new `system_events` table. The committed policy files are loaded at their stated status by the seed, and the
+  images now carry `policies/`: fictional text, with no labels or personal data.
+- **Trade-off:** the golden cases can't use the labeler, because the app may not import it (ADR-0029), so they are a
+  third, small statement of the rules to keep in step. Front matter and prose aren't checked against each other.
+- **Result:** tests cover selection on the change-over days, exact excerpts, drafts never applying, each refusal, escaping,
+  and who can do what. On real Postgres: stemming, ranking, hostile query text, the plan using the index, and two
+  administrators publishing one draft with exactly one success. Limits: `docs/retrieval.md`.
+- **What would change this decision:** a controlled comparison in which hybrid search beats full-text (Milestone 15), or a
+  real customer whose governance requires a second person to publish.

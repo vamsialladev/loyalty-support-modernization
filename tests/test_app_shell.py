@@ -48,6 +48,7 @@ def test_seed_command_migrates_then_calls_the_mock(
 
     calls: list[dict[str, Any]] = []
     monkeypatch.setattr(seed_cli.command, "upgrade", lambda cfg, rev: calls.append({"upgrade": rev}))
+    monkeypatch.setattr(seed_cli, "_load_policies", lambda: None)  # no database here; the next test uses a real one
     monkeypatch.setenv("MOCK_API_TOKEN", "fake-token-for-test")
 
     def ok(url: str, **kw: Any) -> httpx.Response:
@@ -98,6 +99,7 @@ def test_seed_on_a_loaded_mock_still_migrates_and_creates_accounts(
     assert seed_cli.main([]) == 0
     assert seed_cli.main([]) == 0, "running it a second time must also succeed"
     out = capsys.readouterr()
+    assert "policies: guest-rewards-earning@v1" in out.out and "policies: already loaded" in out.out
     assert "mock data already loaded, skipped" in out.out and "agent.ana" in out.out and out.err == ""
     assert "fake-demo-password-1234" not in out.out
     identity = LocalDemoIdentity(make_sessions(make_engine(url)))

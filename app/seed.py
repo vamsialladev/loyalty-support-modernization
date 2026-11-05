@@ -1,12 +1,13 @@
-"""Quickstart seed (spec F.2): migrate the app database, create the local demo accounts, then ask the mock customer
-API to load the dataset.
+"""Quickstart seed (spec F.2): migrate the app database, create the local demo accounts, load the initial policy set,
+then ask the mock customer API to load the dataset.
 
     docker compose exec app python -m app.seed --dataset demo          # 'demo' is an alias for v1
     docker compose exec app python -m app.seed --dataset demo --reset  # reload the mock systems from scratch
 
-Safe to run again: the migration and the demo accounts are repeatable, and data already loaded in the mock API counts
-as success (ADR-0052). Reads DATABASE_URL, MOCK_API_URL, MOCK_API_TOKEN and DEMO_USER_PASSWORD (the demo accounts are
-created only when it is set; ADR-0045). Prints counts and usernames only, never a password or token.
+Safe to run again: the migration, the demo accounts and the policy set are repeatable, and data already loaded in the
+mock API counts as success (ADR-0052, ADR-0057). Reads DATABASE_URL, MOCK_API_URL, MOCK_API_TOKEN and DEMO_USER_PASSWORD
+(the demo accounts are created only when it is set; ADR-0045). Prints counts and usernames only, never a password or
+token.
 """
 
 from __future__ import annotations
@@ -21,6 +22,17 @@ from alembic import command
 from alembic.config import Config
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def _load_policies() -> None:
+    from app.persistence.database import make_engine, make_sessions
+    from app.services.customer_config import CustomerConfig
+    from app.services.policies import load_policy_set
+
+    config = CustomerConfig.load(os.environ.get("APP_CUSTOMER_ID", "hg-demo"))
+    with make_sessions(make_engine(os.environ["DATABASE_URL"]))() as s:
+        added = load_policy_set(s, config.customer_id, ROOT / config.policy_set)
+    print("policies: " + (", ".join(added) if added else "already loaded"))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -40,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
             print("demo accounts: " + ", ".join(ensure_demo_users(s, password)))
     else:
         print("demo accounts: skipped (DEMO_USER_PASSWORD is not set)")
+    _load_policies()
 
     url = os.environ.get("MOCK_API_URL", "http://localhost:8020")
     resp = httpx.post(

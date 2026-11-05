@@ -21,8 +21,8 @@
     <span class="brand">Guest Rewards support · legacy console (arm A)</span>
     {% if user %}
     <nav aria-label="Main">
-      <a href="/queue">Queue</a>
-      <a href="/cases/new">New case</a>
+      {% if user.role == Role.ADMINISTRATOR %}<a href="/admin">Configuration</a>{% else %}<a href="/queue">Queue</a>{% endif %}
+      {% if can_work %}<a href="/cases/new">New case</a>{% endif %}
       {% if user.role == Role.SUPERVISOR %}<a href="/approvals">Approvals</a>{% endif %}
     </nav>
     <form method="post" action="/logout" class="signout">

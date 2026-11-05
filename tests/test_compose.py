@@ -215,6 +215,7 @@ def test_services_that_migrate_at_start_get_a_start_period() -> None:
     services = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))["services"]
     for name in ("app", "mock-api"):
         assert services[name]["healthcheck"]["start_period"] == "120s", name
+        assert services[name]["healthcheck"]["timeout"] == "10s", name  # a 3 s limit failed on a busy machine
 
 
 def test_stack_up_reports_the_cause_and_the_compose_check_covers_the_upgrade() -> None:

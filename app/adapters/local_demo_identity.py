@@ -24,6 +24,8 @@ DEMO_USERS: tuple[tuple[str, str, Role], ...] = (
     ("agent.ben", "Ben (agent)", Role.AGENT),
     ("supervisor.sam", "Sam (supervisor)", Role.SUPERVISOR),
     ("supervisor.sky", "Sky (supervisor)", Role.SUPERVISOR),
+    ("admin.ada", "Ada (administrator)", Role.ADMINISTRATOR),
+    ("auditor.abe", "Abe (auditor)", Role.AUDITOR),
 )
 
 
@@ -53,7 +55,7 @@ class LocalDemoIdentity:
 
 
 def ensure_demo_users(s: Session, password: str) -> list[str]:
-    """Create the four demo accounts, or reset their password and role. Returns the usernames (never the password)."""
+    """Create the demo accounts, or reset their password and role. Returns the usernames (never the password)."""
     if len(password) < 12:
         raise ValueError("DEMO_USER_PASSWORD must be at least 12 characters")
     names = []

@@ -163,3 +163,54 @@ class CaseEvent(Base):
     sim_time_utc: Mapped[str | None] = mapped_column(String(20), default=None)
 
     __table_args__ = (UniqueConstraint("case_id", "step", name="uq_case_events_step"),)
+
+
+class SystemEvent(Base):
+    """Audit events that belong to no case: policy publishing, the kill switch, dead jobs (RFC-0001)."""
+
+    __tablename__ = "system_events"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    actor: Mapped[str] = mapped_column(String(64))
+    actor_kind: Mapped[str] = mapped_column(String(16))  # human | scripted | system
+    action: Mapped[str] = mapped_column(String(48))
+    detail: Mapped[dict[str, Any]] = mapped_column(JSON)
+    at_utc: Mapped[str] = mapped_column(String(32))
+
+
+class PolicyVersionRow(Base):
+    """One version of one policy document, as stored. `status` here is the truth; the file's front matter is not."""
+
+    __tablename__ = "policy_versions"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    customer_id: Mapped[str] = mapped_column(String(32))
+    policy_id: Mapped[str] = mapped_column(String(64))
+    version: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(200))
+    effective_from: Mapped[str] = mapped_column(String(10))
+    effective_to: Mapped[str | None] = mapped_column(String(10), default=None)
+    status: Mapped[str] = mapped_column(String(16))  # draft | published | superseded
+    sections: Mapped[list[str]] = mapped_column(JSON)
+    rules: Mapped[dict[str, Any]] = mapped_column(JSON)
+    checksum: Mapped[str] = mapped_column(String(64))
+    source_text: Mapped[str] = mapped_column(Text)
+    created_by: Mapped[str] = mapped_column(String(64))
+    created_at_utc: Mapped[str] = mapped_column(String(20))
+    published_by: Mapped[str | None] = mapped_column(String(64), default=None)
+    published_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
+    regression: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
+
+    __table_args__ = (UniqueConstraint("customer_id", "policy_id", "version", name="uq_policy_versions_version"),)
+
+
+class PolicyChunk(Base):
+    """One section of a policy version: the exact excerpt a citation opens (spec B.6). Postgres indexes it for full-text
+    search with an expression index in revision 0003 (ADR-0057)."""
+
+    __tablename__ = "policy_chunks"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    policy_version_id: Mapped[int] = mapped_column(ForeignKey("policy_versions.id"), index=True)
+    section_id: Mapped[str] = mapped_column(String(16))
+    heading: Mapped[str] = mapped_column(String(200))
+    text: Mapped[str] = mapped_column(Text)
+
+    __table_args__ = (UniqueConstraint("policy_version_id", "section_id", name="uq_policy_chunks_section"),)

@@ -27,6 +27,7 @@ from app.domain.roles import Identity, Role
 from app.persistence.database import make_engine, make_sessions
 from app.persistence.models import Case, User
 from app.ports.customer_systems import CustomerSystems
+from app.services.policies import load_policy_set
 from benchmarks.intake import load_case, read_split
 from customer_shapes import CustomerShape
 from mock_customer_api import db as mock_db
@@ -97,6 +98,7 @@ def make_arm_a(template: dict[str, Any], tmp_path: Path) -> ArmA:
     password = secrets.token_urlsafe(16)
     with sessions() as s:
         ensure_demo_users(s, password)
+        load_policy_set(s, "hg-demo", ROOT / "policies/hg-demo")
     return ArmA(
         sessions,
         mock_client,
@@ -116,7 +118,7 @@ class Browser:
         self.client = client
         self.csrf = ""
 
-    def login(self, username: str, password: str) -> None:
+    def login(self, username: str, password: str, landing: str = "Points queue") -> None:
         self.client.cookies.clear()
         page = self.client.get("/login")
         token = re.search(r'name="login_csrf" value="([^"]+)"', page.text)
@@ -124,7 +126,7 @@ class Browser:
         resp = self.client.post(
             "/login", data={"username": username, "password": password, "login_csrf": token.group(1)}
         )
-        assert resp.status_code == 200 and "Points queue" in resp.text, resp.text[:300]
+        assert resp.status_code == 200 and landing in resp.text, resp.text[:300]
         self.csrf = self._csrf(resp.text)
 
     @staticmethod

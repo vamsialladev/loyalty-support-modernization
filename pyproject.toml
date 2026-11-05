@@ -65,7 +65,7 @@ testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-q"
 markers = [
-    "postgres: needs a real PostgreSQL in TEST_MOCK_API_DATABASE_URL (skipped, with the reason, if absent)",
+    "postgres: needs a real PostgreSQL in TEST_MOCK_API_DATABASE_URL or TEST_APP_DATABASE_URL (skipped, with the reason, if absent)",
     "browser: drives Chromium with Playwright (skipped, with the reason, if Chromium is not installed)",
 ]
 
