@@ -43,6 +43,7 @@ API-01 and API-02 to Milestone 7. The owner asked for the real-Postgres tests an
 | 30 | Job queue, offline | `uv run pytest tests/test_jobs.py tests/test_case_workflow.py tests/test_state_machine.py tests/test_console_web.py` | **200 passed.** First run: 2 failed. One was my test, where a lease had run out so the older job correctly came back first. **One was a real fault:** the SQLite driver's savepoints released as commits, so a rollback didn't undo a job. The engine now uses SQLAlchemy's documented recipe |
 | 31 | Compose check, step 6 | `scripts\compose_check.ps1 -Browser` | **"compose check passed"**, exit 0: real-Postgres **51 passed**, Playwright 2 passed. `worker exit code after SIGTERM: 0`, from a real `docker compose stop`. A real process ended with `os._exit` mid-job was recovered by the next claim, with attempt 2 and `recovered` set. 8 workers claimed 50 jobs each exactly once |
 | 32 | Secret scan before pushing, from here on | `docker run ... gitleaks git /repo --redact` | **no leaks found**, with the `.gitleaksignore` from row 28 |
+| 33 | CI on PR #8, first run | Actions job 127031971550 | **1 failed, 639 passed, 52 skipped.** `test_the_sweep_runs_on_its_interval...` **found a real bug:** `_last_sweep` started at 0 and was compared with `time.monotonic()`, which on Linux counts from boot, so on a machine up for less than the interval the first sweep was skipped. It passed on the owner's PC only because that had been up for days. Fixed: the first sweep runs at once |
 
 ## First push and the close fix (2026-11-04)
 

@@ -58,7 +58,7 @@ class Worker:
         self.poll_seconds, self.sweep, self.sweep_seconds = poll_seconds, sweep, sweep_seconds
         self.clock, self.health_file = clock, health_file
         self._stop = threading.Event()
-        self._last_sweep = 0.0
+        self._last_sweep: float | None = None
 
     def request_stop(self) -> None:
         """Stop claiming. The job in hand finishes first."""
@@ -138,7 +138,9 @@ class Worker:
             self.health_file.touch()
 
     def _maybe_sweep(self) -> None:
-        if self.sweep is None or time.monotonic() - self._last_sweep < self.sweep_seconds:
+        if self.sweep is None:
+            return
+        if self._last_sweep is not None and time.monotonic() - self._last_sweep < self.sweep_seconds:
             return
         self._last_sweep = time.monotonic()
         try:
