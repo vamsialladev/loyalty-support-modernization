@@ -115,3 +115,23 @@ def test_domain_code_imports_no_web_database_http_or_model_sdk() -> None:
         names = {a.name.split(".")[0] for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names}
         names |= {n.module.split(".")[0] for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) and n.module}
         assert not (names & banned), f"{path.name} imports {names & banned}"
+
+
+def test_readyz_logs_why_the_database_failed_with_secrets_masked(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    from app.main import mask_secrets
+
+    client = app_client(monkeypatch, f"sqlite:///{(tmp_path / 'missing' / 'app.db').as_posix()}")
+    with caplog.at_level("WARNING", logger="app.readiness"):
+        assert client.get("/readyz").json()["database"] == "unreachable"
+    assert "database check failed: OperationalError" in caplog.text
+    masked = mask_secrets("failed postgresql://loyalty_app:hunter2value@db:5432/loyalty password=hunter2value")
+    assert "hunter2value" not in masked and "loyalty_app" in masked
+
+
+def test_the_role_script_grants_connect_back_after_changing_the_owner() -> None:
+    sql = (ROOT / "infrastructure/postgres/sql/app-owner.sql").read_text(encoding="utf-8")
+    assert sql.index("OWNER TO loyalty_owner', current_database()") < sql.index(
+        "GRANT CONNECT ON DATABASE %I TO loyalty_app"
+    )

@@ -672,6 +672,13 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   that is behind, because the runtime role can't: `stack.ps1 -Action migrate` does.
 - **Result:** real-Postgres tests as the runtime role; the compose check rebuilds the old single-role state and upgrades it.
   The close rules from ADR-0054 now also run on real Postgres.
+- **Update (2026-11-05):** the upgrade failed on the owner's real Milestone 5 volume: `loyalty_app` lost `CONNECT`, because
+  it had owned the database, so its only right was the owner's own, and the change of owner moved that. The compose check
+  missed it because it faked the old state from a newer volume and checked table rights, not a login. `app-owner.sql` now
+  grants `CONNECT` back; `scripts/upgrade_check_m5.ps1` builds a volume with the real Milestone 5 code and upgrades it, and
+  runs in the compose check. CI repeats the Milestone 5 ownership on every pull request and asserts the state is faithful
+  before upgrading it. **The lesson: a faked old state proves only what the fake contains; build it with the old code, and
+  test by logging in.** `/readyz` now logs why, masked. A worker that can't reach the database reports unhealthy and backs off.
 - **What would change this decision:** a real customer needing evidence beyond this role, which would mean anchoring a hash
   chain outside the database, or a separate audit store.
 

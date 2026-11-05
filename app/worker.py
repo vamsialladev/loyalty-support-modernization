@@ -34,6 +34,7 @@ Sweep = Callable[[Session], object]
 DEFAULT_LEASE_SECONDS = 60.0  # longer than any single upstream call's timeouts and retries
 DEFAULT_POLL_SECONDS = 1.0
 DEFAULT_SWEEP_SECONDS = 30.0
+MAX_CLAIM_BACKOFF_SECONDS = 60.0
 
 
 class Worker:
@@ -151,14 +152,18 @@ class Worker:
 
     def run_forever(self) -> None:
         log.info("worker started id=%s", self.worker_id)
+        failures = 0
         while not self.stopping:
-            self._touch_health()
             self._maybe_sweep()
             try:
                 did_work = self.run_once()
-            except Exception:  # the database went away: wait and try again
+                self._touch_health()  # only after the database answered: "healthy" must mean it can work
+                failures = 0
+            except Exception:  # the database went away: wait longer each time, so the log can't flood
+                failures += 1
                 log.exception("claim failed")
-                did_work = False
+                self._stop.wait(min(MAX_CLAIM_BACKOFF_SECONDS, self.poll_seconds * 2**failures))
+                continue
             if not did_work:
                 self._stop.wait(self.poll_seconds)
         log.info("worker stopped id=%s", self.worker_id)

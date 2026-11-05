@@ -8,6 +8,8 @@ Run: `uvicorn --factory app.main:create_app --port 8010`.
 
 from __future__ import annotations
 
+import logging
+import re
 from pathlib import Path
 
 import httpx
@@ -25,6 +27,13 @@ from app.settings import AppSettings
 from app.web.console import install_console
 
 ROOT = Path(__file__).resolve().parent.parent
+log = logging.getLogger("app.readiness")
+_URL_PASSWORD = re.compile(r"(://[^:/\s]+:)[^@\s]+@")
+_NAMED_SECRET = re.compile(r"(?i)((?:password|passwd|token|secret)[\"']?\s*[=:]\s*[\"']?)[^\s\"',]+")
+
+
+def mask_secrets(message: str) -> str:
+    return _NAMED_SECRET.sub(r"\1***", _URL_PASSWORD.sub(r"\1***@", message))[:500]
 
 
 def create_app(settings: AppSettings | None = None, systems_factory: SystemsFactory | None = None) -> FastAPI:
@@ -45,8 +54,9 @@ def create_app(settings: AppSettings | None = None, systems_factory: SystemsFact
                 conn.execute(text("SELECT 1"))
                 current = MigrationContext.configure(conn).get_current_revision()
                 checks["database"] = "ok" if current == schema_head else "not_migrated"
-        except Exception:
+        except Exception as exc:
             checks["database"] = "unreachable"
+            log.warning("readiness: database check failed: %s: %s", type(exc).__name__, mask_secrets(str(exc)))
         try:
             resp = httpx.get(f"{settings.mock_api_url}/readyz", timeout=2.0)
             checks["customer_systems"] = "ok" if resp.status_code == 200 else resp.json().get("status", "not_ready")

@@ -56,6 +56,11 @@ authorization, M9), API-01 and API-02 (moved to M7, as the owner approved). Code
   TD-13 closed, TD-18 to TD-27 added), TCO, onboarding, swap guide, role coverage, tool map, `docs/retrieval.md`.
 - **Codex exercise** prepared, not run: `docs/exercises/`.
 
+## After Milestone 6 (2026-11-05)
+The owner's real upgrade failed: the role split removed `loyalty_app`'s `CONNECT` on a Milestone 5 volume, which the compose
+check's faked old state had hidden. Fixed, with a check that upgrades a volume built by the real Milestone 5 code, in the compose
+check and CI (ADR-0058, updated). `/readyz` logs the reason; the worker's health is honest and its failed claims back off.
+
 ## After Milestone 5 (2026-11-03 to 2026-11-04)
 - Upgrade path from an existing volume: `/readyz` compares the database with this code's schema head, `stack.ps1 -Action
   up` names the cause, `app.seed` is repeatable, and the compose check runs this path (ADR-0052).

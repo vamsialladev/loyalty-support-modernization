@@ -3,7 +3,7 @@
 **Updated:** 2026-11-05, after Milestone 6, ready to start Milestone 7.
 
 ## Where things stand
-- Milestones 1-6 are on `main` in the **private** GitHub repository, merged through pull requests #3 to #10. Latest
+- Milestones 1-6 are on `main` in the **private** GitHub repository, merged through pull requests #3 to #11 (#11 is the upgrade fix below). Latest
   results: `docs/verification-log.md`, section "Milestone 6".
 - **Work on a branch and open a pull request.** Merge with a merge commit, not squash or rebase, so cited hashes stay valid.
   **The permission to push and merge covered Milestone 6's pull requests only (D10). Ask again for Milestone 7.** Push with:
@@ -13,8 +13,10 @@
   step 7). Anything with backslashes goes through the editor tools, never a shell heredoc (it put a tab in the log on step 2).
 
 ## Waiting on the owner
-1. **Upgrade your stack (D4).** Exact commands: `docs/onboarding.md` §4d. In short: `update-local-env.ps1`, preflight,
-   `stack.ps1 -Action up`, `stack.ps1 -Action seed`. Your data stays. Not run for you: `.env` and your volume are yours.
+1. **Finish upgrading your stack (D4). Milestone 7 shouldn't start until this is done.** Last read on 2026-11-05: your volume
+   is split and at `0007`, but `loyalty_app` has no `CONNECT`, with 4 accounts and 0 policies, because your stack predates the
+   fix. On `main`, `stack.ps1 -Action up`, then `-Action seed`, then `/readyz` should say `ready` (`docs/onboarding.md` §4d). Your
+   data stays. Not run for you: your volume is yours.
 2. **Label review:** the 30-label sheet (`evaluations/label-review/`).
 3. **The Milestone 6 exercise** (below), and optionally redoing A-000010 with the new Reopen button.
 4. **The Codex exercise**, whenever convenient: `docs/exercises/codex-reconciliation-review.md`. It needs your Codex account.
@@ -28,6 +30,9 @@ what would you ask a real vendor to size that risk?** Then, if you like, a small
 page, try Execute on an approved case, and read what the page and the job do.
 
 ## Known and open
+- **Upgrade tests must use a volume built by the old code.** A faked old state passed while the real one failed (ADR-0058,
+  updated; verification log, Milestone 6, rows 45-50). Milestone 7's migrations get checked by `scripts\upgrade_check_m5.ps1`
+  through the compose check, which runs it automatically.
 - **Local test runs are slow under load.** The offline suite took 35 min 6 s here, against about 3 min on CI, at 99-100% CPU.
   Another project's server and a screen recorder were using 3-4 cores. The compose check once failed on a health check because of
   it (ADR-0052, updated). Close heavy apps first if you can.
