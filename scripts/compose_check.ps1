@@ -45,7 +45,7 @@ foreach ($image in @("$project-mock-api", "$project-app")) {
 Step "real-Postgres integration tests (incl. stored role passwords, blank password refused)" {
     $env:TEST_MOCK_API_DATABASE_URL = "postgresql+psycopg://mock_api:$($values['MOCK_API_DB_PASSWORD'])@127.0.0.1:$dbPort/mock_customer_api_test"
     $env:TEST_DB_ROLES_CONTAINER = "$project-db-1"
-    uv run pytest -m postgres -q -p no:cacheprovider
+    uv run pytest -m postgres -p no:cacheprovider -rs
     Remove-Item Env:TEST_MOCK_API_DATABASE_URL, Env:TEST_DB_ROLES_CONTAINER
 }
 if ($Browser) {

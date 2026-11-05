@@ -8,6 +8,10 @@ display_name: Simulated hotel group (stages 0-8)
 policy_set: policies/hg-demo
 synthetic: true
 
+# Assumptions, not measurements (ADR-0055). A real customer's business owner sets these in a pilot.
+approval_ttl_hours: 24
+max_evidence_age_minutes: 60
+
 properties:
   beach-resort:
     name: Beach Resort

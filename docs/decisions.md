@@ -605,3 +605,24 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **Result:** recorded as the work lands, in the later ADRs and `docs/verification-log.md`.
 - **What would change this decision:** a real vendor's idempotency or lookup behaviour (the RFC's open questions), or a
   load test showing the queue on the primary database can't keep up (Milestone 12).
+
+## ADR-0056: the eligibility engine has two clocks and is checked against the labeler on the dev split only
+- **Context:** spec B.7 wants pure, typed, configurable rules. The reference labeler (`evaluations/labeler.py`, ADR-0029)
+  computes ground truth from the same written policy, and a re-check before execution must see postings that landed after
+  approval without changing whether the claim was on time.
+- **Options considered:** share code between the engine and the labeler (less to write, but one bug would fool both);
+  one "now" for every rule (simple, but a re-check months later would fail the claim window); read rule values from Python
+  constants (they would drift from the policy files).
+- **Decision:** `app/domain/eligibility.py` is written apart from the labeler, and a test proves neither imports the other.
+  It takes `received_at_utc` (window, waiting period) and `as_of_utc` (which ledger and queue entries count). Rule values
+  come from the policy version in force on the checkout date in the property's time zone, from `customer_config`. No
+  policy, or more than one in force, returns `needs_escalation`: the engine never invents one. It adds
+  `refresh_evidence` to the labeler's action vocabulary for stale evidence, which is a system state, not a case label.
+  Arm A keeps its checklist (ADR-0044). The engine isn't called by the console until arm B (Milestone 7).
+- **Trade-off:** two implementations of one policy to keep in step, which is the point. The differential test is limited
+  to the dev split, so a mistake only held-out cases would reveal stays hidden until Milestone 10.
+- **Result:** the two agree on every claimed stay and every case verdict in the dev split. The agreement was not taken on
+  trust: 5 tests change one rule (waiting period, OTA, corporate rate, pending posting, earning rate) and require a
+  disagreement. Every action in the labeler's vocabulary was reached except `request_info` at stay level, which the case
+  verdict test covers. The validation, held-out and stress splits weren't opened.
+- **What would change this decision:** a held-out disagreement in Milestone 10, which would be reported, not tuned away.
