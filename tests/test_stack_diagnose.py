@@ -102,3 +102,18 @@ def test_credentials_in_log_lines_are_masked() -> None:
     assert "hunter2" not in mask("password=hunter2 next")
     assert "hunter2" not in mask('"token": "hunter2"')
     assert mask("nothing secret here") == "nothing secret here"
+
+
+def test_a_finished_migrate_service_is_not_a_problem() -> None:
+    assert service_problem(ServiceState("migrate", "exited", 0)) is None
+
+
+def test_a_failed_migrate_service_is_named_with_its_cause() -> None:
+    logs = [
+        "Traceback (most recent call last):",
+        "RuntimeError: migrations must run as the owner role, not loyalty_app.",
+    ]
+    problem = service_problem(ServiceState("migrate", "exited", 1, logs=logs))
+    assert problem is not None and "one app role" in problem and "-Action up" in problem
+    other = service_problem(ServiceState("migrate", "exited", 1, logs=["alembic Error: boom"]))
+    assert other is not None and other.startswith("migrate: its database migration failed")

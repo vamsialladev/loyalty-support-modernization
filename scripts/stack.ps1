@@ -31,15 +31,20 @@ switch ($Action) {
             Write-Host "seed_data\v1 is missing: generating it first"
             uv run python -m seed_data.generator generate
         }
-        # The app and mock API containers migrate their own databases before they start serving. If the stack doesn't
-        # come up, or the app database still isn't current, say why instead of only "unhealthy" (ADR-0052).
+        # A volume from before Milestone 6 has one app role; split it before anything connects (ADR-0058). Safe to repeat.
+        & docker @compose up -d --wait db
+        if ($LASTEXITCODE -ne 0) { throw "The database did not start. Full logs: scripts\stack.ps1 -Action logs" }
+        & docker @compose exec -T db sh /pg-upgrade/split-app-role.sh
+        if ($LASTEXITCODE -ne 0) { throw "Could not split the app's database role; the cause is above (ADR-0058)." }
+        # The migrate service and the mock API container migrate their databases before anything serves. If the stack
+        # doesn't come up, or the app database still isn't current, say why instead of only "unhealthy" (ADR-0052).
         & docker @compose up --build -d --wait
         $upCode = $LASTEXITCODE
         uv run python scripts/stack_diagnose.py --project $Project --env-file $EnvFile
         $diagnosis = $LASTEXITCODE
         if ($diagnosis -eq 3) {
             Write-Host "Migrating the app database now."
-            Invoke-Compose @("exec", "-T", "app", "alembic", "upgrade", "head")
+            Invoke-Compose @("run", "--rm", "migrate")
             uv run python scripts/stack_diagnose.py --project $Project --env-file $EnvFile
             $diagnosis = $LASTEXITCODE
         }
@@ -48,7 +53,7 @@ switch ($Action) {
         }
     }
     "down" { Invoke-Compose @("down") }
-    "migrate" { Invoke-Compose @("exec", "-T", "app", "alembic", "upgrade", "head") }
+    "migrate" { Invoke-Compose @("run", "--rm", "migrate") }
     "seed" { Invoke-Compose @("exec", "-T", "app", "python", "-m", "app.seed", "--dataset", "demo") }
     "reset-demo" { Invoke-Compose @("exec", "-T", "app", "python", "-m", "app.seed", "--dataset", "demo", "--reset") }
     "demo-cases" {

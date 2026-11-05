@@ -650,3 +650,27 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   administrators publishing one draft with exactly one success. Limits: `docs/retrieval.md`.
 - **What would change this decision:** a controlled comparison in which hybrid search beats full-text (Milestone 15), or a
   real customer whose governance requires a second person to publish.
+
+## ADR-0058: the app's database role is split, so the app can't rewrite audit history
+- **Context:** spec B.10 wants an append-only database role and honest guarantees. `loyalty_app` owned the database and ran
+  migrations, and an owner can always change its own tables. The close rules read `case_events`, so the app still needs
+  to read it. An app holding migration rights in its environment would defeat the split.
+- **Options considered:** a trigger (the owner can disable it, and the app was the owner); an ORM guard (protects nothing);
+  a hash chain alone (whoever can rewrite the table can recompute it); splitting the role, chosen by the owner (D4).
+- **Decision:** `loyalty_owner` owns the objects and runs migrations; `loyalty_app` runs the app and worker, with INSERT and
+  SELECT on `case_events` and `system_events`, and no right to change `alembic_version`. A one-shot `migrate` service is the
+  only service holding the owner's password, which replaces migrate-on-start from ADR-0052. `app-owner.sql` is one
+  idempotent script used by a new volume, `stack.ps1 -Action up` on an old one, and CI. It takes the audit rights back at
+  the end, because its grants cover every table. The state machine gains the transitions in ADR-0055, and reopening
+  (`cases.reopen`) keeps the old events and copies the previous resolution into `case_reopened`.
+- **What it guarantees:** the app role, or a compromise of it, can't update, delete or truncate audit events, alter or drop
+  those tables, or change the schema. Tests prove this by connecting as the real role.
+- **What it does not guarantee:** the owner role, a superuser and anyone with the backups can still rewrite history, and a
+  test records that. It doesn't apply on offline SQLite. Timestamps come from the writer's clock. Approval and job rows stay
+  mutable; events record their changes. **It isn't tamper-proof, and nothing here claims it is.**
+- **Trade-off:** one more `.env` password and one upgrade step on existing volumes. `app.seed` no longer migrates a database
+  that is behind, because the runtime role can't: `stack.ps1 -Action migrate` does.
+- **Result:** real-Postgres tests as the runtime role; the compose check rebuilds the old single-role state and upgrades it.
+  The close rules from ADR-0054 now also run on real Postgres.
+- **What would change this decision:** a real customer needing evidence beyond this role, which would mean anchoring a hash
+  chain outside the database, or a separate audit store.

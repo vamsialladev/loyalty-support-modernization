@@ -43,6 +43,7 @@ def test_dockerfiles_copy_only_service_code_and_run_as_non_root(dockerfile: Path
 ROLE_SECRETS = (
     "POSTGRES_PASSWORD",
     "APP_DB_PASSWORD",
+    "APP_OWNER_DB_PASSWORD",
     "MOCK_API_DB_PASSWORD",
     "MOCK_API_TOKEN",
     "APP_SECRET_KEY",
@@ -105,11 +106,14 @@ def test_compose_refuses_a_blank_secret_everywhere_it_is_used() -> None:
         assert all(use.startswith(":?") for use in uses), f"compose can expand {name} to a blank string"
 
 
-def run_roles_script(tmp_path: Path, app_pw: str, mock_pw: str) -> tuple[int, str]:
+def run_roles_script(
+    tmp_path: Path, app_pw: str, mock_pw: str, owner_pw: str = "a-real-owner-password"
+) -> tuple[int, str]:
     """Run the real init script with psql replaced by a shell function that only records that it ran."""
     log = tmp_path / "psql-calls.log"
     script = (ROOT / "infrastructure/postgres/init/01-roles.sh").as_posix()
     env = {**os.environ, "APP_DB_PASSWORD": app_pw, "MOCK_API_DB_PASSWORD": mock_pw, "POSTGRES_USER": "u"}
+    env |= {"APP_OWNER_DB_PASSWORD": owner_pw}
     env |= {"POSTGRES_DB": "d", "PSQL_LOG": log.as_posix()}
     result = subprocess.run(
         [str(SH), "-c", 'psql() { echo called >> "$PSQL_LOG"; cat > /dev/null; }; . "$0"', script],
@@ -147,7 +151,13 @@ def test_init_script_creates_no_role_with_a_blank_password(
 def test_init_script_runs_with_real_passwords(tmp_path: Path) -> None:
     code, detail = run_roles_script(tmp_path, "a-real-app-password", "a-real-mock-password")
     assert code == 0, detail
-    assert detail.split("|", 1)[0] == "3"  # the role block, then one schema change per mock database
+    assert detail.split("|", 1)[0] == "5"  # the role block, one schema change per mock database, the app role split x2
+
+
+@pytest.mark.skipif(SH is None, reason="needs a POSIX sh (Git for Windows provides one)")
+def test_init_script_refuses_a_blank_owner_password(tmp_path: Path) -> None:
+    code, detail = run_roles_script(tmp_path, "a-real-app-password", "a-real-mock-password", owner_pw="")
+    assert code != 0 and detail.split("|", 1)[0] == "0" and "APP_OWNER_DB_PASSWORD" in detail
 
 
 @pytest.mark.skipif(POWERSHELL is None, reason="needs PowerShell")
@@ -163,7 +173,8 @@ def test_update_local_env_leaves_every_reference_resolvable(tmp_path: Path, star
     if start == "broken-by-the-old-script":
         # What the first version of the script wrote: role passwords appended below the URL lines that use them.
         fake |= {"APP_DB_PASSWORD": "fake-app-role-pw-5566", "MOCK_API_DB_PASSWORD": "fake-mock-role-pw-7788"}
-    dropped = {"APP_DB_PASSWORD", "MOCK_API_DB_PASSWORD"}
+        fake |= {"APP_OWNER_DB_PASSWORD": "fake-owner-role-pw-9900"}
+    dropped = {"APP_DB_PASSWORD", "APP_OWNER_DB_PASSWORD", "MOCK_API_DB_PASSWORD"}
     lines = []
     for line in (ROOT / ".env.example").read_text(encoding="utf-8").splitlines():
         key = line.split("=", 1)[0]
@@ -209,6 +220,16 @@ def test_update_local_env_leaves_every_reference_resolvable(tmp_path: Path, star
 
 
 # ---------- the upgrade path from an earlier milestone's volume (ADR-0052) ----------
+
+
+def test_only_the_migrate_service_holds_the_owner_password() -> None:
+    services = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))["services"]
+    assert "loyalty_owner" in services["migrate"]["environment"]["DATABASE_URL"]
+    assert services["app"]["depends_on"]["migrate"] == {"condition": "service_completed_successfully"}
+    for name in set(services) - {"migrate", "db"}:
+        environment = str(services[name].get("environment", ""))
+        assert "OWNER" not in environment and "loyalty_owner" not in environment, name
+    assert "alembic" not in (ROOT / "Dockerfile.app").read_text(encoding="utf-8").splitlines()[-1]
 
 
 def test_services_that_migrate_at_start_get_a_start_period() -> None:

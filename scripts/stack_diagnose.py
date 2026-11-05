@@ -22,6 +22,7 @@ import httpx
 from dotenv import dotenv_values
 
 READY, PROBLEM, NEEDS_MIGRATION = 0, 1, 3
+ONE_SHOT_SERVICES = ("migrate",)  # they finish and exit 0 on purpose (ADR-0058)
 _URL_PASSWORD = re.compile(r"(://[^:/\s]+:)[^@\s]+@")
 _NAMED_SECRET = re.compile(r"(?i)((?:password|passwd|token|secret)[\"']?\s*[=:]\s*[\"']?)[^\s\"',]+")
 
@@ -53,6 +54,10 @@ def _log_cause(service: str, logs: list[str]) -> str | None:
             "created, so changing them in .env later doesn't update them. Restore the old values, or delete the "
             "volume with scripts\\stack.ps1 -Action clean (this deletes the local data)."
         )
+    if "must run as the owner role" in text:
+        return (
+            f"{service}: this volume still has one app role. Run scripts\\stack.ps1 -Action up, which splits it first."
+        )
     if "permission denied for schema" in text:
         return f"{service}: its database role can't create tables. The init script didn't finish; check the db logs."
     if "Can't locate revision" in text:
@@ -67,6 +72,8 @@ def _log_cause(service: str, logs: list[str]) -> str | None:
 
 def service_problem(svc: ServiceState) -> str | None:
     """The cause, in plain words, if this service isn't up; None if it is."""
+    if svc.service in ONE_SHOT_SERVICES and svc.state == "exited" and svc.exit_code == 0:
+        return None
     if svc.state == "exited" or (svc.state != "running" and svc.exit_code != 0):
         return _log_cause(svc.service, svc.logs) or (
             f"{svc.service}: stopped with exit code {svc.exit_code}. Last lines: {_recent(svc.logs)}"

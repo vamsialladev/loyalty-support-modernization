@@ -56,7 +56,8 @@ jobs:
           --health-interval 3s --health-timeout 3s --health-retries 20
     env:
       TEST_MOCK_API_DATABASE_URL: postgresql+psycopg://mock_api:ci-only-throwaway@127.0.0.1:5432/mock_customer_api_test
-      TEST_APP_DATABASE_URL: postgresql+psycopg://mock_api:ci-only-throwaway@127.0.0.1:5432/loyalty_test
+      TEST_APP_DATABASE_URL: postgresql+psycopg://loyalty_app:ci-only-throwaway@127.0.0.1:5432/loyalty_test
+      TEST_APP_OWNER_DATABASE_URL: postgresql+psycopg://loyalty_owner:ci-only-throwaway@127.0.0.1:5432/loyalty_test
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: astral-sh/setup-uv@v10.3.3
@@ -65,8 +66,12 @@ jobs:
           python-version: "3.12"
           enable-cache: true
       - run: uv sync --frozen
-      - name: The app's throwaway database
-        run: psql "postgresql://mock_api:ci-only-throwaway@127.0.0.1:5432/mock_customer_api_test" -c "CREATE DATABASE loyalty_test"
+      - name: The app's throwaway database and its two roles, from the same script the stack uses
+        run: |
+          psql "postgresql://mock_api:ci-only-throwaway@127.0.0.1:5432/mock_customer_api_test" \
+            -c "CREATE ROLE loyalty_app LOGIN PASSWORD 'ci-only-throwaway'" -c "CREATE DATABASE loyalty_test"
+          psql "postgresql://mock_api:ci-only-throwaway@127.0.0.1:5432/loyalty_test" \
+            -v owner_pw=ci-only-throwaway -f infrastructure/postgres/sql/app-owner.sql
       - run: uv run pytest -m postgres -rs
 
   secrets:

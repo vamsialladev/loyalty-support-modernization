@@ -14,7 +14,7 @@ param(
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 
-$LocalSecrets = @("POSTGRES_PASSWORD", "APP_DB_PASSWORD", "MOCK_API_DB_PASSWORD", "MOCK_API_TOKEN", "APP_SECRET_KEY", "DEMO_USER_PASSWORD")
+$LocalSecrets = @("POSTGRES_PASSWORD", "APP_DB_PASSWORD", "APP_OWNER_DB_PASSWORD", "MOCK_API_DB_PASSWORD", "MOCK_API_TOKEN", "APP_SECRET_KEY", "DEMO_USER_PASSWORD")
 $OldUrls = @{
     "DATABASE_URL"          = 'postgresql+psycopg://loyalty:${POSTGRES_PASSWORD}@localhost:5432/loyalty'
     "MOCK_API_DATABASE_URL" = 'postgresql+psycopg://loyalty:${POSTGRES_PASSWORD}@localhost:5432/mock_customer_api'

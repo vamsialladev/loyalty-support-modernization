@@ -108,6 +108,18 @@
 </section>
 {% endif %}
 
+{% if can_work and case.status in ["Resolved", "Escalated", "Rejected"] %}
+<section class="card" aria-labelledby="reopen-h">
+  <h2 id="reopen-h">Reopen</h2>
+  <form method="post" action="/cases/{{ case.id }}/reopen">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="reopen-reason">Why this case needs another look (at least 20 characters). The history stays as it is.</label>
+    <textarea id="reopen-reason" name="reason" rows="2" required></textarea>
+    <button type="submit">Reopen case</button>
+  </form>
+</section>
+{% endif %}
+
 {% if adjustments %}
 <section class="card" aria-labelledby="adj-h">
   <h2 id="adj-h">Adjustment</h2>

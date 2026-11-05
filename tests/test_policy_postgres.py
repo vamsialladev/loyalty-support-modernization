@@ -25,9 +25,13 @@ from tests.conftest import ROOT
 from tests.test_policies import ADMIN, CUSTOMER, POLICY_DIR, draft_text
 
 URL = os.environ.get("TEST_APP_DATABASE_URL", "")
+OWNER_URL = os.environ.get("TEST_APP_OWNER_DATABASE_URL", "")
 pytestmark = [
     pytest.mark.postgres,
-    pytest.mark.skipif(not URL.startswith("postgresql"), reason="TEST_APP_DATABASE_URL is not set to PostgreSQL"),
+    pytest.mark.skipif(
+        not (URL.startswith("postgresql") and OWNER_URL.startswith("postgresql")),
+        reason="TEST_APP_DATABASE_URL and TEST_APP_OWNER_DATABASE_URL are not set to PostgreSQL",
+    ),
 ]
 CONFIG = CustomerConfig.load(CUSTOMER)
 
@@ -35,7 +39,7 @@ CONFIG = CustomerConfig.load(CUSTOMER)
 @pytest.fixture
 def factory() -> Iterator[sessionmaker[Session]]:
     cfg = Config(str(ROOT / "alembic.ini"))
-    cfg.set_main_option("sqlalchemy.url", URL)
+    cfg.set_main_option("sqlalchemy.url", OWNER_URL)
     command.downgrade(cfg, "base")
     command.upgrade(cfg, "head")
     engine = make_engine(URL)

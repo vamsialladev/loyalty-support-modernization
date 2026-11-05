@@ -443,7 +443,7 @@ def test_attach_rereads_the_record_on_the_server(arm: ArmA) -> None:
             svc.attach_policy(s, arm.who("agent.ana"), case, arm.index, "made-up#1")
 
 
-def test_every_state_is_reachable_and_terminal_states_are_final() -> None:
+def test_every_state_is_reachable_and_terminal_states_only_reopen() -> None:
     reachable, frontier = {CaseState.NEW}, [CaseState.NEW]
     while frontier:
         for target in TRANSITIONS[frontier.pop()]:
@@ -455,4 +455,4 @@ def test_every_state_is_reachable_and_terminal_states_are_final() -> None:
     with pytest.raises(InvalidTransition):
         check_transition(CaseState.NEW, CaseState.APPROVED)
     with pytest.raises(InvalidTransition):
-        check_transition(CaseState.RESOLVED, CaseState.INVESTIGATING)
+        check_transition(CaseState.RESOLVED, CaseState.APPROVED)

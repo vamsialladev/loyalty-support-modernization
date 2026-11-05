@@ -57,6 +57,7 @@ DONE_MESSAGES = {
     "info": "Message sent to the member. The case is waiting for their reply.",
     "resumed": "Investigation resumed.",
     "escalated": "Case escalated.",
+    "reopened": "Case reopened.",
     "approved": "Adjustment approved. It can now be executed.",
     "rejected": "Adjustment rejected.",
     "applied": "Adjustment applied in the loyalty platform.",
@@ -413,6 +414,13 @@ def install_console(
         case = svc.get_case(s, active.identity, case_id)
         svc.escalate(s, active.identity, case, reason)
         return back_to(case, "escalated")
+
+    @app.post("/cases/{case_id}/reopen", response_model=None)
+    def reopen(s: DB, active: User, case_id: int, reason: Annotated[str, Form()], csrf: Csrf = "") -> Response:
+        check_csrf(active, csrf)
+        case = svc.get_case(s, active.identity, case_id)
+        svc.reopen(s, active.identity, case, reason)
+        return back_to(case, "reopened")
 
     # ---------- the four evidence screens (D14) ----------
 

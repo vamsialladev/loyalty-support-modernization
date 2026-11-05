@@ -198,6 +198,41 @@ the template. A write that times out goes to `Execution unknown` and is looked u
 explain why adding a nickname list to `screens.search_member` would be wrong *in arm A* (hint: D18, and what the
 benchmark would then measure).
 
+## 4d. Upgrading your own stack to the split database role (Milestone 6, ADR-0058)
+
+From Milestone 6 the app runs as `loyalty_app`, which can't change audit history, and a separate `loyalty_owner` runs
+migrations. **A volume from before Milestone 6 needs one new `.env` value and one normal `up`.** Your data stays. Nothing
+needs pasting: the first command generates the password, writes it to `.env` and prints only the name.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\update-local-env.ps1
+```
+
+It should list `APP_OWNER_DB_PASSWORD` under "added from template" and "generated". Check it without printing a value:
+
+```powershell
+uv run python -m app.preflight --profile portfolio
+```
+
+Then bring the stack up. This starts the database first, splits the role (safe to repeat), migrates as the owner and starts
+the app:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\stack.ps1 -Action up
+```
+
+Then load the initial policy set and the two new demo accounts (`admin.ada`, `auditor.abe`; same demo password):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\stack.ps1 -Action seed
+```
+
+**To undo the split** on a local volume, if you ever need an older checkout: as the database admin, run `REASSIGN OWNED BY
+loyalty_owner TO loyalty_app`. Or start clean with `scripts\stack.ps1 -Action clean`, which deletes the local data.
+
+**To redo case A-000010:** sign in as an agent or supervisor, open the case, and use "Reopen" with a reason of at least 20
+characters. Its `case_closed` event stays as the record of the wrong denial. The next close follows the ADR-0054 rules.
+
 ## 5. Common failure modes so far
 - **`ModuleNotFoundError: app`** when running pytest outside `uv run`: use `uv run pytest`.
 - **Preflight says NOT READY:** expected with an empty `.env`; it lists exactly which settings are missing.
