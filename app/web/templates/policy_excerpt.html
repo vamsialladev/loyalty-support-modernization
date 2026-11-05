@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ cited.title }} §{{ cited.ref.section }}{% endblock %}
+{% block main %}
+<h1>{{ cited.title }}</h1>
+<p class="muted" data-testid="excerpt-version">Version {{ cited.ref.version }} · in force {{ cited.effective_from }} to {{ cited.effective_to or "open" }} · {{ cited.status }}</p>
+<section class="card" aria-labelledby="ex-h">
+  <h2 id="ex-h">§{{ cited.ref.section }} {{ cited.heading }}</h2>
+  <pre class="message" data-testid="excerpt-text">{{ cited.text }}</pre>
+</section>
+<p class="muted">Source checksum {{ cited.source_checksum }} · read {{ cited.retrieved_at_utc }}</p>
+{% endblock %}

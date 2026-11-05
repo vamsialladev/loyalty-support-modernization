@@ -21,7 +21,7 @@ from app.arms.legacy.rules import LegacyRules
 from app.clock import utc_now
 from app.domain.case_states import CaseState, check_transition
 from app.domain.customer_records import LedgerEntry, Member, StayRecord
-from app.domain.roles import Identity, require_case_worker
+from app.domain.roles import Identity, require_case_reader, require_case_worker
 from app.persistence.models import AdjustmentRequestRow, Case, CaseEvidence, CaseNote, CaseRequest
 from app.ports.customer_systems import CustomerSystemError, CustomerSystems
 from app.services.instrumentation import events, record
@@ -103,7 +103,7 @@ def create_case(
 def list_cases(
     s: Session, who: Identity, *, queue: str = intake.POINTS_QUEUE, status: str | None = None, mine: bool = False
 ) -> list[Case]:
-    require_case_worker(who)
+    require_case_reader(who)
     query = select(Case).where(Case.queue == queue)
     if status:
         query = query.where(Case.status == status)
@@ -113,7 +113,7 @@ def list_cases(
 
 
 def get_case(s: Session, who: Identity, case_id: int) -> Case:
-    require_case_worker(who)
+    require_case_reader(who)  # every action that changes a case checks `require_case_worker` itself
     case = s.get(Case, case_id)
     if case is None:
         raise CaseNotFound(case_id)

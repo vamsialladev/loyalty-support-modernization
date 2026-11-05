@@ -10,7 +10,6 @@ docs/
 tests/
 security/
 scripts/
-policies/
 portfolio/
 .claude/
 .cursor/

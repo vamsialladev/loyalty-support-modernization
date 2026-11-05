@@ -50,9 +50,9 @@ services:
     read_only: true
     tmpfs: [/tmp]
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8020/healthz', timeout=2)"]
-      interval: 3s
-      timeout: 3s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8020/healthz', timeout=5)"]
+      interval: 5s
+      timeout: 10s  # includes starting Python, which takes seconds on a busy machine (ADR-0052)
       retries: 30
       start_period: 120s  # migrations run before the server starts; a slow cold start isn't a failure
     deploy:
@@ -79,9 +79,9 @@ services:
     read_only: true
     tmpfs: [/tmp]
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8010/healthz', timeout=2)"]
-      interval: 3s
-      timeout: 3s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8010/healthz', timeout=5)"]
+      interval: 5s
+      timeout: 10s  # includes starting Python, which takes seconds on a busy machine (ADR-0052)
       retries: 30
       start_period: 120s  # migrations run before the server starts; a slow cold start isn't a failure
     deploy:

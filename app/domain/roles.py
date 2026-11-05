@@ -1,7 +1,8 @@
 """Who may do what (spec B.10 roles). Pure rules; the services call them, the browser never decides.
 
-Milestone 5 has the two roles arm A's browser flow needs. Administrator and auditor arrive with Milestones 6 and 9.
-A role comes only from the server-side session (`app.services.sessions`), never from a form field or a model.
+Agents create and investigate cases, supervisors approve or reject, administrators manage configuration (policy
+publishing, the kill switch) and auditors only read. A role comes only from the server-side session
+(`app.services.sessions`), never from a form field or a model. The full authorization test set is Milestone 9.
 """
 
 from __future__ import annotations
@@ -13,6 +14,8 @@ from enum import StrEnum
 class Role(StrEnum):
     AGENT = "agent"
     SUPERVISOR = "supervisor"
+    ADMINISTRATOR = "administrator"
+    AUDITOR = "auditor"
 
 
 @dataclass(frozen=True)
@@ -30,6 +33,16 @@ class NotPermitted(Exception):
 def require_case_worker(who: Identity) -> None:
     if who.role not in (Role.AGENT, Role.SUPERVISOR):
         raise NotPermitted("only agents and supervisors work cases")
+
+
+def require_case_reader(who: Identity) -> None:
+    if who.role not in (Role.AGENT, Role.SUPERVISOR, Role.AUDITOR):
+        raise NotPermitted("only agents, supervisors and auditors read cases")
+
+
+def require_administrator(who: Identity) -> None:
+    if who.role is not Role.ADMINISTRATOR:
+        raise NotPermitted("only an administrator manages configuration")
 
 
 def approval_refusal(who: Identity, requested_by: str) -> str | None:

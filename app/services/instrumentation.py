@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.clock import utc_now_precise
 from app.domain.roles import Identity
-from app.persistence.models import Case, CaseEvent
+from app.persistence.models import Case, CaseEvent, SystemEvent
 
 SCRIPTED_PREFIX = "scripted-"
 
@@ -44,6 +44,20 @@ def record(s: Session, case: Case, who: Identity, action: str, **detail: Any) ->
     s.add(event)
     s.flush()
     return event
+
+
+def record_system(s: Session, who: Identity, action: str, **detail: Any) -> SystemEvent:
+    """An audit event with no case: policy publishing, the kill switch, dead jobs."""
+    event = SystemEvent(
+        actor=who.username, actor_kind=actor_kind(who), action=action, detail=detail, at_utc=utc_now_precise()
+    )
+    s.add(event)
+    s.flush()
+    return event
+
+
+def system_events(s: Session, limit: int = 50) -> list[SystemEvent]:
+    return list(s.scalars(select(SystemEvent).order_by(SystemEvent.id.desc()).limit(limit)))
 
 
 def events(s: Session, case: Case) -> list[CaseEvent]:

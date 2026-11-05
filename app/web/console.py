@@ -27,12 +27,13 @@ from app.arms.legacy import intake, screens
 from app.arms.legacy.keyword_index import KeywordIndex
 from app.arms.legacy.rules import LegacyRules
 from app.domain.case_states import CaseState, InvalidTransition
-from app.domain.roles import NotPermitted, Role, approval_refusal
+from app.domain.roles import NotPermitted, Role, approval_refusal, require_administrator, require_case_worker
 from app.persistence.models import Case
 from app.ports.customer_systems import CustomerSystemError, CustomerSystems
 from app.services import cases as svc
-from app.services import sessions
-from app.services.instrumentation import events
+from app.services import policies, policy_publishing, sessions
+from app.services.customer_config import CustomerConfig
+from app.services.instrumentation import events, system_events
 from app.services.write_path import SharedWritePath, approval_of, attempts_of, load_request, pending_approvals
 from app.settings import AppSettings
 from customer_shapes import CustomerShape
@@ -120,6 +121,7 @@ def install_console(
     rules = LegacyRules.load(settings.customer_id)
     index = KeywordIndex.load()
     write_path = SharedWritePath(settings.customer_id)
+    customer = CustomerConfig.load(settings.customer_id)
 
     # ---------- plumbing ----------
 
@@ -159,6 +161,7 @@ def install_console(
     ) -> HTMLResponse:
         context |= {
             "user": active.identity if active else None,
+            "can_work": active is not None and active.identity.role in (Role.AGENT, Role.SUPERVISOR),
             "csrf": active.csrf_token if active else "",
             "banner": banner(case),
             "case": case,
@@ -188,6 +191,11 @@ def install_console(
     @app.exception_handler(InvalidTransition)
     def _transition(request: Request, exc: InvalidTransition) -> Response:
         return render(request, "error.html", None, 409, title="Not possible right now", message=str(exc))
+
+    @app.exception_handler(policy_publishing.PublishRefused)
+    def _publish_refused(request: Request, exc: policy_publishing.PublishRefused) -> Response:
+        message = "; ".join(exc.problems)
+        return render(request, "error.html", None, 409, title="Not published", message=message)
 
     @app.exception_handler(svc.CaseNotFound)
     def _missing(request: Request, exc: svc.CaseNotFound) -> Response:
@@ -234,7 +242,7 @@ def install_console(
         if who is None:
             return RedirectResponse("/login?failed=true", status_code=303)
         token, _csrf = sessions.start(s, who)
-        response = RedirectResponse("/queue", status_code=303)
+        response = RedirectResponse("/admin" if who.role is Role.ADMINISTRATOR else "/queue", status_code=303)
         response.set_cookie(
             SESSION_COOKIE,
             token,
@@ -256,10 +264,12 @@ def install_console(
 
     # ---------- queue and intake ----------
 
-    @app.get("/queue", response_class=HTMLResponse)
+    @app.get("/queue", response_model=None)
     def queue(
         request: Request, s: DB, active: User, queue: str = intake.POINTS_QUEUE, status: str = "", mine: bool = False
-    ) -> HTMLResponse:
+    ) -> Response:
+        if active.identity.role is Role.ADMINISTRATOR:
+            return RedirectResponse("/admin", status_code=303)
         if queue not in (intake.POINTS_QUEUE, intake.BILLING_QUEUE):
             queue = intake.POINTS_QUEUE
         rows = svc.list_cases(s, active.identity, queue=queue, status=status or None, mine=mine)
@@ -276,6 +286,7 @@ def install_console(
 
     @app.get("/cases/new", response_class=HTMLResponse)
     def new_case_page(request: Request, active: User) -> HTMLResponse:
+        require_case_worker(active.identity)
         return render(request, "case_new.html", active)
 
     @app.post("/cases", response_model=None)
@@ -406,6 +417,7 @@ def install_console(
     # ---------- the four evidence screens (D14) ----------
 
     def screen_case(s: Session, active: sessions.ActiveSession, case_id: int) -> Case:
+        require_case_worker(active.identity)  # the screens read customer records and log each search
         return svc.get_case(s, active.identity, case_id)
 
     def can_search(case: Case) -> bool:
@@ -629,3 +641,37 @@ def install_console(
         case = request_case(s, active, request_id)
         result = write_path.check_status(s, active.identity, request_id, systems_for(case.received_at_utc))
         return back_to(case, result.status)
+
+    # ---------- configuration: policy versions (administrators) and exact excerpts ----------
+
+    @app.get("/admin", response_class=HTMLResponse)
+    def admin_page(request: Request, s: DB, active: User) -> HTMLResponse:
+        require_administrator(active.identity)
+        return render(
+            request,
+            "admin.html",
+            active,
+            versions=policies.version_rows(s, settings.customer_id),
+            system_events=system_events(s),
+        )
+
+    @app.post("/admin/policies/draft", response_model=None)
+    def policy_draft(s: DB, active: User, source: Annotated[str, Form()], csrf: Csrf = "") -> Response:
+        check_csrf(active, csrf)
+        policy_publishing.create_draft(s, active.identity, source, settings.customer_id)
+        return RedirectResponse("/admin", status_code=303)
+
+    @app.post("/admin/policies/{row_id}/publish", response_model=None)
+    def policy_publish(s: DB, active: User, row_id: int, csrf: Csrf = "") -> Response:
+        check_csrf(active, csrf)
+        policy_publishing.publish(s, active.identity, row_id, customer)
+        return RedirectResponse("/admin", status_code=303)
+
+    @app.get("/policies/{policy_id}/v{version}/{section_id}", response_class=HTMLResponse)
+    def policy_excerpt(
+        request: Request, s: DB, active: User, policy_id: str, version: int, section_id: str
+    ) -> HTMLResponse:
+        cited = policies.excerpt(s, settings.customer_id, policy_id, version, section_id)
+        if cited is None:
+            return render(request, "error.html", active, 404, title="Not found", message="There is no such excerpt.")
+        return render(request, "policy_excerpt.html", active, cited=cited)

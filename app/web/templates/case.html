@@ -24,7 +24,7 @@
   {% endfor %}
 </section>
 
-{% if case.status == "New" %}
+{% if can_work and case.status == "New" %}
 <section class="card">
   {% if case.queue == "points" %}
   <form method="post" action="/cases/{{ case.id }}/start">
@@ -68,7 +68,7 @@
     {% if checklist.rules_revision %} · {{ checklist.rules_revision }}{% endif %}</p>
 </section>
 
-{% if case.status == "Investigating" %}
+{% if can_work and case.status == "Investigating" %}
 <section class="card" aria-labelledby="act-h">
   <h2 id="act-h">Decide</h2>
   <form method="post" action="/cases/{{ case.id }}/request-adjustment">
@@ -99,7 +99,7 @@
     <button type="submit">Escalate</button>
   </form>
 </section>
-{% elif case.status == "Awaiting information" %}
+{% elif can_work and case.status == "Awaiting information" %}
 <section class="card">
   <form method="post" action="/cases/{{ case.id }}/resume">
     <input type="hidden" name="csrf" value="{{ csrf }}">
@@ -150,12 +150,14 @@
 <section class="card" aria-labelledby="notes-h">
   <h2 id="notes-h">Notes</h2>
   {% for n in notes %}<p><strong>{{ n.author }}</strong> · {{ n.created_at_utc }}<br>{{ n.body }}</p>{% else %}<p class="empty">No notes yet.</p>{% endfor %}
+  {% if can_work %}
   <form method="post" action="/cases/{{ case.id }}/notes">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <label for="note-body">Add a note</label>
     <textarea id="note-body" name="body" rows="2" required></textarea>
     <button type="submit">Add note</button>
   </form>
+  {% endif %}
 </section>
 
 <section class="card" aria-labelledby="tl-h">

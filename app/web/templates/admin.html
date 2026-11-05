@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Configuration{% endblock %}
+{% block main %}
+<h1>Configuration</h1>
+
+<section class="card" aria-labelledby="pol-h">
+  <h2 id="pol-h">Policy versions</h2>
+  <p class="muted">A draft applies to no stay. Publishing runs the checks, supersedes the version before it and logs who did it.</p>
+  <table class="grid">
+    <caption class="sr-only">Policy versions</caption>
+    <thead><tr><th scope="col">Policy</th><th scope="col">Version</th><th scope="col">In force</th><th scope="col">Status</th><th scope="col">Published by</th><th scope="col">Action</th></tr></thead>
+    <tbody>
+    {% for v in versions %}
+      <tr data-testid="policy-{{ v.policy_id }}-{{ v.version }}">
+        <td>{{ v.title }}</td>
+        <td>{{ v.version }}</td>
+        <td>{{ v.effective_from }} to {{ v.effective_to or "open" }}</td>
+        <td>{{ v.status }}</td>
+        <td>{{ v.published_by or "" }}</td>
+        <td>
+          {% if v.status == "draft" %}
+          <form method="post" action="/admin/policies/{{ v.id }}/publish">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <button type="submit">Run checks and publish</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="empty">No policy versions loaded. Run the seed command.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <form method="post" action="/admin/policies/draft">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="source">New draft: paste the whole policy document, front matter included</label>
+    <textarea id="source" name="source" rows="8" required></textarea>
+    <button type="submit">Store as draft</button>
+  </form>
+</section>
+
+<section class="card" aria-labelledby="sys-h">
+  <h2 id="sys-h">Configuration history</h2>
+  <ol class="timeline">
+    {% for e in system_events %}<li>{{ e.at_utc }} · {{ e.actor }} · {{ e.action }} · {{ e.detail.get("policy", "") }} {% if e.detail.get("version") %}v{{ e.detail["version"] }}{% endif %}</li>{% else %}<li class="empty">Nothing yet.</li>{% endfor %}
+  </ol>
+</section>
+{% endblock %}
