@@ -38,6 +38,7 @@ API-01 and API-02 to Milestone 7. The owner asked for the real-Postgres tests an
 | 25 | Bug found while writing the race test | read `SharedWritePath.decide` | It re-read the evidence and then wrote with no lock, so a publish committing in between could be overwritten by "approved". Not yet seen failing; fixed before any test could catch it: it now locks the case and re-checks under the lock |
 | 26 | Arm A's defects kept | `tests/test_approval_binding.py::test_the_recheck_does_not_quietly_fix_arm_as_defects` | On D06 and D07 dev cases arm A still approves and credits: the re-check uses its own view (ADR-0044). No scoring; held-out split not touched |
 | 27 | Compose check, step 5 | `scripts\compose_check.ps1 -Browser` | **"compose check passed"**, exit 0: real-Postgres **44 passed**, Playwright 2 passed, upgrade path to `0005`. Includes publish invalidating in one transaction, a publish failing part way changing nothing, and publish racing approve |
+| 28 | Secret scan on PR #7, CI run 41960676075 | gitleaks job; same command locally: `docker run ... gitleaks git /repo --redact` | **Failed: 1 finding,** `generic-api-key` at `tests/test_approval_binding.py:311`, commit `87f7d1e`. Read by hand: a fake value I wrote for the key-rotation test, not a real secret. The test now uses low-entropy values. Because merge commits keep that commit in history, `.gitleaksignore` lists that one exact fingerprint. No force-push; no other rule or path is ignored |
 
 ## First push and the close fix (2026-11-04)
 

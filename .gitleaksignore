@@ -1,0 +1,3 @@
+# One false positive, by exact fingerprint (commit:file:rule:line). A fake value in a key-rotation test; see
+# docs/verification-log.md, Milestone 6. A new finding anywhere else, or in another commit, still fails the scan.
+87f7d1ecc0fb4764c579fd1cc457a6217cce4f71:tests/test_approval_binding.py:generic-api-key:311

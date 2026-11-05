@@ -307,8 +307,8 @@ def test_an_approval_from_before_binding_must_be_approved_again(arm: ArmA) -> No
 
 def test_another_secret_cannot_use_the_approval(arm: ArmA) -> None:
     with arm.sessions() as s:
-        case, row = approved(arm, s, wp=SharedWritePath(secret_key="the-secret-at-approval-time-0001"))
-        rotated = SharedWritePath(secret_key="the-secret-after-rotation-0002")
+        case, row = approved(arm, s, wp=SharedWritePath(secret_key="first" * 8))
+        rotated = SharedWritePath(secret_key="second" * 8)
         assert rotated.execute(s, arm.who("supervisor.sam"), row.id, arm.systems(case.received_at_utc)).status == (
             "invalidated"
         )
