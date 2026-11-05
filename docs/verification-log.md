@@ -18,8 +18,8 @@ API-01 and API-02 to Milestone 7. The owner asked for the real-Postgres tests an
 | 5 | Step 1 merged | PR #3, Actions run 41941879891, `gh pr merge 3 --merge` | All 3 jobs green; merge commit `6cb58cb` |
 | 6 | Eligibility engine, rule by rule | `uv run pytest tests/test_eligibility.py` | All passed: rounding, boundary days and time-zone edges, channels, profiles, both clocks, stale evidence, every refusal to decide. First run: 1 failed, **my test's arithmetic**: 200,001 cents is still 20,000 points, so it wasn't over the limit; the test now uses 200,010 |
 | 7 | Engine against the independent labeler, dev split only | `uv run pytest tests/test_eligibility_differential.py` | No disagreement on any claimed stay or case verdict **on the first run**. A first-run match needed checking, so 5 tests now change one rule each and require a disagreement; all 5 did. Validation, held-out and stress splits not opened |
-| 8 | Offline checks, step 2, first run | `scripts	est.ps1` | **1 failed, 399 passed:** `test_app_cannot_read_labels_or_generator_metadata` found the word `evaluations` in `app/domain/eligibility.py`'s docstring. The test is right; the docstring was reworded |
-| 9 | Offline checks, step 2 | `scripts	est.ps1` | Exit 0: ruff, format and mypy clean, **400 passed, 13 skipped**, coverage 94.98%, 11 min 44 s |
+| 8 | Offline checks, step 2, first run | `scripts\test.ps1` | **1 failed, 399 passed:** `test_app_cannot_read_labels_or_generator_metadata` found the word `evaluations` in `app/domain/eligibility.py`'s docstring. The test is right; the docstring was reworded |
+| 9 | Offline checks, step 2 | `scripts\test.ps1` | Exit 0: ruff, format and mypy clean, **400 passed, 13 skipped**, coverage 94.98%, 11 min 44 s |
 | 10 | Compose check, step 2 (one at a time, after row 9) | `scripts\compose_check.ps1 -Browser` | **"compose check passed"**, exit 0: real-Postgres tests **9 passed**, Playwright 2 passed, upgrade path. No schema or stack change in this step. The script now prints the Postgres count |
 
 ## First push and the close fix (2026-11-04)
