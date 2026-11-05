@@ -152,10 +152,10 @@ class Worker:
     def run_forever(self) -> None:
         log.info("worker started id=%s", self.worker_id)
         while not self.stopping:
-            self._touch_health()
             self._maybe_sweep()
             try:
                 did_work = self.run_once()
+                self._touch_health()  # only after the database answered: "healthy" must mean it can work
             except Exception:  # the database went away: wait and try again
                 log.exception("claim failed")
                 did_work = False

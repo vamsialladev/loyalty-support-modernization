@@ -10,6 +10,10 @@ REASSIGN OWNED BY loyalty_app TO loyalty_owner;
 SELECT format('ALTER DATABASE %I OWNER TO loyalty_owner', current_database()) \gexec
 ALTER SCHEMA public OWNER TO loyalty_owner;
 
+-- On a Milestone 5 volume loyalty_app owned the database, so its only CONNECT was the owner's own, and the change of
+-- owner just moved that to loyalty_owner. Without this line the app can't log in, on that volume only.
+SELECT format('GRANT CONNECT ON DATABASE %I TO loyalty_app', current_database()) \gexec
+
 GRANT USAGE ON SCHEMA public TO loyalty_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO loyalty_app;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO loyalty_app;

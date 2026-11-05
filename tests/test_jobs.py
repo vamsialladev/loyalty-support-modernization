@@ -412,3 +412,18 @@ def test_the_health_file_is_touched(factory: sessionmaker[Session], clock: TestC
     worker.request_stop()
     thread.join(10)
     assert health.exists()
+
+
+def test_a_worker_that_cannot_reach_the_database_does_not_report_healthy(
+    factory: sessionmaker[Session], clock: TestClock, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    health = tmp_path / "alive"
+    worker = Worker(factory, {}, clock=clock, health_file=health, poll_seconds=0.01)
+
+    def no_database() -> bool:
+        worker.request_stop()
+        raise RuntimeError("permission denied for database")
+
+    monkeypatch.setattr(worker, "run_once", no_database)
+    worker.run_forever()
+    assert not health.exists()
