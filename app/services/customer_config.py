@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
@@ -28,3 +29,8 @@ class CustomerConfig:
             int(data["max_evidence_age_minutes"]),
         )
         return cls(data["customer_id"], data["policy_set"], rules, int(data["approval_ttl_hours"]))
+
+
+@lru_cache(maxsize=8)
+def customer_config(customer_id: str) -> CustomerConfig:
+    return CustomerConfig.load(customer_id)

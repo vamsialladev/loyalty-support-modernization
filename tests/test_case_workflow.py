@@ -46,7 +46,7 @@ def investigate(arm: ArmA, s: Session, case: Case, agent: str = "agent.ana") -> 
 def to_approved(arm: ArmA, s: Session, case: Case, agent: str = "agent.ana", approver: str = "supervisor.sam") -> int:
     investigate(arm, s, case, agent)
     request = svc.request_adjustment(s, arm.who(agent), case, arm.rules)
-    WP.decide(s, arm.who(approver), request.id, approve=True, reason="")
+    WP.decide(s, arm.who(approver), request.id, arm.systems(case.received_at_utc), approve=True, reason="")
     return request.id
 
 
@@ -63,7 +63,7 @@ def test_k01_completes_end_to_end_through_the_services(arm: ArmA) -> None:
         assert checklist.outcome is Outcome.ADJUST and checklist.points_owed == 14_840
         request = svc.request_adjustment(s, arm.who("agent.ana"), case, arm.rules)
         assert case.status == CaseState.PENDING_APPROVAL and request.points == 14_840
-        WP.decide(s, arm.who("supervisor.sam"), request.id, approve=True, reason="")
+        WP.decide(s, arm.who("supervisor.sam"), request.id, arm.systems(case.received_at_utc), approve=True, reason="")
         result = WP.execute(s, arm.who("supervisor.sam"), request.id, arm.systems(case.received_at_utc))
         assert result.status == "applied"
         assert case.status == CaseState.RESOLVED and case.resolution_code == "adjusted"
@@ -80,8 +80,10 @@ def test_the_requester_cannot_approve_their_own_adjustment(arm: ArmA) -> None:
         investigate(arm, s, case, agent="supervisor.sam")
         request = svc.request_adjustment(s, arm.who("supervisor.sam"), case, arm.rules)
         with pytest.raises(NotPermitted, match="another supervisor"):
-            WP.decide(s, arm.who("supervisor.sam"), request.id, approve=True, reason="")
-        WP.decide(s, arm.who("supervisor.sky"), request.id, approve=True, reason="")
+            WP.decide(
+                s, arm.who("supervisor.sam"), request.id, arm.systems(case.received_at_utc), approve=True, reason=""
+            )
+        WP.decide(s, arm.who("supervisor.sky"), request.id, arm.systems(case.received_at_utc), approve=True, reason="")
         with pytest.raises(NotPermitted):
             WP.execute(s, arm.who("supervisor.sam"), request.id, arm.systems(case.received_at_utc))
         assert (
@@ -96,8 +98,8 @@ def test_an_agent_can_neither_approve_nor_execute(arm: ArmA) -> None:
         request = svc.request_adjustment(s, arm.who("agent.ana"), case, arm.rules)
         for agent in ("agent.ana", "agent.ben"):
             with pytest.raises(NotPermitted, match="only a supervisor"):
-                WP.decide(s, arm.who(agent), request.id, approve=True, reason="")
-        WP.decide(s, arm.who("supervisor.sam"), request.id, approve=True, reason="")
+                WP.decide(s, arm.who(agent), request.id, arm.systems(case.received_at_utc), approve=True, reason="")
+        WP.decide(s, arm.who("supervisor.sam"), request.id, arm.systems(case.received_at_utc), approve=True, reason="")
         with pytest.raises(NotPermitted):
             WP.execute(s, arm.who("agent.ben"), request.id, arm.systems(case.received_at_utc))
         assert case.status == CaseState.APPROVED
@@ -211,11 +213,22 @@ def test_rejection_needs_a_reason_and_ends_the_case(arm: ArmA) -> None:
         investigate(arm, s, case)
         request = svc.request_adjustment(s, arm.who("agent.ana"), case, arm.rules)
         with pytest.raises(svc.WorkflowError, match="reason"):
-            WP.decide(s, arm.who("supervisor.sam"), request.id, approve=False, reason=" ")
-        WP.decide(s, arm.who("supervisor.sam"), request.id, approve=False, reason="Folio shows a different rate.")
+            WP.decide(
+                s, arm.who("supervisor.sam"), request.id, arm.systems(case.received_at_utc), approve=False, reason=" "
+            )
+        WP.decide(
+            s,
+            arm.who("supervisor.sam"),
+            request.id,
+            arm.systems(case.received_at_utc),
+            approve=False,
+            reason="Folio shows a different rate.",
+        )
         assert case.status == CaseState.REJECTED and case.resolution_code == "rejected"
         with pytest.raises(svc.WorkflowError, match="already been decided"):
-            WP.decide(s, arm.who("supervisor.sky"), request.id, approve=True, reason="")
+            WP.decide(
+                s, arm.who("supervisor.sky"), request.id, arm.systems(case.received_at_utc), approve=True, reason=""
+            )
     assert adjustments_on_ledger(arm) == []
 
 

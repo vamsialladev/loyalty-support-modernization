@@ -93,6 +93,7 @@ def stack(mock_template: dict[str, Any], tmp_path_factory: pytest.TempPathFactor
 
     from app.adapters.local_demo_identity import ensure_demo_users
     from app.persistence.database import make_engine, make_sessions
+    from app.services.policies import load_policy_set
     from tests.conftest import ROOT
 
     tmp = tmp_path_factory.mktemp("e2e")
@@ -104,6 +105,7 @@ def stack(mock_template: dict[str, Any], tmp_path_factory: pytest.TempPathFactor
     password, token = "e2e-" + os.urandom(9).hex(), "e2e-token-" + os.urandom(6).hex()
     with make_sessions(make_engine(app_url))() as s:
         ensure_demo_users(s, password)
+        load_policy_set(s, "hg-demo", ROOT / "policies/hg-demo")
 
     mock_port, app_port = _free_port(), _free_port()
     base_env = {k: v for k, v in os.environ.items() if not k.startswith(("MOCK_API_", "DATABASE_URL"))}

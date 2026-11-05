@@ -17,13 +17,18 @@ from sqlalchemy.orm import Session
 from app.arms.legacy import intake, screens
 from app.arms.legacy.checklist import Checklist, Evidence, LedgerView, Outcome, evaluate
 from app.arms.legacy.keyword_index import KeywordIndex
+from app.arms.legacy.revalidation import evidence_facts
 from app.arms.legacy.rules import LegacyRules
 from app.clock import utc_now
+from app.domain.approval_binding import evidence_hash
+from app.domain.business_time import business_date
 from app.domain.case_states import TERMINAL, CaseState, check_transition
 from app.domain.customer_records import LedgerEntry, Member, StayRecord
 from app.domain.roles import Identity, NotPermitted, Role, require_case_reader, require_case_worker
 from app.persistence.models import AdjustmentRequestRow, Case, CaseEvidence, CaseNote, CaseRequest
 from app.ports.customer_systems import CustomerSystemError, CustomerSystems
+from app.services import policies
+from app.services.customer_config import customer_config
 from app.services.instrumentation import events, record
 
 ARM_A = "A"
@@ -133,6 +138,12 @@ def notes_of(s: Session, case: Case) -> list[CaseNote]:
 def adjustment_requests_of(s: Session, case: Case) -> list[AdjustmentRequestRow]:
     query = select(AdjustmentRequestRow).where(AdjustmentRequestRow.case_id == case.id)
     return list(s.scalars(query.order_by(AdjustmentRequestRow.id)))
+
+
+def read_time(case: Case) -> str:
+    """The simulated time to read this case's records at. Later than its received time only when a test or the benchmark
+    moved it, so a re-check can see what happened after the claim."""
+    return case.sim_now_utc or case.received_at_utc
 
 
 def move(case: Case, target: CaseState) -> None:
@@ -295,6 +306,12 @@ def request_adjustment(s: Session, who: Identity, case: Case, rules: LegacyRules
         raise WorkflowError(f"the rules checklist does not allow an adjustment ({checklist.outcome.value})")
     evidence = current_evidence(s, case)
     assert evidence.member is not None and evidence.stay is not None  # guaranteed by Outcome.ADJUST
+    timezone = customer_config(case.customer_id).rules.property_timezones.get(evidence.stay.property)
+    if timezone is None:
+        raise WorkflowError(f"no time zone is configured for {evidence.stay.property}: escalate this case")
+    checkout_day = business_date(evidence.stay.checkout_at_utc, timezone)
+    if not policies.has_single_claim_policy(s, case.customer_id, checkout_day):
+        raise WorkflowError(f"no single published policy covers a checkout on {checkout_day}: escalate this case")
     row = AdjustmentRequestRow(
         case_id=case.id,
         member_number=evidence.member.member_number,
@@ -305,6 +322,9 @@ def request_adjustment(s: Session, who: Identity, case: Case, rules: LegacyRules
         requested_by=who.username,
         requested_at_utc=utc_now(),
         status="pending",
+        evidence_hash=evidence_hash(evidence_facts(evidence, evidence.stay.stay_id)),
+        policy_refs=policies.claim_policy_refs(s, case.customer_id, checkout_day),
+        checkout_day=checkout_day.isoformat(),
     )
     s.add(row)
     move(case, CaseState.PENDING_APPROVAL)

@@ -1,12 +1,14 @@
 """Shared fixtures. Full generation runs once per test session (it takes a while on slow machines)."""
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
+os.environ.setdefault("APP_SECRET_KEY", "test-only-secret-for-approval-binding-0123456789")
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:

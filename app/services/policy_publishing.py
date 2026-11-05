@@ -32,7 +32,7 @@ from app.domain.policy import (
 )
 from app.domain.roles import Identity, require_administrator
 from app.persistence.models import PolicyVersionRow
-from app.services import policies
+from app.services import approvals, policies
 from app.services.customer_config import CustomerConfig
 from app.services.instrumentation import record_system
 
@@ -221,6 +221,8 @@ def publish(s: Session, who: Identity, row_id: int, config: CustomerConfig) -> P
         closed = previous.version
     row.status, row.published_by, row.published_at_utc = PUBLISHED, who.username, now
     row.regression = {"golden_cases": len(golden), "problems": [], "checked_at_utc": now}
+    s.flush()
+    ended = approvals.invalidate_for_policy_change(s, who, config.customer_id)
     record_system(
         s,
         who,
@@ -231,6 +233,7 @@ def publish(s: Session, who: Identity, row_id: int, config: CustomerConfig) -> P
         effective_from=row.effective_from,
         supersedes=closed,
         golden_cases=len(golden),
+        invalidated_requests=ended,
     )
     s.commit()
     return row

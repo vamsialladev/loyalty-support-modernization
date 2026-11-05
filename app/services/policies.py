@@ -15,7 +15,7 @@ from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.clock import utc_now
-from app.domain.policy import DRAFT, MISSING_POINTS, PolicyDocument, PolicyRef, PolicyVersion, parse_document
+from app.domain.policy import DRAFT, EARNING, MISSING_POINTS, PolicyDocument, PolicyRef, PolicyVersion, parse_document
 from app.persistence.models import PolicyChunk, PolicyVersionRow
 
 # Uses the same expression as the GIN index in migration 0003. The query text is always a bound parameter.
@@ -84,8 +84,9 @@ def claim_policy_refs(s: Session, customer_id: str, checkout_day: date) -> list[
 
 
 def has_single_claim_policy(s: Session, customer_id: str, checkout_day: date) -> bool:
+    """Exactly one claim policy and one earning policy cover this date, so a recommendation has something to rest on."""
     rows = in_force_rows(s, customer_id, checkout_day)
-    return sum(1 for row in rows if row.policy_id == MISSING_POINTS) == 1
+    return all(sum(1 for row in rows if row.policy_id == policy) == 1 for policy in (MISSING_POINTS, EARNING))
 
 
 def store_document(
