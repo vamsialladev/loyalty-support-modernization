@@ -577,3 +577,31 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **Result:** a test now proves nothing in `app/` imports `benchmarks/`; Milestone 10 adds the test that no route,
   setting or profile can select the variant.
 - **What would change this decision:** none planned; the variant exists only to measure what the write path prevents.
+
+## ADR-0055: the Milestone 6 design and the owner's ten choices
+- **Context:** Milestone 6 completes the write path (ADR-0044). The full reasoning, options and risks are in
+  `docs/rfcs/RFC-0001-write-path-integrity.md`. The owner approved the plan on 2026-11-04.
+- **Options considered:** per choice, in the RFC.
+- **Decision (owner's choices):**
+  - **D1:** execution always goes through the durable worker; the case page polls for status.
+  - **D2:** an invalidated or expired approval returns the case to `Investigating`. It's never revived: a new request,
+    approval and key follow. This replaces the Milestone 2 diagram's `Approved -> Pending approval`.
+  - **D3:** the binding is HMAC-SHA256 with a key derived from `APP_SECRET_KEY`.
+  - **D4:** split the database role now; the hash chain is deferred. The owner runs the `.env` and volume steps.
+  - **D5:** an approval lasts 24 hours by wall clock, set per customer. This is an assumption, not a measurement.
+  - **D6:** an agent or supervisor can reopen with a reason of at least 20 characters; only a supervisor if a credit was
+    applied. Reopening grants no new power.
+  - **D7:** a new administrator role controls the kill switch and publishing, and one administrator can publish. A
+    read-only auditor role is added too.
+  - **D8:** every arm's approval binds to the policy in force at checkout, chosen by the platform, even though arm A's
+    checklist ignores it. D15 stays a defect in arm A's evaluator.
+  - **D9:** changed evidence is detected at approve and execute; changed policy acts immediately.
+  - **D10:** Milestone 6's branches may be pushed, opened as pull requests and merged with a merge commit when CI is
+    green. This permission covers this milestone only.
+  - **Also approved:** API-01 and API-02 move to Milestone 7, because item 6 of the spec's milestone order doesn't list
+    an API and the console doesn't need one yet.
+- **Trade-off:** per choice, in the RFC. The largest: the console's execute becomes asynchronous, and `.env` gains one
+  password.
+- **Result:** recorded as the work lands, in the later ADRs and `docs/verification-log.md`.
+- **What would change this decision:** a real vendor's idempotency or lookup behaviour (the RFC's open questions), or a
+  load test showing the queue on the primary database can't keep up (Milestone 12).

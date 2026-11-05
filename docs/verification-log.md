@@ -3,6 +3,19 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## Milestone 6 (started 2026-11-04)
+
+All work by Claude Code (Opus 5.5). The owner approved the plan and its ten design choices (D1–D10) on 2026-11-04,
+including pushing this milestone's branches, opening its pull requests and merging them when CI is green, and moving
+API-01 and API-02 to Milestone 7. The owner asked for the real-Postgres tests and the compose check at each step.
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | PR #2 merged before this milestone | `gh run list --commit 68deba1f…`; Actions run 41885597620 | Merge commit `68deba1` (branch `docs/handoff-m6`), CI on `main` **success** |
+| 2 | This repo's git email | `git config --local user.email` | Already `339370878+vamsialladev@users.noreply.github.com`; not changed |
+| 3 | Baseline before any change, offline | `scripts\test.ps1` on `68deba1` | Exit 0: ruff and mypy clean, **337 passed, 13 skipped**, coverage 94.69%, 5 min 56 s. 4 skips need a POSIX `sh`; the other 9 are the Postgres-only tests, which need a running stack |
+| 4 | Baseline before any change, compose check with its real-Postgres tests (step 1: RFC) | `scripts\compose_check.ps1 -Browser` on `68deba1` plus the RFC files | **"compose check passed"**, exit 0: every step, Playwright 2 passed against the stack, upgrade path. The real-Postgres step printed no count, because pytest's `-q` was given twice; its exit code passed. The later steps print it |
+
 ## First push and the close fix (2026-11-04)
 
 All work by Claude Code (Opus 5.5) on the owner's instructions. The owner unticked GitHub's email block for the first
