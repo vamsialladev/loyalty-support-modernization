@@ -1,0 +1,13 @@
+# Decision rule for the request-routing baseline (Appendix I4). Committed before any model was trained, and the Git history shows it.
+# Change these only with a reason in docs/decisions.md, and treat that as a new experiment.
+selection_split: validation     # dev trains; validation selects; held-out reporting is Milestone 10
+primary_metric: macro_f1        # over the classes the split contains
+# Rules stay unless the classifier beats them on the primary metric by at least this much.
+minimum_gain_over_rules: 0.05
+# Whatever the metric says, routing must not lose a non-English or multi-issue message: each sends a person to the case.
+minimum_recall:
+  non_english: 0.90
+  multi_issue: 0.80
+# Cost and latency: the classifier runs on our own CPU, so it pays no API cost. It must fit a page's budget.
+maximum_p95_ms_per_request: 50
+seed: 20261106
