@@ -1,4 +1,4 @@
-/* Legacy console (arm A). Plain CSS, no build step. Colour pairs meet WCAG AA:
+/* Console (arms A and B). Plain CSS, no build step. Colour pairs meet WCAG AA:
    ink #1c1f1d on #ffffff 16.5:1; muted #4f5652 on #ffffff 7.4:1; banner #ffffff on #7a2e0e 9.0:1;
    primary #ffffff on #1e4636 11.0:1; error #8a1c1c on #fdecec 7.3:1; ok #1d4d2b on #e7f4ea 8.9:1. */
 :root {
@@ -63,6 +63,10 @@ form + form { margin-top: calc(var(--space) * 2); }
 .hits { padding-left: calc(var(--space) * 3); }
 .hits h2 { font-size: 16px; }
 .timeline { font-size: 14px; color: var(--muted); }
+.flags { display: flex; flex-wrap: wrap; gap: var(--space); padding: 0; list-style: none; }
+.flag { font-size: 14px; padding: 0 var(--space); background: var(--notice-bg); border: 1px solid #8a6d1b; border-radius: 12px; }
+.table-wrap { overflow-x: auto; }
+.result { border-left: 4px solid var(--primary); padding-left: calc(var(--space) * 2); }
 .adjustment + .adjustment { border-top: 1px solid var(--line); margin-top: var(--space); }
 @media (max-width: 600px) {
   .record { grid-template-columns: 1fr; }

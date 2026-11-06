@@ -1,0 +1,39 @@
+{% if adjustments %}
+<section class="card" aria-labelledby="adj-h">
+  <h2 id="adj-h">Adjustment</h2>
+  {% for a in adjustments %}
+  <div class="adjustment">
+    <p>{{ a.row.points }} points for stay {{ a.row.stay_id }} on {{ a.row.member_number }} · requested by {{ a.row.requested_by }}
+      · status <span data-testid="adjustment-status">{{ a.row.status }}</span></p>
+    {% if a.approval %}<p class="muted">{{ a.approval.decision|capitalize }} by {{ a.approval.decided_by }}{% if a.approval.reason %}: {{ a.approval.reason }}{% endif %}{% if a.approval.expires_at_utc %} · expires {{ a.approval.expires_at_utc }}{% endif %}</p>{% endif %}
+    {% if a.row.invalidated_reason %}<p class="notice" data-testid="invalidated-reason">Ended: {{ a.row.invalidated_reason }}</p>{% endif %}
+    {% for t in a.attempts %}
+    <p class="muted">Attempt {{ loop.index }}: {{ t.outcome }}{% if t.upstream_adjustment_id %} · <span data-testid="adjustment-id">{{ t.upstream_adjustment_id }}</span>{% endif %}{% if t.error_code %} · {{ t.error_code }}{% endif %} · key {{ t.idempotency_key }}</p>
+    {% endfor %}
+    {% if a.refusal %}
+      {% if case.status in ["Pending approval", "Approved", "Execution unknown"] %}<p class="notice" data-testid="refusal">{{ a.refusal|capitalize }}.</p>{% endif %}
+    {% else %}
+      {% if case.status == "Pending approval" and a.row.status == "pending" %}
+      <form method="post" action="/adjustments/{{ a.row.id }}/decide">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <label for="reason-{{ a.row.id }}">Reason (required to reject)</label>
+        <textarea id="reason-{{ a.row.id }}" name="reason" rows="2"></textarea>
+        <button type="submit" name="decision" value="approve">Approve</button>
+        <button type="submit" name="decision" value="reject" class="secondary">Reject</button>
+      </form>
+      {% elif case.status == "Approved" and a.row.status == "approved" and not job_active %}
+      <form method="post" action="/adjustments/{{ a.row.id }}/execute">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button type="submit">Execute adjustment</button>
+      </form>
+      {% elif case.status == "Execution unknown" %}
+      <form method="post" action="/adjustments/{{ a.row.id }}/check-status">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button type="submit">Check status with the loyalty platform</button>
+      </form>
+      {% endif %}
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endif %}

@@ -16,17 +16,23 @@
     <option value="">Any</option>
     {% for st in states %}<option value="{{ st }}" {% if st == status %}selected{% endif %}>{{ st }}</option>{% endfor %}
   </select>
+  <label for="arm">Arm</label>
+  <select id="arm" name="arm">
+    <option value="">Any</option>
+    {% for a in arms %}<option value="{{ a }}" {% if a == arm %}selected{% endif %}>{{ a }}</option>{% endfor %}
+  </select>
   <label class="check"><input type="checkbox" name="mine" value="true" {% if mine %}checked{% endif %}> Assigned to me</label>
   <button type="submit">Filter</button>
 </form>
 {% if rows %}
 <table class="grid">
   <caption class="sr-only">Cases</caption>
-  <thead><tr><th scope="col">Case</th><th scope="col">Received (UTC)</th><th scope="col">Status</th><th scope="col">Assigned</th></tr></thead>
+  <thead><tr><th scope="col">Case</th><th scope="col">Arm</th><th scope="col">Received (UTC)</th><th scope="col">Status</th><th scope="col">Assigned</th></tr></thead>
   <tbody>
   {% for c in rows %}
     <tr>
       <td><a href="/cases/{{ c.id }}">{{ c.reference }}</a></td>
+      <td>{{ c.arm }}</td>
       <td>{{ c.received_at_utc }}</td>
       <td><span class="status">{{ c.status }}</span></td>
       <td>{{ c.assigned_to or "—" }}</td>

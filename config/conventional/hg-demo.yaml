@@ -1,0 +1,58 @@
+# Arm B's search aids for this customer (spec B.8; D12, D18). Plain lists a support lead can read and change.
+# Nicknames: listed forms only; anything else is for a person, or for arm C (catalog, D18).
+nicknames:
+  elizabeth: [liz, beth, eliza, betsy, lizzie]
+  william: [will, bill, billy, liam]
+  robert: [rob, bob, bobby]
+  michael: [mike, mick]
+  james: [jim, jimmy, jamie]
+  thomas: [tom, tommy]
+  daniel: [dan, danny]
+  samuel: [sam, sammy]
+  alexander: [alex, xander, sasha]
+  jennifer: [jen, jenny]
+  katherine: [kate, katie, kathy]
+  margaret: [maggie, meg, peggy]
+  henry: [harry, hank]
+  benjamin: [ben, benny]
+  christopher: [chris]
+  matthew: [matt]
+  nicholas: [nick]
+  joseph: [joe, joey]
+  olivia: [liv]
+  sofia: [sophie]
+  lucas: [luke]
+  fatima: [fati]
+  grace: [gracie]
+  ethan: [e]
+# Words members use, and the words the policy uses. A search adds the policy's words; it never replaces the member's.
+synonyms:
+  "didn't get my points": missing points
+  "did not get my points": missing points
+  "retro credit": missing points request
+  "retroactive credit": missing points request
+  "stay not counted": missing points request
+  "never posted": missing points
+  "not posted": missing points
+  "not credited": missing points
+  "points never showed": missing points
+  "points missing": missing points
+  "claim points": missing points request
+  "how long": waiting period
+  "too early": waiting period
+  "wait": waiting period
+  "deadline": claim window
+  "too late": claim window
+  "expedia": online travel agency
+  "booking site": online travel agency
+  "third party": online travel agency
+  "ota": online travel agency
+  "agent": travel agent
+  "corporate": corporate travel program
+  "company rate": corporate travel program
+  "room rate": room revenue
+  "taxes": room revenue
+  "supervisor": approval
+  "manager": approval
+  "pending": posting queue
+  "late posting": pending posting

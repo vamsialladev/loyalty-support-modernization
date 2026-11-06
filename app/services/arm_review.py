@@ -1,6 +1,6 @@
 """The re-check before approval and before execution: each arm re-runs its evaluator on fresh reads (ADR-0044, WP-07).
 
-Milestones 7 and 8 add arms B and C here, using the eligibility engine and their own view of the evidence.
+Arm B uses the eligibility engine and its own view of the evidence. Milestone 8 adds arm C here.
 """
 
 from __future__ import annotations
@@ -15,9 +15,11 @@ from app.arms.legacy.checklist import Outcome, evaluate
 from app.arms.legacy.revalidation import evidence_facts, fresh_evidence
 from app.arms.legacy.rules import LegacyRules
 from app.domain.approval_binding import evidence_hash
+from app.domain.eligibility import NextAction
 from app.persistence.models import Case
 from app.ports.customer_systems import CustomerSystems
-from app.services.cases import ARM_A, WorkflowError, current_evidence
+from app.services import conventional
+from app.services.cases import ARM_A, ARM_B, WorkflowError, current_evidence
 
 
 @dataclass(frozen=True)
@@ -47,6 +49,14 @@ class LegacyReview:
         )
 
 
+class ConventionalReview:
+    """Arm B re-runs the eligibility engine on arm B's view of the evidence, posting queue included (ADR-0064)."""
+
+    def review(self, s: Session, case: Case, stay_id: str, systems: CustomerSystems, as_of_utc: str) -> FreshReview:
+        action, points, digest = conventional.fresh_review_facts(s, case, stay_id, systems, as_of_utc)
+        return FreshReview(action == NextAction.ADJUST.value, points, action, digest)
+
+
 @lru_cache(maxsize=8)
 def _legacy_review(customer_id: str) -> LegacyReview:
     return LegacyReview(LegacyRules.load(customer_id))
@@ -55,4 +65,6 @@ def _legacy_review(customer_id: str) -> LegacyReview:
 def review_for(case: Case) -> ArmReview:
     if case.arm == ARM_A:
         return _legacy_review(case.customer_id)
+    if case.arm == ARM_B:
+        return ConventionalReview()
     raise WorkflowError(f"no re-check is defined for arm {case.arm}")

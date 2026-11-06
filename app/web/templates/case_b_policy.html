@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Policy search · {{ case.reference }}{% endblock %}
+{% block main %}
+<nav class="case-nav" aria-label="Case screens">
+  <a href="/cases/{{ case.id }}">Case {{ case.reference }}</a>
+  <a href="/cases/{{ case.id }}/policy-search" aria-current="page">Policy search</a>
+</nav>
+<h1>Policy search</h1>
+{% if not day %}
+<p class="notice" data-testid="no-stay">Investigate first. The search reads the policy version in force on the stay's checkout date, and no stay is identified yet.</p>
+{% else %}
+<p class="muted">Only the versions in force on this stay's checkout date, {{ day }}. Your words, plus the policy's words for them.</p>
+<form method="get" action="/cases/{{ case.id }}/policy-search" class="search" role="search">
+  <label for="q">Search</label>
+  <input id="q" name="q" value="{{ q }}">
+  <button type="submit">Search</button>
+</form>
+{% if searched %}
+  {% if hits %}
+  <ol class="hits" data-testid="policy-hits">
+    {% for h in hits %}
+    <li><a href="/policies/{{ h.ref.policy_id }}/v{{ h.ref.version }}/{{ h.ref.section }}">{{ h.title }} v{{ h.ref.version }} §{{ h.ref.section }} {{ h.heading }}</a></li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p class="empty" data-testid="policy-empty">Nothing in these versions matches. Try fewer words.</p>
+  {% endif %}
+{% endif %}
+{% endif %}
+{% endblock %}

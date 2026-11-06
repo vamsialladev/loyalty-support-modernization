@@ -7,7 +7,6 @@ rule, an amount or a permission (S01, S02).
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 
 POINTS_QUEUE = "points"
 BILLING_QUEUE = "billing"
@@ -38,15 +37,6 @@ _MORE_STAYS = re.compile(
 )
 
 
-@dataclass(frozen=True)
-class RequestSignals:
-    member_numbers: tuple[str, ...]
-    confirmations: tuple[str, ...]  # hotel and partner confirmation numbers, as written
-    language: str | None  # None means English, or at least not one of the languages recognised
-    out_of_scope: tuple[str, ...]
-    mentions_more_stays: bool
-
-
 def _unique(items: list[str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(items))
 
@@ -73,15 +63,23 @@ def route(text: str) -> str:
     return POINTS_QUEUE
 
 
-def read_signals(text: str, form_member: str | None = None, form_confirmation: str | None = None) -> RequestSignals:
-    numbers = [form_member.strip().upper()] if form_member and form_member.strip() else []
-    numbers += [m.upper() for m in _MEMBER.findall(text)]
-    confirmations = [form_confirmation.strip().upper()] if form_confirmation and form_confirmation.strip() else []
-    confirmations += [m.upper() for m in _STAY.findall(text)] + [m.upper() for m in _PARTNER.findall(text)]
-    return RequestSignals(
-        _unique(numbers),
-        _unique(confirmations),
-        detect_language(text),
-        out_of_scope_topics(text),
-        bool(_MORE_STAYS.search(text)),
-    )
+def mentions_more_stays(text: str) -> bool:
+    return bool(_MORE_STAYS.search(text))
+
+
+def member_numbers_in(text: str) -> tuple[str, ...]:
+    return _unique([m.upper() for m in _MEMBER.findall(text)])
+
+
+def confirmations_in(text: str) -> tuple[str, ...]:
+    return _unique([m.upper() for m in _STAY.findall(text)] + [m.upper() for m in _PARTNER.findall(text)])
+
+
+def signoff_name(text: str) -> str | None:
+    """The name on the last line ("Thanks, Clara Kowalski" -> "Clara Kowalski"), or None."""
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if not lines:
+        return None
+    last = lines[-1].split(", ", 1)[-1].rstrip(".")
+    parts = last.split()
+    return last if 2 <= len(parts) <= 4 and all(p[:1].isupper() for p in parts) else None

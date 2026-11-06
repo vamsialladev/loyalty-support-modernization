@@ -14,6 +14,7 @@ RUN uv sync --frozen --no-default-groups --group api --no-install-project
 COPY customer_shapes ./customer_shapes
 COPY config/customers ./config/customers
 COPY config/legacy ./config/legacy
+COPY config/conventional ./config/conventional
 COPY config/policy-regression ./config/policy-regression
 COPY policies ./policies
 COPY alembic.ini ./

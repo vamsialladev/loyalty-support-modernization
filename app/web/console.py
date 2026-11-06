@@ -1,4 +1,4 @@
-"""The server-rendered console (Jinja2 + HTMX + CSS, spec 0.6 and B.13) for arm A's legacy workflow.
+"""The server-rendered console (Jinja2 + HTMX + CSS, spec 0.6 and B.13) for arm A's legacy workflow and arm B.
 
 Every page shows the banner: SYNTHETIC DATA, profile, AI mode, customer, simulated time. Every state change is a
 POST with the session's CSRF token, followed by a redirect. Every check (role, separation of duties, case state,
@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import secrets
 from collections.abc import Callable, Iterator
+from datetime import date
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -22,15 +23,17 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app import correlation
 from app.adapters.local_demo_identity import LocalDemoIdentity
+from app.arms.conventional.investigation import OTHER_MEMBER_TEXT
 from app.arms.legacy import intake, screens
 from app.arms.legacy.keyword_index import KeywordIndex
 from app.arms.legacy.rules import LegacyRules
+from app.domain.business_time import local_datetime
 from app.domain.case_states import CaseState, InvalidTransition
 from app.domain.roles import NotPermitted, Role, approval_refusal, require_administrator, require_case_worker
 from app.persistence.models import Case
 from app.ports.customer_systems import CustomerSystemError
 from app.services import cases as svc
-from app.services import jobs, kill_switch, policies, policy_publishing, sessions
+from app.services import conventional, jobs, kill_switch, policies, policy_publishing, sessions
 from app.services.customer_config import CustomerConfig
 from app.services.instrumentation import events, system_events
 from app.services.systems import SystemsFactory
@@ -46,6 +49,13 @@ CSP = (
 )
 DONE_MESSAGES = {
     "created": "Case created.",
+    "investigating": "Investigation queued. This page updates by itself when the result is in.",
+    "asked": "Question sent to the member. The case is waiting for their reply.",
+    "more_stays": "Question about the other stays sent. The case keeps moving.",
+    "supplied": "Answer stored. Investigating again.",
+    "feedback": "Thanks: feedback recorded.",
+    "group_escalated": "The linked cases together are over the supervisor limit, so all of them were escalated.",
+    "overridden": "Case closed against the engine's result. The override and your reason are logged.",
     "started": "Work started. Use the four screens to find and attach the evidence.",
     "attached": "Evidence attached to the case.",
     "note": "Note added.",
@@ -98,14 +108,23 @@ Csrf = Annotated[str, Form()]
 def install_console(
     app: FastAPI, settings: AppSettings, factory: sessionmaker[Session], systems_for: SystemsFactory
 ) -> None:
+    customer = CustomerConfig.load(settings.customer_id)
     templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
+
+    def property_time(utc: str | None, property_name: str | None = None) -> str:
+        """A UTC time on the property's clock, with the zone named (spec B.13). UTC when the zone is unknown."""
+        if not utc:
+            return ""
+        timezone = customer.rules.property_timezones.get(property_name or "")
+        return local_datetime(utc, timezone) if timezone else utc
+
+    templates.env.filters["property_time"] = property_time
     app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="static")
     identity = LocalDemoIdentity(factory)
     app.state.sessions, app.state.identity = factory, identity
     rules = LegacyRules.load(settings.customer_id)
     index = KeywordIndex.load()
     write_path = SharedWritePath(settings.customer_id, secret_key=settings.secret_key or None)
-    customer = CustomerConfig.load(settings.customer_id)
 
     # ---------- plumbing ----------
 
@@ -129,11 +148,13 @@ def install_console(
 
     def banner(case: Case | None) -> dict[str, str]:
         sim = "per case"
+        ai_mode = "none (arms A and B)"
         if case is not None:
             sim = case.received_at_utc if settings.sim_clock else "off (live mock clock)"
+            ai_mode = "none (arm B, rules and search)" if case.arm == svc.ARM_B else "none (arm A, legacy)"
         return {
             "profile": settings.profile,
-            "ai_mode": "none (arm A, legacy)",
+            "ai_mode": ai_mode,
             "customer": settings.customer_id,
             "sim_time": sim,
         }
@@ -253,13 +274,20 @@ def install_console(
 
     @app.get("/queue", response_model=None)
     def queue(
-        request: Request, s: DB, active: User, queue: str = intake.POINTS_QUEUE, status: str = "", mine: bool = False
+        request: Request,
+        s: DB,
+        active: User,
+        queue: str = intake.POINTS_QUEUE,
+        status: str = "",
+        mine: bool = False,
+        arm: str = "",
     ) -> Response:
         if active.identity.role is Role.ADMINISTRATOR:
             return RedirectResponse("/admin", status_code=303)
         if queue not in (intake.POINTS_QUEUE, intake.BILLING_QUEUE):
             queue = intake.POINTS_QUEUE
-        rows = svc.list_cases(s, active.identity, queue=queue, status=status or None, mine=mine)
+        arm = arm if arm in svc.ARMS else ""
+        rows = svc.list_cases(s, active.identity, queue=queue, status=status or None, mine=mine, arm=arm or None)
         return render(
             request,
             "queue.html",
@@ -268,6 +296,8 @@ def install_console(
             queue=queue,
             status=status,
             mine=mine,
+            arm=arm,
+            arms=svc.ARMS,
             states=[st.value for st in CaseState],
         )
 
@@ -287,6 +317,7 @@ def install_console(
         form_member_number: Annotated[str, Form()] = "",
         form_confirmation: Annotated[str, Form()] = "",
         form_name: Annotated[str, Form()] = "",
+        arm: Annotated[str, Form()] = svc.ARM_A,
         csrf: Csrf = "",
     ) -> Response:
         check_csrf(active, csrf)
@@ -304,7 +335,7 @@ def install_console(
             form_confirmation=form_confirmation.strip() or None,
             form_name=form_name.strip() or None,
         )
-        case = svc.create_case(s, active.identity, request_, customer_id=settings.customer_id)
+        case = svc.create_case(s, active.identity, request_, customer_id=settings.customer_id, arm=arm)
         return back_to(case, "created")
 
     # ---------- case detail and decisions ----------
@@ -312,16 +343,9 @@ def install_console(
     @app.get("/cases/{case_id}", response_class=HTMLResponse)
     def case_page(request: Request, s: DB, active: User, case_id: int, done: str = "") -> HTMLResponse:
         case = svc.get_case(s, active.identity, case_id)
-        adjustments = []
-        for row in svc.adjustment_requests_of(s, case):
-            adjustments.append(
-                {
-                    "row": row,
-                    "approval": approval_of(s, row),
-                    "attempts": attempts_of(s, row),
-                    "refusal": approval_refusal(active.identity, row.requested_by),
-                }
-            )
+        if case.arm == svc.ARM_B:
+            return arm_b_page(request, s, active, case, done)
+        adjustments = adjustment_view(s, active, case)
         checklist = svc.checklist_for(s, case, rules)
         return render(
             request,
@@ -341,6 +365,48 @@ def install_console(
             job_active=jobs.active_case_job(s, case.id),
             polling=_polling(s, case),
             switch_engaged=kill_switch.is_engaged(s),
+        )
+
+    def adjustment_view(s: Session, active: sessions.ActiveSession, case: Case) -> list[dict[str, Any]]:
+        return [
+            {
+                "row": row,
+                "approval": approval_of(s, row),
+                "attempts": attempts_of(s, row),
+                "refusal": approval_refusal(active.identity, row.requested_by),
+            }
+            for row in svc.adjustment_requests_of(s, case)
+        ]
+
+    def arm_b_page(request: Request, s: Session, active: sessions.ActiveSession, case: Case, done: str) -> HTMLResponse:
+        rec = conventional.latest_recommendation(s, case)
+        group = [c for c in conventional.group_cases(s, case) if c.id != case.id]
+        evidence = conventional.latest_evidence(s, case)
+        return render(
+            request,
+            "case_b.html",
+            active,
+            case=case,
+            requests=svc.requests_of(s, case),
+            rec=rec,
+            evidence=evidence,
+            stay_property=(evidence["records"][0]["property"] if evidence and evidence["records"] else None),
+            close_code=conventional.recommended_close_code(rec) if rec else None,
+            close_codes=conventional.CLOSE_CODES,
+            prompt=conventional.prompt_for(rec),
+            channels=conventional.CHANNELS,
+            answers=conventional.member_answers(s, case),
+            group=group,
+            notes=svc.notes_of(s, case),
+            adjustments=adjustment_view(s, active, case),
+            events=events(s, case),
+            feedback=conventional.feedback_of(s, case),
+            message=DONE_MESSAGES.get(done, ""),
+            job_active=jobs.active_case_job(s, case.id),
+            job_failed=conventional.failed_investigation(s, case),
+            polling=_polling(s, case),
+            switch_engaged=kill_switch.is_engaged(s),
+            other_member_text=OTHER_MEMBER_TEXT,
         )
 
     def _polling(s: Session, case: Case) -> bool:
@@ -371,8 +437,94 @@ def install_console(
     def request_adjustment(s: DB, active: User, case_id: int, csrf: Csrf = "") -> Response:
         check_csrf(active, csrf)
         case = svc.get_case(s, active.identity, case_id)
+        if case.arm == svc.ARM_B:
+            outcome = conventional.request_adjustment(s, active.identity, case)
+            return back_to(case, "requested" if outcome.row is not None else "group_escalated")
         svc.request_adjustment(s, active.identity, case, rules)
         return back_to(case, "requested")
+
+    # ---------- arm B: the investigation and what follows from it ----------
+
+    @app.post("/cases/{case_id}/investigate", response_model=None)
+    def investigate(s: DB, active: User, case_id: int, csrf: Csrf = "") -> Response:
+        check_csrf(active, csrf)
+        case = svc.get_case(s, active.identity, case_id)
+        conventional.start_investigation(s, active.identity, case)
+        return back_to(case, "investigating")
+
+    @app.post("/cases/{case_id}/ask", response_model=None)
+    def ask(s: DB, active: User, case_id: int, message: Annotated[str, Form()] = "", csrf: Csrf = "") -> Response:
+        check_csrf(active, csrf)
+        case = svc.get_case(s, active.identity, case_id)
+        conventional.ask_member(s, active.identity, case, systems_for(svc.read_time(case)), message)
+        return back_to(case, "asked")
+
+    @app.post("/cases/{case_id}/more-stays", response_model=None)
+    def more_stays(s: DB, active: User, case_id: int, csrf: Csrf = "") -> Response:
+        check_csrf(active, csrf)
+        case = svc.get_case(s, active.identity, case_id)
+        conventional.mention_more_stays(s, active.identity, case, systems_for(svc.read_time(case)))
+        return back_to(case, "more_stays")
+
+    @app.post("/cases/{case_id}/supply-info", response_model=None)
+    def supply_info(
+        s: DB,
+        active: User,
+        case_id: int,
+        reply_text: Annotated[str, Form()] = "",
+        booking_channel: Annotated[str, Form()] = "",
+        member_number: Annotated[str, Form()] = "",
+        confirmation: Annotated[str, Form()] = "",
+        scope_cleared: Annotated[bool, Form()] = False,
+        csrf: Csrf = "",
+    ) -> Response:
+        check_csrf(active, csrf)
+        case = svc.get_case(s, active.identity, case_id)
+        conventional.supply_information(
+            s,
+            active.identity,
+            case,
+            reply_text=reply_text,
+            booking_channel=booking_channel,
+            member_number=member_number,
+            confirmation=confirmation,
+            scope_cleared=scope_cleared,
+        )
+        return back_to(case, "supplied")
+
+    @app.post("/cases/{case_id}/feedback", response_model=None)
+    def feedback(
+        s: DB,
+        active: User,
+        case_id: int,
+        rating: Annotated[str, Form()],
+        comment: Annotated[str, Form()] = "",
+        csrf: Csrf = "",
+    ) -> Response:
+        check_csrf(active, csrf)
+        case = svc.get_case(s, active.identity, case_id)
+        conventional.give_feedback(s, active.identity, case, rating, comment)
+        return back_to(case, "feedback")
+
+    @app.get("/cases/{case_id}/policy-search", response_class=HTMLResponse)
+    def policy_search(request: Request, s: DB, active: User, case_id: int, q: str = "") -> HTMLResponse:
+        """D12 and D15: synonyms and full-text search, only over the versions in force on this stay's checkout date."""
+        case = screen_case(s, active, case_id, svc.ARM_B)
+        rec = conventional.latest_recommendation(s, case)
+        day = date.fromisoformat(rec.checkout_day) if rec and rec.checkout_day else None
+        hits = conventional.search_policy(s, case.customer_id, q, day) if day and q.strip() else []
+        if day and q.strip():
+            svc.log_search(s, case, active.identity, "policy", "full text", len(hits))
+        return render(
+            request,
+            "case_b_policy.html",
+            active,
+            case=case,
+            q=q,
+            hits=hits,
+            day=day,
+            searched=bool(day and q.strip()),
+        )
 
     @app.post("/cases/{case_id}/close", response_model=None)
     def close(
@@ -385,6 +537,9 @@ def install_console(
     ) -> Response:
         check_csrf(active, csrf)
         case = svc.get_case(s, active.identity, case_id)
+        if case.arm == svc.ARM_B:
+            overridden = conventional.close_case(s, active.identity, case, code, note)
+            return back_to(case, "overridden" if overridden else "closed")
         svc.close_case(s, active.identity, case, code, note, rules)
         return back_to(case, "closed")
 
@@ -418,9 +573,12 @@ def install_console(
 
     # ---------- the four evidence screens (D14) ----------
 
-    def screen_case(s: Session, active: sessions.ActiveSession, case_id: int) -> Case:
+    def screen_case(s: Session, active: sessions.ActiveSession, case_id: int, arm: str = svc.ARM_A) -> Case:
         require_case_worker(active.identity)  # the screens read customer records and log each search
-        return svc.get_case(s, active.identity, case_id)
+        case = svc.get_case(s, active.identity, case_id)
+        if case.arm != arm:
+            raise svc.WorkflowError(f"this screen belongs to arm {arm}; this case is on arm {case.arm}")
+        return case
 
     def can_search(case: Case) -> bool:
         return CaseState(case.status) is CaseState.INVESTIGATING

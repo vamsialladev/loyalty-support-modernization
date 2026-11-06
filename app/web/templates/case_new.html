@@ -6,6 +6,11 @@
   <p class="muted">For a request that arrived by phone or another channel outside the web form.</p>
   <form method="post" action="/cases">
     <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="arm">Workflow</label>
+    <select id="arm" name="arm">
+      <option value="A">Arm A: legacy screens, worked by hand</option>
+      <option value="B">Arm B: improved conventional (rules and search, no AI)</option>
+    </select>
     <label for="received_at_utc">Received (UTC)</label>
     <input id="received_at_utc" name="received_at_utc" placeholder="2026-07-20T14:00:00Z" required>
     <label for="contact_channel">Channel</label>

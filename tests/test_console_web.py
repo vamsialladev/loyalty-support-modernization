@@ -145,7 +145,7 @@ def test_every_page_has_the_banner_and_security_headers(arm: ArmA) -> None:
     for url in ("/queue", f"/cases/{case.id}", f"/cases/{case.id}/member", "/cases/new", "/approvals"):
         resp = b.get(url)
         assert resp.status_code == 200, url
-        assert "SYNTHETIC DATA" in resp.text and "AI mode: none (arm A, legacy)" in resp.text, url
+        assert "SYNTHETIC DATA" in resp.text and "AI mode: none (arm" in resp.text, url
         assert "customer: hg-demo" in resp.text, url
         csp = resp.headers["content-security-policy"]
         assert "script-src 'self'" in csp and "unsafe" not in csp
