@@ -178,13 +178,15 @@ class Worker:
 
 def build_handlers(settings: Any) -> tuple[dict[str, Handler], Sweep | None]:
     """The write path's jobs, reading the customer systems the same way the console does."""
+    from app.services.assisted import runtime_from_settings
     from app.services.job_handlers import build_handlers as write_path_handlers
     from app.services.job_handlers import sweep_stranded
     from app.services.systems import mock_systems_factory
     from app.services.write_path import SharedWritePath
 
     write_path = SharedWritePath(settings.customer_id, secret_key=settings.secret_key or None)
-    return write_path_handlers(write_path, mock_systems_factory(settings)), sweep_stranded
+    handlers = write_path_handlers(write_path, mock_systems_factory(settings), runtime_from_settings(settings))
+    return handlers, sweep_stranded
 
 
 OPERATOR = Identity(0, "worker-cli", "Worker command line", Role.ADMINISTRATOR)

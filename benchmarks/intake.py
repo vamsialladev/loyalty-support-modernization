@@ -93,7 +93,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--split", choices=SPLITS, default="dev")
     parser.add_argument("--limit", type=int, default=20)
     parser.add_argument("--cases", default="", help="comma-separated case IDs, e.g. DV-001,DV-002")
-    parser.add_argument("--arm", choices=("A", "B"), default="A", help="which workflow the new cases use")
+    parser.add_argument("--arm", choices=("A", "B", "C"), default="A", help="which workflow the new cases use")
     parser.add_argument("--env-file", default=str(ROOT / ".env"))
     args = parser.parse_args(argv)
 

@@ -13,7 +13,7 @@
   {% if job_active %}The worker has this ({{ job_active.status }}, attempt {{ job_active.attempts }}).{% else %}Waiting for a result.{% endif %} <a href="/cases/{{ case.id }}">Refresh</a>
 </p>
 {% endif %}
-<p class="muted">Arm B · queue: {{ case.queue }} · assigned to {{ case.assigned_to or "nobody" }} · received {{ case.received_at_utc|property_time(stay_property) }}
+<p class="muted">Arm {{ case.arm }} · queue: {{ case.queue }} · assigned to {{ case.assigned_to or "nobody" }} · received {{ case.received_at_utc|property_time(stay_property) }}
   {% if case.resolution_code %}· resolution: <span data-testid="resolution">{{ case.resolution_code }}</span>{% endif %}</p>
 {% if case.resolution_note %}<p class="muted">{{ case.resolution_note }}</p>{% endif %}
 {% if group %}
@@ -44,6 +44,12 @@
   {% endif %}
   {% if job_active %}
   <p aria-live="polite" data-testid="investigation-running">Reading the member, stay, ledger and posting queue…</p>
+  {% if can_work and case.arm == "C" %}
+  <form method="post" action="/cases/{{ case.id }}/cancel-investigation">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button type="submit" class="secondary">Stop the AI run</button>
+  </form>
+  {% endif %}
   {% elif can_work and case.queue == "points" and case.status in ["New", "Investigating"] %}
   <form method="post" action="/cases/{{ case.id }}/investigate">
     <input type="hidden" name="csrf" value="{{ csrf }}">
@@ -134,6 +140,31 @@
     <ul>{% for m in evidence.member_stays %}<li>{{ m.stay_id }} · {{ m.property }} · arrived {{ m.arrival_date }} · {{ m.nights }} nights</li>{% endfor %}</ul>
   </details>
   {% endif %}
+</section>
+{% endif %}
+
+{% if case.arm == "C" and rec and rec.ai %}
+<section class="card ai-panel" aria-labelledby="ai-h" data-testid="ai-panel">
+  <h2 id="ai-h">AI-written notes{% if rec.ai.mock %} (MOCK: no real model){% endif %}</h2>
+  <p class="notice">A model wrote this. It can be wrong. The evidence and the engine's result above are what count, and you decide.</p>
+  {% if rec.ai.fallback %}
+  <p data-testid="ai-fallback">The AI run ended early ({{ rec.ai.fallback }}), so there's no AI reading. The rules result above stands.</p>
+  {% else %}
+  <p data-testid="ai-summary">{{ rec.ai.summary }}</p>
+  {% if rec.ai.observed_facts %}<ul>{% for fact in rec.ai.observed_facts %}<li>{{ fact }}</li>{% endfor %}</ul>{% endif %}
+  <h3>Why, in plain words</h3>
+  <p>{{ rec.ai.explanation }}</p>
+  {% if rec.ai.citations %}
+  <p>Sections it used:
+    {% for c in rec.ai.citations %}<a data-testid="ai-citation" href="/policies/{{ c.policy_id }}/v{{ c.version }}/{{ c.section_id }}">{{ c.policy_id }} v{{ c.version }} §{{ c.section_id }}</a>{% if not loop.last %}; {% endif %}{% endfor %}
+  </p>
+  {% endif %}
+  {% if rec.ai.missing_information %}<h3>What it says is missing</h3><ul>{% for item in rec.ai.missing_information %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
+  {% if rec.ai.out_of_scope_items %}<h3>Not about points: for a person</h3><ul data-testid="ai-out-of-scope">{% for item in rec.ai.out_of_scope_items %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
+  <h3>Draft reply, for you to edit and send yourself</h3>
+  <pre class="message" data-testid="ai-draft">{{ rec.ai.draft_reply }}</pre>
+  {% endif %}
+  {% if ai_run %}<p class="muted" data-testid="ai-run">Run {{ ai_run.id }} · {{ ai_run.model_id }} · prompt {{ ai_run.prompt_version }} · {{ ai_run.turns }} model turns, {{ ai_run.tool_calls }} tool calls · ended: {{ ai_run.stop_reason }}</p>{% endif %}
 </section>
 {% endif %}
 

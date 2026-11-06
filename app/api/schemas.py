@@ -17,7 +17,7 @@ class CaseCreate(Strict):
     received_at_utc: str = Field(pattern=UTC_TIME)
     contact_channel: Literal["phone_note", "email", "web_form"]
     text: str = Field(min_length=1, max_length=20000)
-    arm: Literal["A", "B"] = "B"
+    arm: Literal["A", "B", "C"] = "B"
     sender_email: str | None = Field(default=None, max_length=255)
     form_member_number: str | None = Field(default=None, max_length=32)
     form_confirmation: str | None = Field(default=None, max_length=32)
@@ -123,6 +123,7 @@ class RecommendationOut(BaseModel):
     citations: list[CitationOut]
     flags: list[str]
     created_at_utc: str
+    ai: dict[str, Any] | None = None  # text a model wrote, on arm C. Everything above is the engine's
 
 
 class CaseDetail(CaseOut):

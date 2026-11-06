@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import JSON, ForeignKey, Index, Integer, String, Text, UniqueConstraint, text
+from sqlalchemy import JSON, BigInteger, ForeignKey, Index, Integer, LargeBinary, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 LIVE_CREDIT = "status IN ('executing', 'execution_unknown', 'executed', 'execution_conflict')"
@@ -131,6 +131,75 @@ class Recommendation(Base):
     evidence_hash: Mapped[str | None] = mapped_column(String(64), default=None)
     checkout_day: Mapped[str | None] = mapped_column(String(10), default=None)
     created_at_utc: Mapped[str] = mapped_column(String(20))
+    # Arm C only. Every field above is the engine's; `ai` is text a model wrote, kept apart so the page can label it.
+    ai_run_id: Mapped[int | None] = mapped_column(Integer, default=None)
+    ai: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
+
+
+class AiRun(Base):
+    """One run of the AI loop: what ran, on what, how it ended and what it cost (spec B.9; RFC-0002)."""
+
+    __tablename__ = "ai_runs"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), index=True)
+    caller: Mapped[str] = mapped_column(String(64))
+    provider: Mapped[str] = mapped_column(String(32))
+    model_id: Mapped[str] = mapped_column(String(64))
+    is_mock: Mapped[bool] = mapped_column(default=True)
+    prompt_version: Mapped[str] = mapped_column(String(32))
+    policy_versions: Mapped[list[str]] = mapped_column(JSON, default=list)
+    status: Mapped[str] = mapped_column(String(16))  # running | finished | stopped
+    stop_reason: Mapped[str | None] = mapped_column(String(32), default=None)
+    turns: Mapped[int] = mapped_column(Integer, default=0)
+    tool_calls: Mapped[int] = mapped_column(Integer, default=0)
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cost_microusd: Mapped[int] = mapped_column(Integer, default=0)
+    elapsed_ms: Mapped[int] = mapped_column(Integer, default=0)
+    problems: Mapped[list[str]] = mapped_column(JSON, default=list)
+    cancel_requested: Mapped[bool] = mapped_column(default=False)
+    correlation_id: Mapped[str | None] = mapped_column(String(32), default=None)
+    started_at_utc: Mapped[str] = mapped_column(String(20))
+    finished_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
+
+
+class AiStep(Base):
+    """One thing a run did. Never the content of evidence or of the model's text (spec B.9: secrets out of traces)."""
+
+    __tablename__ = "ai_steps"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("ai_runs.id"), index=True)
+    step: Mapped[int] = mapped_column(Integer)
+    kind: Mapped[str] = mapped_column(String(16))  # model | tool | validation
+    name: Mapped[str] = mapped_column(String(48))
+    arguments_hash: Mapped[str | None] = mapped_column(String(64), default=None)
+    status: Mapped[str] = mapped_column(String(24))
+    result_chars: Mapped[int] = mapped_column(Integer, default=0)
+    elapsed_ms: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class AiSpend(Base):
+    """What live model calls have cost, per day and per month, so a restart can't reset a cap (LIVE-05)."""
+
+    __tablename__ = "ai_spend"
+    period: Mapped[str] = mapped_column(String(16), primary_key=True)  # day:2026-11-06 | month:2026-11
+    cost_microusd: Mapped[int] = mapped_column(BigInteger, default=0)
+    updated_at_utc: Mapped[str] = mapped_column(String(20))
+
+
+class CaseAttachment(Base):
+    """A file that came with a request. Extracted values are evidence only (Appendix H)."""
+
+    __tablename__ = "case_attachments"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), index=True)
+    filename: Mapped[str] = mapped_column(String(128))
+    media_type: Mapped[str] = mapped_column(String(48))
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(String(64))
+    content: Mapped[bytes] = mapped_column(LargeBinary)
+    added_by: Mapped[str] = mapped_column(String(64))
+    added_at_utc: Mapped[str] = mapped_column(String(20))
 
 
 class Feedback(Base):

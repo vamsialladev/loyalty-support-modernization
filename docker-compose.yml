@@ -87,6 +87,9 @@ services:
       MOCK_API_URL: http://mock-api:8020
       MOCK_API_TOKEN: ${MOCK_API_TOKEN:?set MOCK_API_TOKEN in .env}
       APP_SECRET_KEY: ${APP_SECRET_KEY:?set APP_SECRET_KEY in .env}
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      FEATURE_LIVE_AI: ${FEATURE_LIVE_AI:-false}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
       APP_PROFILE: ${APP_PROFILE:-portfolio}
       DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:?set DEMO_USER_PASSWORD in .env}
       MOCK_API_SIM_CLOCK: ${MOCK_API_SIM_CLOCK:-false}
@@ -120,6 +123,13 @@ services:
       MOCK_API_URL: http://mock-api:8020
       MOCK_API_TOKEN: ${MOCK_API_TOKEN:?set MOCK_API_TOKEN in .env}
       APP_SECRET_KEY: ${APP_SECRET_KEY:?set APP_SECRET_KEY in .env}
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      FEATURE_LIVE_AI: ${FEATURE_LIVE_AI:-false}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}  # only the worker calls the model
+      LLM_BUDGET_USD_PER_RUN: ${LLM_BUDGET_USD_PER_RUN:-1.00}
+      LLM_BUDGET_USD_DAILY: ${LLM_BUDGET_USD_DAILY:-}
+      LLM_BUDGET_USD_TOTAL: ${LLM_BUDGET_USD_TOTAL:-5.00}
       APP_PROFILE: ${APP_PROFILE:-portfolio}
       MOCK_API_SIM_CLOCK: ${MOCK_API_SIM_CLOCK:-false}
       WORKER_HEALTH_FILE: /tmp/worker-alive

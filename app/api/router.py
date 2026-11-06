@@ -161,6 +161,7 @@ def _recommendation(rec: Recommendation) -> api.RecommendationOut:
         citations=citations,
         flags=rec.flags,
         created_at_utc=rec.created_at_utc,
+        ai=rec.ai,
     )
 
 
@@ -208,7 +209,7 @@ def build_router(settings: AppSettings, systems_for: SystemsFactory) -> APIRoute
         active: Reader,
         queue: Annotated[str | None, Query(max_length=16)] = None,
         case_status: Annotated[str | None, Query(alias="status", max_length=32)] = None,
-        arm: Annotated[str | None, Query(pattern="^[AB]$")] = None,
+        arm: Annotated[str | None, Query(pattern="^[ABC]$")] = None,
         cursor: str | None = None,
         limit: Annotated[int, Query(ge=1, le=MAX_PAGE)] = 50,
     ) -> api.CasePage:

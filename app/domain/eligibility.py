@@ -281,7 +281,7 @@ def evaluate_stay(claim: StayClaim, policies: Sequence[PolicyVersion], customer:
     return result(Eligibility.ELIGIBLE, NextAction.ADJUST, reason, owed=owed)
 
 
-_ACTION_ORDER = (
+ACTION_ORDER = (
     NextAction.ESCALATE,
     NextAction.REFRESH_EVIDENCE,
     NextAction.REQUEST_INFO,
@@ -298,7 +298,7 @@ def combine(results: Sequence[EligibilityResult]) -> CaseVerdict:
     """One case's verdict over its claimed stays. The supervisor limit applies per case (policy section 6)."""
     if not results:
         raise ValueError("a case verdict needs at least one stay")
-    top = min(results, key=lambda r: _ACTION_ORDER.index(r.action))
+    top = min(results, key=lambda r: ACTION_ORDER.index(r.action))
     owed = sum(r.points_owed for r in results)
     limits = [r.supervisor_limit_points for r in results if r.supervisor_limit_points is not None]
     if top.action is NextAction.ADJUST and limits and owed > min(limits):

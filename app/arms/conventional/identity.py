@@ -18,7 +18,8 @@ MAX_MERGE_HOPS = 3
 MAX_NEAR_DISTANCE = 2
 MAX_CANDIDATES_SHOWN = 5
 EXACT_NUMBER, NEAR_NUMBER, EMAIL, NAME = "member_number", "member_number_near", "email", "name"
-_WEIGHT = {EXACT_NUMBER: 4, EMAIL: 3, NAME: 2, NEAR_NUMBER: 1}
+STAY_ON_PROFILE = "stay_on_profile"  # an exact confirmation number that is on this profile (RFC-0002, D18)
+_WEIGHT = {EXACT_NUMBER: 4, EMAIL: 3, NAME: 2, STAY_ON_PROFILE: 2, NEAR_NUMBER: 1}
 
 
 class IdentityStatus(StrEnum):
@@ -33,6 +34,7 @@ class IdentityClaim:
     member_numbers: tuple[str, ...] = ()
     email: str | None = None
     name: str | None = None
+    confirmations: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -102,7 +104,13 @@ def names_match(name: str, member: Member, config: ConventionalConfig) -> bool:
     )
 
 
-def score(claim: IdentityClaim, member: Member, config: ConventionalConfig, via: str | None = None) -> tuple[str, ...]:
+def score(
+    claim: IdentityClaim,
+    member: Member,
+    config: ConventionalConfig,
+    via: str | None = None,
+    stay_owners: frozenset[str] = frozenset(),
+) -> tuple[str, ...]:
     matched = []
     numbers = {member.member_number, *([via] if via else [])}
     if any(n in numbers for n in claim.member_numbers):
@@ -113,6 +121,8 @@ def score(claim: IdentityClaim, member: Member, config: ConventionalConfig, via:
         matched.append(EMAIL)
     if claim.name and names_match(claim.name, member, config):
         matched.append(NAME)
+    if numbers & stay_owners:
+        matched.append(STAY_ON_PROFILE)
     return tuple(matched)
 
 
@@ -130,8 +140,24 @@ def current_profile(systems: CustomerSystems, member: Member) -> tuple[Member, s
     return member, retired
 
 
+def _stay_owners(systems: CustomerSystems, claim: IdentityClaim) -> frozenset[str]:
+    """Who holds the stays this message quotes exactly. A near match isn't an identifier: it's only a guess at one."""
+    owners: set[str] = set()
+    for confirmation in claim.confirmations:
+        try:
+            if confirmation.startswith("TRV-"):
+                records = systems.find_stays(partner_confirmation=confirmation)
+            else:
+                records = systems.get_stay_records(confirmation)
+        except RecordNotFound:
+            continue
+        owners |= {r.member_number for r in records if r.member_number}
+    return frozenset(owners)
+
+
 def find_candidates(systems: CustomerSystems, claim: IdentityClaim, config: ConventionalConfig) -> list[Candidate]:
     found: list[Member] = []
+    stay_owners = _stay_owners(systems, claim)
     for number in claim.member_numbers:
         try:
             found.append(systems.get_member(number))
@@ -146,7 +172,7 @@ def find_candidates(systems: CustomerSystems, claim: IdentityClaim, config: Conv
     candidates: dict[str, Candidate] = {}
     for member in found:
         profile, via = current_profile(systems, member)
-        matched = score(claim, profile, config, via)
+        matched = score(claim, profile, config, via, stay_owners)
         known = candidates.get(profile.member_number)
         if matched and (known is None or len(matched) > len(known.matched)):
             candidates[profile.member_number] = Candidate(profile, matched, via)
@@ -165,7 +191,8 @@ def same_person(a: Member, b: Member) -> bool:
 
 
 def choose(candidates: list[Candidate]) -> IdentityResult:
-    shown = tuple(candidates[:MAX_CANDIDATES_SHOWN])
+    # A stay's holder isn't a candidate on that alone: quoting a number mustn't show whose stay it is (S03).
+    shown = tuple(c for c in candidates if c.matched != (STAY_ON_PROFILE,))[:MAX_CANDIDATES_SHOWN]
     if not candidates:
         return IdentityResult(IdentityStatus.NOT_FOUND, None, ())
     confirmed = [c for c in candidates if len(c.matched) >= 2]

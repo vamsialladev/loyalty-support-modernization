@@ -40,6 +40,7 @@ from app.ports.customer_systems import CustomerSystems
 from app.services import approvals, jobs, policies
 from app.services.cases import (
     ARM_B,
+    ARM_C,
     CaseNotFound,
     IntakeRequest,
     WorkflowError,
@@ -98,7 +99,8 @@ CLOSE_CODES = (
 
 
 def _require_arm_b(case: Case) -> None:
-    if case.arm != ARM_B:
+    """Arm C is arm B plus the model, so these services are the same for both."""
+    if case.arm not in (ARM_B, ARM_C):
         raise WorkflowError("this case is on arm A, which is worked by hand on the legacy screens")
 
 
@@ -177,7 +179,7 @@ def claim_text_for(s: Session, case: Case) -> ClaimText:
     attachments = tuple(a for r in requests for a in r.attachment_names)
     return ClaimText(
         text=text,
-        identity=IdentityClaim(tuple(dict.fromkeys(numbers)), email, name),
+        identity=IdentityClaim(tuple(dict.fromkeys(numbers)), email, name, tuple(dict.fromkeys(confirmations))),
         confirmations=tuple(dict.fromkeys(confirmations)),
         received_at_utc=case.received_at_utc,
         attachments=attachments,
@@ -259,10 +261,10 @@ def _snapshot(found: Investigation) -> dict[str, Any]:
     }
 
 
-def _split_group(s: Session, who: Identity, case: Case, first_stay: str, others: tuple[str, ...]) -> list[Case]:
+def split_group(s: Session, who: Identity, case: Case, first_stay: str, others: tuple[str, ...]) -> list[Case]:
     """One case per stay, linked (ADR-0062). The new cases are investigated the same way, by the worker."""
     case.group_ref = case.group_ref or case.reference
-    _claim_stay(s, who, case, first_stay)
+    claim_stay(s, who, case, first_stay)
     created = []
     original = requests_of(s, case)[0]
     for stay in others:
@@ -282,12 +284,12 @@ def _split_group(s: Session, who: Identity, case: Case, first_stay: str, others:
             request,
             customer_id=case.customer_id,
             source_ref=case.source_ref,
-            arm=ARM_B,
+            arm=case.arm,
             group_ref=case.group_ref,
             commit=False,
         )
         sibling.sim_now_utc = case.sim_now_utc
-        _claim_stay(s, who, sibling, stay)
+        claim_stay(s, who, sibling, stay)
         move(sibling, CaseState.INVESTIGATING)
         sibling.assigned_to = case.assigned_to
         jobs.enqueue(s, INVESTIGATE_JOB, {"case_id": sibling.id, "user_id": who.user_id}, case_id=sibling.id)
@@ -296,7 +298,7 @@ def _split_group(s: Session, who: Identity, case: Case, first_stay: str, others:
     return created
 
 
-def _claim_stay(s: Session, who: Identity, case: Case, stay_id: str) -> None:
+def claim_stay(s: Session, who: Identity, case: Case, stay_id: str) -> None:
     s.add(
         CaseEvidence(
             case_id=case.id,
@@ -361,7 +363,7 @@ def investigate_case(s: Session, who: Identity, case: Case, systems: CustomerSys
     )
     s.add(rec)
     if found.other_confirmations and stay_id:
-        _split_group(s, who, case, stay_id, found.other_confirmations)
+        split_group(s, who, case, stay_id, found.other_confirmations)
     s.flush()
     record(
         s,

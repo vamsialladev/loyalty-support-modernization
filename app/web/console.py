@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app import correlation
 from app.adapters.local_demo_identity import LocalDemoIdentity
+from app.ai.harness import latest_run, request_cancel
 from app.arms.conventional.investigation import OTHER_MEMBER_TEXT
 from app.arms.legacy import intake, screens
 from app.arms.legacy.keyword_index import KeywordIndex
@@ -33,8 +34,8 @@ from app.domain.case_states import CaseState, InvalidTransition
 from app.domain.roles import NotPermitted, Role, approval_refusal, require_administrator, require_case_worker
 from app.persistence.models import Case
 from app.ports.customer_systems import CustomerSystemError
+from app.services import assisted, conventional, jobs, kill_switch, metrics, policies, policy_publishing, sessions
 from app.services import cases as svc
-from app.services import conventional, jobs, kill_switch, metrics, policies, policy_publishing, sessions
 from app.services.customer_config import CustomerConfig
 from app.services.instrumentation import events, system_events
 from app.services.systems import SystemsFactory
@@ -55,6 +56,8 @@ DONE_MESSAGES = {
     "asked": "Question sent to the member. The case is waiting for their reply.",
     "more_stays": "Question about the other stays sent. The case keeps moving.",
     "supplied": "Answer stored. Investigating again.",
+    "cancelling": "Asked the AI run to stop. The rules result stands.",
+    "nothing_running": "No AI run is going on.",
     "feedback": "Thanks: feedback recorded.",
     "group_escalated": "The linked cases together are over the supervisor limit, so all of them were escalated.",
     "overridden": "Case closed against the engine's result. The override and your reason are logged.",
@@ -111,6 +114,7 @@ def install_console(
     app: FastAPI, settings: AppSettings, factory: sessionmaker[Session], systems_for: SystemsFactory
 ) -> None:
     customer = CustomerConfig.load(settings.customer_id)
+    ai_mode_label = assisted.mode_label(settings)
     templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 
     def property_time(utc: str | None, property_name: str | None = None) -> str:
@@ -153,7 +157,11 @@ def install_console(
         ai_mode = "none (arms A and B)"
         if case is not None:
             sim = case.received_at_utc if settings.sim_clock else "off (live mock clock)"
-            ai_mode = "none (arm B, rules and search)" if case.arm == svc.ARM_B else "none (arm A, legacy)"
+            ai_mode = {
+                svc.ARM_A: "none (arm A, legacy)",
+                svc.ARM_B: "none (arm B, rules and search)",
+                svc.ARM_C: f"{ai_mode_label} (arm C)",
+            }[case.arm]
         return {
             "profile": settings.profile,
             "ai_mode": ai_mode,
@@ -346,7 +354,7 @@ def install_console(
     @app.get("/cases/{case_id}", response_class=HTMLResponse)
     def case_page(request: Request, s: DB, active: User, case_id: int, done: str = "") -> HTMLResponse:
         case = svc.get_case(s, active.identity, case_id)
-        if case.arm == svc.ARM_B:
+        if case.arm in (svc.ARM_B, svc.ARM_C):
             return arm_b_page(request, s, active, case, done)
         adjustments = adjustment_view(s, active, case)
         checklist = svc.checklist_for(s, case, rules)
@@ -410,6 +418,7 @@ def install_console(
             polling=_polling(s, case),
             switch_engaged=kill_switch.is_engaged(s),
             other_member_text=OTHER_MEMBER_TEXT,
+            ai_run=latest_run(s, case) if case.arm == svc.ARM_C else None,
         )
 
     def _polling(s: Session, case: Case) -> bool:
@@ -440,7 +449,7 @@ def install_console(
     def request_adjustment(s: DB, active: User, case_id: int, csrf: Csrf = "") -> Response:
         check_csrf(active, csrf)
         case = svc.get_case(s, active.identity, case_id)
-        if case.arm == svc.ARM_B:
+        if case.arm in (svc.ARM_B, svc.ARM_C):
             outcome = conventional.request_adjustment(s, active.identity, case)
             return back_to(case, "requested" if outcome.row is not None else "group_escalated")
         svc.request_adjustment(s, active.identity, case, rules)
@@ -454,6 +463,13 @@ def install_console(
         case = svc.get_case(s, active.identity, case_id)
         conventional.start_investigation(s, active.identity, case)
         return back_to(case, "investigating")
+
+    @app.post("/cases/{case_id}/cancel-investigation", response_model=None)
+    def cancel_investigation(s: DB, active: User, case_id: int, csrf: Csrf = "") -> Response:
+        check_csrf(active, csrf)
+        require_case_worker(active.identity)
+        case = svc.get_case(s, active.identity, case_id)
+        return back_to(case, "cancelling" if request_cancel(s, case) else "nothing_running")
 
     @app.post("/cases/{case_id}/ask", response_model=None)
     def ask(s: DB, active: User, case_id: int, message: Annotated[str, Form()] = "", csrf: Csrf = "") -> Response:
@@ -512,7 +528,8 @@ def install_console(
     @app.get("/cases/{case_id}/policy-search", response_class=HTMLResponse)
     def policy_search(request: Request, s: DB, active: User, case_id: int, q: str = "") -> HTMLResponse:
         """D12 and D15: synonyms and full-text search, only over the versions in force on this stay's checkout date."""
-        case = screen_case(s, active, case_id, svc.ARM_B)
+        arm = svc.ARM_C if svc.get_case(s, active.identity, case_id).arm == svc.ARM_C else svc.ARM_B
+        case = screen_case(s, active, case_id, arm)
         rec = conventional.latest_recommendation(s, case)
         day = date.fromisoformat(rec.checkout_day) if rec and rec.checkout_day else None
         hits = conventional.search_policy(s, case.customer_id, q, day) if day and q.strip() else []
@@ -540,7 +557,7 @@ def install_console(
     ) -> Response:
         check_csrf(active, csrf)
         case = svc.get_case(s, active.identity, case_id)
-        if case.arm == svc.ARM_B:
+        if case.arm in (svc.ARM_B, svc.ARM_C):
             overridden = conventional.close_case(s, active.identity, case, code, note)
             return back_to(case, "overridden" if overridden else "closed")
         svc.close_case(s, active.identity, case, code, note, rules)
