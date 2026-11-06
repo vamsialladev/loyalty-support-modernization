@@ -1,0 +1,219 @@
+{
+ "note": "SYNTHETIC history generated from documented assumptions; the numbers demonstrate the analysis method and restate those assumptions. They are not findings about a real operation.",
+ "period": "2025-W44 to 2026-W44",
+ "cases": 3872,
+ "failed": 1057,
+ "failed_percent": 27,
+ "under_credited": 824,
+ "over_credited": 215,
+ "credited_twice": 18,
+ "predicted_share_b": 61,
+ "predicted_share_c": 21,
+ "drivers": [
+  {
+   "driver": "D05",
+   "name": "OTA confirmation format not searchable",
+   "cases": 126,
+   "failed": 86,
+   "predicted": "B"
+  },
+  {
+   "driver": "D16",
+   "name": "Several stays in one message",
+   "cases": 113,
+   "failed": 83,
+   "predicted": "C"
+  },
+  {
+   "driver": "D03",
+   "name": "Missing booking channel",
+   "cases": 117,
+   "failed": 75,
+   "predicted": "B"
+  },
+  {
+   "driver": "D17",
+   "name": "Wrong or partial confirmation numbers",
+   "cases": 109,
+   "failed": 67,
+   "predicted": "B"
+  },
+  {
+   "driver": "D13",
+   "name": "Member lookup needs an exact match",
+   "cases": 117,
+   "failed": 66,
+   "predicted": "B"
+  },
+  {
+   "driver": "D15",
+   "name": "No policy version by stay date",
+   "cases": 81,
+   "failed": 63,
+   "predicted": "B"
+  },
+  {
+   "driver": "D23",
+   "name": "Non-English requests",
+   "cases": 94,
+   "failed": 57,
+   "predicted": "C"
+  },
+  {
+   "driver": "D20",
+   "name": "Points claim mixed with a complaint",
+   "cases": 106,
+   "failed": 56,
+   "predicted": "C"
+  },
+  {
+   "driver": "D22",
+   "name": "Evidence only in an attached folio or receipt",
+   "cases": 93,
+   "failed": 53,
+   "predicted": "B partly, C rest"
+  },
+  {
+   "driver": "D02",
+   "name": "Stays on a merged member number",
+   "cases": 69,
+   "failed": 49,
+   "predicted": "B"
+  },
+  {
+   "driver": "D09",
+   "name": "New OTA rule missing from legacy rules and index",
+   "cases": 58,
+   "failed": 46,
+   "predicted": "B"
+  },
+  {
+   "driver": "D18",
+   "name": "Nicknames and name formats",
+   "cases": 87,
+   "failed": 45,
+   "predicted": "B partly, C rest"
+  },
+  {
+   "driver": "D06",
+   "name": "Late postings, visible only in the posting feed",
+   "cases": 77,
+   "failed": 41,
+   "predicted": "B"
+  },
+  {
+   "driver": "D07",
+   "name": "Reversed and re-posted transactions",
+   "cases": 72,
+   "failed": 37,
+   "predicted": "B"
+  },
+  {
+   "driver": "D21",
+   "name": "Corporate exception buried in policy text",
+   "cases": 39,
+   "failed": 35,
+   "predicted": "B"
+  },
+  {
+   "driver": "K",
+   "name": "Control cases",
+   "cases": 1882,
+   "failed": 32,
+   "predicted": "A (already correct)"
+  },
+  {
+   "driver": "D19",
+   "name": "Dates in mixed formats",
+   "cases": 76,
+   "failed": 30,
+   "predicted": "C"
+  },
+  {
+   "driver": "D04",
+   "name": "UTC timestamps read as local dates",
+   "cases": 81,
+   "failed": 30,
+   "predicted": "B"
+  },
+  {
+   "driver": "D25",
+   "name": "Conflicting records",
+   "cases": 46,
+   "failed": 23,
+   "predicted": "none (escalate)"
+  },
+  {
+   "driver": "D08",
+   "name": "Old 30-day wait still set at Mountain Lodge",
+   "cases": 86,
+   "failed": 21,
+   "predicted": "B"
+  },
+  {
+   "driver": "D12",
+   "name": "Search misses synonyms",
+   "cases": 170,
+   "failed": 21,
+   "predicted": "B"
+  },
+  {
+   "driver": "D10",
+   "name": "No duplicate check across cases",
+   "cases": 37,
+   "failed": 18,
+   "predicted": "platform (all arms)"
+  },
+  {
+   "driver": "D01",
+   "name": "Duplicate member profiles",
+   "cases": 89,
+   "failed": 13,
+   "predicted": "B"
+  },
+  {
+   "driver": "D24",
+   "name": "Stay record genuinely missing upstream",
+   "cases": 38,
+   "failed": 5,
+   "predicted": "none (escalate)"
+  },
+  {
+   "driver": "D11",
+   "name": "No approval binding",
+   "cases": 9,
+   "failed": 5,
+   "predicted": "platform (all arms)"
+  }
+ ],
+ "charts": [
+  {
+   "file": "pareto.png",
+   "title": "Failure drivers",
+   "alt": "Bar chart of failed cases per failure driver, most failures first.",
+   "width": 990,
+   "height": 495
+  },
+  {
+   "file": "weekly-volume-sla.png",
+   "title": "Weekly volume and SLA",
+   "alt": "Requests opened each week, with the share resolved on time.",
+   "width": 990,
+   "height": 440
+  },
+  {
+   "file": "backlog.png",
+   "title": "Backlog",
+   "alt": "Open cases at the end of each week.",
+   "width": 990,
+   "height": 385
+  },
+  {
+   "file": "handling-time.png",
+   "title": "Handling time",
+   "alt": "Handling time per failure driver.",
+   "width": 990,
+   "height": 440
+  }
+ ]
+}

@@ -20,7 +20,7 @@ a { color: var(--primary); }
 .brand { font-weight: 600; }
 .top nav { display: flex; gap: calc(var(--space) * 2); }
 .signout { margin-left: auto; display: flex; gap: var(--space); align-items: center; }
-main { max-width: 1100px; margin: 0 auto; padding: calc(var(--space) * 2); }
+main { max-width: 1100px; margin: 0 auto; padding: calc(var(--space) * 2); overflow-wrap: anywhere; }
 footer { max-width: 1100px; margin: 0 auto; padding: calc(var(--space) * 2); color: var(--muted); font-size: 14px; }
 h1 { font-size: 26px; margin: calc(var(--space) * 2) 0; }
 h2 { font-size: 19px; margin: 0 0 var(--space); }
@@ -66,6 +66,7 @@ form + form { margin-top: calc(var(--space) * 2); }
 .flags { display: flex; flex-wrap: wrap; gap: var(--space); padding: 0; list-style: none; }
 .flag { font-size: 14px; padding: 0 var(--space); background: var(--notice-bg); border: 1px solid #8a6d1b; border-radius: 12px; }
 .table-wrap { overflow-x: auto; }
+.chart { max-width: 100%; height: auto; }
 .result { border-left: 4px solid var(--primary); padding-left: calc(var(--space) * 2); }
 .adjustment + .adjustment { border-top: 1px solid var(--line); margin-top: var(--space); }
 @media (max-width: 600px) {

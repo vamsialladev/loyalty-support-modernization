@@ -19,7 +19,8 @@
 <section class="card" aria-labelledby="pol-h">
   <h2 id="pol-h">Policy versions</h2>
   <p class="muted">A draft applies to no stay. Publishing runs the checks, supersedes the version before it and logs who did it.</p>
-  <table class="grid">
+  <div class="table-wrap" tabindex="0" role="group" aria-label="Table, scrolls sideways on a narrow screen">
+<table class="grid">
     <caption class="sr-only">Policy versions</caption>
     <thead><tr><th scope="col">Policy</th><th scope="col">Version</th><th scope="col">In force</th><th scope="col">Status</th><th scope="col">Published by</th><th scope="col">Action</th></tr></thead>
     <tbody>
@@ -44,6 +45,7 @@
     {% endfor %}
     </tbody>
   </table>
+</div>
   <form method="post" action="/admin/policies/draft">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <label for="source">New draft: paste the whole policy document, front matter included</label>

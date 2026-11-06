@@ -3,6 +3,7 @@
 {% block main %}
 <h1>Adjustments waiting for approval</h1>
 {% if rows %}
+<div class="table-wrap" tabindex="0" role="group" aria-label="Table, scrolls sideways on a narrow screen">
 <table class="grid">
   <caption class="sr-only">Pending adjustments</caption>
   <thead><tr><th scope="col">Case</th><th scope="col">Arm</th><th scope="col">Stay</th><th scope="col" class="num">Points</th><th scope="col">Requested by</th><th scope="col">You can decide?</th></tr></thead>
@@ -19,6 +20,7 @@
   {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
 <p class="empty">Nothing is waiting for approval.</p>
 {% endif %}

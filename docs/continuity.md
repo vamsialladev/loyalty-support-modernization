@@ -221,7 +221,7 @@ Documentation → Author → License.
 |---|---|---|---|
 | 0 Discovery | Four-check test (felt it, would pay, first version in a week, know the first user); discovery Q&A format; SOW, pricing, security-questionnaire structure | `hotel-ai-discovery/docs/PROBLEM_SELECTION.md`, `DISCOVERY.md`, `SOW.md`, `PRICING.md`, `SECURITY_QUESTIONNAIRE.md` | 2 |
 | 1 Knowledge Assistant | Citation style and the "check with a manager" refusal; the Guest Rewards document | `hotel-ops-assistant/data/raw/shared/loyalty_program.md` | 6–8 |
-| 2 Guest Request Agent | Approval UX ("needs manager approval", staff approve before anything happens); booking and member-number shapes | `guest-request-agent/scripts/make_data.py`, `views/` | 3, 7 |
+| 2 Guest Request Agent | Approval UX ("needs manager approval", staff approve before anything happens); booking and member-number shapes. **The difference: stage 2 only proposes, while stage 9 executes money-like actions, with idempotency and reconciliation** (M7, `templates/case_b.html`; RFC-0001) | `guest-request-agent/scripts/make_data.py`, `views/` | 3, 7 |
 | 3 Eval Harness | Case schema, report format, Wilson intervals, judge-calibration approach; register Stage 9 via a reviewed PR | `eval-harness/src/hoteleval/` | 10 |
 | 4–5 Production & Handoff | Runbook, SLO, budget and handoff templates | `hotel-ai-handoff/` | 12–13, 18 |
 | 7 MCP Server | Role decides tools and fields, tenants invisible to each other, every call audited | `hotel-tools-mcp/` | 11 |

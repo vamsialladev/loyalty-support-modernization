@@ -91,7 +91,7 @@
     <dd data-testid="evidence-stay">{% if evidence.stay_id %}{{ evidence.stay_id }} · found by {{ evidence.stay_found_by }}{% elif evidence.stay_found_by == "other_member" %}{{ other_member_text }}{% else %}not identified{% endif %}</dd>
   </dl>
   {% if evidence.candidates and not evidence.member %}
-  <div class="table-wrap">
+  <div class="table-wrap" tabindex="0" role="group" aria-label="Table, scrolls sideways on a narrow screen">
   <table class="grid">
     <caption>Possible members. Two identifiers must match before one counts.</caption>
     <thead><tr><th scope="col">Member</th><th scope="col">Name</th><th scope="col">What matched</th></tr></thead>
@@ -100,7 +100,7 @@
   </div>
   {% endif %}
   {% if evidence.records %}
-  <div class="table-wrap">
+  <div class="table-wrap" tabindex="0" role="group" aria-label="Table, scrolls sideways on a narrow screen">
   <table class="grid">
     <caption>Stay records</caption>
     <thead><tr><th scope="col">Record</th><th scope="col">Property</th><th scope="col">Checkout (property time)</th><th scope="col">Status</th><th scope="col">Channel</th><th scope="col">Rate</th><th scope="col" class="num">Room revenue</th></tr></thead>
@@ -109,7 +109,7 @@
   </div>
   {% endif %}
   {% if evidence.stay_id %}
-  <div class="table-wrap">
+  <div class="table-wrap" tabindex="0" role="group" aria-label="Table, scrolls sideways on a narrow screen">
   <table class="grid">
     <caption>Ledger for this stay, on every profile</caption>
     <thead><tr><th scope="col">Entry</th><th scope="col">Profile</th><th scope="col">Kind</th><th scope="col">Posted</th><th scope="col" class="num">Points</th></tr></thead>
@@ -118,7 +118,7 @@
     </tbody>
   </table>
   </div>
-  <div class="table-wrap">
+  <div class="table-wrap" tabindex="0" role="group" aria-label="Table, scrolls sideways on a narrow screen">
   <table class="grid">
     <caption>Posting queue for this stay</caption>
     <thead><tr><th scope="col">Item</th><th scope="col">Queued</th><th scope="col">Expected</th><th scope="col" class="num">Points</th></tr></thead>
@@ -143,6 +143,7 @@
   {% if rec.action == "adjust" %}
   <form method="post" action="/cases/{{ case.id }}/request-adjustment">
     <input type="hidden" name="csrf" value="{{ csrf }}">
+    <p class="muted" data-testid="needs-approval">Needs a supervisor's approval. Nothing happens to the member's points until a different supervisor approves this exact amount.</p>
     <button type="submit">Request adjustment of {{ rec.points_owed }} points</button>
   </form>
   {% endif %}

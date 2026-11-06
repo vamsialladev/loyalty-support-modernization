@@ -10,7 +10,7 @@
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
-  <div class="banner" role="note" aria-label="Environment" data-testid="banner">
+  <div class="banner" role="region" aria-label="Environment" data-testid="banner">
     <strong>SYNTHETIC DATA</strong>
     <span>profile: {{ banner.profile }}</span>
     <span>AI mode: {{ banner.ai_mode }}</span>
@@ -24,6 +24,7 @@
       {% if user.role == Role.ADMINISTRATOR %}<a href="/admin">Configuration</a>{% else %}<a href="/queue">Queue</a>{% endif %}
       {% if can_work %}<a href="/cases/new">New case</a>{% endif %}
       {% if user.role == Role.SUPERVISOR %}<a href="/approvals">Approvals</a>{% endif %}
+      {% if can_see_metrics %}<a href="/metrics">Metrics</a> <a href="/day-one">Day one</a>{% endif %}
     </nav>
     <form method="post" action="/logout" class="signout">
       <input type="hidden" name="csrf" value="{{ csrf }}">

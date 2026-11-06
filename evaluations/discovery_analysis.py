@@ -10,6 +10,7 @@ an FDE would read a real export on day one; it is not a finding about any real o
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -418,8 +419,70 @@ def write_all(root: Path = ROOT, docs: Path | None = None) -> dict[str, Any]:
     return r
 
 
-def main() -> int:
-    r = write_all()
+CONSOLE_CHARTS = (
+    ("pareto.png", "Failure drivers", "Bar chart of failed cases per failure driver, most failures first."),
+    ("weekly-volume-sla.png", "Weekly volume and SLA", "Requests opened each week, with the share resolved on time."),
+    ("backlog.png", "Backlog", "Open cases at the end of each week."),
+    ("handling-time.png", "Handling time", "Handling time per failure driver."),
+)
+
+
+def console_summary(r: dict[str, Any]) -> dict[str, Any]:
+    """What the console's day-one page may show: totals per driver, never a case. The app can't import this module or
+    read the history (ADR-0062), so these are exported into the app's own folder."""
+    o = r["outcomes"]
+    return {
+        "note": CAVEAT,
+        "period": f"{r['first_week']} to {r['last_week']}",
+        "cases": r["n"],
+        "failed": r["failures"],
+        "failed_percent": round(100 * r["failures"] / r["n"]),
+        "under_credited": o.get("false_denial", 0),
+        "over_credited": o.get("false_approval", 0),
+        "credited_twice": o.get("duplicate_credit", 0),
+        "predicted_share_b": round(100 * r["predicted_b_share"]),
+        "predicted_share_c": round(100 * r["predicted_c_only_share"]),
+        "drivers": [
+            {
+                "driver": row["driver"],
+                "name": row["name"],
+                "cases": row["cases"],
+                "failed": row["failures"],
+                "predicted": row["arm"],
+            }
+            for row in r["pareto"]
+            if row["failures"] > 0
+        ],
+    }
+
+
+def _png_size(path: Path) -> tuple[int, int]:
+    head = path.read_bytes()[16:24]
+    return int.from_bytes(head[:4], "big"), int.from_bytes(head[4:], "big")
+
+
+def export_for_console(r: dict[str, Any], docs: Path, out: Path) -> None:
+    out.mkdir(parents=True, exist_ok=True)
+    charts_out = []
+    for name, title, alt in CONSOLE_CHARTS:
+        source = docs / "images" / "day-one" / name
+        (out / name).write_bytes(source.read_bytes())
+        width, height = _png_size(source)
+        charts_out.append({"file": name, "title": title, "alt": alt, "width": width, "height": height})
+    payload = {**console_summary(r), "charts": charts_out}
+    (out / "summary.json").write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8", newline="\n")
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="python -m evaluations.discovery_analysis")
+    parser.add_argument("--console-only", action="store_true", help="only refresh the console's day-one export")
+    args = parser.parse_args(argv)
+    if args.console_only:
+        cases, events = load(ROOT)
+        r = analyse(cases, events, ROOT)
+    else:
+        r = write_all()
+    export_for_console(r, ROOT / "docs", ROOT / "app" / "web" / "day_one")
     print(f"history cases {r['n']}, failures {r['failures']}, predicted non-AI share {r['predicted_b_share']:.0%}")
     return 0
 

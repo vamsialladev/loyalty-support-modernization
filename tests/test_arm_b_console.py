@@ -22,6 +22,7 @@ from app.settings import AppSettings
 from app.worker import Worker
 from benchmarks.intake import load_case, read_split
 from tests.arm_a import ArmA, Browser, field, make_arm_a
+from tests.conftest import ROOT
 
 
 @pytest.fixture
@@ -80,6 +81,15 @@ def test_the_whole_path_from_investigation_to_credit(arm: ArmA) -> None:
     assert field(done.text, "adjustment-id")
     credits = [e for e in arm.systems().get_ledger("GR-85640") if e.kind == "adjustment" and e.stay_id == "BR-6638"]
     assert [e.points for e in credits] == [owed]
+
+
+def test_the_approval_wording_follows_stage_2_and_states_the_difference(arm: ArmA) -> None:
+    """REUSE-04: "needs approval" before anything happens; stage 2 only proposes, this stage executes."""
+    agent = browser(arm, "agent.ana")
+    _cid, page = investigated(arm, agent, "DV-001")
+    assert "Needs a supervisor's approval" in page.text
+    continuity = (ROOT / "docs/continuity.md").read_text(encoding="utf-8")
+    assert "stage 2 only proposes, while stage 9 executes" in continuity
 
 
 def test_a_citation_opens_the_exact_excerpt_of_the_version_in_force(arm: ArmA) -> None:

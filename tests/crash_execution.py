@@ -1,6 +1,6 @@
 """A real worker process that dies at a chosen moment during an execution (spec Part D, Appendix C).
 
-    python -m tests.crash_execution <before|after> <app database url> <mock api url> <mock api token>
+    CRASH_APP_URL=... CRASH_MOCK_URL=... CRASH_MOCK_TOKEN=... python -m tests.crash_execution <before|after>
 
 `before` dies at the moment it would submit; `after` dies right after the platform committed the credit. Either way
 `os._exit` ends the process with no `finally`, no commit and no signal handler, as a power cut would. It uses the real
@@ -38,7 +38,8 @@ class DiesAtSubmit:
 
 
 def main() -> None:
-    moment, app_url, mock_url, token = sys.argv[1:5]
+    moment = sys.argv[1]
+    app_url, mock_url, token = os.environ["CRASH_APP_URL"], os.environ["CRASH_MOCK_URL"], os.environ["CRASH_MOCK_TOKEN"]
     shape = CustomerShape.load("hg-demo")
 
     def systems(sim_time: str | None) -> DiesAtSubmit:

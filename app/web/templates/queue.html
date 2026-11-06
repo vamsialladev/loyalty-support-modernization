@@ -25,6 +25,7 @@
   <button type="submit">Filter</button>
 </form>
 {% if rows %}
+<div class="table-wrap" tabindex="0" role="group" aria-label="Table, scrolls sideways on a narrow screen">
 <table class="grid">
   <caption class="sr-only">Cases</caption>
   <thead><tr><th scope="col">Case</th><th scope="col">Arm</th><th scope="col">Received (UTC)</th><th scope="col">Status</th><th scope="col">Assigned</th></tr></thead>
@@ -40,6 +41,7 @@
   {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
 <p class="empty">No cases match these filters.</p>
 {% endif %}

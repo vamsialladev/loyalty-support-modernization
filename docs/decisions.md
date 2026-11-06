@@ -826,3 +826,18 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   (`tests/test_arm_b_postgres.py`). No aggregate score was computed or recorded (ADR-0048).
 - **What would change this decision:** a platform with a single consolidated claim-lookup call (fewer reads), or a customer who wants the
   agent to see the evidence before the engine's result, to reduce automation bias.
+
+## ADR-0065: The JSON API is a thin layer over the same services
+- **Context:** API-01 and API-02 moved here from Milestone 6. Machine identity isn't until Milestone 9, and a second set of rules in an API layer would be
+  a second place for a permission to go wrong.
+- **Options considered:** (1) a separate API with its own checks; (2) bearer tokens now; (3) the console's session, calling the same services.
+- **Decision:** option 3. `/api/v1` calls `app.services`, with the session cookie and an `X-CSRF-Token` header for changes. Errors are RFC 9457 problem
+  documents from a custom route class, so nothing in this router falls through to the console's HTML errors. Request bodies refuse unknown fields, so
+  `points` in a body is an error. Lists use an opaque cursor. The contract is committed at `app/api/contracts/openapi-v1.json` and tested. Starting an
+  investigation twice returns the same job. FastAPI 0.162 keeps included routers in a wrapper, so the contract is built from the router, not from `app.routes`.
+- **Metrics and the day-one page:** counts only, with scripted runs kept apart from people, for supervisors, administrators and auditors. The day-one files sit
+  outside `/static`, which needs no sign-in.
+- **Trade-off:** no other system can call the API until Milestone 9 (TD-32). Arm A's manual evidence steps aren't in the API: arm A is the baseline, and
+  nothing needs them there.
+- **Result:** `tests/test_api.py`, `tests/test_metrics_and_day_one.py`. The contract test fails on any undeclared change.
+- **What would change this decision:** a customer's gateway that requires a different auth scheme or error format.
