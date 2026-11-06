@@ -174,11 +174,12 @@ def resolve_confirmation(
     return StayMatch(given, "missing")
 
 
-def stay_by_date(member_stays: tuple[StayRecord, ...], dates: list[date]) -> StayMatch:
+def stay_by_date(systems: CustomerSystems, member_stays: tuple[StayRecord, ...], dates: list[date]) -> StayMatch:
+    """Reads every record of the stay it finds, not only this member's: a conflicting record must be seen (D25)."""
     wanted = {d.isoformat() for d in dates}
     fits = sorted({r.stay_id for r in member_stays if r.arrival_date in wanted})
     if len(fits) == 1:
-        return StayMatch(fits[0], "by_date", tuple(r for r in member_stays if r.stay_id == fits[0]))
+        return StayMatch(fits[0], "by_date", tuple(systems.get_stay_records(fits[0])))
     return StayMatch(None, "several_fit" if fits else "none_given")
 
 
@@ -286,7 +287,7 @@ def _resolve_all(
         if match.stay_id:
             matches.setdefault(match.stay_id, match)
     if not claim_text.confirmations:
-        return stay_by_date(stays, dates), ()
+        return stay_by_date(systems, stays, dates), ()
     if not matches:
         return first or StayMatch(None, "none_given"), ()
     ordered = list(matches.values())

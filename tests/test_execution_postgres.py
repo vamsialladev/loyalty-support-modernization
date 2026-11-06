@@ -383,14 +383,16 @@ def mock_server(pg: tuple[ArmA, Engine], tmp_path_factory: pytest.TempPathFactor
 
 
 def die_during_execution(moment: str, mock_url: str) -> None:
+    """The connection details go through the environment: a timeout's message prints the arguments, and CI logs keep it.
+    Ten minutes, because a real process start took over three on a loaded machine (verification log, Milestone 7)."""
     done = subprocess.run(
-        [sys.executable, "-m", "tests.crash_execution", moment, APP_URL, mock_url, ARM_A_TOKEN],
+        [sys.executable, "-m", "tests.crash_execution", moment],
         cwd=ROOT,
         capture_output=True,
         text=True,
-        timeout=180,
+        timeout=600,
         check=False,
-        env=os.environ.copy(),
+        env=os.environ | {"CRASH_APP_URL": APP_URL, "CRASH_MOCK_URL": mock_url, "CRASH_MOCK_TOKEN": ARM_A_TOKEN},
     )
     assert done.returncode == 9, done.stdout[-400:] + done.stderr[-800:]
 

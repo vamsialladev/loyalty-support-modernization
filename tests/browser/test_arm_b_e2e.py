@@ -26,21 +26,22 @@ from tests.browser.test_legacy_e2e import (  # noqa: F401  (pytest fixtures)
 pytestmark = pytest.mark.browser
 expect = playwright_api.expect
 WAIT_MS = 90_000
-LOST_RESPONSE_NTH = 4  # which K01 case the seeded lost response hits; the other tests use earlier ones
+# The Compose stack is one world for both browser modules, and a credit stays credited. Arm A's tests use the first two
+# K01 cases, so each arm B test takes its own after them.
+HAPPY_PATH, SELF_APPROVAL, REJECTION, ACCESSIBILITY, LOST_RESPONSE = 2, 3, 4, 5, 6
 
 
-def _lost_response_case(labels: dict[str, Any]) -> str:
-    ids = sorted(
+def k01_case(labels: dict[str, Any], nth: int) -> str:
+    return sorted(
         cid
         for cid, lab in labels.items()
         if lab["split"] == "dev" and lab["scenarios"] == ["K01"] and lab["next_action"] == "adjust"
-    )
-    return ids[LOST_RESPONSE_NTH]
+    )[nth]
 
 
 def seeded_fault_rules(labels: dict[str, Any]) -> str:
     """Read by the offline stack: the loyalty platform applies this stay's credit and loses the reply."""
-    stay = labels[_lost_response_case(labels)]["facts"]["claimed_stay_ids"][0]
+    stay = labels[k01_case(labels, LOST_RESPONSE)]["facts"]["claimed_stay_ids"][0]
     return f"rules:\n  - fault: commit_then_lost\n    stay_suffix: {stay}\n"
 
 
@@ -83,16 +84,23 @@ def investigate(page: Any, stack: Stack, case_id: int) -> None:  # noqa: F811
 
 
 def test_arm_b_completes_a_case_end_to_end_in_the_browser(chromium: Any, stack: Stack) -> None:  # noqa: F811
+    from benchmarks.intake import read_split
+
+    source = k01_case(stack.labels, HAPPY_PATH)
+    label = stack.labels[source]
+    stay, member, owed = label["facts"]["claimed_stay_ids"][0], label["claimant_member_number"], label["owed_total"]
+    request = next(c for c in read_split("dev", stack.datasets) if c.case_id == source).requests[0]
     page, problems = open_page(chromium)
     sign_in(page, stack, "agent.ana")
     page.get_by_role("link", name="New case").click()
     page.get_by_label("Workflow").select_option("B")
-    page.get_by_label("Received (UTC)").fill("2026-06-18T13:44:00Z")
-    page.get_by_label("Channel").select_option("email")
-    page.get_by_label("Member's email (if given)").fill("clara.kowalski4@example.com")
-    page.get_by_label("What the member said").fill(
-        "My points are missing. Confirmation BR-6638.\nThanks, Clara Kowalski"
-    )
+    page.get_by_label("Received (UTC)").fill(request.received_at_utc)
+    page.get_by_label("Channel").select_option(request.contact_channel)
+    page.get_by_label("Member's email (if given)").fill(request.sender_email or "")
+    page.get_by_label("Member's name (if given)").fill(request.form_name or "")
+    page.get_by_label("Member number (if given)").fill(request.form_member_number or "")
+    page.get_by_label("Confirmation number (if given)").fill(request.form_confirmation or "")
+    page.get_by_label("What the member said").fill(request.text)
     page.get_by_role("button", name="Create case").click()
     expect(page.get_by_test_id("banner")).to_contain_text("arm B")
     expect(status(page)).to_have_text("New")
@@ -100,9 +108,9 @@ def test_arm_b_completes_a_case_end_to_end_in_the_browser(chromium: Any, stack: 
     page.get_by_role("button", name="Investigate", exact=True).click()
     expect(status(page)).to_have_text("Investigating")
     expect(page.get_by_test_id("engine-action")).to_have_text("adjust", timeout=WAIT_MS)
-    expect(page.get_by_test_id("points-owed")).to_have_text("14840")
-    expect(page.get_by_test_id("evidence-member")).to_contain_text("GR-85640")
-    expect(page.get_by_test_id("evidence-stay")).to_contain_text("BR-6638")
+    expect(page.get_by_test_id("points-owed")).to_have_text(str(owed))
+    expect(page.get_by_test_id("evidence-member")).to_contain_text(member)
+    expect(page.get_by_test_id("evidence-stay")).to_contain_text(stay)
 
     citation = page.get_by_test_id("citation").first
     citation.click()
@@ -110,13 +118,13 @@ def test_arm_b_completes_a_case_end_to_end_in_the_browser(chromium: Any, stack: 
     expect(page.get_by_test_id("excerpt-version")).to_contain_text("Version")
     page.go_back()
 
-    page.get_by_role("button", name="Request adjustment of 14840 points").click()
+    page.get_by_role("button", name=f"Request adjustment of {owed} points").click()
     expect(status(page)).to_have_text("Pending approval")
     sign_out(page)
 
     sign_in(page, stack, "supervisor.sam")
     page.get_by_role("link", name="Approvals").click()
-    page.get_by_role("row").filter(has_text="BR-6638").get_by_role("link").first.click()
+    page.get_by_role("row").filter(has_text=stay).get_by_role("link").first.click()
     page.get_by_role("button", name="Approve").click()
     expect(status(page)).to_have_text("Approved")
     page.get_by_role("button", name="Execute adjustment").click()
@@ -128,7 +136,7 @@ def test_arm_b_completes_a_case_end_to_end_in_the_browser(chromium: Any, stack: 
 
 
 def test_a_supervisor_cant_approve_what_they_requested_on_arm_b(chromium: Any, stack: Stack) -> None:  # noqa: F811
-    case_id = load_arm_b(stack, dev_case(stack, "K01", 1, next_action="adjust"))
+    case_id = load_arm_b(stack, k01_case(stack.labels, SELF_APPROVAL))
     page, _problems = open_page(chromium)
     sign_in(page, stack, "supervisor.sam")
     investigate(page, stack, case_id)
@@ -172,7 +180,7 @@ def test_missing_information_goes_out_and_comes_back(chromium: Any, stack: Stack
 
 
 def test_rejection_then_reopening_keeps_the_history(chromium: Any, stack: Stack) -> None:  # noqa: F811
-    case_id = load_arm_b(stack, dev_case(stack, "K01", 2, next_action="adjust"))
+    case_id = load_arm_b(stack, k01_case(stack.labels, REJECTION))
     page, _problems = open_page(chromium)
     sign_in(page, stack, "agent.ana")
     investigate(page, stack, case_id)
@@ -198,7 +206,7 @@ def test_a_lost_response_reconciles_to_one_credit(chromium: Any, stack: Stack) -
     worker finds out what happened. Only the offline stack has the rule."""
     if os.environ.get("E2E_BASE_URL"):
         pytest.skip("the Compose stack runs without the seeded fault rules; the offline run covers this")
-    source = _lost_response_case(stack.labels)
+    source = k01_case(stack.labels, LOST_RESPONSE)
     member, stay = stack.labels[source]["claimant_member_number"], stack.labels[source]["facts"]["claimed_stay_ids"][0]
     case_id = load_arm_b(stack, source)
     page, _problems = open_page(chromium)
@@ -231,7 +239,7 @@ def _axe(page: Any) -> list[str]:
 
 def test_the_console_pages_have_no_accessibility_violations(chromium: Any, stack: Stack) -> None:  # noqa: F811
     """UI-03: axe-core on each page type, at phone and desktop widths. A page with an issue fails with its rule ID."""
-    adjust = load_arm_b(stack, dev_case(stack, "K01", 3, next_action="adjust"))
+    adjust = load_arm_b(stack, k01_case(stack.labels, ACCESSIBILITY))
     ask = load_arm_b(stack, dev_case(stack, "D19", 1))
     legacy = load_dataset_case(stack, dev_case(stack, "K02", 3))
     failures: list[str] = []

@@ -177,6 +177,30 @@ def test_d22_uses_an_explicit_date_or_asks(arm: ArmA) -> None:
             assert run.final_status in {"Resolved", "Awaiting information", "Escalated"}, run.path
 
 
+def test_a_stay_found_by_its_date_passes_the_recheck_and_reads_every_record(arm: ArmA) -> None:
+    """The re-check reads the stay by number. If the first read saw fewer records, the evidence hash would differ and
+    every approval of a stay found by date would be invalidated, or a conflicting record would stay hidden."""
+    from app.services.cases import IntakeRequest, create_case
+
+    label = arm.labels["DV-001"]  # K01: stated with its dates, and no confirmation number in this message
+    text = "I stayed at Beach Resort from November 25-29, 2025 but the points are missing.\nThanks, Clara Kowalski"
+    request = IntakeRequest(
+        received_at_utc=label["facts"]["received_at_utc"],
+        contact_channel="email",
+        text=text,
+        sender_email="clara.kowalski4@example.com",
+    )
+    with arm.sessions() as s:
+        agent = ScriptedConventionalAgent(s, arm.factory())
+        case = create_case(s, agent.agent, request, arm="B")
+        run = agent.run(case)
+        rec = conventional.latest_recommendation(s, case)
+        evidence = conventional.latest_evidence(s, case)
+        assert rec is not None and evidence is not None
+        assert evidence["stay_found_by"] == "by_date" and evidence["stay_id"] == "BR-6638"
+        assert run.final_status == "Resolved" and credited_points(s, case) == [label["owed_total"]], run.path
+
+
 def test_d23_routes_other_languages_to_a_person(arm: ArmA) -> None:
     with arm.sessions() as s:
         for nth in range(scenario_ids(arm, "D23")):
