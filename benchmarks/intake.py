@@ -31,6 +31,7 @@ from sqlalchemy.orm import Session
 from app.domain.roles import Identity, Role
 from app.persistence.models import Case, CaseRequest
 from app.services.cases import IntakeRequest, create_case
+from app.services.conventional import add_attachment
 
 ROOT = Path(__file__).resolve().parent.parent
 DATASET_DIR = ROOT / "benchmarks" / "datasets" / "v1"
@@ -42,6 +43,7 @@ INTAKE = Identity(0, "intake", "Web and email intake", Role.AGENT)
 class DatasetCase:
     case_id: str
     requests: tuple[IntakeRequest, ...]
+    attachments: tuple[Path, ...] = ()
 
 
 def read_split(split: str, dataset_dir: Path = DATASET_DIR) -> list[DatasetCase]:
@@ -66,7 +68,9 @@ def read_split(split: str, dataset_dir: Path = DATASET_DIR) -> list[DatasetCase]
             )
             for r in sorted(row["requests"], key=lambda r: r["received_at_utc"])
         )
-        out.append(DatasetCase(row["case_id"], requests))
+        seed = dataset_dir.parents[2] / "seed_data" / "v1"
+        files = tuple(seed / a["filename"] for r in row["requests"] for a in r.get("attachments", []))
+        out.append(DatasetCase(row["case_id"], requests, files))
     return out
 
 
@@ -85,6 +89,9 @@ def load_case(s: Session, item: DatasetCase, customer_id: str = "hg-demo", arm: 
         ):
             continue
         created.append(create_case(s, INTAKE, request, customer_id=customer_id, source_ref=item.case_id, arm=arm))
+    if arm != "A" and created:  # arm A's tool can't open attachments (D22)
+        for path in item.attachments:
+            add_attachment(s, INTAKE, created[0], path.name, path.read_bytes())
     return created
 
 

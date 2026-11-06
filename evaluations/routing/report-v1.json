@@ -1,0 +1,222 @@
+{
+ "api_cost_per_1000_usd": 0.0,
+ "artifact_sha256": "b67a5171cfe8098a37e356dd4c9b72b92f61fb90c855389359f169518683efe9",
+ "classes_not_in_the_dataset": [
+  "out_of_scope",
+  "complaint_only"
+ ],
+ "classifier": {
+  "cases": 30,
+  "confusion_matrix": [
+   [
+    28,
+    0,
+    0
+   ],
+   [
+    0,
+    1,
+    0
+   ],
+   [
+    0,
+    0,
+    1
+   ]
+  ],
+  "labels": [
+   "missing_points",
+   "multi_issue",
+   "non_english"
+  ],
+  "macro_f1": 1.0,
+  "recall": {
+   "missing_points": 1.0,
+   "multi_issue": 1.0,
+   "non_english": 1.0
+  },
+  "support": {
+   "missing_points": 28,
+   "multi_issue": 1,
+   "non_english": 1
+  }
+ },
+ "classifier_p95_ms": 5.0,
+ "decision": {
+  "chosen": "rules",
+  "gain": 0.0,
+  "reasons_against": [
+   "gain 0.0 is under 0.05"
+  ]
+ },
+ "drift_check_on_stress": {
+  "classifier": {
+   "cases": 30,
+   "confusion_matrix": [
+    [
+     18,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     2,
+     0,
+     0
+    ],
+    [
+     0,
+     1,
+     1,
+     0
+    ],
+    [
+     8,
+     0,
+     0,
+     0
+    ]
+   ],
+   "labels": [
+    "missing_points",
+    "multi_issue",
+    "non_english",
+    "suspected_injection"
+   ],
+   "macro_f1": 0.571,
+   "recall": {
+    "missing_points": 1.0,
+    "multi_issue": 1.0,
+    "non_english": 0.5,
+    "suspected_injection": 0.0
+   },
+   "support": {
+    "missing_points": 18,
+    "multi_issue": 2,
+    "non_english": 2,
+    "suspected_injection": 8
+   }
+  },
+  "rules": {
+   "cases": 30,
+   "confusion_matrix": [
+    [
+     18,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     2,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     2,
+     0
+    ],
+    [
+     8,
+     0,
+     0,
+     0
+    ]
+   ],
+   "labels": [
+    "missing_points",
+    "multi_issue",
+    "non_english",
+    "suspected_injection"
+   ],
+   "macro_f1": 0.705,
+   "recall": {
+    "missing_points": 1.0,
+    "multi_issue": 1.0,
+    "non_english": 1.0,
+    "suspected_injection": 0.0
+   },
+   "support": {
+    "missing_points": 18,
+    "multi_issue": 2,
+    "non_english": 2,
+    "suspected_injection": 8
+   }
+  }
+ },
+ "not_run": {
+  "embeddings_or_small_model": "Blocked: needs a model download and a GPU budget decision (ML-05)",
+  "llm_zero_and_few_shot": "NOT RUN: needs a live model and the owner's go-ahead"
+ },
+ "reliability_on_validation": [
+  {
+   "cases": 1,
+   "correct_share": 1.0,
+   "from": 0.4,
+   "mean_probability": 0.565,
+   "to": 0.6
+  },
+  {
+   "cases": 21,
+   "correct_share": 1.0,
+   "from": 0.6,
+   "mean_probability": 0.733,
+   "to": 0.8
+  },
+  {
+   "cases": 8,
+   "correct_share": 1.0,
+   "from": 0.8,
+   "mean_probability": 0.826,
+   "to": 1.0
+  }
+ ],
+ "rules": {
+  "cases": 30,
+  "confusion_matrix": [
+   [
+    28,
+    0,
+    0
+   ],
+   [
+    0,
+    1,
+    0
+   ],
+   [
+    0,
+    0,
+    1
+   ]
+  ],
+  "labels": [
+   "missing_points",
+   "multi_issue",
+   "non_english"
+  ],
+  "macro_f1": 1.0,
+  "recall": {
+   "missing_points": 1.0,
+   "multi_issue": 1.0,
+   "non_english": 1.0
+  },
+  "support": {
+   "missing_points": 28,
+   "multi_issue": 1,
+   "non_english": 1
+  }
+ },
+ "seed": 20261106,
+ "selection_split": "validation",
+ "synthetic": true,
+ "train_split": "dev",
+ "train_support": {
+  "missing_points": 94,
+  "multi_issue": 3,
+  "non_english": 3
+ }
+}

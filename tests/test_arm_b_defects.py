@@ -167,13 +167,21 @@ def test_d20_a_points_claim_with_a_complaint_goes_to_a_person_not_billing(arm: A
             assert_engine_action(run, "escalate:multi_issue")
 
 
-def test_d22_uses_an_explicit_date_or_asks(arm: ArmA) -> None:
+def test_d22_clean_documents_are_read_and_photos_are_flagged(arm: ArmA) -> None:
+    """Arm B's baseline: a PDF's text layer and a plain email. A photo needs vision, which is arm C's (catalog, D22)."""
     with arm.sessions() as s:
+        seen_read, seen_unread = False, False
         for nth in range(scenario_ids(arm, "D22")):
-            run, case, _label = run_scenario(arm, s, "D22", nth)
+            run, case, label = run_scenario(arm, s, "D22", nth)
             rec = conventional.latest_recommendation(s, case)
-            assert rec is not None and "attachment_not_read" in rec.flags
+            assert rec is not None
             assert run.final_status in {"Resolved", "Awaiting information", "Escalated"}, run.path
+            if "attachment_not_read" in rec.flags:
+                seen_unread = True
+            else:
+                seen_read = True
+                assert rec.stay_id == label["facts"]["claimed_stay_ids"][0], run.path
+        assert seen_read and seen_unread
 
 
 def test_a_stay_found_by_its_date_passes_the_recheck_and_reads_every_record(arm: ArmA) -> None:

@@ -841,3 +841,29 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   nothing needs them there.
 - **Result:** `tests/test_api.py`, `tests/test_metrics_and_day_one.py`. The contract test fails on any undeclared change.
 - **What would change this decision:** a customer's gateway that requires a different auth scheme or error format.
+
+## ADR-0066: Arm C is arm B plus a model that can't decide
+- **Context:** Milestone 8 adds the AI layer. RFC-0002 holds the design. A model must add reading, and must never touch identity, eligibility, the amount, permissions, approval or execution.
+- **Options considered:** replacing arm B's investigation with the loop; running arm B first and giving the loop what's left; summarizing only.
+- **Decision:** arm B runs first, always, and is the fallback. The loop reads through five narrow tools and hands back a `Proposal` with no field for an amount. Code acts on only three things it says, each checked: which of the member's own stays the message means, that a person needn't read a multi-issue or non-English message first, and the text shown to staff. The engine then reads again. Arm C's re-check doesn't ask the model.
+- **Model:** Claude Haiku 5.5, effort `low`, pinned and listed in `config/ai/hg-demo.yaml`. An unlisted or deprecated model fails safe to arm B's result. The app's web process has no key: only the worker calls the model.
+- **Trade-off:** arm C always pays for arm B's reads and at least one model turn, so it can't be cheaper than arm B. A model that says the message needs no person gets past arm B's gate, with engine, supervisor and re-check still in place. A linked case doesn't run the model again, so it has no AI text.
+- **Result:** every stop condition and injection test passes on scripted models (`tests/test_ai_loop.py`, `tests/test_arm_c.py`). **No real model has run:** the live smoke test is NOT RUN until the owner approves it.
+- **What would change this decision:** Milestone 10 showing that the loop adds nothing over arm B on the defects it targets. Then ship arm B and drop the loop.
+
+## ADR-0067: An exact confirmation number on the profile is an identifier, for arm B too
+- **Context:** The catalog predicted that D18's married names need a model. Writing RFC-0002 showed they don't: its own detection method is "name differs, other identifiers match", and an exact email plus an exact confirmation number on that profile are two identifiers code can check. F9 says arm B gets a fair fix for everything that doesn't need AI.
+- **Options considered:** leave it for arm C, as predicted (unfair: it would credit AI with something rules can do); let the model confirm identity (forbidden); add the identifier to the shared code.
+- **Decision:** add it to `app/arms/conventional/identity.py`. Exact only: a near match isn't an identifier. It never counts alone, and someone whose only match is a quoted stay isn't shown as a candidate (S03).
+- **Trade-off:** a number and a confirmation can both be known to someone else, so it's a little weaker than number plus email. The credit can only go to the profile that holds the stay, and a supervisor still approves.
+- **Result:** dev's D18 cases reach the right member on arm B (`tests/test_arm_b_defects.py`). The catalog's prediction stands as written: if this holds at Milestone 10, it's a prediction missed in arm B's favour, and it's reported that way (F8).
+- **What would change this decision:** a customer's identity policy that wants a personal identifier in every pair.
+
+## ADR-0068: Documents are evidence only, and routing stays on rules
+- **Context:** D22 needs a non-AI baseline before Milestone 10, or arm B is unfairly weak (TD-31). Appendix I asks whether a classifier beats rules for routing.
+- **Decision (documents):** arm B reads a PDF's text layer and a plain email with rules; arm C can read images through the provider. A value can point at a stay and nothing more: it isn't an identifier, it never changes a record, and a document that disagrees with the record sends the case to a person when it's the only link. Type, size and content checks run before parsing. Standing is `matches`, `differs` or `format_only`, never a percentage.
+- **Limit:** Tesseract isn't installed, so **OCR on images is blocked with that prerequisite.** The catalog says "clean folios via OCR"; these PDFs have a text layer, so the fair fix works without it. A scanned PDF has no text layer and goes to a person. The mock can't see, and says so by finding nothing.
+- **Decision (routing):** the rule in `config/routing/thresholds.yaml` was committed first (`455fd0b`). Rules and TF-IDF + logistic regression both scored 1.0 macro-F1 on validation, so the gain is 0.0 and **rules stay.**
+- **Why that isn't a win:** validation has one case in each minority class, and shares a phrase bank with dev. It can't tell the methods apart. The drift check found that neither recognises injection attempts (0 of 8), and safety doesn't rest on that. The dataset also has no out-of-scope-only or complaint-only requests, so those classes aren't measured (`docs/model-card-routing.md`).
+- **Result:** `tests/test_extraction.py`, `tests/test_routing_baseline.py`. Closes TD-31. Field-level scoring is Milestone 10.
+- **What would change this decision:** held-out or pilot data showing that rules miss real wording.

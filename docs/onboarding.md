@@ -326,6 +326,25 @@ After changing the API, run `uv run python -m app.api.contract --write` and look
 
 **The rule to remember:** nothing an agent or a member types can set an amount. The only route to a credit is the engine's own result.
 
+## 4g. Arm C, in one page (Milestone 8)
+
+**Try it offline, for free.** Choose **Arm C** on New case, then press Investigate. `AI_PROVIDER=mock` is the default. Everything the mock writes starts with `[MOCK]`, and **says nothing about any real model.**
+
+**Read in this order:** RFC-0002, `app/ai/loop.py`, `app/ai/tools.py`, `app/ai/validation.py`, `app/services/assisted.py`, then `docs/ai-engineering-matrix.md`.
+
+**To turn on a real model** (costs money, so it needs the owner's go-ahead): set `AI_PROVIDER=anthropic`, `FEATURE_LIVE_AI=true`, `ANTHROPIC_MODEL=claude-haiku-5-5`, `ANTHROPIC_API_KEY` and the `LLM_BUDGET_USD_*` caps in `.env`. Only the worker gets the key.
+
+**Where to look when something's wrong**
+
+| Symptom | Likely cause | Check |
+|---|---|---|
+| `ai_fallback` on a case | The run ended early | The reason is on the page; `ai_runs.stop_reason`; `ai_steps` for the step |
+| `unknown_model` | The ID isn't in `config/ai/hg-demo.yaml` | Add it with its price and the date, after comparing it |
+| `budget_exhausted` straight away | A cap is reached, or a cap didn't parse (counts as zero) | `ai_spend`; the `LLM_BUDGET_USD_*` values |
+| `test_prompt_versioning` fails | The prompt's text changed | Add a new version file; don't edit the old one |
+
+**The rule to remember:** if you're tempted to let the model's output change a decision, put a deterministic check in front of it, and give that check to arm B as well (ADR-0067).
+
 ## 5. Common failure modes so far
 - **`ModuleNotFoundError: app`** when running pytest outside `uv run`: use `uv run pytest`.
 - **Preflight says NOT READY:** expected with an empty `.env`; it lists exactly which settings are missing.

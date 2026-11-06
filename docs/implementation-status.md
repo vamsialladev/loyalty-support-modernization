@@ -1,7 +1,7 @@
 # Implementation status
 
-**Last updated:** 2026-11-06 · **Current milestone:** 7 of 20 complete · **Next:** Milestone 8 (the AI loop and harness; RFC first).
-**Waiting on the owner:** the 30-label review; the Milestone 7 exercise; the Codex exercise, when convenient
+**Last updated:** 2026-11-06 · **Current milestone:** 8 of 20 complete · **Next:** Milestone 9 (security hardening).
+**Waiting on the owner:** the go-ahead for the live smoke test; the 30-label review; the Milestone 7 and 8 exercises; the Codex exercise, when convenient
 (`docs/exercises/codex-reconciliation-review.md`).
 
 ## Completion scores (spec Part 0.5)
@@ -10,15 +10,17 @@ verified" (or "Not applicable") counts as done.
 
 | Score | Done (verified) | Total | % | In progress (unverified / configured / docs) |
 |---|---|---|---|---|
-| Core product functionality | 49 | 108 | 45% | 5 |
-| Benchmarks and evaluation | 15 | 64 | 23% | 2 |
+| Core product functionality | 75 | 108 | 69% | 5 |
+| Benchmarks and evaluation | 18 | 64 | 28% | 2 |
 | Actual-tool exercises | 0 | 16 | 0% | 3 |
 | Protocol labs | 0 | 16 | 0% | 0 |
-| Security controls | 6 | 55 | 11% | 5 |
+| Security controls | 9 | 55 | 16% | 5 |
 | Owner's demonstrated understanding | 0 | 3 | 0% | 1 |
-| Other tracked work (not a Part 0.5 score) | 36 | 107 | 34% | 13 |
+| Other tracked work (not a Part 0.5 score) | 38 | 107 | 36% | 13 |
 
 369 requirements: Tier 1: 190, Tier 2: 102, Tier 3: 27, Tier 4: 50
+
+New in M8: arm C (ARMC-01, ARMS-01), AI engineering (AI-01, AI-03 to AI-17), ELIG-02, POL-06, POL-07, TEST-03, TEST-04, the system card (ENT-01, ENT-02), labels and review order (ENT-05, ENT-06), documents (DOC-02 to DOC-04), the routing baseline (ML-01, ML-03). **All of it is verified on mock and scripted models; the live smoke test is NOT RUN.** Blocked: ML-05, and image OCR. Started, still `Planned`: AI-02 and ML-02 (need a live model, M10), SEC-05, ENT-12, ENT-23, DOC-06 (M9), ENT-15, LIVE-05, OPS-05 (M12), BENCH-10 (M10).
 
 New in M7: arm B (ARMB-01), the JSON API (API-01, API-02), the complete console (UI-01, UI-03), the browser suite (TEST-05), the
 day-one page (LGF-11), stage 2's approval wording (REUSE-04). Started but not done (still `Planned`, with progress noted in the
@@ -41,7 +43,15 @@ authorization, M9), API-01 and API-02 (moved to M7, as the owner approved). Code
 | 5 | **Implemented and verified** (Appendix C, M5: legacy arm A completes a case end to end in the browser) | `tests/browser/test_legacy_e2e.py` (2, offline and against the stack), `tests/test_legacy_rules.py` (26), `tests/test_legacy_screens.py` (14), `tests/test_case_workflow.py` (36), `tests/test_console_web.py` (17), `tests/test_scripted_agent.py` (10), `tests/test_arm_a_boundaries.py` (6); verification log, Milestone 5 |
 | 6 | **Implemented and verified** (Appendix C, M6: real-Postgres tests pass for idempotency atomicity, concurrent execute, duplicate prevention, timeout-after-commit reconciliation, lease recovery, approval invalidation) | `tests/test_execution_postgres.py`, `tests/test_write_path_postgres.py`, `tests/test_worker_postgres.py`, `tests/test_audit_postgres.py`, `tests/test_mock_api_postgres.py`; `scripts\compose_check.ps1 -Browser`; verification log, Milestone 6 |
 | 7 | **Implemented and verified** (Appendix C, M7: arm B works; Playwright happy path and self-approval block pass) | `tests/browser/test_arm_b_e2e.py` (offline and against the stack), `tests/test_arm_b_defects.py`, `tests/test_arm_b_console.py`, `tests/test_arm_b_rules.py`, `tests/test_arm_b_postgres.py`, `tests/test_arm_a_fence.py`, `tests/test_api.py`, `tests/test_metrics_and_day_one.py`; verification log, Milestone 7 |
-| 8–20 | Planned | `docs/implementation-plan.md` |
+| 8 | **Implemented and verified** (Appendix C, M8: every loop stop condition and injection test passes on the mock provider; the Claude provider is implemented; its live smoke test is **NOT RUN**) | `tests/test_ai_loop.py`, `tests/test_ai_tools.py`, `tests/test_ai_provider.py`, `tests/test_arm_c.py`, `tests/test_extraction.py`, `tests/test_routing_baseline.py`; verification log, Milestone 8 |
+| 9–20 | Planned | `docs/implementation-plan.md` |
+
+## Milestone 8 deliverables
+- **The loop** (`app/ai/`): an explicit state machine, with a test per stop condition, five read-only tools, validation against the engine, one repair, then arm B's result.
+- **Providers:** a mock, scripted models, and the Claude adapter, behind one port. Live needs a flag, a listed model and a key.
+- **Caps and records:** `ai_runs`, `ai_steps`, `ai_spend`. No evidence and no hidden reasoning in records.
+- **Documents:** text-layer PDFs and emails by rules, for arms B and C; vision for arm C.
+- **Fairness:** ADR-0067 moved D18's married names to arm B. Routing stayed on rules under a rule committed first.
 
 ## Milestone 7 deliverables
 - **Arm B** (`app/arms/conventional/`, `app/services/conventional.py`): one durable investigation, two identifiers, one evidence view,

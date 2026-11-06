@@ -17,6 +17,7 @@ from typing import Any
 from app.arms.conventional import identity as ident
 from app.arms.conventional import signals
 from app.arms.conventional.config import ConventionalConfig
+from app.arms.conventional.extraction import Extracted, check_against_record
 from app.domain.business_time import business_date
 from app.domain.customer_records import LedgerEntry, Member, PendingPosting, StayRecord
 from app.domain.eligibility import (
@@ -66,6 +67,8 @@ class ClaimText:
     attachments: tuple[str, ...] = ()
     stated_channel: str | None = None
     scope_cleared: bool = False  # a person read the message and dealt with the rest of it
+    documents: tuple[Extracted, ...] = ()
+    from_document: bool = False  # the only confirmation number came from an attached document, not the message
 
 
 @dataclass(frozen=True)
@@ -98,6 +101,7 @@ class Investigation:
     other_confirmations: tuple[str, ...] = ()
     checkout_day: date | None = None
     facts: dict[str, Any] = field(default_factory=dict)
+    documents: tuple[dict[str, Any], ...] = ()
 
 
 def explicit_arrival_dates(text: str) -> list[date]:
@@ -294,6 +298,20 @@ def _resolve_all(
     return ordered[0], tuple(m.stay_id for m in ordered[1:] if m.stay_id)
 
 
+def _document_views(claim_text: ClaimText, match: StayMatch) -> tuple[dict[str, Any], ...]:
+    """What each document says and how it compares with the record. Shown to staff, never written to any record."""
+    arrival = match.records[0].arrival_date if match.records else None
+    return tuple(
+        {
+            "method": d.method,
+            "reason": d.reason,
+            "fields": {k: v for k, v in d.fields().items() if v},
+            "checks": check_against_record(d, match.stay_id, arrival),
+        }
+        for d in claim_text.documents
+    )
+
+
 def _gate(result: EligibilityResult, claim_text: ClaimText, flags: list[str]) -> EligibilityResult:
     """D20 and D23: rules can't work these, so the whole message goes to a person. Nothing can be credited from here
     until a person says so."""
@@ -330,7 +348,10 @@ def investigate(
     as_of_utc: str,
 ) -> Investigation:
     flags: list[str] = []
-    if claim_text.attachments:
+    unread = len(claim_text.attachments) > len(claim_text.documents) or any(
+        d.method == "none" for d in claim_text.documents
+    )
+    if unread:
         flags.append("attachment_not_read")
     if signals.mentions_more_stays(claim_text.text):
         flags.append("more_stays_mentioned")
@@ -366,6 +387,8 @@ def investigate(
         return Investigation(_gate(_ask(detail, text), claim_text, flags), base, tuple(flags))
     if match.how == "corrected":
         flags.append("confirmation_corrected")
+    if claim_text.from_document:
+        flags.append("confirmation_from_document")
 
     claim, evidence, facts = read_claim(
         systems,
@@ -378,9 +401,16 @@ def investigate(
     )
     evidence = replace(evidence, candidates=found.candidates, stay=match, member_stays=base.member_stays)
     flags += _data_flags(match.records, evidence)
+    documents = _document_views(claim_text, match)
+    differs = any("differs" in view["checks"].values() for view in documents)
+    if differs:
+        flags.append("document_differs")
     if match.records and not all(_names_agree(r, member) for r in match.records):
         flags.append("guest_name_differs")
         result = _escalate("guest_name_differs", "The name on the stay isn't the member's name.", match.stay_id)
+    elif differs and claim_text.from_document:
+        text = "The attached document is the only link to this stay, and it disagrees with the record."
+        result = _escalate("document_differs", text, match.stay_id)
     else:
         result = evaluate_stay(claim, policies, customer)
         verdict = combine([result])  # one stay alone can be over the limit
@@ -394,4 +424,5 @@ def investigate(
         timezone = customer.property_timezones.get(match.records[0].property)
         if timezone:
             checkout = business_date(match.records[0].checkout_at_utc, timezone)
-    return Investigation(_gate(result, claim_text, flags), evidence, tuple(flags), others, checkout, facts)
+    gated = _gate(result, claim_text, flags)
+    return Investigation(gated, evidence, tuple(flags), others, checkout, facts, documents)

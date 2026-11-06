@@ -46,3 +46,18 @@ recorded before any arm B code (ADR-0063).
   That can cost arm B on a case arm A happens to get right, and it's reported, not tuned away.
 - **Interface gains aren't AI gains.** Arm C is arm B plus the AI layer, so anything above comes with arm C too and isn't credited to AI.
 - **Fallback.** With no model at all, arm B still works. That's the manual fallback the spec asks for.
+
+## What arm C adds, and what it can't decide
+
+Arm C is arm B plus a model. Arm B's investigation runs first, always. **The model can't decide:** the action must equal the engine's, and it has no field for an amount. Everything above comes with arm C too, and isn't credited to AI.
+
+| Defect | Arm B | Arm C adds | Limit |
+|---|---|---|---|
+| D16 several stays | Explicit numbers; asks about the rest | Works out vague ones, from this member's own stays | Only stays the tools returned; several fits means ask |
+| D19 mixed dates | Asks | Resolves a date when one stay fits | Never guesses between two |
+| D20 mixed issues | Sends the whole message to a person | Carries on with points; notes the rest for a person | The engine and a supervisor still decide |
+| D22 attached evidence | Text-layer PDFs and emails | Reads photos through vision | A number counts only if it's this member's stay |
+| D23 other languages | Sends it to a person | Reads it and drafts in that language | Staff review and send the draft |
+| Any case | The engine's reasons | A plain explanation with checked citations, and a draft reply | Labelled AI-written, after the evidence |
+
+**Other differences:** arm C always costs at least what arm B costs, plus model calls. If the model is off or fails, the case holds arm B's result, flagged `ai_fallback`. **D18 isn't in this table:** it moved to arm B (ADR-0067).

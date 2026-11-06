@@ -156,3 +156,14 @@ deployment.
 
 **Starter kit (reusable as they are):** the two-identifier rule, the group limit under row locks, the consolidated evidence pattern,
 the override log, the JSON API's problem documents, the arm fence test.
+
+## The model provider and documents (Milestone 8)
+
+| Part | Here | For a real engagement |
+|---|---|---|
+| Model provider | `app/ports/model_provider.py`: mock, scripted, Claude | A sibling adapter (Bedrock, for example, in M12). Must pass the same tests, including strict tool arguments |
+| Data sent to the provider | Redacted free text, summaries, excerpts | **Check the customer's data agreement and the provider's retention terms first.** Nothing real has been sent |
+| Spending caps | `ai_spend`, in the database | Also set a limit in the provider's own console |
+| Documents | Text-layer PDFs and emails by rules; vision through the provider | Real scans need OCR: install Tesseract or a cloud OCR, and measure it. Real layouts need new rules |
+
+**Customer-specific:** `config/prompts/`, `config/ai/`, document field rules. **Starter kit:** the loop, the stop conditions and their tests, the validation shape, the harness tables, the idea of a fence around each baseline.

@@ -18,15 +18,17 @@ from sqlalchemy.orm import Session
 from app.adapters.mock_model import MOCK_MODEL_ID
 from app.ai.config import ai_config
 from app.ai.context import ContextInput, build
-from app.ai.harness import AiRuntime, SpendCaps, run_loop
+from app.ai.harness import AiRuntime, SpendCaps, add_spend, remaining_microusd, run_loop
 from app.ai.loop import ACCEPTED, LoopResult
 from app.ai.tools import Proposal, ToolContext
+from app.arms.conventional.extraction import document_text
 from app.arms.conventional.investigation import member_stays
 from app.clock import utc_now
 from app.domain.case_states import CaseState
 from app.domain.roles import Identity
 from app.persistence.models import AiRun, Case, CaseEvidence, CaseNote, Recommendation
 from app.ports.customer_systems import CustomerSystems
+from app.ports.model_provider import ProviderRejected, ProviderUnavailable
 from app.services import conventional, jobs, policies
 from app.services.cases import CaseNotFound, read_time, requests_of
 from app.services.customer_config import customer_config
@@ -159,14 +161,51 @@ def _store(s: Session, case: Case, run: AiRun | None, result: LoopResult) -> Rec
     return rec
 
 
+def _read_images(
+    s: Session, who: Identity, case: Case, systems: CustomerSystems, runtime: AiRuntime, rec: Recommendation
+) -> Recommendation:
+    """D22's noisy photos. A number read from an image only counts if it's one of this member's own stays, which is the
+    check against the record (Appendix H). Anything else is noted for a person, and the case goes on without it."""
+    provider = runtime.provider
+    images = [a for a in conventional.attachments_of(s, case) if a.media_type.startswith("image/")]
+    if provider is None or not images or rec.stay_id is not None or rec.member_number is None:
+        return rec
+    if not provider.is_mock and remaining_microusd(s, runtime.caps) <= 0:
+        return rec
+    member = systems.get_member(rec.member_number)
+    own = {r.stay_id for r in member_stays(systems, member)}
+    price = ai_config(case.customer_id).models.get(provider.model_id)
+    timeout = ai_config(case.customer_id).limits.call_timeout_seconds
+    for image in images:
+        try:
+            fields, usage = provider.read_image(image.media_type, image.content, timeout)
+        except (ProviderUnavailable, ProviderRejected) as exc:
+            record(s, case, jobs.SYSTEM, "document_read", method="vision", result=type(exc).__name__)
+            s.commit()
+            return rec
+        if not provider.is_mock and price is not None:
+            add_spend(s, price.cost_microusd(usage.input_tokens, usage.output_tokens))
+        found = fields.get("confirmation")
+        matched = found in own
+        record(s, case, jobs.SYSTEM, "document_read", method="vision", result="matched" if matched else "no_match")
+        s.commit()
+        if matched and found:
+            conventional.claim_stay(s, who, case, found)
+            s.commit()
+            return conventional.investigate_case(s, jobs.SYSTEM, case, systems)
+    return rec
+
+
 def investigate_case(
     s: Session, who: Identity, case: Case, systems: CustomerSystems, runtime: AiRuntime
 ) -> Recommendation:
     rec = conventional.investigate_case(s, jobs.SYSTEM, case, systems)
     if case.group_ref and case.group_ref != case.reference:
         return rec  # a linked case: the model already read this message on the first one
+    rec = _read_images(s, who, case, systems, runtime, rec)
     requests = [r.text for r in requests_of(s, case)]
     ctx = _tool_context(s, who, case, systems, rec)
+    papers = tuple(document_text(a.filename, a.content) for a in conventional.attachments_of(s, case))
     opening = build(
         ContextInput(
             tuple(requests),
@@ -176,6 +215,7 @@ def investigate_case(
             tuple(rec.flags),
             rec.member_number is not None,
             read_time(case),
+            documents=tuple(p for p in papers if p),
         ),
         ai_config(case.customer_id).limits.context_chars,
     )
