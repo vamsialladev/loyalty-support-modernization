@@ -1,0 +1,12 @@
+<section class="card" aria-labelledby="notes-h">
+  <h2 id="notes-h">Notes</h2>
+  {% for n in notes %}<p><strong>{{ n.author }}</strong> · {{ n.created_at_utc }}<br>{{ n.body }}</p>{% else %}<p class="empty">No notes yet.</p>{% endfor %}
+  {% if can_work %}
+  <form method="post" action="/cases/{{ case.id }}/notes">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="note-body">Add a note</label>
+    <textarea id="note-body" name="body" rows="2" required></textarea>
+    <button type="submit">Add note</button>
+  </form>
+  {% endif %}
+</section>

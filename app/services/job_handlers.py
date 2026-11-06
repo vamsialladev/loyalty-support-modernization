@@ -15,8 +15,8 @@ from sqlalchemy.orm import Session
 from app.domain.case_states import CaseState
 from app.domain.roles import Identity, NotPermitted, Role
 from app.persistence.models import AdjustmentRequestRow, Case, ExecutionAttempt, Job, User
-from app.ports.customer_systems import CustomerSystems
-from app.services import jobs
+from app.ports.customer_systems import CustomerSystemError, CustomerSystems, RateLimited
+from app.services import conventional, jobs
 from app.services.cases import WorkflowError, read_time
 from app.services.instrumentation import record
 from app.services.jobs import ClaimedJob, Defer, GiveUp, Retry
@@ -121,7 +121,24 @@ def build_handlers(write_path: SharedWritePath, systems_for: SystemsFor) -> dict
         if result.status == "not_applied":
             after_absent(s, row, user_id)
 
-    return {EXECUTE_JOB: execute, RECONCILE_JOB: reconcile}
+    def investigate(s: Session, job: ClaimedJob) -> None:
+        """Arm B's investigation only reads and stores a new result, so running it twice is harmless."""
+        case_id = int(job.payload["case_id"])
+        case = s.get(Case, case_id)
+        if case is None:
+            raise GiveUp("case_missing")
+        try:
+            conventional.run_investigation_job(s, case_id, systems_for(read_time(case)))
+        except RateLimited as exc:
+            s.rollback()
+            raise Retry("upstream_busy", exc.retry_after_seconds) from exc
+        except CustomerSystemError as exc:
+            s.rollback()
+            if exc.retryable:
+                raise Retry(exc.code or type(exc).__name__) from exc
+            raise GiveUp(exc.code or type(exc).__name__) from exc
+
+    return {EXECUTE_JOB: execute, RECONCILE_JOB: reconcile, conventional.INVESTIGATE_JOB: investigate}
 
 
 def sweep_stranded(s: Session) -> list[int]:

@@ -1,0 +1,6 @@
+<section class="card" aria-labelledby="tl-h">
+  <h2 id="tl-h">Timeline</h2>
+  <ol class="timeline">
+    {% for e in events %}<li>Step {{ e.step }} · {{ e.at_utc }} · {{ e.actor }} · {{ e.action }}</li>{% endfor %}
+  </ol>
+</section>

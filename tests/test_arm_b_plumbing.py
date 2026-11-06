@@ -66,6 +66,10 @@ def test_a_search_with_no_filter_is_still_refused(arm: ArmA) -> None:
         arm.systems().find_members()
 
 
+def test_the_app_image_carries_arm_bs_config() -> None:
+    assert "COPY config/conventional ./config/conventional" in (ROOT / "Dockerfile.app").read_text(encoding="utf-8")
+
+
 def test_arm_a_never_uses_the_name_filter() -> None:
     """D13 and D18 stay in arm A: its screens have no name search (ADR-0062)."""
     for path in (ROOT / "app/arms/legacy").rglob("*.py"):

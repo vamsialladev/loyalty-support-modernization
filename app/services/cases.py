@@ -91,6 +91,7 @@ def create_case(
     source_ref: str | None = None,
     arm: str = ARM_A,
     group_ref: str | None = None,
+    commit: bool = True,
 ) -> Case:
     """The arm is fixed here and never changes: nothing offers a way to move a case between arms."""
     require_case_worker(who)
@@ -117,7 +118,8 @@ def create_case(
     case.reference = f"{arm}-{case.id:06d}"
     s.add(CaseRequest(case_id=case.id, **asdict(request)))
     record(s, case, who, "case_created", queue=case.queue, channel=request.contact_channel)
-    s.commit()
+    if commit:
+        s.commit()
     return case
 
 
@@ -181,8 +183,15 @@ def _require(case: Case, *states: CaseState) -> None:
         raise WorkflowError(f"this needs the case to be {allowed}; it is '{case.status}'")
 
 
+def _require_arm_a(case: Case) -> None:
+    """Arm B has its own services (`conventional.py`), so nothing can run arm A's checklist on an arm B case."""
+    if case.arm != ARM_A:
+        raise WorkflowError(f"this action belongs to arm A; this case is on arm {case.arm}")
+
+
 def start_work(s: Session, who: Identity, case: Case) -> None:
     require_case_worker(who)
+    _require_arm_a(case)
     if case.queue != intake.POINTS_QUEUE:
         raise WorkflowError("this case is in the billing queue, which the billing team works outside this tool")
     _require(case, CaseState.NEW)
@@ -202,6 +211,7 @@ def log_search(s: Session, case: Case, who: Identity, screen: str, by: str, resu
 
 
 def _attach(s: Session, case: Case, who: Identity, kind: str, ref: str, snapshot: dict[str, Any]) -> None:
+    _require_arm_a(case)
     _require(case, CaseState.INVESTIGATING)
     s.add(
         CaseEvidence(
@@ -322,6 +332,7 @@ def add_note(s: Session, who: Identity, case: Case, body: str) -> None:
 def request_adjustment(s: Session, who: Identity, case: Case, rules: LegacyRules) -> AdjustmentRequestRow:
     """Ask a supervisor to approve exactly what the rules checklist computed. The agent never types an amount."""
     require_case_worker(who)
+    _require_arm_a(case)
     _require(case, CaseState.INVESTIGATING)
     checklist = checklist_for(s, case, rules)
     if checklist.outcome is not Outcome.ADJUST or checklist.points_owed is None:
@@ -398,6 +409,7 @@ def close_case(s: Session, who: Identity, case: Case, code: str, note: str, rule
     """Resolve without an adjustment, under the rules in `_check_close_allowed` (ADR-0054). A code the checklist
     doesn't support is an override and is logged as one."""
     require_case_worker(who)
+    _require_arm_a(case)
     _require(case, CaseState.INVESTIGATING)
     if code not in CLOSE_CODES:
         raise WorkflowError(f"unknown resolution '{code}'")
@@ -412,7 +424,9 @@ def close_case(s: Session, who: Identity, case: Case, code: str, note: str, rule
     s.commit()
 
 
-def request_information(s: Session, who: Identity, case: Case, systems: CustomerSystems, message: str) -> str:
+def request_information(
+    s: Session, who: Identity, case: Case, systems: CustomerSystems, message: str, member_number: str | None = None
+) -> str:
     """Ask the member for something, through the ticketing system (simulated). Returns the ticket ID."""
     require_case_worker(who)
     _require(case, CaseState.INVESTIGATING)
@@ -423,7 +437,7 @@ def request_information(s: Session, who: Identity, case: Case, systems: Customer
         ticket = systems.create_ticket(
             subject=f"Your missing points request {case.reference}",
             body=message.strip(),
-            member_number=member.member_number if member else None,
+            member_number=member_number or (member.member_number if member else None),
         )
     except CustomerSystemError as exc:
         record(s, case, who, "system_error", operation="create_ticket", code=exc.code or type(exc).__name__)

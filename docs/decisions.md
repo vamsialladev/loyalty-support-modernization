@@ -802,3 +802,27 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **Trade-off:** a deliberate fix to arm A must regenerate the file and log the reason in the catalog's change log. That's the point.
 - **Result:** passes on arm A as it stood, and again after the plumbing PR (verification log, Milestone 7).
 - **What would change this decision:** an owner-approved change to arm A, treated as a new experiment (F9).
+
+## ADR-0064: How arm B is built
+- **Context:** Arm B is the non-AI fix for every defect that doesn't need AI (F9), and the manual fallback. It must be good enough that
+  any gain arm C shows is really AI's, and it must use the same write path as arm A.
+- **Options considered:** (1) run the investigation inside the web request; (2) run it through the durable worker; (3) make the agent
+  click through steps with better screens. Option 1 ties a page to several customer calls. Option 3 leaves D14 unfixed.
+- **Decision:** option 2. `POST /cases/{id}/investigate` queues a job, unique per case, and the page polls. The job reads through the port,
+  asks the eligibility engine, and stores one consolidated evidence snapshot and one `recommendations` row. Pure logic is in
+  `app/arms/conventional/`; storage is in `app/services/conventional.py`; `ConventionalReview` re-runs the same code for the re-check.
+- **Rules that protect safety and fairness:**
+  - Agents can't type an amount. The only way to request a credit is the engine's own `adjust` result.
+  - Closing against the engine needs a reason of at least 20 characters and is logged as an override, in `feedback` and in the event.
+  - Two identifiers before a candidate counts as the member. A stay on someone else's profile stores and shows nothing about it.
+  - A member's reply is stored as evidence. It can select records and fill a blank channel, and nothing else.
+  - `scope_cleared` lets a person say they read a multi-issue or non-English message. It's logged, and it changes no amount.
+  - Arm B's scripted agent never goes against the engine and reads no label.
+- **Group limit (ADR-0062):** `request_adjustment` locks every case in the group in ID order, then checks the group's total. Over the limit,
+  open requests are invalidated and the whole group escalates. A case with no group locks itself, so a double click makes one request.
+- **Trade-off:** a worker must be running for arm B to work. If the job dies, the page says why and offers a retry. Arm B also makes more
+  reads per case than arm A, including a name search on every investigation, which a real platform might rate-limit (swap guide).
+- **Result:** per-defect tests on dev (`tests/test_arm_b_defects.py`), console and safety tests (`tests/test_arm_b_console.py`), real locks
+  (`tests/test_arm_b_postgres.py`). No aggregate score was computed or recorded (ADR-0048).
+- **What would change this decision:** a platform with a single consolidated claim-lookup call (fewer reads), or a customer who wants the
+  agent to see the evidence before the engine's result, to reduce automation bias.

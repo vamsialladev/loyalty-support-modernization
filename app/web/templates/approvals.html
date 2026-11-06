@@ -5,11 +5,12 @@
 {% if rows %}
 <table class="grid">
   <caption class="sr-only">Pending adjustments</caption>
-  <thead><tr><th scope="col">Case</th><th scope="col">Stay</th><th scope="col" class="num">Points</th><th scope="col">Requested by</th><th scope="col">You can decide?</th></tr></thead>
+  <thead><tr><th scope="col">Case</th><th scope="col">Arm</th><th scope="col">Stay</th><th scope="col" class="num">Points</th><th scope="col">Requested by</th><th scope="col">You can decide?</th></tr></thead>
   <tbody>
   {% for r in rows %}
     <tr>
       <td><a href="/cases/{{ r.case.id }}">{{ r.case.reference }}</a></td>
+      <td>{{ r.case.arm }}</td>
       <td>{{ r.row.stay_id }}</td>
       <td class="num">{{ r.row.points }}</td>
       <td>{{ r.row.requested_by }}</td>
