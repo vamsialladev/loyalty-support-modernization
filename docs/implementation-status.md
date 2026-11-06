@@ -1,7 +1,7 @@
 # Implementation status
 
-**Last updated:** 2026-11-05 · **Current milestone:** 6 of 20 complete · **Next:** Milestone 7 (arm B and the complete
-server-rendered UI). **Waiting on the owner:** the 30-label review; the Codex exercise, when convenient
+**Last updated:** 2026-11-06 · **Current milestone:** 7 of 20 complete · **Next:** Milestone 8 (the AI loop and harness; RFC first).
+**Waiting on the owner:** the 30-label review; the Milestone 7 exercise; the Codex exercise, when convenient
 (`docs/exercises/codex-reconciliation-review.md`).
 
 ## Completion scores (spec Part 0.5)
@@ -10,15 +10,19 @@ verified" (or "Not applicable") counts as done.
 
 | Score | Done (verified) | Total | % | In progress (unverified / configured / docs) |
 |---|---|---|---|---|
-| Core product functionality | 42 | 108 | 39% | 5 |
-| Benchmarks and evaluation | 14 | 64 | 22% | 2 |
+| Core product functionality | 49 | 108 | 45% | 5 |
+| Benchmarks and evaluation | 15 | 64 | 23% | 2 |
 | Actual-tool exercises | 0 | 16 | 0% | 3 |
 | Protocol labs | 0 | 16 | 0% | 0 |
 | Security controls | 6 | 55 | 11% | 5 |
 | Owner's demonstrated understanding | 0 | 3 | 0% | 1 |
 | Other tracked work (not a Part 0.5 score) | 36 | 107 | 34% | 13 |
 
-369 requirements: Tier 1: 190, Tier 2: 102, Tier 3: 27, Tier 4: 50.
+369 requirements: Tier 1: 190, Tier 2: 102, Tier 3: 27, Tier 4: 50
+
+New in M7: arm B (ARMB-01), the JSON API (API-01, API-02), the complete console (UI-01, UI-03), the browser suite (TEST-05), the
+day-one page (LGF-11), stage 2's approval wording (REUSE-04). Started but not done (still `Planned`, with progress noted in the
+matrix): ARMS-01 and PROF-02 (arm C, M8), DB-01 (evaluation tables, M8), SEC-17 (rest in M9). Arm A is fenced (ADR-0063).
 
 New in M6: eligibility (ELIG-01), policies (POL-01, POL-03 to POL-05, POL-08 as documentation), the state machine and roles
 (WP-01, WP-02), binding and invalidation (WP-03, WP-06), re-check (WP-07), concurrency (WP-08), reconciliation (WP-09, MOCK-09),
@@ -36,7 +40,16 @@ authorization, M9), API-01 and API-02 (moved to M7, as the owner approved). Code
 | 4 | **Implemented and verified** (Appendix C, M3-4: `docker compose up`, migrate and seed succeed from scratch; contract tests pass) | `tests/test_mock_api.py` (41), `tests/test_compose.py`, `tests/test_app_shell.py`, `tests/test_mock_api_postgres.py` (6, real Postgres); `scripts\compose_check.ps1` passed; verification log, Milestone 4 |
 | 5 | **Implemented and verified** (Appendix C, M5: legacy arm A completes a case end to end in the browser) | `tests/browser/test_legacy_e2e.py` (2, offline and against the stack), `tests/test_legacy_rules.py` (26), `tests/test_legacy_screens.py` (14), `tests/test_case_workflow.py` (36), `tests/test_console_web.py` (17), `tests/test_scripted_agent.py` (10), `tests/test_arm_a_boundaries.py` (6); verification log, Milestone 5 |
 | 6 | **Implemented and verified** (Appendix C, M6: real-Postgres tests pass for idempotency atomicity, concurrent execute, duplicate prevention, timeout-after-commit reconciliation, lease recovery, approval invalidation) | `tests/test_execution_postgres.py`, `tests/test_write_path_postgres.py`, `tests/test_worker_postgres.py`, `tests/test_audit_postgres.py`, `tests/test_mock_api_postgres.py`; `scripts\compose_check.ps1 -Browser`; verification log, Milestone 6 |
-| 7–20 | Planned | `docs/implementation-plan.md` |
+| 7 | **Implemented and verified** (Appendix C, M7: arm B works; Playwright happy path and self-approval block pass) | `tests/browser/test_arm_b_e2e.py` (offline and against the stack), `tests/test_arm_b_defects.py`, `tests/test_arm_b_console.py`, `tests/test_arm_b_rules.py`, `tests/test_arm_b_postgres.py`, `tests/test_arm_a_fence.py`, `tests/test_api.py`, `tests/test_metrics_and_day_one.py`; verification log, Milestone 7 |
+| 8–20 | Planned | `docs/implementation-plan.md` |
+
+## Milestone 7 deliverables
+- **Arm B** (`app/arms/conventional/`, `app/services/conventional.py`): one durable investigation, two identifiers, one evidence view,
+  the engine's result with citations, the missing-information loop, overrides with reasons, linked cases under one supervisor limit.
+  Each fix maps to a pre-registered defect (`docs/arm-differences.md`). No aggregate score computed (ADR-0048).
+- **The fence around arm A** (`tests/test_arm_a_fence.py`): source hashes and scripted paths, recorded first.
+- **JSON API** (`app/api/`): the same services and permissions, problem documents, cursor paging, a published contract.
+- **Console:** `/metrics`, `/day-one`, the audit timeline with details, axe-core on every page type at two widths.
 
 ## Milestone 6 deliverables
 - **Eligibility** (`app/domain/eligibility.py`): typed, pure, two clocks, checked against the labeler on the dev split only.

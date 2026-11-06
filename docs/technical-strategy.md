@@ -27,6 +27,11 @@ arm's own view; an idempotency key from the approval; four execution steps with 
 index behind every "only one" rule; "unknown" as a real state that nothing may hide; a kill switch that reads as a lock, not a
 flag. **Reading this as a standard:** `docs/rfcs/RFC-0001-write-path-integrity.md`.
 
+## Added in Milestone 7
+- **Fence every baseline.** A pinned hash plus a behaviour snapshot, written before the change, is cheap, and it's what makes a later
+  comparison believable. It's a candidate for the starter kit.
+- **Keep arm B a real product, not a straw man.** It's the fallback when AI is down, and it sets the bar AI has to beat.
+
 ## What not to build
 A general agent framework; a vector database before a measured need; multitenancy inside one database; a workflow
 automation platform; anything that lets a model move points.

@@ -3,6 +3,29 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## Milestone 7 (2026-11-05 to 2026-11-06)
+
+All work by Claude Code (Opus 5.5), under the owner's standing instructions (`CLAUDE.md`). No aggregate accuracy for any arm was computed or recorded (ADR-0048).
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | Baseline before any M7 code | `scripts\test.ps1`, branch `docs/m7-records`, 2026-11-05 | **685 passed, 70 skipped, 94.89%**, 9 min 42 s |
+| 2 | Records PR | PR #12, Actions run 42153501396, `gh pr merge 12 --merge`; main run 42154236693 | All 3 jobs green; merge commit `58edefc` |
+| 3 | The fence around arm A, recorded before any M7 code | `$env:ARM_A_FENCE_WRITE="1"; pytest tests/test_arm_a_fence.py` from `58edefc` | Wrote `tests/fixtures/arm_a_fence.json` (source hashes, all 100 dev cases); no score, no label. Re-run without the setting: 2 passed |
+| 4 | Plumbing PR: arm per case, migration 0008, `familyName`, routing | `pytest` on the affected files, ruff, mypy, `scripts\compose_check.ps1` (incl. the upgrade from a real M5 volume) | Passed; PR #13, run 42156188918 green, merge `9c20070`, main run 42157580327 green |
+| 5 | Arm B per-defect tests on dev | `pytest tests/test_arm_b_defects.py` | Passed after one test fix. **Finding:** two tests failed on `expected_outcome`: it's the case's eventual outcome after a later contact, and the right check at first contact is `next_action`. The engine agreed with the labelled action. No aggregate score computed |
+| 6 | Bug the tests caught | `tests/test_arm_b_console.py` | My template split cut at the title's `endblock`, duplicating a block in arm A's page (`block 'main' defined twice`). Fixed |
+| 7 | Gap found by reading | `Dockerfile.app` | The image lacked `config/conventional`, which offline tests can't see. Added, with a test |
+| 8 | Arm B PR | `scripts\compose_check.ps1 -Browser`; PR #14, run 42162053145 (incl. the real-Postgres group-limit race, 8 rounds) | Passed; merge `20eb562`, main run 42163279861 green. Arm A's fence still passed |
+| 9 | API: FastAPI behaviour found by test | `pytest tests/test_api.py` | Two surprises: dependencies defined inside a function don't resolve under postponed annotations (moved to module level), and FastAPI 0.162 wraps included routers, so `app.routes` shows none (the contract is now built from the router). The contract test caught the second: an empty document |
+| 10 | Accessibility | `pytest tests/browser/test_arm_b_e2e.py -k accessibility` (axe-core at 1280 and 360 px) | First run: 23 findings across 3 rules (`region`, `landmark-unique`, `scrollable-region-focusable`), then sideways scroll on `/admin` and the excerpt page. All fixed; 0 now |
+| 11 | Self-review: stay found by date | `pytest tests/test_arm_b_defects.py -k date` | A stay found by date read only this member's records, which could hide a conflicting record and change the re-check's hash. It now reads every record of the stay; test added |
+| 12 | Compose check with both browser suites, first try | `scripts\compose_check.ps1 -Browser` on the PR #15 commit | **FAILED** on two steps, with details lost to my own `Select-Object -Last 20`. Re-run with a full log: **browser 9 passed, 1 skipped**. Real-Postgres **1 failed, 66 passed**: the crash test's 180 s limit on starting a real process, with the machine at about 100% CPU. In between, arm B's happy path had credited the stay arm A's test needs, because the Compose stack is one world for both modules. Fixed: each arm B test now uses its own stay |
+| 13 | Crash test hygiene | `tests/test_execution_postgres.py`, `tests/crash_execution.py` | A timeout's message prints the subprocess arguments, which held the throwaway stack's database URL. It now passes through the environment, so it can't reach a CI log. Limit raised to 10 minutes. Passes on CI |
+| 14 | Local load | `Get-Process`, read-only | A process outside this repo, `uvicorn app.main:app --port 8011` (`daypilot`, started 10-31), had used about 255,000 CPU-seconds. Not touched: it isn't part of this project. Owner told |
+| 15 | PR #15, whole suite and real Postgres on CI | Actions run 42226155913 on `0c986be`: `Lint, types, tests`, `Real-Postgres tests`, `Secret scan` | All 3 green: **825 passed, 69 skipped, 93.91% coverage** offline (browser tests included, with the lost-response test); **63 passed, 4 skipped** real-Postgres (2 new: the group-limit race and the double click, 8 rounds each); no leaks. Merged with a merge commit |
+| 16 | Not run locally after the last fixes | The compose check after `0c986be` | Local steps ran on the earlier commit (row 12). The last commit changed one read in arm B, the browser tests' cases and the crash test's arguments. CI covered all three, and the Compose stack wasn't re-run for this row |
+
 ## Milestone 6 (started 2026-11-04)
 
 All work by Claude Code (Opus 5.5). The owner approved the plan and its ten design choices (D1–D10) on 2026-11-04,

@@ -92,3 +92,13 @@ Kept current at every milestone. Each line says what is limited, why, and what w
   `scripts\*.ps1` equivalents are what was run.
 - **No remote repository and no CI yet.** Checks ran locally only. (Superseded 2026-11-03: private repository and a first CI workflow, ADR-0053.)
 - **Local tools missing:** gitleaks, Terraform, Trivy, syft, AWS CLI, Supabase CLI (see `docs/tool-access-matrix.md`).
+
+## Added in Milestone 7 (2026-11-06)
+- **Arm B has no OCR yet:** attachments aren't read, and the case says so with the flag `attachment_not_read`. Planned with Milestone 8's
+  extraction, before the benchmark (TD-31).
+- **Language:** the console is English only. Spanish, French, Portuguese and German messages are detected and sent to a person. Other
+  languages aren't detected and go through the rules as they are. Dates and numbers aren't localized; times show on the property's clock.
+- **Member replies are typed in by staff.** There's no inbound email or portal in this simulation.
+- **Arm A's screens keep their UTC times.** They're part of the registered baseline (D04).
+- **Metrics are counts, not scores.** Whether an outcome was right is only known in the benchmark, against labels the app never sees.
+- **Scripted runs say nothing about human time** (spec E.7).
