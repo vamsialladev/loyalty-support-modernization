@@ -1,10 +1,10 @@
 # Session handoff
 
-**Updated:** 2026-11-06, after Milestone 8. Milestone 9 is next.
+**Updated:** 2026-11-06, after Milestone 9. Milestone 10 is next.
 
 ## Where things stand
-- Milestones 1-8 are on `main` in the **private** GitHub repository, merged through pull requests #3 onward. Latest results:
-  `docs/verification-log.md`, section "Milestone 8".
+- Milestones 1-9 are on `main` in the **private** GitHub repository, merged through pull requests #3 onward. Latest results:
+  `docs/verification-log.md`, section "Milestone 9".
 - **Work on a branch and open a pull request.** Merge with a merge commit, not squash or rebase, so cited hashes stay valid.
   **Standing permission for Milestones 7-20 (`CLAUDE.md`): push, open pull requests and merge when CI is green.** Push with:
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (two accounts are signed in to `gh`).
@@ -13,11 +13,16 @@
   step 7). Anything with backslashes goes through the editor tools, never a shell heredoc (it put a tab in the log on step 2).
 
 ## Waiting on the owner
-0. **The live smoke test costs a few hundredths of a cent, and needs your go-ahead** plus `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL=claude-haiku-5-5` in `.env`: `scripts/live_smoke_ai.py`. Until then it's recorded as NOT RUN. It blocks nothing until Milestone 10, which needs real runs.
+0. **Add the Anthropic settings to this repo's `.env`.** You approved the live smoke test and Milestone 10's live evaluation on 2026-11-06, with a **hard cap of $5 total**. But preflight still shows `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` and `LLM_BUDGET_USD_DAILY` as missing here, so nothing has run and nothing was spent. Milestone 10 also needs `AI_PROVIDER=anthropic`, `FEATURE_LIVE_AI=true` and `LLM_BUDGET_USD_TOTAL=5.00`.
 1. **Label review:** the 30-label sheet (`evaluations/label-review/`).
 2. Optionally, redo A-000010 with the new Reopen button. It's still `Resolved` as `deny_claim_window`.
 3. **The Codex exercise**, whenever convenient: `docs/exercises/codex-reconciliation-review.md`. It needs your Codex account.
 4. **The email block:** tick "Block command line pushes that expose my email" again, if not done already.
+
+## The Milestone 9 exercise (K.1)
+Customer scope is enforced by our queries and tests, not by the database. The tests found one real gap already: the approvals list showed other customers' requests.
+
+**Say what the worst outcome is if a new query forgets the scope, and who would notice. Then say whether you'd add Postgres row-level security now, or wait until two customers really share a deployment, and what it would cost.** Your answer goes in `docs/owner-exercises.md`.
 
 ## The Milestone 8 exercise (K.1)
 Arm C's model can tell the system that a multi-issue message needs no person to read it first. An injected message could try to make it say so.
@@ -68,13 +73,15 @@ powershell -ExecutionPolicy Bypass -File scripts\compose_check.ps1 -Browser
 
 3. Follow the standing instructions in `CLAUDE.md`.
 
-## Milestone 9 scope (spec N.1 item 9; Appendix C)
-- Done when: authorization, CSRF, rate-limit, redaction and red-team tests pass; OIDC profile login works locally.
-- Started and noted in the matrix: SEC-05, SEC-17, ENT-12, ENT-23, DOC-06, TEST-01, TEST-02. Bearer tokens for the API (TD-32).
+## Milestone 10 scope (spec N.1 item 10)
+- Benchmark runner, thresholds, A/B/C comparison, error analysis, business-value report. **RFC first** (`docs/rfcs/`).
+- Thresholds are committed before any aggregate score (ADR-0048). Held-out data isn't for tuning.
+- SEC-19's repeated model tests belong with the real runs.
+- Real runs are approved with a **hard cap of $5 total**, across the smoke test and the live evaluation. The runner must stop itself at the cap, and not rely on the settings alone. Keep mock and live results separate: different folders, and labelled in every report.
 
 ## Trying arm B on your own stack
-`stack.ps1 -Action up` rebuilds and migrates to `0008`; your data stays. Then load cases with
+`stack.ps1 -Action up` rebuilds and migrates to `0010`; your data stays. Then load cases with
 `uv run python -m benchmarks.intake --split dev --limit 10 --arm B`. Steps are in `docs/onboarding.md` §4f.
 
 ## Blockers
-None for starting Milestone 9. Milestone 8's live run needs `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` in `.env`.
+None for starting Milestone 10's design. Its real runs wait for the Anthropic settings in this repo's `.env`.

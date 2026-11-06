@@ -38,7 +38,7 @@ Final counts per run are in `docs/verification-log.md`, Milestone 9.
 
 ## Not run, or not covered
 
-- **Repeating model-based tests to show variability: NOT RUN.** It needs a live model, which costs money, so it waits for the owner's go-ahead.
+- **Repeating model-based tests to show variability: NOT RUN.** It needs a live model. The owner has approved live runs with a $5 cap, so it belongs with Milestone 10's.
 - **Cross-user stream access:** there's no streaming endpoint.
 - **Malicious callbacks:** there are none until Milestone 11. Only the URL gate exists.
 - **MFA:** a guide only. Nothing tests it, because nothing enforces it.

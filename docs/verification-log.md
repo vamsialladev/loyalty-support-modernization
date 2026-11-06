@@ -3,6 +3,28 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## Milestone 9 (2026-11-06)
+
+All work by Claude Code (Opus 5.5), under the owner's standing instructions. **No real model was called.** No aggregate accuracy for any arm was computed.
+
+**Owner's approval, 2026-11-06:** run the live smoke test, and Milestone 10's live evaluation later, with a hard cap of $5 total. Keep mock and live results clearly separated.
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | Milestone 8's close | PR #18, CI run 42268547825 | 985 passed, 69 skipped, 94.28% coverage; 63 passed, 4 skipped on real Postgres. Merged as `42d3a88` |
+| 2 | Customer scope | `pytest tests/test_security_authz.py` | **Found a real bug on the first run:** the approvals list showed other customers' pending requests. Fixed in `pending_approvals` |
+| 3 | OIDC against a real Keycloak, in a real browser | `scripts\oidc_check.ps1`, synthetic users | **7 of 7.** Includes a rotated key and a disabled user. `security/evidence/oidc-check-2026-11-06.txt` |
+| 4 | Red team on business effects | `pytest tests/test_red_team.py tests/test_red_team_shared_corpus.py`; models scripted to obey the attacker | No business effect. Shared corpus: 30 attacks and 5 controls. **No real model.** This shows what's reachable, not how often a model complies |
+| 5 | The security tests together, first local run | 135 tests, 849 s | 130 passed, 4 skipped (Postgres), **1 failed:** the login-limit test, near a 300 s window's edge. It passed alone. Cause **likely, not proven:** the run's times allow a crossing without showing one. The test now has a fixed clock, and a new test pins what fixed windows cost |
+| 6 | PR #19, whole suite on CI, first push | Actions run 42292806236 | **Failed:** 2 failed, 1151 passed, 73 skipped. Browser tests stalled for 30 s on `/day-one`, offline on SQLite. It reproduced locally |
+| 7 | Compose check on that first push | `scripts\compose_check.ps1 -Browser` | Passed: 71 real-Postgres, browser 9 passed, 1 skipped. **So this check couldn't see the bug in row 6:** it only shows on SQLite |
+| 8 | Finding the stall | App log; `tests/test_rate_limit_concurrency.py` | `database is locked` in `rate_limit.hit`. Every signed-in request has written a rate-limit row since this milestone, and the charts load together. **First fix (atomic count, first in its transaction) wasn't enough:** the concurrency test passed, the browser test still stalled. Second cause: `resolve` kept a read open across the identity provider's own connection. Test of the real path: **965 s with 91 locked-database errors on the old code, 3.8 s with none after both fixes** |
+| 9 | After the fixes, locally | `pytest tests/browser tests/test_console_web.py tests/test_api.py tests/test_security_authz.py tests/test_oidc.py tests/test_rate_limit_concurrency.py tests/test_app_shell.py` | 131 passed, 0 failed. Ruff, format and mypy clean |
+| 10 | PR #19 on the fixed commit `a4842d3` | Actions run 42306973474 | All three jobs green: **1155 passed, 73 skipped, 94.44% coverage;** real Postgres **67 passed, 4 skipped;** secret scan clean |
+| 11 | Compose check on `a4842d3` | `scripts\compose_check.ps1 -Browser` | **Passed:** real Postgres **71 passed,** browser **9 passed, 1 skipped,** upgrade from a real Milestone 5 volume to migration `0010` passed. Merged as `9ccb210` |
+| 12 | **Live smoke test** | `scripts/live_smoke_ai.py` | **NOT RUN.** The owner approved it on 2026-11-06, but preflight shows `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` and `LLM_BUDGET_USD_DAILY` missing from this repo's `.env`. Nothing spent |
+| 13 | Repeated red-team runs on a real model (SEC-19) | Not built yet | **NOT RUN.** Belongs with Milestone 10's live runs |
+
 ## Milestone 8 (2026-11-06)
 
 All work by Claude Code (Opus 5.5), under the owner's standing instructions. **No real model was called.** No aggregate accuracy for any arm was computed.

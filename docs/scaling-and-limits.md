@@ -84,3 +84,8 @@ through `arm_review.review_for`.
 - **Cost per case:** not measured. No real model has run. Milestone 10 measures it.
 - **What breaks first:** the provider's rate limit, then per-run tokens as documents grow. `context_chars` caps the second; the worker's job queue absorbs bursts for the first.
 - **Concurrency:** one worker runs one job at a time, so more cases means more workers. Each run holds no lock and no open transaction during a model call.
+
+## Rate limits and security (Milestone 9)
+- **Every signed-in request writes one row** to `rate_limits`, under a row lock, so each person's requests run one at a time at that point. Cost not measured. Milestone 12's load test measures it. What would change it: a shared cache, at the price of another system to run.
+- **`rate_limits` grows** with people and addresses. Old windows are overwritten per key rather than deleted, so growth follows the number of distinct keys.
+- **Retention** scans resolved cases daily. Fine at this size; an index on status and update time is the next step.
