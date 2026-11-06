@@ -59,6 +59,8 @@ class Case(Base):
     # The business time to read at, when a test or the benchmark moved it past `received_at_utc` (RFC-0001, fault 5).
     # Nothing in the console or the API can set it.
     sim_now_utc: Mapped[str | None] = mapped_column(String(20), default=None)
+    # Arm B: one case per stay, linked when a message claims several. The supervisor limit covers the group (ADR-0062).
+    group_ref: Mapped[str | None] = mapped_column(String(32), default=None, index=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
     created_at_utc: Mapped[str] = mapped_column(String(20))
     updated_at_utc: Mapped[str] = mapped_column(String(20))
@@ -104,6 +106,46 @@ class CaseNote(Base):
     case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), index=True)
     author: Mapped[str] = mapped_column(String(64))
     body: Mapped[str] = mapped_column(Text)
+    created_at_utc: Mapped[str] = mapped_column(String(20))
+
+
+class Recommendation(Base):
+    """What an arm's evaluator said about a case, from fresh reads. Each investigation adds a row; the latest counts.
+    `author` is "engine" (arm B, deterministic). Never an amount typed by a person."""
+
+    __tablename__ = "recommendations"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), index=True)
+    author: Mapped[str] = mapped_column(String(32))
+    member_number: Mapped[str | None] = mapped_column(String(32), default=None)
+    stay_id: Mapped[str | None] = mapped_column(String(32), default=None)
+    status: Mapped[str] = mapped_column(String(32))
+    action: Mapped[str] = mapped_column(String(32))
+    detail: Mapped[str | None] = mapped_column(String(64), default=None)
+    points_owed: Mapped[int] = mapped_column(Integer, default=0)
+    earned_points: Mapped[int] = mapped_column(Integer, default=0)
+    credited_points: Mapped[int] = mapped_column(Integer, default=0)
+    reasons: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    citations: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    flags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    evidence_hash: Mapped[str | None] = mapped_column(String(64), default=None)
+    checkout_day: Mapped[str | None] = mapped_column(String(10), default=None)
+    created_at_utc: Mapped[str] = mapped_column(String(20))
+
+
+class Feedback(Base):
+    """A person's view of a recommendation, or the reason they went against it (spec B.11, E.2). `kind` is
+    "feedback" or "override"."""
+
+    __tablename__ = "feedback"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), index=True)
+    recommendation_id: Mapped[int | None] = mapped_column(ForeignKey("recommendations.id"), default=None)
+    kind: Mapped[str] = mapped_column(String(16))
+    rating: Mapped[str | None] = mapped_column(String(16), default=None)
+    reason_code: Mapped[str | None] = mapped_column(String(48), default=None)
+    comment: Mapped[str | None] = mapped_column(Text, default=None)
+    author: Mapped[str] = mapped_column(String(64))
     created_at_utc: Mapped[str] = mapped_column(String(20))
 
 

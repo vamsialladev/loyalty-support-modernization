@@ -79,8 +79,11 @@ class MockCustomerApiAdapter:
     def get_member(self, member_number: str) -> Member:
         return self._record("member", Member, self._request("GET", f"/v1/members/{member_number}"))
 
-    def find_members(self, *, email: str | None = None, phone: str | None = None) -> list[Member]:
-        params = {k: v for k, v in (("emailAddress", email), ("phoneNumber", phone)) if v}
+    def find_members(
+        self, *, email: str | None = None, phone: str | None = None, family_name: str | None = None
+    ) -> list[Member]:
+        filters = (("emailAddress", email), ("phoneNumber", phone), ("familyName", family_name))
+        params = {k: v for k, v in filters if v}
         return self._items("member", Member, self._request("GET", "/v1/members", params=params))
 
     def get_stay_records(self, stay_id: str) -> list[StayRecord]:

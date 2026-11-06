@@ -787,3 +787,18 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **Result:** recorded as Milestone 7 lands.
 - **What would change this decision:** a real platform with no name search (then D13 and D18 fall back to asking), or a customer
   whose limit is per stay.
+
+## ADR-0063: A fence around arm A, recorded before arm B
+- **Context:** Arm B's fixes touch shared code (`cases.py`, the mock API, the port). Any change that leaks into arm A would
+  move the baseline after pre-registration (F9), and a scored comparison at Milestone 10 wouldn't show why.
+- **Options considered:** a code-review rule; hashes of arm A's source only; a behaviour snapshot only; both. Hashes miss a
+  change in shared code. A snapshot misses a change that dev cases happen not to reach.
+- **Decision:** both, in `tests/test_arm_a_fence.py`: SHA-256 of `app/arms/legacy/`, `config/legacy/` and the scripted agent, and
+  what the scripted agent does with all 100 dev cases (path, status, resolution, steps, points). Recorded from commit `58edefc`,
+  before any Milestone 7 code. It stores no score and reads no label.
+- **Other choices here:** the name filter is `familyName`, the customer's own field name in the mock API's shape, not the
+  `lastName` ADR-0062 mentions. Same filter, contract 1.1.0. The arm is fixed at intake, and arm B's routing is its own
+  (`app/arms/conventional/signals.py`), so D20 stays in arm A.
+- **Trade-off:** a deliberate fix to arm A must regenerate the file and log the reason in the catalog's change log. That's the point.
+- **Result:** passes on arm A as it stood, and again after the plumbing PR (verification log, Milestone 7).
+- **What would change this decision:** an owner-approved change to arm A, treated as a new experiment (F9).
