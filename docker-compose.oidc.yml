@@ -1,0 +1,21 @@
+# The enterprise sign-in profile: a local Keycloak (spec C.4; SEC-08). Local only, synthetic users, no real identity.
+#   docker compose -p loyalty-oidc -f docker-compose.oidc.yml --env-file <file> up -d --wait
+# `scripts\oidc_check.ps1` starts this, creates throwaway users, signs in through a real browser and tears it down.
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4.2
+    command: ["start-dev", "--import-realm", "--health-enabled=true", "--hostname-strict=false"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD}
+    ports:
+      - "127.0.0.1:${KEYCLOAK_HOST_PORT:-8090}:8080"
+    volumes:
+      - ./infrastructure/keycloak/realm-hotel.json:/opt/keycloak/data/import/realm-hotel.json:ro
+    healthcheck:
+      # The image has no curl, so this opens the management port with bash.
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q UP <&3"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 60s

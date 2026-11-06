@@ -1,0 +1,39 @@
+{
+  "realm": "hotel",
+  "enabled": true,
+  "displayName": "Fictional hotel group (SYNTHETIC)",
+  "registrationAllowed": false,
+  "groups": [
+    {"name": "loyalty-agents"},
+    {"name": "loyalty-supervisors"},
+    {"name": "loyalty-admins"},
+    {"name": "loyalty-auditors"},
+    {"name": "other-team"}
+  ],
+  "clients": [
+    {
+      "clientId": "loyalty-console",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://127.0.0.1:8010/auth/oidc/callback"],
+      "attributes": {"pkce.code.challenge.method": "S256"},
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "claim.name": "groups",
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -30,7 +30,7 @@ DEMO_USERS: tuple[tuple[str, str, Role], ...] = (
 
 
 def _identity(user: User) -> Identity:
-    return Identity(user.id, user.username, user.display_name, Role(user.role))
+    return Identity(user.id, user.username, user.display_name, Role(user.role), user.customer_id)
 
 
 class LocalDemoIdentity:

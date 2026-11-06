@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 
@@ -19,6 +19,7 @@ class CustomerConfig:
     policy_set: str
     rules: CustomerRules
     approval_ttl_hours: int
+    oidc_group_roles: dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def load(cls, customer_id: str, config_dir: Path = CONFIG_DIR) -> CustomerConfig:
@@ -28,7 +29,8 @@ class CustomerConfig:
             dict(data["source_code_channels"]),
             int(data["max_evidence_age_minutes"]),
         )
-        return cls(data["customer_id"], data["policy_set"], rules, int(data["approval_ttl_hours"]))
+        groups = dict((data.get("oidc") or {}).get("group_roles") or {})
+        return cls(data["customer_id"], data["policy_set"], rules, int(data["approval_ttl_hours"]), groups)
 
 
 @lru_cache(maxsize=8)

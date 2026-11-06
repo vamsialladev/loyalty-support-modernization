@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ heading }}{% endblock %}
+{% block main %}
+<section class="card">
+  <h1>{{ heading }}</h1>
+  <p class="notice">Copy this now. It won't be shown again.</p>
+  <pre class="message" data-testid="shown-once">{{ value }}</pre>
+  <p><a href="/admin/users">Back to accounts</a></p>
+</section>
+{% endblock %}

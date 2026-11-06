@@ -121,3 +121,10 @@ conversions:
   roomRevenue: usd_to_cents
   taxAmount: usd_to_cents
   feeAmount: usd_to_cents
+# Which identity-provider group gives which role (spec C.4; ENT-25). No mapped group means no access.
+oidc:
+  group_roles:
+    loyalty-agents: agent
+    loyalty-supervisors: supervisor
+    loyalty-admins: administrator
+    loyalty-auditors: auditor

@@ -40,6 +40,12 @@ class AppSettings:
     ai_budget_per_run_usd: float = 1.0
     ai_budget_daily_usd: float = 5.0
     ai_budget_total_usd: float = 5.0
+    auth_mode: str = "local"  # local | oidc
+    oidc_issuer_url: str = ""
+    oidc_client_id: str = ""
+    oidc_client_secret: str = ""
+    app_base_url: str = "http://127.0.0.1:8010"
+    rate_limit_per_minute: int = 600
 
     @property
     def cookie_secure(self) -> bool:
@@ -64,4 +70,10 @@ class AppSettings:
             ai_budget_per_run_usd=_number("LLM_BUDGET_USD_PER_RUN", 1.0),
             ai_budget_daily_usd=_number("LLM_BUDGET_USD_DAILY", _number("LLM_BUDGET_USD_TOTAL", 5.0)),
             ai_budget_total_usd=_number("LLM_BUDGET_USD_TOTAL", 5.0),
+            auth_mode=os.environ.get("AUTH_MODE", "local").strip() or "local",
+            oidc_issuer_url=os.environ.get("OIDC_ISSUER_URL", "").strip(),
+            oidc_client_id=os.environ.get("OIDC_CLIENT_ID", "").strip(),
+            oidc_client_secret=os.environ.get("OIDC_CLIENT_SECRET", ""),
+            app_base_url=os.environ.get("APP_BASE_URL", "http://127.0.0.1:8010").strip().rstrip("/"),
+            rate_limit_per_minute=int(_number("RATE_LIMIT_PER_MINUTE", 600)),
         )

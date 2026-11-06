@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Set a new password{% endblock %}
+{% block main %}
+<section class="card narrow">
+  <h1>Set a new password</h1>
+  <p class="muted">This link works once, and signs out every session on the account.</p>
+  <form method="post" action="/recover">
+    <input type="hidden" name="login_csrf" value="{{ login_csrf }}">
+    <input type="hidden" name="token" value="{{ token }}">
+    <label for="password">New password (at least 12 characters)</label>
+    <input id="password" name="password" type="password" autocomplete="new-password" minlength="12" required>
+    <button type="submit">Save password</button>
+  </form>
+</section>
+{% endblock %}

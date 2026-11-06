@@ -1,0 +1,9 @@
+scripts\oidc_check.ps1, Keycloak 26.4.2, 2026-11-06 (throwaway users, random passwords, torn down afterwards)
+PASS  a mapped group signs in and reaches the queue
+PASS  an agent can't reach configuration
+PASS  the supervisor group gets the supervisor role
+PASS  a user with no mapped group is refused
+PASS  a user disabled in Keycloak can't sign in again
+PASS  the signing key really rotated
+PASS  sign-in still works after the key rotated
+7 of 7 checks passed
