@@ -259,7 +259,8 @@
       "default": "B",
       "enum": [
        "A",
-       "B"
+       "B",
+       "C"
       ],
       "title": "Arm",
       "type": "string"
@@ -987,6 +988,18 @@
       "title": "Action",
       "type": "string"
      },
+     "ai": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ai"
+     },
      "author": {
       "title": "Author",
       "type": "string"
@@ -1461,7 +1474,7 @@
       "schema": {
        "anyOf": [
         {
-         "pattern": "^[AB]$",
+         "pattern": "^[ABC]$",
          "type": "string"
         },
         {

@@ -27,7 +27,7 @@ recorded before any arm B code (ADR-0063).
 | D15 current policy only | Current rules | The version in force on the checkout date | `domain/policy.py`, `conventional.search_policy` |
 | D16 several stays | One stay | **Partial:** explicit numbers become linked cases; asks about the rest | `conventional._split_group`, `mention_more_stays` |
 | D17 wrong numbers | Not found | Missing prefix, or one near match within the member's own stays that doesn't contradict a stated date | `investigation.py` `resolve_confirmation` |
-| D18 name forms | Not found | **Partial:** listed nicknames and dropped accents; anything else asks | `identity.py`, `config/conventional/hg-demo.yaml` |
+| D18 name forms | Not found | Listed nicknames and dropped accents; a different surname passes only with two other identifiers (exact email, and an exact confirmation number on that profile); anything else asks. **Goes further than the catalog's prediction:** RFC-0002 explains why | `identity.py`, `config/conventional/hg-demo.yaml` |
 | D19 mixed dates | Wrong | Reads only dates with the month in words and a year; asks otherwise, never guesses | `investigation.py` `explicit_arrival_dates` |
 | D20 mixed issues | Claim lost in billing | Stays in the points queue, flagged `multi_issue`, sent to a person | `conventional/signals.py`, `investigation.py` `_gate` |
 | D21 corporate exception | Denies | Encoded in the published rules | `domain/eligibility.py` |

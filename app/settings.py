@@ -12,6 +12,17 @@ def _flag(name: str) -> bool:
     return os.environ.get(name, "false").strip().lower() == "true"
 
 
+def _number(name: str, default: float) -> float:
+    """A cap that doesn't parse counts as zero, so nothing live runs on a typo."""
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return 0.0
+
+
 @dataclass(frozen=True)
 class AppSettings:
     database_url: str
@@ -23,6 +34,12 @@ class AppSettings:
     public_demo_mode: bool = False
     secret_key: str = ""
     worker_health_file: str = ""
+    ai_provider: str = "mock"
+    feature_live_ai: bool = False
+    anthropic_model: str = ""
+    ai_budget_per_run_usd: float = 1.0
+    ai_budget_daily_usd: float = 5.0
+    ai_budget_total_usd: float = 5.0
 
     @property
     def cookie_secure(self) -> bool:
@@ -41,4 +58,10 @@ class AppSettings:
             public_demo_mode=_flag("PUBLIC_DEMO_MODE"),
             secret_key=os.environ.get("APP_SECRET_KEY", ""),
             worker_health_file=os.environ.get("WORKER_HEALTH_FILE", ""),
+            ai_provider=os.environ.get("AI_PROVIDER", "mock").strip() or "mock",
+            feature_live_ai=_flag("FEATURE_LIVE_AI"),
+            anthropic_model=os.environ.get("ANTHROPIC_MODEL", "").strip(),
+            ai_budget_per_run_usd=_number("LLM_BUDGET_USD_PER_RUN", 1.0),
+            ai_budget_daily_usd=_number("LLM_BUDGET_USD_DAILY", _number("LLM_BUDGET_USD_TOTAL", 5.0)),
+            ai_budget_total_usd=_number("LLM_BUDGET_USD_TOTAL", 5.0),
         )

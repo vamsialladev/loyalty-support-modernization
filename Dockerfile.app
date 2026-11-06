@@ -15,6 +15,8 @@ COPY customer_shapes ./customer_shapes
 COPY config/customers ./config/customers
 COPY config/legacy ./config/legacy
 COPY config/conventional ./config/conventional
+COPY config/ai ./config/ai
+COPY config/prompts ./config/prompts
 COPY config/policy-regression ./config/policy-regression
 COPY policies ./policies
 COPY alembic.ini ./

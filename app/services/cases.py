@@ -34,7 +34,8 @@ from app.services.instrumentation import events, record
 
 ARM_A = "A"
 ARM_B = "B"
-ARMS = (ARM_A, ARM_B)
+ARM_C = "C"
+ARMS = (ARM_A, ARM_B, ARM_C)
 REASON_MISSING_POINTS = "missing_points"
 
 # What an agent may close a case as, and the checklist outcome each code agrees with. A close that disagrees with

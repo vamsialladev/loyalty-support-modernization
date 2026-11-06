@@ -27,6 +27,7 @@ from dataclasses import dataclass, field
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.ai.harness import AiRuntime
 from app.arms.conventional import signals
 from app.domain.case_states import CaseState
 from app.domain.eligibility import NextAction
@@ -65,12 +66,17 @@ def simulated_review(checklist: dict[str, object]) -> tuple[bool, str]:
 
 class ScriptedConventionalAgent:
     def __init__(
-        self, s: Session, systems_for: SystemsFactory, customer_id: str = "hg-demo", write_path: WritePath | None = None
+        self,
+        s: Session,
+        systems_for: SystemsFactory,
+        customer_id: str = "hg-demo",
+        write_path: WritePath | None = None,
+        ai_runtime: AiRuntime | None = None,
     ) -> None:
         self.s, self.systems_for, self.customer_id = s, systems_for, customer_id
         self.write_path = write_path or SharedWritePath(customer_id)
         self.agent, self.supervisor = ensure_scripted_users(s)
-        handlers = build_handlers(self.write_path, systems_for)  # type: ignore[arg-type]
+        handlers = build_handlers(self.write_path, systems_for, ai_runtime)  # type: ignore[arg-type]
         self.worker = Worker(sessionmaker(bind=s.get_bind(), expire_on_commit=False), handlers)
 
     def run(self, case: Case) -> ConventionalRun:

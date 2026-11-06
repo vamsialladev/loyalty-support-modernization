@@ -244,7 +244,7 @@ def read_claim(
     return claim, evidence, facts
 
 
-def _member_stays(systems: CustomerSystems, member: Member) -> tuple[StayRecord, ...]:
+def member_stays(systems: CustomerSystems, member: Member) -> tuple[StayRecord, ...]:
     duplicates, merged = ident.linked_profiles(systems, member)
     return tuple(r for p in (member.member_number, *duplicates, *merged) for r in systems.find_stays(member_number=p))
 
@@ -348,7 +348,7 @@ def investigate(
     member = found.member
     if found.candidates and ident.NEAR_NUMBER in found.candidates[0].matched:
         flags.append("member_number_corrected")
-    stays = _member_stays(systems, member)
+    stays = member_stays(systems, member)
     dates = explicit_arrival_dates(claim_text.text)
     match, others = _resolve_all(systems, claim_text, stays, member, dates)
     base = Evidence(member=member, candidates=found.candidates, stay=match, member_stays=_summaries(stays))

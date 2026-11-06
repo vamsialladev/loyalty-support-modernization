@@ -1,0 +1,21 @@
+# The AI loop's settings for this customer (RFC-0002). Limits are starting points; Milestone 12 measures them.
+limits:
+  max_turns: 6             # the same limit as Stage 2's agent; a person is waiting
+  max_tool_calls_per_turn: 4
+  parallel_reads: 4        # read-only tools run side by side, up to this many
+  max_identical_calls: 2   # the second identical call is already no new evidence
+  deadline_seconds: 60     # a person is waiting on a page
+  call_timeout_seconds: 30
+  max_provider_failures: 2 # then arm B's result stands, rather than retrying until the budget is gone
+  max_repairs: 1           # spec B.9: one bounded repair
+  max_output_tokens: 2000
+  context_chars: 8000      # the member's messages and evidence put together
+  tool_result_chars: 4000  # larger results are cut, and they say so
+# Only these models may run. Anything else fails safe to arm B's result (ENT-15).
+# Prices are USD per million tokens, from the first-party price list on the date shown. Re-check them before a live run.
+models:
+  claude-haiku-5-5:
+    input_per_mtok: 0.10
+    output_per_mtok: 0.50
+    checked_on: "2026-11-06"
+    deprecated: false

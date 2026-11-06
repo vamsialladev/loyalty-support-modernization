@@ -12,12 +12,13 @@ from collections.abc import Callable
 from sqlalchemy import exists, select
 from sqlalchemy.orm import Session
 
+from app.ai.harness import AiRuntime
 from app.domain.case_states import CaseState
 from app.domain.roles import Identity, NotPermitted, Role
 from app.persistence.models import AdjustmentRequestRow, Case, ExecutionAttempt, Job, User
 from app.ports.customer_systems import CustomerSystemError, CustomerSystems, RateLimited
-from app.services import conventional, jobs
-from app.services.cases import WorkflowError, read_time
+from app.services import assisted, conventional, jobs
+from app.services.cases import ARM_C, WorkflowError, read_time
 from app.services.instrumentation import record
 from app.services.jobs import ClaimedJob, Defer, GiveUp, Retry
 from app.services.write_path import EXECUTE_JOB, RECONCILE_JOB, RecheckFailed, SharedWritePath, load_request
@@ -57,7 +58,11 @@ def _submissions(s: Session, row: AdjustmentRequestRow) -> int:
     return len(s.scalars(query).all())
 
 
-def build_handlers(write_path: SharedWritePath, systems_for: SystemsFor) -> dict[str, Handler]:
+def build_handlers(
+    write_path: SharedWritePath, systems_for: SystemsFor, ai_runtime: AiRuntime | None = None
+) -> dict[str, Handler]:
+    runtime = ai_runtime or assisted.mock_runtime()
+
     def after_absent(s: Session, row: AdjustmentRequestRow, user_id: int) -> None:
         """Reconciliation found nothing. Try again under the same key, a bounded number of times, then leave it
         `Approved` for a person."""
@@ -128,7 +133,11 @@ def build_handlers(write_path: SharedWritePath, systems_for: SystemsFor) -> dict
         if case is None:
             raise GiveUp("case_missing")
         try:
-            conventional.run_investigation_job(s, case_id, systems_for(read_time(case)))
+            systems = systems_for(read_time(case))
+            if case.arm == ARM_C:
+                assisted.run_investigation_job(s, case_id, _requester(s, job), systems, runtime)
+            else:
+                conventional.run_investigation_job(s, case_id, systems)
         except RateLimited as exc:
             s.rollback()
             raise Retry("upstream_busy", exc.retry_after_seconds) from exc

@@ -138,16 +138,15 @@ def test_d16_several_explicit_numbers_become_linked_cases(arm: ArmA) -> None:
         assert {conventional.claimed_stay(s, c) for c in linked} == set(stays[:2])
 
 
-def test_d18_listed_nickname_found_married_name_asked(arm: ArmA) -> None:
+def test_d18_a_different_surname_passes_only_on_two_other_identifiers(arm: ArmA) -> None:
+    """Exact email plus an exact confirmation on that profile. No model needed, so it belongs to arm B (RFC-0002,
+    F9)."""
     with arm.sessions() as s:
-        outcomes = []
         for nth in range(scenario_ids(arm, "D18")):
-            run, case, _label = run_scenario(arm, s, "D18", nth)
-            outcomes.append((run.final_status, run.path))
+            run, case, label = run_scenario(arm, s, "D18", nth)
             rec = conventional.latest_recommendation(s, case)
             assert rec is not None
-            assert rec.detail in {"second_identifier", "member_not_found", "which_member"} or rec.member_number
-    assert any(status == "Awaiting information" for status, _ in outcomes), outcomes  # married names
+            assert rec.member_number == label["claimant_member_number"], (nth, run.path, rec.detail)
 
 
 def test_d19_vague_dates_are_asked_about_never_guessed(arm: ArmA) -> None:

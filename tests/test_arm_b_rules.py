@@ -68,6 +68,17 @@ def test_identifiers_are_counted_separately() -> None:
     assert _score(IdentityClaim((), "E.NUNEZ@mail.test", "Liz Nunez"), m) == (ident.EMAIL, ident.NAME)
 
 
+def test_an_exact_stay_on_the_profile_is_an_identifier_but_never_enough_alone() -> None:
+    m = member()
+    assert ident.score(IdentityClaim((), None, None), m, CONFIG, stay_owners=frozenset({m.member_number})) == (
+        ident.STAY_ON_PROFILE,
+    )
+    alone = ident.choose([Candidate(m, (ident.STAY_ON_PROFILE,))])
+    assert alone.status is IdentityStatus.NEEDS_SECOND_IDENTIFIER and alone.candidates == ()  # and it isn't shown
+    both = ident.choose([Candidate(m, (ident.EMAIL, ident.STAY_ON_PROFILE))])
+    assert both.status is IdentityStatus.CONFIRMED
+
+
 def test_one_identifier_is_never_enough() -> None:
     m = member()
     alone = ident.choose([Candidate(m, (ident.EXACT_NUMBER,))])
