@@ -75,7 +75,9 @@ def chromium() -> Iterator[Any]:
 
 
 @pytest.fixture(scope="module")
-def stack(mock_template: dict[str, Any], tmp_path_factory: pytest.TempPathFactory) -> Iterator[Stack]:
+def stack(
+    request: pytest.FixtureRequest, mock_template: dict[str, Any], tmp_path_factory: pytest.TempPathFactory
+) -> Iterator[Stack]:
     if os.environ.get("E2E_BASE_URL"):
         yield Stack(
             os.environ["E2E_BASE_URL"].rstrip("/"),
@@ -114,6 +116,11 @@ def stack(mock_template: dict[str, Any], tmp_path_factory: pytest.TempPathFactor
         "MOCK_API_TOKEN": token,
         "MOCK_API_SIM_CLOCK": "true",
     }
+    seeded_faults = getattr(request.module, "seeded_fault_rules", None)  # a module may ask for a seeded failure
+    if seeded_faults is not None:
+        rules = tmp / "fault_rules.yaml"
+        rules.write_text(seeded_faults(mock_template["labels"]), encoding="utf-8")
+        mock_env |= {"MOCK_API_FAULTS": "true", "MOCK_API_FAULT_RULES_FILE": str(rules)}
     app_env = base_env | {
         "DATABASE_URL": app_url,
         "MOCK_API_URL": f"http://127.0.0.1:{mock_port}",

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Operational metrics{% endblock %}
+{% block main %}
+<h1>Operational metrics</h1>
+<p class="muted">{{ metrics.note }} Cases a scripted actor touched are counted apart from people's: their steps and times measure software, not an employee. All data is synthetic.</p>
+<p>Jobs waiting or running: <strong data-testid="jobs-queued">{{ metrics.jobs_queued }}</strong> · jobs that gave up: <strong data-testid="jobs-dead">{{ metrics.jobs_dead }}</strong></p>
+{% if metrics.rows %}
+<div class="table-wrap" tabindex="0" role="group" aria-label="Table, scrolls sideways on a narrow screen">
+<table class="grid" data-testid="metrics-table">
+  <caption class="sr-only">Metrics per arm and per kind of worker</caption>
+  <thead><tr>
+    <th scope="col">Arm</th><th scope="col">Worked by</th><th scope="col" class="num">Cases</th><th scope="col" class="num">Median steps</th>
+    <th scope="col" class="num">Median minutes to close</th><th scope="col" class="num">Requested</th><th scope="col" class="num">Executed</th>
+    <th scope="col" class="num">Points executed</th><th scope="col" class="num">Invalidated</th><th scope="col" class="num">Overrides</th>
+    <th scope="col" class="num">Asked member</th><th scope="col" class="num">Escalated</th><th scope="col" class="num">Helpful / not</th>
+  </tr></thead>
+  <tbody>
+  {% for r in metrics.rows %}
+    <tr>
+      <td>{{ r.arm }}</td><td>{{ r.kind }}</td><td class="num">{{ r.cases }}</td>
+      <td class="num">{{ r.median_steps if r.median_steps is not none else "—" }}</td>
+      <td class="num">{{ r.median_minutes_to_close if r.median_minutes_to_close is not none else "—" }}</td>
+      <td class="num">{{ r.adjustments_requested }}</td><td class="num">{{ r.adjustments_executed }}</td><td class="num">{{ r.points_executed }}</td>
+      <td class="num">{{ r.approvals_invalidated }}</td><td class="num">{{ r.overrides }}</td><td class="num">{{ r.information_requests }}</td>
+      <td class="num">{{ r.escalated }}</td><td class="num">{{ r.feedback_helpful }} / {{ r.feedback_not_helpful }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% for r in metrics.rows %}
+<section class="card" aria-labelledby="st-{{ r.arm }}-{{ r.kind }}">
+  <h2 id="st-{{ r.arm }}-{{ r.kind }}">Arm {{ r.arm }}, worked by {{ r.kind }}</h2>
+  <p>Status: {% for name, n in r.by_status.items() %}{{ name }} {{ n }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+  {% if r.engine_results %}<p>Engine's latest result: {% for name, n in r.engine_results.items() %}{{ name }} {{ n }}{% if not loop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+</section>
+{% endfor %}
+{% else %}
+<p class="empty">No cases yet.</p>
+{% endif %}
+{% endblock %}

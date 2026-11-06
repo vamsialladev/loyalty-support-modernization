@@ -1,6 +1,7 @@
 <section class="card" aria-labelledby="tl-h">
   <h2 id="tl-h">Timeline</h2>
+  <p class="muted">The full audit trail. Each row is permanent: the application's database role can't change or delete it.</p>
   <ol class="timeline">
-    {% for e in events %}<li>Step {{ e.step }} · {{ e.at_utc }} · {{ e.actor }} · {{ e.action }}</li>{% endfor %}
+    {% for e in events %}<li>Step {{ e.step }} · {{ e.at_utc }} · {{ e.actor }} ({{ e.actor_kind }}) · <span data-testid="event-action">{{ e.action }}</span>{% for key, value in e.detail.items() %}{% if key != "correlation_id" %} · {{ key }}: {{ value }}{% endif %}{% endfor %}</li>{% endfor %}
   </ol>
 </section>

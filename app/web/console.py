@@ -8,6 +8,7 @@ HTMX only swaps search results in place; each page also works as a plain form wi
 
 from __future__ import annotations
 
+import json
 import secrets
 from collections.abc import Callable, Iterator
 from datetime import date
@@ -16,7 +17,7 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, sessionmaker
@@ -33,7 +34,7 @@ from app.domain.roles import NotPermitted, Role, approval_refusal, require_admin
 from app.persistence.models import Case
 from app.ports.customer_systems import CustomerSystemError
 from app.services import cases as svc
-from app.services import conventional, jobs, kill_switch, policies, policy_publishing, sessions
+from app.services import conventional, jobs, kill_switch, metrics, policies, policy_publishing, sessions
 from app.services.customer_config import CustomerConfig
 from app.services.instrumentation import events, system_events
 from app.services.systems import SystemsFactory
@@ -41,6 +42,7 @@ from app.services.write_path import SharedWritePath, approval_of, attempts_of, l
 from app.settings import AppSettings
 
 WEB_DIR = Path(__file__).resolve().parent
+DAY_ONE_DIR = WEB_DIR / "day_one"
 SESSION_COOKIE = "lsm_session"
 LOGIN_CSRF_COOKIE = "lsm_login_csrf"
 CSP = (
@@ -170,6 +172,7 @@ def install_console(
         context |= {
             "user": active.identity if active else None,
             "can_work": active is not None and active.identity.role in (Role.AGENT, Role.SUPERVISOR),
+            "can_see_metrics": active is not None and active.identity.role is not Role.AGENT,
             "csrf": active.csrf_token if active else "",
             "banner": banner(case),
             "case": case,
@@ -803,6 +806,31 @@ def install_console(
         case = request_case(s, active, request_id)
         result = write_path.check_status(s, active.identity, request_id, systems_for(svc.read_time(case)))
         return back_to(case, result.status)
+
+    # ---------- operational metrics and the day-one page ----------
+
+    @app.get("/metrics", response_class=HTMLResponse)
+    def metrics_page(request: Request, s: DB, active: User) -> HTMLResponse:
+        return render(request, "metrics.html", active, metrics=metrics.collect(s, active.identity))
+
+    def day_one_summary() -> dict[str, Any]:
+        loaded: dict[str, Any] = json.loads((DAY_ONE_DIR / "summary.json").read_text(encoding="utf-8"))
+        return loaded
+
+    @app.get("/day-one", response_class=HTMLResponse)
+    def day_one(request: Request, active: User) -> HTMLResponse:
+        """Aggregates exported from the discovery analysis (ADR-0062). The same roles as the metrics."""
+        metrics.require_metrics_reader(active.identity)
+        summary = day_one_summary()
+        return render(request, "day_one.html", active, summary=summary, charts=summary["charts"])
+
+    @app.get("/day-one/charts/{name}", response_model=None)
+    def day_one_chart(request: Request, active: User, name: str) -> Response:
+        """Behind sign-in, unlike `/static`. Only the charts the export lists, so a name can't reach any other file."""
+        metrics.require_metrics_reader(active.identity)
+        if name not in {chart["file"] for chart in day_one_summary()["charts"]}:
+            return render(request, "error.html", active, 404, title="Not found", message="There is no such chart.")
+        return FileResponse(DAY_ONE_DIR / name, media_type="image/png")
 
     # ---------- configuration: policy versions (administrators) and exact excerpts ----------
 

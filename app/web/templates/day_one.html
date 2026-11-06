@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Day-one discovery{% endblock %}
+{% block main %}
+<h1>Day-one discovery</h1>
+<p class="notice" role="note">SYNTHETIC history generated from documented assumptions. These numbers show the analysis method and restate those assumptions. They are not findings about a real company, and they are aggregates: no case appears here.</p>
+<section class="card" aria-labelledby="sum-h">
+  <h2 id="sum-h">The legacy queue over {{ summary.period }}</h2>
+  <dl class="record">
+    <dt>Requests</dt><dd data-testid="day-one-cases">{{ "{:,}".format(summary.cases) }}</dd>
+    <dt>Ended with the wrong points</dt><dd data-testid="day-one-failed">{{ "{:,}".format(summary.failed) }} ({{ summary.failed_percent }}%)</dd>
+    <dt>Under-credited</dt><dd>{{ "{:,}".format(summary.under_credited) }}</dd>
+    <dt>Over-credited</dt><dd>{{ "{:,}".format(summary.over_credited) }}</dd>
+    <dt>Predicted fixable without AI (pre-registered)</dt><dd>about {{ summary.predicted_share_b }}% of failures</dd>
+    <dt>Predicted to need AI (pre-registered)</dt><dd>about {{ summary.predicted_share_c }}% of failures</dd>
+  </dl>
+  <p class="muted">The predictions come from the defect catalog, written before any arm existed. The benchmark at Milestone 10 tests them.</p>
+</section>
+{% for chart in charts %}
+<section class="card" aria-labelledby="chart-{{ loop.index }}">
+  <h2 id="chart-{{ loop.index }}">{{ chart.title }}</h2>
+  <img src="/day-one/charts/{{ chart.file }}" alt="{{ chart.alt }}" width="{{ chart.width }}" height="{{ chart.height }}" class="chart">
+</section>
+{% endfor %}
+<section class="card" aria-labelledby="drv-h">
+  <h2 id="drv-h">Failure drivers, in numbers</h2>
+  <div class="table-wrap" tabindex="0" role="group" aria-label="Table, scrolls sideways on a narrow screen">
+  <table class="grid">
+    <caption class="sr-only">Failure drivers, most failures first</caption>
+    <thead><tr><th scope="col">Driver</th><th scope="col">Defect</th><th scope="col" class="num">Cases</th><th scope="col" class="num">Failed</th><th scope="col">Predicted fix</th></tr></thead>
+    <tbody>{% for d in summary.drivers %}<tr><td>{{ d.driver }}</td><td>{{ d.name }}</td><td class="num">{{ d.cases }}</td><td class="num">{{ d.failed }}</td><td>{{ d.predicted }}</td></tr>{% endfor %}</tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}

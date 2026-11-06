@@ -1,9 +1,10 @@
-"""The app: health and readiness, plus the server-rendered console for arm A (Milestone 5).
+"""The app: health and readiness, the server-rendered console for arms A and B, and the JSON API.
 
 Run: `uvicorn --factory app.main:create_app --port 8010`.
 - `/healthz`: the process is up.
 - `/readyz`: the app database answers and is at this code's schema revision, and the customer systems answer.
-- `/login`, `/queue`, `/cases/...`, `/approvals`: the Jinja2 + HTMX console (`app/web/console.py`).
+- `/login`, `/queue`, `/cases/...`, `/approvals`, `/metrics`, `/day-one`: the console (`app/web/console.py`).
+- `/api/v1/...`: the JSON API, with the same permissions (`app/api/router.py`).
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from app import __version__
+from app.api.router import install_api
 from app.persistence.database import make_engine, make_sessions
 from app.services.systems import SystemsFactory, mock_systems_factory
 from app.settings import AppSettings
@@ -65,5 +67,7 @@ def create_app(settings: AppSettings | None = None, systems_factory: SystemsFact
         ready = all(v == "ok" for v in checks.values())
         return JSONResponse({"status": "ready" if ready else "not_ready", **checks}, status_code=200 if ready else 503)
 
-    install_console(app, settings, make_sessions(engine), systems_factory or mock_systems_factory(settings))
+    systems_for = systems_factory or mock_systems_factory(settings)
+    install_console(app, settings, make_sessions(engine), systems_for)
+    install_api(app, settings, systems_for)
     return app
