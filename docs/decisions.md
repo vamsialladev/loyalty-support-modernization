@@ -867,3 +867,15 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **Why that isn't a win:** validation has one case in each minority class, and shares a phrase bank with dev. It can't tell the methods apart. The drift check found that neither recognises injection attempts (0 of 8), and safety doesn't rest on that. The dataset also has no out-of-scope-only or complaint-only requests, so those classes aren't measured (`docs/model-card-routing.md`).
 - **Result:** `tests/test_extraction.py`, `tests/test_routing_baseline.py`. Closes TD-31. Field-level scoring is Milestone 10.
 - **What would change this decision:** held-out or pilot data showing that rules miss real wording.
+
+## ADR-0069: Security hardening: scope, identity, limits, and what we reused
+- **Context:** Milestone 9. The console trusted that one deployment means one customer, had no rate limits, and had no enterprise sign-in or recovery.
+- **Customer scope:** options were one database per customer (strongest, and simplest to reason about); row scope in the app; Postgres row-level security. **Chosen: row scope in the app, tested,** because a real deployment here runs one customer per stack and this is the second layer. **It found a real bug on the first run:** the approvals list showed every customer's requests. RLS can be added later: it isn't needed for what's tested.
+- **OIDC:** options were Authlib, PyJWT plus our own flow, or a gateway in front. **Chosen: PyJWT for token checks, with a small authorization-code flow.** No cryptography of our own. Roles come from groups on every sign-in, and no mapped group means no access. An account deactivated here stays out. Verified against a real Keycloak in a real browser, 7 of 7 (`security/evidence/`).
+- **Rate limits:** in the database rather than in process memory, so that every process shares them and a restart doesn't reset them. Costs a write per request; Milestone 12 measures that.
+- **Machine tokens:** read-only by having no CSRF value, short-lived, stored as hashes, and shown as an auditor in the log.
+- **Retention:** removes personal data and keeps the audit trail and credits. Backups aren't touched, and that's stated. Legal hold beats both retention and erasure.
+- **Reuse (REUSE-08):** `hotel-ai-platform`'s input-blocking patterns and PII library: **not adopted.** Its model is to block at the door; here, an attack has nothing to act on, and spec C.7 says not to rely on a detector. A false block would also cost arm B a real claim. Its shared red-team corpus: **adopted,** copied at commit `3879d00`, and checked on business effects. Its own warning applies, because the cases were written beside its patterns.
+- **Trade-off:** tests are the only thing enforcing scope, so a new query can forget it. The route-walking test covers access, but not what a query returns.
+- **Result:** `tests/test_security_authz.py`, `tests/test_oidc.py`, `tests/test_red_team.py`, `tests/test_red_team_shared_corpus.py`; `security/` holds the rest.
+- **What would change this decision:** more than one customer sharing a deployment for real. Then add RLS, and test it on the actual connection (spec C.5).

@@ -8,7 +8,10 @@ HTMX only swaps search results in place; each page also works as a plain form wi
 
 from __future__ import annotations
 
+import csv
+import io
 import json
+import logging
 import secrets
 from collections.abc import Callable, Iterator
 from datetime import date
@@ -17,13 +20,15 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, File, Form, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app import correlation
 from app.adapters.local_demo_identity import LocalDemoIdentity
+from app.adapters.oidc_identity import OidcClient, OidcError, OidcSettings, provision
 from app.ai.harness import latest_run, request_cancel
 from app.arms.conventional.extraction import MAX_BYTES
 from app.arms.conventional.investigation import OTHER_MEMBER_TEXT
@@ -35,17 +40,31 @@ from app.domain.case_states import CaseState, InvalidTransition
 from app.domain.roles import NotPermitted, Role, approval_refusal, require_administrator, require_case_worker
 from app.persistence.models import Case
 from app.ports.customer_systems import CustomerSystemError
-from app.services import assisted, conventional, jobs, kill_switch, metrics, policies, policy_publishing, sessions
+from app.services import (
+    accounts,
+    assisted,
+    conventional,
+    jobs,
+    kill_switch,
+    metrics,
+    policies,
+    policy_publishing,
+    rate_limit,
+    retention,
+    sessions,
+)
 from app.services import cases as svc
 from app.services.customer_config import CustomerConfig
-from app.services.instrumentation import events, system_events
+from app.services.instrumentation import events, record_system, system_events
 from app.services.systems import SystemsFactory
 from app.services.write_path import SharedWritePath, approval_of, attempts_of, load_request, pending_approvals
 from app.settings import AppSettings
 
+log = logging.getLogger("app.console")
 WEB_DIR = Path(__file__).resolve().parent
 DAY_ONE_DIR = WEB_DIR / "day_one"
 SESSION_COOKIE = "lsm_session"
+OIDC_COOKIE = "lsm_oidc"
 MAX_UPLOAD_BYTES = MAX_BYTES
 LOGIN_CSRF_COOKIE = "lsm_login_csrf"
 CSP = (
@@ -106,7 +125,12 @@ def _signed_in(request: Request, s: DB) -> sessions.ActiveSession:
     active = sessions.resolve(s, request.app.state.identity, request.cookies.get(SESSION_COOKIE))
     if active is None:
         raise LoginRequired
+    rate_limit.hit(s, f"user:{active.identity.user_id}", request.app.state.rate_limit_per_minute, 60)
     return active
+
+
+def _address(request: Request) -> str:
+    return request.client.host if request.client else "unknown"
 
 
 User = Annotated[sessions.ActiveSession, Depends(_signed_in)]
@@ -118,6 +142,21 @@ def install_console(
 ) -> None:
     customer = CustomerConfig.load(settings.customer_id)
     ai_mode_label = assisted.mode_label(settings)
+    oidc = (
+        OidcClient(
+            OidcSettings(
+                settings.oidc_issuer_url,
+                settings.oidc_client_id,
+                settings.oidc_client_secret,
+                f"{settings.app_base_url}/auth/oidc/callback",
+                customer.oidc_group_roles,
+                settings.customer_id,
+            ),
+            app.state.oidc_http,
+        )
+        if settings.auth_mode == "oidc"
+        else None
+    )
     templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 
     def property_time(utc: str | None, property_name: str | None = None) -> str:
@@ -131,6 +170,7 @@ def install_console(
     app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="static")
     identity = LocalDemoIdentity(factory)
     app.state.sessions, app.state.identity = factory, identity
+    app.state.rate_limit_per_minute = settings.rate_limit_per_minute
     rules = LegacyRules.load(settings.customer_id)
     index = KeywordIndex.load()
     write_path = SharedWritePath(settings.customer_id, secret_key=settings.secret_key or None)
@@ -202,9 +242,39 @@ def install_console(
     def _csrf(request: Request, exc: CsrfFailed) -> Response:
         return render(request, "error.html", None, 403, title="Request refused", message="The form expired. Reload.")
 
+    def _audit_denial(request: Request, action: str) -> None:
+        """Security events (C.10): what was refused, and where. Never the request's content."""
+        with factory() as s:
+            record_system(s, jobs.SYSTEM, action, path=request.url.path[:120], method=request.method)
+            s.commit()
+
     @app.exception_handler(NotPermitted)
     def _forbidden(request: Request, exc: NotPermitted) -> Response:
+        _audit_denial(request, "authorization_denied")
         return render(request, "error.html", None, 403, title="Not permitted", message=str(exc))
+
+    @app.exception_handler(rate_limit.RateLimited)
+    def _too_many(request: Request, exc: rate_limit.RateLimited) -> Response:
+        _audit_denial(request, "rate_limited")
+        message = "Too many requests. Wait a little and try again."
+        response = render(request, "error.html", None, 429, title="Slow down", message=message)
+        response.headers["Retry-After"] = str(exc.retry_after_seconds)
+        return response
+
+    @app.exception_handler(accounts.AccountError)
+    def _account(request: Request, exc: accounts.AccountError) -> Response:
+        return render(request, "error.html", None, 409, title="Not possible", message=str(exc))
+
+    @app.exception_handler(Exception)
+    def _unexpected(request: Request, exc: Exception) -> Response:
+        """No stack trace reaches a person (C.7). The reference finds the details in the log."""
+        reference = correlation.current() or correlation.new_id()
+        log.exception("unexpected error %s on %s", reference, request.url.path)
+        if request.url.path.startswith("/api/"):
+            body = {"title": "Something went wrong", "status": 500, "code": "internal", "reference": reference}
+            return JSONResponse(body, status_code=500, media_type="application/problem+json")
+        message = f"Something went wrong on our side. The reference is {reference}."
+        return render(request, "error.html", None, 500, title="Something went wrong", message=message)
 
     @app.exception_handler(svc.WorkflowError)
     def _workflow(request: Request, exc: svc.WorkflowError) -> Response:
@@ -243,7 +313,8 @@ def install_console(
     @app.get("/login", response_class=HTMLResponse)
     def login_page(request: Request, failed: bool = False) -> HTMLResponse:
         token = secrets.token_urlsafe(24)
-        response = render(request, "login.html", None, 401 if failed else 200, failed=failed, login_csrf=token)
+        status = 401 if failed else 200
+        response = render(request, "login.html", None, status, failed=failed, login_csrf=token, oidc=oidc is not None)
         response.set_cookie(
             LOGIN_CSRF_COOKIE, token, httponly=True, samesite="strict", secure=settings.cookie_secure, max_age=900
         )
@@ -260,9 +331,17 @@ def install_console(
         cookie = request.cookies.get(LOGIN_CSRF_COOKIE, "")
         if not cookie or not secrets.compare_digest(cookie, login_csrf):
             raise CsrfFailed
+        if oidc is not None:
+            raise svc.WorkflowError("this deployment signs in through the identity provider")
+        address = _address(request)
+        rate_limit.check_login(s, username, address)
         who = identity.authenticate(username, password)
         if who is None:
+            rate_limit.record_login_failure(s, username, address)
+            record_system(s, jobs.SYSTEM, "sign_in_failed", method="password")
+            s.commit()
             return RedirectResponse("/login?failed=true", status_code=303)
+        rate_limit.clear_login_failures(s, username)
         token, _csrf = sessions.start(s, who)
         response = RedirectResponse("/admin" if who.role is Role.ADMINISTRATOR else "/queue", status_code=303)
         response.set_cookie(
@@ -273,6 +352,83 @@ def install_console(
             secure=settings.cookie_secure,
             max_age=sessions.SESSION_HOURS * 3600,
         )
+        response.delete_cookie(LOGIN_CSRF_COOKIE)
+        return response
+
+    @app.get("/auth/oidc/start", response_model=None)
+    def oidc_start() -> Response:
+        if oidc is None:
+            return RedirectResponse("/login", status_code=303)
+        begun = oidc.start()
+        response = RedirectResponse(begun.url, status_code=303)
+        value = f"{begun.state}|{begun.nonce}|{begun.verifier}"
+        # Lax, not Strict: the provider sends the browser back from another site, and this cookie must come along.
+        response.set_cookie(
+            OIDC_COOKIE, value, httponly=True, samesite="lax", secure=settings.cookie_secure, max_age=600
+        )
+        return response
+
+    @app.get("/auth/oidc/callback", response_model=None)
+    def oidc_callback(request: Request, s: DB, code: str = "", state: str = "") -> Response:
+        failed = render(
+            request, "error.html", None, 401, title="Sign-in failed", message="Sign-in didn't work. Try again."
+        )
+        parts = request.cookies.get(OIDC_COOKIE, "").split("|")
+        if oidc is None or len(parts) != 3 or not state or not secrets.compare_digest(parts[0], state) or not code:
+            record_system(s, jobs.SYSTEM, "sign_in_failed", method="oidc", reason="state")
+            s.commit()
+            return failed
+        try:
+            claims = oidc.verify(oidc.exchange(code, parts[2]), parts[1])
+            who = provision(s, claims, oidc.settings)
+        except OidcError as exc:
+            record_system(s, jobs.SYSTEM, "sign_in_failed", method="oidc", reason=str(exc)[:48])
+            s.commit()
+            return failed
+        token, _csrf = sessions.start(s, who)
+        target = "/admin" if who.role is Role.ADMINISTRATOR else "/queue"
+        # A plain page, not a redirect: a Strict cookie isn't sent on a chain that began on another site.
+        html = f'<!doctype html><meta http-equiv="refresh" content="0;url={target}"><a href="{target}">Continue</a>'
+        response = HTMLResponse(html)
+        response.set_cookie(
+            SESSION_COOKIE,
+            token,
+            httponly=True,
+            samesite="strict",
+            secure=settings.cookie_secure,
+            max_age=sessions.SESSION_HOURS * 3600,
+        )
+        response.delete_cookie(OIDC_COOKIE)
+        return response
+
+    @app.get("/recover", response_class=HTMLResponse)
+    def recover_page(request: Request, token: str = "") -> HTMLResponse:
+        login_token = secrets.token_urlsafe(24)
+        response = render(request, "recover.html", None, token=token, login_csrf=login_token)
+        response.set_cookie(
+            LOGIN_CSRF_COOKIE, login_token, httponly=True, samesite="strict", secure=settings.cookie_secure, max_age=900
+        )
+        return response
+
+    @app.post("/recover", response_model=None)
+    def recover(
+        request: Request,
+        s: DB,
+        token: Annotated[str, Form()],
+        password: Annotated[str, Form()],
+        login_csrf: Annotated[str, Form()] = "",
+    ) -> Response:
+        cookie = request.cookies.get(LOGIN_CSRF_COOKIE, "")
+        if not cookie or not secrets.compare_digest(cookie, login_csrf):
+            raise CsrfFailed
+        address = _address(request)
+        rate_limit.check_login(s, "recovery", address)
+        try:
+            accounts.redeem_recovery(s, token, password)
+        except accounts.AccountError:
+            rate_limit.record_login_failure(s, "recovery", address)
+            raise
+        response = RedirectResponse("/login", status_code=303)
         response.delete_cookie(LOGIN_CSRF_COOKIE)
         return response
 
@@ -881,6 +1037,99 @@ def install_console(
             switch=kill_switch.state(s),
             switch_engaged=kill_switch.is_engaged(s),
         )
+
+    @app.get("/admin/users", response_class=HTMLResponse)
+    def admin_users(request: Request, s: DB, active: User, issued: str = "") -> HTMLResponse:
+        require_administrator(active.identity)
+        return render(
+            request,
+            "admin_users.html",
+            active,
+            users=accounts.users_of(s, active.identity),
+            tokens=accounts.api_tokens_of(s, active.identity),
+            message=issued,
+        )
+
+    @app.post("/admin/users/{user_id}/active", response_model=None)
+    def admin_set_active(s: DB, active: User, user_id: int, value: Annotated[str, Form()], csrf: Csrf = "") -> Response:
+        check_csrf(active, csrf)
+        accounts.set_active(s, active.identity, user_id, value == "on")
+        return RedirectResponse("/admin/users", status_code=303)
+
+    @app.post("/admin/users/{user_id}/recovery", response_class=HTMLResponse)
+    def admin_recovery(request: Request, s: DB, active: User, user_id: int, csrf: Csrf = "") -> HTMLResponse:
+        check_csrf(active, csrf)
+        token = accounts.issue_recovery(s, active.identity, user_id)
+        link = f"{settings.app_base_url}/recover?token={token}"
+        return render(request, "admin_shown_once.html", active, heading="Recovery link", value=link)
+
+    @app.post("/admin/api-tokens", response_class=HTMLResponse)
+    def admin_api_token(
+        request: Request, s: DB, active: User, name: Annotated[str, Form()], csrf: Csrf = ""
+    ) -> HTMLResponse:
+        check_csrf(active, csrf)
+        issued = accounts.issue_api_token(s, active.identity, name)
+        return render(request, "admin_shown_once.html", active, heading="API token", value=issued.token)
+
+    @app.post("/admin/api-tokens/revoke", response_model=None)
+    def admin_api_token_revoke(s: DB, active: User, name: Annotated[str, Form()], csrf: Csrf = "") -> Response:
+        check_csrf(active, csrf)
+        accounts.revoke_api_token(s, active.identity, name)
+        return RedirectResponse("/admin/users", status_code=303)
+
+    @app.get("/admin/access-review.csv", response_model=None)
+    def access_review(s: DB, active: User) -> Response:
+        rows = accounts.access_review_rows(s, active.identity)
+        out = io.StringIO()
+        writer = csv.DictWriter(out, fieldnames=["username", "role", "active", "source", "last_sign_in_utc"])
+        writer.writeheader()
+        writer.writerows(rows)
+        headers = {"Content-Disposition": 'attachment; filename="access-review.csv"'}
+        return Response(out.getvalue(), media_type="text/csv", headers=headers)
+
+    def _admin_case(s: Session, active: sessions.ActiveSession, reference: str) -> Case:
+        require_administrator(active.identity)
+        case = s.scalars(select(Case).where(Case.reference == reference.strip())).first()
+        if case is None or case.customer_id != active.identity.customer_id:
+            raise svc.CaseNotFound(reference)
+        return case
+
+    @app.post("/admin/legal-hold", response_model=None)
+    def legal_hold(
+        s: DB,
+        active: User,
+        reference: Annotated[str, Form()],
+        hold: Annotated[str, Form()],
+        reason: Annotated[str, Form()],
+        csrf: Csrf = "",
+    ) -> Response:
+        check_csrf(active, csrf)
+        if not reason.strip():
+            raise svc.WorkflowError("give the reason")
+        retention.set_legal_hold(s, active.identity, _admin_case(s, active, reference), hold == "on", reason)
+        return RedirectResponse("/admin/users", status_code=303)
+
+    @app.post("/admin/data-subject/export", response_model=None)
+    def data_subject_export(s: DB, active: User, member_number: Annotated[str, Form()], csrf: Csrf = "") -> Response:
+        check_csrf(active, csrf)
+        data = retention.export_member(s, active.identity, member_number.strip())
+        headers = {"Content-Disposition": 'attachment; filename="member-export.json"'}
+        return JSONResponse(data, headers=headers)
+
+    @app.post("/admin/data-subject/erase", response_class=HTMLResponse)
+    def data_subject_erase(
+        request: Request,
+        s: DB,
+        active: User,
+        member_number: Annotated[str, Form()],
+        confirm: Annotated[str, Form()] = "",
+        csrf: Csrf = "",
+    ) -> HTMLResponse:
+        check_csrf(active, csrf)
+        if confirm.strip() != member_number.strip():
+            raise svc.WorkflowError("type the member number again to confirm")
+        report = retention.erase_member(s, active.identity, member_number.strip())
+        return render(request, "admin_shown_once.html", active, heading="Erasure done", value=str(report))
 
     @app.post("/admin/kill-switch", response_model=None)
     def set_kill_switch(

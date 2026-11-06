@@ -35,6 +35,8 @@ input[type="checkbox"] { width: auto; }
 button { font: inherit; margin-top: var(--space); padding: 6px calc(var(--space) * 2); border: 1px solid var(--primary);
   border-radius: var(--radius); background: var(--primary); color: #fff; cursor: pointer; }
 button.secondary { background: #fff; color: var(--primary); }
+a.button { display: inline-block; padding: 6px calc(var(--space) * 2); border-radius: var(--radius); background: var(--primary);
+  color: #fff; text-decoration: none; }
 button.link { background: none; border: none; color: var(--primary); text-decoration: underline; padding: 0; margin: 0; }
 button[disabled] { background: #c9c4ba; border-color: #c9c4ba; color: #3b3f3c; cursor: not-allowed; }
 form + form { margin-top: calc(var(--space) * 2); }

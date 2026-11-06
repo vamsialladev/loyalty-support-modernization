@@ -6,6 +6,9 @@
   <p class="muted">Local demo accounts: <code>agent.ana</code>, <code>agent.ben</code>, <code>supervisor.sam</code>,
     <code>supervisor.sky</code>. The password is <code>DEMO_USER_PASSWORD</code> in your <code>.env</code>.</p>
   {% if failed %}<p class="error" role="alert">That username and password don't match an active account.</p>{% endif %}
+  {% if oidc %}
+  <p><a class="button" href="/auth/oidc/start" data-testid="oidc-start">Sign in with your company account</a></p>
+  {% else %}
   <form method="post" action="/login">
     <input type="hidden" name="login_csrf" value="{{ login_csrf }}">
     <label for="username">Username</label>
@@ -14,5 +17,6 @@
     <input id="password" name="password" type="password" autocomplete="current-password" required>
     <button type="submit">Sign in</button>
   </form>
+  {% endif %}
 </section>
 {% endblock %}

@@ -96,6 +96,8 @@ def create_case(
 ) -> Case:
     """The arm is fixed here and never changes: nothing offers a way to move a case between arms."""
     require_case_worker(who)
+    if customer_id != who.customer_id:
+        raise NotPermitted("this account works for another customer")
     if not request.text.strip():
         raise WorkflowError("the request text is empty")
     if arm not in ARMS:
@@ -134,7 +136,7 @@ def list_cases(
     arm: str | None = None,
 ) -> list[Case]:
     require_case_reader(who)
-    query = select(Case).where(Case.queue == queue)
+    query = select(Case).where(Case.queue == queue, Case.customer_id == who.customer_id)
     if arm:
         query = query.where(Case.arm == arm)
     if status:
@@ -147,7 +149,7 @@ def list_cases(
 def get_case(s: Session, who: Identity, case_id: int) -> Case:
     require_case_reader(who)  # every action that changes a case checks `require_case_worker` itself
     case = s.get(Case, case_id)
-    if case is None:
+    if case is None or case.customer_id != who.customer_id:  # another customer's case doesn't exist for this person
         raise CaseNotFound(case_id)
     return case
 

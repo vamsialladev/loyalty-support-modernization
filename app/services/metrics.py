@@ -86,7 +86,7 @@ def collect(s: Session, who: Identity) -> Metrics:
     closes: dict[tuple[str, str], list[float]] = {}
     statuses: dict[tuple[str, str], Counter[str]] = {}
     results: dict[tuple[str, str], Counter[str]] = {}
-    for case in s.scalars(select(Case)):
+    for case in s.scalars(select(Case).where(Case.customer_id == who.customer_id)):
         events = events_by_case.get(case.id, [])
         key = (case.arm, _worked_by(events))
         stats = table.setdefault(key, ArmMetrics(*key))

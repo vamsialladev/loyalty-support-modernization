@@ -9,7 +9,19 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import JSON, BigInteger, ForeignKey, Index, Integer, LargeBinary, String, Text, UniqueConstraint, text
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    ForeignKey,
+    Index,
+    Integer,
+    LargeBinary,
+    String,
+    Text,
+    UniqueConstraint,
+    false,
+    text,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 LIVE_CREDIT = "status IN ('executing', 'execution_unknown', 'executed', 'execution_conflict')"
@@ -28,6 +40,44 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     active: Mapped[bool] = mapped_column(default=True)
     created_at_utc: Mapped[str] = mapped_column(String(20))
+    external_id: Mapped[str | None] = mapped_column(String(255), default=None)  # issuer|subject, for OIDC sign-in
+    customer_id: Mapped[str] = mapped_column(String(32), default="hg-demo", server_default="hg-demo")
+
+    __table_args__ = (Index("uq_users_external_id", "external_id", unique=True),)
+
+
+class RateLimit(Base):
+    """One counter per key and window, shared by every web process (`app/services/rate_limit.py`)."""
+
+    __tablename__ = "rate_limits"
+    key: Mapped[str] = mapped_column(String(160), primary_key=True)
+    window_start: Mapped[int] = mapped_column(Integer)
+    hits: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class RecoveryToken(Base):
+    """A one-use password recovery link. Only its SHA-256 is stored."""
+
+    __tablename__ = "recovery_tokens"
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_by: Mapped[str] = mapped_column(String(64))
+    created_at_utc: Mapped[str] = mapped_column(String(20))
+    expires_at_utc: Mapped[str] = mapped_column(String(20))
+    used_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
+
+
+class ApiToken(Base):
+    """A read-only, short-lived token for another system. Only its SHA-256 is stored."""
+
+    __tablename__ = "api_tokens"
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(64))
+    customer_id: Mapped[str] = mapped_column(String(32))
+    created_by: Mapped[str] = mapped_column(String(64))
+    created_at_utc: Mapped[str] = mapped_column(String(20))
+    expires_at_utc: Mapped[str] = mapped_column(String(20))
+    revoked_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
 
 
 class UserSession(Base):
@@ -61,6 +111,8 @@ class Case(Base):
     sim_now_utc: Mapped[str | None] = mapped_column(String(20), default=None)
     # Arm B: one case per stay, linked when a message claims several. The supervisor limit covers the group (ADR-0062).
     group_ref: Mapped[str | None] = mapped_column(String(32), default=None, index=True)
+    legal_hold: Mapped[bool] = mapped_column(default=False, server_default=false())
+    personal_data_removed_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
     version: Mapped[int] = mapped_column(Integer, default=1)
     created_at_utc: Mapped[str] = mapped_column(String(20))
     updated_at_utc: Mapped[str] = mapped_column(String(20))

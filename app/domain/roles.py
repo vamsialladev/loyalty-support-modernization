@@ -24,6 +24,7 @@ class Identity:
     username: str
     display_name: str
     role: Role
+    customer_id: str = "hg-demo"  # records of any other customer don't exist for this person (spec C.5)
 
 
 class NotPermitted(Exception):

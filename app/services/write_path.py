@@ -129,7 +129,8 @@ def _permit(who: Identity, row: AdjustmentRequestRow) -> None:
 
 
 def pending_approvals(s: Session, who: Identity) -> list[tuple[AdjustmentRequestRow, Case]]:
-    """The supervisor's queue. Requests the viewer made themselves are listed but cannot be decided by them."""
+    """The supervisor's queue, for their own customer only (spec C.5). Requests the viewer made themselves are listed
+    but cannot be decided by them."""
     rows = s.scalars(
         select(AdjustmentRequestRow).where(AdjustmentRequestRow.status == "pending").order_by(AdjustmentRequestRow.id)
     )
@@ -137,7 +138,8 @@ def pending_approvals(s: Session, who: Identity) -> list[tuple[AdjustmentRequest
     for row in rows:
         case = s.get(Case, row.case_id)
         assert case is not None
-        out.append((row, case))
+        if case.customer_id == who.customer_id:
+            out.append((row, case))
     return out
 
 

@@ -27,8 +27,8 @@ from app.domain.case_states import InvalidTransition
 from app.domain.roles import NotPermitted, require_case_reader
 from app.persistence.models import AdjustmentRequestRow, Case, Recommendation
 from app.ports.customer_systems import CustomerSystemError
+from app.services import accounts, conventional, jobs, metrics, policies, rate_limit, sessions
 from app.services import cases as svc
-from app.services import conventional, jobs, metrics, policies, sessions
 from app.services.instrumentation import events
 from app.services.systems import SystemsFactory
 from app.services.write_path import SharedWritePath, approval_of, attempts_of, load_request
@@ -67,6 +67,10 @@ def _to_problem(exc: Exception) -> JSONResponse:
         return problem_response(422, "invalid_request", "The request isn't valid", ", ".join(fields))
     if isinstance(exc, CustomerSystemError):
         return problem_response(502, "upstream", "Customer system error", exc.code or type(exc).__name__)
+    if isinstance(exc, rate_limit.RateLimited):
+        response = problem_response(429, "rate_limited", "Too many requests")
+        response.headers["Retry-After"] = str(exc.retry_after_seconds)
+        return response
     raise exc
 
 
@@ -87,6 +91,7 @@ class ProblemRoute(APIRoute):
                 InvalidTransition,
                 RequestValidationError,
                 CustomerSystemError,
+                rate_limit.RateLimited,
             ) as exc:
                 return _to_problem(exc)
 
@@ -174,9 +179,17 @@ DB = Annotated[Session, Depends(db)]
 
 
 def signed_in(request: Request, s: DB) -> sessions.ActiveSession:
+    """A person's session, or a machine's read-only bearer token. A token carries no CSRF value, so it can't change
+    anything."""
     active = sessions.resolve(s, request.app.state.identity, request.cookies.get(SESSION_COOKIE))
     if active is None:
-        raise Problem(401, "not_signed_in", "Sign in first")
+        bearer = request.headers.get("authorization", "")
+        token = bearer[7:].strip() if bearer.lower().startswith("bearer ") else None
+        machine = accounts.identity_for_api_token(s, token)
+        if machine is None:
+            raise Problem(401, "not_signed_in", "Sign in first")
+        active = sessions.ActiveSession(machine, "")
+    rate_limit.hit(s, f"user:{active.identity.username}", request.app.state.rate_limit_per_minute, 60)
     return active
 
 
@@ -214,7 +227,7 @@ def build_router(settings: AppSettings, systems_for: SystemsFactory) -> APIRoute
         limit: Annotated[int, Query(ge=1, le=MAX_PAGE)] = 50,
     ) -> api.CasePage:
         require_case_reader(active.identity)
-        query = select(Case)
+        query = select(Case).where(Case.customer_id == active.identity.customer_id)
         if queue:
             query = query.where(Case.queue == queue)
         if case_status:
@@ -315,6 +328,8 @@ def build_router(settings: AppSettings, systems_for: SystemsFactory) -> APIRoute
     ) -> tuple[AdjustmentRequestRow, Case]:
         require_case_reader(active.identity)
         row, case = load_request(s, request_id)
+        if case.customer_id != active.identity.customer_id:
+            raise svc.CaseNotFound(request_id)
         return row, case
 
     @router.get("/adjustments/{request_id}", response_model=api.AdjustmentOut)
@@ -363,7 +378,7 @@ def build_router(settings: AppSettings, systems_for: SystemsFactory) -> APIRoute
 
     @router.get("/policies/{policy_id}/v{version}/{section_id}", response_model=api.ExcerptOut)
     def excerpt(s: DB, active: Reader, policy_id: str, version: int, section_id: str) -> api.ExcerptOut:
-        cited = policies.excerpt(s, settings.customer_id, policy_id, version, section_id)
+        cited = policies.excerpt(s, active.identity.customer_id, policy_id, version, section_id)
         if cited is None:
             raise Problem(404, "not_found", "There is no such excerpt")
         return api.ExcerptOut(
