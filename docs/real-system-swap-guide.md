@@ -140,3 +140,19 @@ deployment.
 - **Starter kit vs customer-specific.** Reusable: `jobs.py`, `worker.py`, `approval_binding.py`, `kill_switch.py`, the four-step
   execution, the outcome table, `app-owner.sql`, the publishing flow. Customer-specific: rule fields and golden cases, policy
   text, `settle_seconds` and approval expiry, each arm's `ArmReview`, the adjustment's business fields.
+
+## Arm B on a real platform (Milestone 7)
+
+| What arm B assumes | Mock API | Ask a real vendor | If they don't have it |
+|---|---|---|---|
+| Search members by family name | `familyName`, ignoring case and accents (contract 1.1.0) | Is there a name search? Is it exact, and is it rate-limited? | D13 and D18 fall back to asking the member |
+| Find a stay by partner confirmation | `partnerConfirmation` | Is the OTA's number indexed? | D05 stays unfixed: ask for the hotel's number |
+| A posting queue feed | `/v1/posting-queue` | Is there one? How late can it be? | D06 can't be seen: wait longer before crediting |
+| Reverse lookup of merged numbers | `merged_into` on a member | Can we follow merges both ways? | Only stays that carry the old number find it |
+| Several reads per investigation | No limit | What's the rate limit? Is there a claim-lookup call? | Cache within one investigation; check the invalidation first |
+
+**Customer-specific (a new customer changes these):** `config/conventional/<customer>.yaml` (nicknames, synonyms),
+`config/customers/<customer>.yaml`, the `PROMPTS` wording, the language lists in `app/arms/conventional/signals.py`.
+
+**Starter kit (reusable as they are):** the two-identifier rule, the group limit under row locks, the consolidated evidence pattern,
+the override log, the JSON API's problem documents, the arm fence test.

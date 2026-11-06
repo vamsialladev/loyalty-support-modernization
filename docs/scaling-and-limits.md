@@ -72,3 +72,10 @@ the primary database. The queue itself is unlikely to be first.
 
 **Team size:** the write path takes care to change. A second engineer can add an arm without touching it, because arms plug in
 through `arm_review.review_for`.
+
+## Arm B and the console (Milestone 7)
+- **Reads per investigation:** several customer-system calls, more when a member has linked profiles. Not measured under load: Milestone 12.
+- **What breaks first:** the family-name search on a real platform, then the metrics page, which scans whole tables (TD-33).
+- **Row locks:** the group limit locks one group's cases for one short transaction, with no customer call inside it, so unrelated cases
+  don't wait on each other.
+- **Not measured yet:** throughput, and page times under load. No number here is a result.

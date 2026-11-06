@@ -44,3 +44,9 @@
   real Postgres), Data Engineer (policy store, provenance, validation of missing, conflicting and stale data), Solutions
   Architect (the questions for a real platform's write API), Responsible AI / Governance (human approval bound to the exact
   action; publishing controls), ML Engineer / Applied Scientist (engine checked against the labeler on the dev split only).
+- **M7:** Forward Deployed Engineer (each fix mapped to a pre-registered defect; arm-differences page), Backend / Platform Engineer
+  (durable investigation, group limit under row locks, JSON API with a published contract), Frontend Engineer (the complete
+  server-rendered console, states, axe and keyboard checks), QA / Test Engineer (per-defect tests on dev, browser suite, race tests),
+  Staff / Principal (fence around the baseline, ADR-0063 and ADR-0064), Data Engineer (validation flags, day-one export with a trace
+  test), Security Engineer (two identifiers, another member's data never stored, strict request bodies), Executive sponsor (phase 3
+  brief), Solutions Architect (what arm B needs from a real platform).

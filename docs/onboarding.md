@@ -294,6 +294,38 @@ The kill switch is on the Configuration page; sign in as `admin.ada`. `auditor.a
 
 **Starter kit vs customer-specific:** see the swap guide's Milestone 6 section.
 
+## 4f. Arm B, in one page (Milestone 7)
+
+**Try it.** Sign in as `agent.ana`, choose **New case**, pick **Arm B**, and describe a request. Or load dev cases:
+
+```powershell
+uv run python -m benchmarks.intake --split dev --limit 10 --arm B
+```
+
+Open a case and press **Investigate**. The worker does the reading, so **the worker must be running** (`stack.ps1 -Action up` starts it).
+
+**What happens, in order** (`app/arms/conventional/investigation.py`):
+1. Who is asking: candidates from the number, the email and the family name. Two identifiers must match.
+2. Which stay: exact number, partner number, missing prefix, near match within this member's stays, or an unmistakable date.
+3. One read: stay records, ledger on every linked profile, posting queue. This same code runs again for each re-check.
+4. The eligibility engine decides (`app/domain/eligibility.py`). Rules on the message can only send it to a person.
+5. One evidence snapshot and one `recommendations` row are stored. The latest row counts.
+
+**Where to look when something's wrong**
+
+| Symptom | Likely cause | Check |
+|---|---|---|
+| "The worker has this" never ends | The worker isn't running | `docker ps`, then the worker's log |
+| "The investigation couldn't finish" | The customer system refused us | The code on the page; `/admin` for dead jobs; press Investigate again |
+| Always `second_identifier` | The message has one identifier | That's the two-identifier rule, not a bug |
+| A credit is refused after approval | The facts changed | `invalidated-reason` on the case |
+| `test_arm_a_fence` fails | Shared code changed arm A | **Fix the change. Don't regenerate the fence** unless the owner approved a change to arm A |
+
+**Arm B's JSON API** is at `/api/v1`, with the console's session and an `X-CSRF-Token` header. `GET /api/v1/me` gives you the token.
+After changing the API, run `uv run python -m app.api.contract --write` and look at the difference.
+
+**The rule to remember:** nothing an agent or a member types can set an amount. The only route to a credit is the engine's own result.
+
 ## 5. Common failure modes so far
 - **`ModuleNotFoundError: app`** when running pytest outside `uv run`: use `uv run pytest`.
 - **Preflight says NOT READY:** expected with an empty `.env`; it lists exactly which settings are missing.

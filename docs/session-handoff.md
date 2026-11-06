@@ -1,10 +1,10 @@
 # Session handoff
 
-**Updated:** 2026-11-05, after Milestone 6 and the upgrade fix, with the owner's stack upgraded. Milestone 7 planning is next.
+**Updated:** 2026-11-06, after Milestone 7. Milestone 8 is next, starting with its RFC.
 
 ## Where things stand
-- Milestones 1-6 are on `main` in the **private** GitHub repository, merged through pull requests #3 to #11 (#11 is the upgrade fix below). Latest
-  results: `docs/verification-log.md`, section "Milestone 6".
+- Milestones 1-7 are on `main` in the **private** GitHub repository, merged through pull requests #3 to #16. Latest results:
+  `docs/verification-log.md`, section "Milestone 7".
 - **Work on a branch and open a pull request.** Merge with a merge commit, not squash or rebase, so cited hashes stay valid.
   **Standing permission for Milestones 7-20 (`CLAUDE.md`): push, open pull requests and merge when CI is green.** Push with:
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (two accounts are signed in to `gh`).
@@ -18,12 +18,16 @@
 3. **The Codex exercise**, whenever convenient: `docs/exercises/codex-reconciliation-review.md`. It needs your Codex account.
 4. **The email block:** tick "Block command line pushes that expose my email" again, if not done already.
 
-## The Milestone 6 exercise (K.1)
-Answered and recorded in `docs/owner-exercises.md`.
+## The Milestone 7 exercise (K.1)
+Arm B wants two matching identifiers before it treats someone as the member. Arm A accepts an exact member number alone. So at
+Milestone 10, arm B may do worse than arm A on some simple cases, by asking when arm A would just credit the points.
+
+**Should we relax arm B's rule to one identifier when the number is exact, to raise its score? Give your reasoning, including what
+could go wrong, and what fairness rule applies if we change it after seeing results.** Your answer goes in `docs/owner-exercises.md`.
 
 ## Known and open
 - **Upgrade tests must use a volume built by the old code.** A faked old state passed while the real one failed (ADR-0058,
-  updated; verification log, Milestone 6, rows 45-50). Milestone 7's migrations get checked by `scripts\upgrade_check_m5.ps1`
+  updated; verification log, Milestone 6, rows 45-50). New migrations get checked by `scripts\upgrade_check_m5.ps1`
   through the compose check, which runs it automatically.
 - **Local test runs are slow under load.** The offline suite took 35 min 6 s here, against about 3 min on CI, at 99-100% CPU.
   Another project's server and a screen recorder were using 3-4 cores. The compose check once failed on a health check because of
@@ -56,14 +60,18 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 powershell -ExecutionPolicy Bypass -File scripts\compose_check.ps1 -Browser
 ```
 
-3. Follow the standing instructions in `CLAUDE.md`. Milestone 7's choices are in ADR-0062.
+3. Follow the standing instructions in `CLAUDE.md`.
 
-## Milestone 7 scope (spec N.1 item 7; Appendix C)
-- Arm B: corrected rules through `app/domain/eligibility.py`, consolidated evidence, better search (synonyms, D12), validation.
-- It plugs in through `app/services/arm_review.py::review_for`, with arm B's view of the evidence in the hash.
-- The complete server-rendered console (UI-01, B.13), and the JSON API moved here (API-01, API-02).
-- Playwright: the happy path and the self-approval block for arm B, plus reopening and reconciliation in the browser (TEST-05).
-- `docs/executive-brief.md` at the end of the core-build phase.
+## Milestone 8 scope (spec N.1 item 8; Appendix C)
+- **An RFC first** (`docs/rfcs/`), as `CLAUDE.md` asks: the AI loop and the harness.
+- Arm C: arm B plus the model. It plugs in at `arm_review.review_for`, and the investigation job is where its loop runs. The engine still decides.
+- **D22's clean-folio OCR must land here (TD-31), or arm B is unfairly weak at Milestone 10.** Decide with the extraction work.
+- Done when: every loop stop condition and injection test passes on the mock provider; the Claude provider is implemented, and its live smoke test is run or marked NOT RUN.
+- **Ask the owner before the live run:** it costs API money and needs `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` in `.env`.
+
+## Trying arm B on your own stack
+`stack.ps1 -Action up` rebuilds and migrates to `0008`; your data stays. Then load cases with
+`uv run python -m benchmarks.intake --split dev --limit 10 --arm B`. Steps are in `docs/onboarding.md` §4f.
 
 ## Blockers
-None for Milestone 7. Milestone 8's live run needs `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` in `.env`.
+None for starting Milestone 8. Milestone 8's live run needs `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` in `.env`.
