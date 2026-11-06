@@ -764,3 +764,26 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   an insert referencing a case holds a key-share lock that `FOR UPDATE` conflicts with (now `FOR NO KEY UPDATE`), and the unique
   index's refusal surfaced during a flush, outside the `try` (widened).
 - **What would change this decision:** a real platform's measured lookup lag and key retention (swap guide), or a load test.
+
+## ADR-0062: Milestone 7's three choices, and the owner's standing instructions
+- **Context:** Milestone 7 builds arm B. Three design points needed the owner's call, and they touch fairness: the mock API has
+  no name search, policy section 6 sets the supervisor limit per case, and the app may not read discovery data. On 2026-11-05
+  the owner approved the recommended choices, "as long as they don't weaken safety or the benchmark's fairness", and gave
+  standing instructions for Milestones 7-20 (`CLAUDE.md`).
+- **Options considered and decisions:**
+  - **Name search.** Without it a mistyped member number can't produce candidates, so D13 and D18 couldn't get their fair fix
+    (F9). Options: fuzzy matching only over email and phone; an additive `lastName` filter on the mock API's member search.
+    **Chosen: the additive filter, contract 1.1.0.** Arm A's screens don't call it, so its D13 and D18 stay. A candidate still
+    needs two matching identifiers before it counts as the member, so a name match alone never moves points.
+  - **Per-case supervisor limit.** A case per stay would be simplest, but splitting a request could slip under the 20,000
+    point limit. Options: several credits inside one case (changes the proven write path); one case per stay, linked as a
+    group. **Chosen: one case per stay, with `group_ref`,** and the limit is checked on the group's total when any request in
+    it is made. The write path doesn't change. A group over the limit escalates as a whole.
+  - **Day-one page.** The app can't import the analysis or read the history. **Chosen: `discovery_analysis` exports aggregate counts
+    and charts into `app/web/static/day-one/`; a test checks they trace to the committed report.** No per-case rows and no labels.
+    Supervisors, administrators and auditors can open it; agents don't need it for casework.
+- **Trade-off:** the group limit adds one rule outside the write path, so it needs its own concurrency test: two agents in one
+  group at once mustn't both pass. The name filter is a contract change a real vendor might not offer (swap guide).
+- **Result:** recorded as Milestone 7 lands.
+- **What would change this decision:** a real platform with no name search (then D13 and D18 fall back to asking), or a customer
+  whose limit is per stay.

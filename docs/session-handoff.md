@@ -1,33 +1,25 @@
 # Session handoff
 
-**Updated:** 2026-11-05, after Milestone 6, ready to start Milestone 7.
+**Updated:** 2026-11-05, after Milestone 6 and the upgrade fix, with the owner's stack upgraded. Milestone 7 planning is next.
 
 ## Where things stand
 - Milestones 1-6 are on `main` in the **private** GitHub repository, merged through pull requests #3 to #11 (#11 is the upgrade fix below). Latest
   results: `docs/verification-log.md`, section "Milestone 6".
 - **Work on a branch and open a pull request.** Merge with a merge commit, not squash or rebase, so cited hashes stay valid.
-  **The permission to push and merge covered Milestone 6's pull requests only (D10). Ask again for Milestone 7.** Push with:
+  **Standing permission for Milestones 7-20 (`CLAUDE.md`): push, open pull requests and merge when CI is green.** Push with:
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (two accounts are signed in to `gh`).
 - This repo's `user.email` is the noreply address. Run gitleaks before pushing; the command is in `docs/fde-tool-map.md`.
 - Commit messages from PowerShell: use `git commit -F <file>`. A here-string with double quotes gets mangled (it happened on
   step 7). Anything with backslashes goes through the editor tools, never a shell heredoc (it put a tab in the log on step 2).
 
 ## Waiting on the owner
-1. **Finish upgrading your stack (D4). Milestone 7 shouldn't start until this is done.** Last read on 2026-11-05: your volume
-   is split and at `0007`, but `loyalty_app` has no `CONNECT`, with 4 accounts and 0 policies, because your stack predates the
-   fix. On `main`, `stack.ps1 -Action up`, then `-Action seed`, then `/readyz` should say `ready` (`docs/onboarding.md` §4d). Your
-   data stays. Not run for you: your volume is yours.
-2. **Label review:** the 30-label sheet (`evaluations/label-review/`).
-3. **The Milestone 6 exercise** (below), and optionally redoing A-000010 with the new Reopen button.
-4. **The Codex exercise**, whenever convenient: `docs/exercises/codex-reconciliation-review.md`. It needs your Codex account.
-5. **The email block:** tick "Block command line pushes that expose my email" again, if not done already.
+1. **Label review:** the 30-label sheet (`evaluations/label-review/`).
+2. Optionally, redo A-000010 with the new Reopen button. It's still `Resolved` as `deny_claim_window`.
+3. **The Codex exercise**, whenever convenient: `docs/exercises/codex-reconciliation-review.md`. It needs your Codex account.
+4. **The email block:** tick "Block command line pushes that expose my email" again, if not done already.
 
 ## The Milestone 6 exercise (K.1)
-A supervisor approves an adjustment. The worker's submission times out; two lookups find nothing after the settle window, so the
-job resubmits with the same key. That works. Then suppose it had instead run out of attempts, the approval expired, and an agent
-requested again, which creates a new approval and a new key. **Why is the same-key retry safe while the new-key path isn't, and
-what would you ask a real vendor to size that risk?** Then, if you like, a small change: turn the switch off on the Configuration
-page, try Execute on an approved case, and read what the page and the job do.
+Answered and recorded in `docs/owner-exercises.md`.
 
 ## Known and open
 - **Upgrade tests must use a volume built by the old code.** A faked old state passed while the real one failed (ADR-0058,
@@ -64,7 +56,7 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 powershell -ExecutionPolicy Bypass -File scripts\compose_check.ps1 -Browser
 ```
 
-3. **Before Milestone 7, say whether to use plan mode and wait for the owner.** `CLAUDE.md` lists it as optional.
+3. Follow the standing instructions in `CLAUDE.md`. Milestone 7's choices are in ADR-0062.
 
 ## Milestone 7 scope (spec N.1 item 7; Appendix C)
 - Arm B: corrected rules through `app/domain/eligibility.py`, consolidated evidence, better search (synonyms, D12), validation.
