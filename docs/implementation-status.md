@@ -1,8 +1,8 @@
 # Implementation status
 
 **Last updated:** 2026-11-05 · **Current milestone:** 6 of 20 complete · **Next:** Milestone 7 (arm B and the complete
-server-rendered UI). **Waiting on the owner:** the 30-label review; the `.env` and volume upgrade (`docs/onboarding.md` §4d);
-the Codex exercise, when convenient (`docs/exercises/codex-reconciliation-review.md`).
+server-rendered UI). **Waiting on the owner:** the 30-label review; the Codex exercise, when convenient
+(`docs/exercises/codex-reconciliation-review.md`).
 
 ## Completion scores (spec Part 0.5)
 Counted from `docs/requirements-matrix.md` by `uv run python scripts/matrix_scores.py`. Only "Implemented and
@@ -60,6 +60,7 @@ authorization, M9), API-01 and API-02 (moved to M7, as the owner approved). Code
 The owner's real upgrade failed: the role split removed `loyalty_app`'s `CONNECT` on a Milestone 5 volume, which the compose
 check's faked old state had hidden. Fixed, with a check that upgrades a volume built by the real Milestone 5 code, in the compose
 check and CI (ADR-0058, updated). `/readyz` logs the reason; the worker's health is honest and its failed claims back off.
+The owner's stack is upgraded and ready, with their data kept (verification log, Milestone 6, row 57).
 
 ## After Milestone 5 (2026-11-03 to 2026-11-04)
 - Upgrade path from an existing volume: `/readyz` compares the database with this code's schema head, `stack.ps1 -Action

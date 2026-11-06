@@ -22,11 +22,23 @@ artifacts (`docs/technical-strategy.md`, `docs/scaling-and-limits.md`, `docs/tec
 `docs/executive-brief.md` at the end of each phase. ADRs record the options considered and what would change the
 decision. Note what moves into the starter kit and what is customer-specific.
 
+## Standing instructions from the owner (2026-11-05, Milestones 7-20, in spec order)
+- **Standing permission:** push branches, open pull requests, and merge with a merge commit when CI is green, without
+  asking each time.
+- **Still ask first** before anything that costs money, deploys publicly, publishes the website, deletes data, or uses the
+  owner's accounts.
+- **Use your recommended choices** unless they weaken safety, the benchmark's fairness or honesty. Ask the owner only
+  about those.
+- **To save usage:** read only the spec parts for the current milestone, keep summaries short, and don't paste long logs;
+  put details in `docs/verification-log.md`.
+- **At the end of each milestone:** update `docs/session-handoff.md`, and tell the owner in 3 lines what changed and what
+  they must do.
+
 ## Model and mode guidance (follow at the start of every milestone)
 - The owner uses **Opus for all milestones**; quality matters more than speed or usage.
-- **Before starting each milestone, say whether to use plan mode, then wait for the owner to confirm.**
-- Recommend plan mode for design-heavy milestones: **6** (approvals, idempotency, reconciliation), **8** (AI loop
-  and harness), **10** (benchmark design), **11** (protocols), and whenever a bug survives two fix attempts.
+- Design-heavy milestones get an RFC in `docs/rfcs/` before the code, and don't wait for the owner unless a standing
+  instruction above says so: **6** (approvals, idempotency, reconciliation), **8** (AI loop and harness), **10** (benchmark
+  design), **11** (protocols). Plan again whenever a bug survives two fix attempts.
 - Claude Code cannot switch models or modes itself. The owner switches models with `/model` and plan mode with
   Shift+Tab.
 
@@ -36,7 +48,8 @@ decision. Note what moves into the starter kit and what is customer-specific.
 3. Work only on the milestone or task named in the prompt.
 4. After changes: run the relevant tests, review `git diff`, update `docs/requirements-matrix.md`,
    `docs/implementation-status.md`, `docs/verification-log.md` and `docs/session-handoff.md`.
-5. Commit with a descriptive Conventional Commits message when checks pass. Never push without the owner's OK.
+5. Commit with a descriptive Conventional Commits message when checks pass. Never push with failing checks; merge only when
+   CI is green, under the standing permission above.
 6. End each milestone with the Part K.1 teaching notes: what changed, why, how to verify, common failure modes,
    one exercise, then ask the owner to explain the result or make a small change.
 
@@ -72,7 +85,7 @@ only as a role being sought.
 ## Windows notes
 - Python 3.12 via `uv`. `make` is not installed on the owner's machine: every make target has a
   `scripts\*.ps1` equivalent.
-- Two GitHub accounts are signed in to `gh`. When pushing (only with the owner's OK), use
+- Two GitHub accounts are signed in to `gh`. When pushing, use
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` so the vamsialladev
   credential is used.
 - Never use shell heredocs containing backslashes on Windows; write files with the editor tools instead.

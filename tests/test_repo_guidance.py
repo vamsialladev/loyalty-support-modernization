@@ -42,7 +42,6 @@ def test_claude_md_has_mode_guidance():
     text = read("CLAUDE.md")
     section = text.split("## Model and mode guidance", 1)[1].split("\n## ", 1)[0]
     assert "Opus for all milestones" in section
-    assert "wait for the owner to confirm" in section
     for milestone in ("**6**", "**8**", "**10**", "**11**"):
         assert milestone in section
     assert "two fix attempts" in section
@@ -52,8 +51,23 @@ def test_claude_md_has_mode_guidance():
 
 def test_claude_md_keeps_the_d2_rules():
     text = read("CLAUDE.md")
-    for rule in ("Never weaken or delete a failing test", "deterministic Python only", "Never push without"):
+    for rule in (
+        "Never weaken or delete a failing test",
+        "deterministic Python only",
+        "Never push with failing checks",
+    ):
         assert rule in text
+
+
+def test_claude_md_keeps_the_owners_standing_instructions():
+    section = read("CLAUDE.md").split("## Standing instructions from the owner", 1)[1].split("\n## ", 1)[0]
+    for rule in (
+        "merge with a merge commit when CI is green",
+        "costs money, deploys publicly, publishes the website, deletes data",
+        "safety, the benchmark's fairness or honesty",
+        "`docs/session-handoff.md`",
+    ):
+        assert rule in " ".join(section.split()), rule
 
 
 def test_agent_guides_point_to_claude_md():
