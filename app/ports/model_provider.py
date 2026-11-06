@@ -86,3 +86,7 @@ class ModelProvider(Protocol):
     def complete(
         self, system: str, messages: list[Message], tools: list[ToolSpec], max_tokens: int, timeout_seconds: float
     ) -> ModelTurn: ...
+
+    def read_image(
+        self, media_type: str, content: bytes, timeout_seconds: float
+    ) -> tuple[dict[str, str | None], Usage]: ...

@@ -15,7 +15,7 @@ from datetime import date
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import Depends, FastAPI, Form, Request
+from fastapi import Depends, FastAPI, File, Form, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app import correlation
 from app.adapters.local_demo_identity import LocalDemoIdentity
 from app.ai.harness import latest_run, request_cancel
+from app.arms.conventional.extraction import MAX_BYTES
 from app.arms.conventional.investigation import OTHER_MEMBER_TEXT
 from app.arms.legacy import intake, screens
 from app.arms.legacy.keyword_index import KeywordIndex
@@ -45,6 +46,7 @@ from app.settings import AppSettings
 WEB_DIR = Path(__file__).resolve().parent
 DAY_ONE_DIR = WEB_DIR / "day_one"
 SESSION_COOKIE = "lsm_session"
+MAX_UPLOAD_BYTES = MAX_BYTES
 LOGIN_CSRF_COOKIE = "lsm_login_csrf"
 CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; form-action 'self'; "
@@ -56,6 +58,7 @@ DONE_MESSAGES = {
     "asked": "Question sent to the member. The case is waiting for their reply.",
     "more_stays": "Question about the other stays sent. The case keeps moving.",
     "supplied": "Answer stored. Investigating again.",
+    "attached_document": "Document added. Investigate again to read it.",
     "cancelling": "Asked the AI run to stop. The rules result stands.",
     "nothing_running": "No AI run is going on.",
     "feedback": "Thanks: feedback recorded.",
@@ -418,6 +421,7 @@ def install_console(
             polling=_polling(s, case),
             switch_engaged=kill_switch.is_engaged(s),
             other_member_text=OTHER_MEMBER_TEXT,
+            attachments=conventional.attachments_of(s, case),
             ai_run=latest_run(s, case) if case.arm == svc.ARM_C else None,
         )
 
@@ -510,6 +514,20 @@ def install_console(
             scope_cleared=scope_cleared,
         )
         return back_to(case, "supplied")
+
+    @app.post("/cases/{case_id}/attachments", response_model=None)
+    async def add_attachment(
+        s: DB,
+        active: User,
+        case_id: int,
+        file: Annotated[UploadFile, File()],
+        csrf: Csrf = "",
+    ) -> Response:
+        check_csrf(active, csrf)
+        case = svc.get_case(s, active.identity, case_id)
+        content = await file.read(MAX_UPLOAD_BYTES + 1)
+        conventional.add_attachment(s, active.identity, case, file.filename or "upload", content)
+        return back_to(case, "attached_document")
 
     @app.post("/cases/{case_id}/feedback", response_model=None)
     def feedback(

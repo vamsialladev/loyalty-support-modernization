@@ -102,3 +102,12 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **Arm A's screens keep their UTC times.** They're part of the registered baseline (D04).
 - **Metrics are counts, not scores.** Whether an outcome was right is only known in the benchmark, against labels the app never sees.
 - **Scripted runs say nothing about human time** (spec E.7).
+
+## Added in Milestone 8 (2026-11-06)
+- **No real model has run.** Everything about arm C is verified on a mock and scripted models only. `scripts/live_smoke_ai.py` is NOT RUN until the owner approves it.
+- **Redaction is pattern matching.** It catches emails, phone numbers, card numbers and API-key shapes. It misses a number written in words, and addresses. Names stay, because reading a request needs them.
+- **Provider data terms aren't checked.** Check retention and any data agreement before sending real data.
+- **Image OCR is blocked** (Tesseract isn't installed). A scanned PDF has no text layer, so it goes to a person.
+- **Routing can't be judged from these numbers:** see `docs/model-card-routing.md`. Two Appendix I classes aren't in the dataset.
+- **Injection is contained, not prevented.** A model may repeat an injected instruction in its draft. Drafts aren't sent, and business effects are what the tests check.
+- **Non-English messages:** arm C's drafts in other languages are unreviewed machine text until staff read them, and staff may not read that language.

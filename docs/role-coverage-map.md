@@ -50,3 +50,4 @@
   Staff / Principal (fence around the baseline, ADR-0063 and ADR-0064), Data Engineer (validation flags, day-one export with a trace
   test), Security Engineer (two identifiers, another member's data never stored, strict request bodies), Executive sponsor (phase 3
   brief), Solutions Architect (what arm B needs from a real platform).
+- **M8:** ML Engineer / Applied Scientist (loop, harness, routing baseline with its rule committed first), Prompt Engineering (versioned prompt, separated data), Backend / Platform Engineer (provider port, worker integration, spend tables), Security Engineer (tool allowlist, injection tests on business effects, redaction, ingestion controls), Responsible AI / Governance (system card, use-case register, labelled AI text, evidence first), QA / Test Engineer (one test per stop condition), Staff / Principal (RFC-0002, the fairness call in ADR-0067), Data Engineer (document extraction with checks against the record).

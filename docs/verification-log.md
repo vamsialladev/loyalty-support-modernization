@@ -3,6 +3,23 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## Milestone 8 (2026-11-06)
+
+All work by Claude Code (Opus 5.5), under the owner's standing instructions. **No real model was called.** No aggregate accuracy for any arm was computed.
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | Milestone 7's close | PR #16, `gh pr merge 16 --merge` | Merged as `299901c` |
+| 2 | RFC first | `docs/rfcs/RFC-0002-ai-loop-and-harness.md` | Written before the code. **Finding while writing:** D18's married names don't need a model, so under F9 that fix went to arm B (ADR-0067) |
+| 3 | Stop conditions and tools | `pytest tests/test_ai_loop.py tests/test_ai_tools.py tests/test_ai_provider.py`, scripted models | One failure at first, a real bug: ISO dates matched the phone pattern, so redaction would have removed them. Fixed |
+| 4 | Arm C end to end, on a mock and scripted models | `pytest tests/test_arm_c.py` | Two failures at first, a real issue: the harness held a database transaction open while the model was called. It now commits first. **No real model involved** |
+| 5 | Arm A's fence and arm B's per-defect tests, after the shared code changed | `pytest tests/test_arm_a_fence.py tests/test_arm_b_defects.py tests/test_arm_b_rules.py` | Passed. D18's test was rewritten on purpose, because the behaviour changed (ADR-0067) |
+| 6 | PR #17, whole suite and real Postgres on CI | Actions run 42236387502: `Lint, types, tests`, `Real-Postgres tests`, `Secret scan` | All green |
+| 7 | Compose check with both browser suites, started on PR #17's commit (the host-side tests also saw the next step's work, then uncommitted, in the working tree) | `scripts\compose_check.ps1 -Browser`, full log kept | **Passed:** real-Postgres **67 passed**, browser **9 passed, 1 skipped** (reconciliation needs the offline seeded rule), upgrade from a real Milestone 5 volume passed. Merged as `5dfdd3e` |
+| 8 | Document extraction on dev | `pytest tests/test_extraction.py` | Passed: folios in each layout and OTA emails match the generator's fields. Field-level scoring over the whole set is Milestone 10. Image OCR **blocked**: Tesseract isn't installed |
+| 9 | Routing baseline | `uv run python -m evaluations.routing_baseline`, thresholds committed first as `455fd0b` | **Rules stay** (gain 0.0). Rules and classifier both 1.0 macro-F1 on validation, but it has **one case per minority class** and shares a phrase bank with dev, so this can't tell them apart. Drift check on stress: neither finds injection attempts (0 of 8). `evaluations/routing/report-v1.json`, `docs/model-card-routing.md` |
+| 10 | **Live smoke test** | `scripts/live_smoke_ai.py` | **NOT RUN.** It costs money and needs the owner's go-ahead. Everything about arm C is verified only on mock and scripted models |
+
 ## Milestone 7 (2026-11-05 to 2026-11-06)
 
 All work by Claude Code (Opus 5.5), under the owner's standing instructions (`CLAUDE.md`). No aggregate accuracy for any arm was computed or recorded (ADR-0048).

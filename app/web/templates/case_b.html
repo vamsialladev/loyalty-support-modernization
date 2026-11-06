@@ -143,6 +143,36 @@
 </section>
 {% endif %}
 
+<section class="card" aria-labelledby="docs-h">
+  <h2 id="docs-h">Documents</h2>
+  <p class="muted">What a document says is evidence only. It can point at a stay, and it never changes a record, an amount or an approval.</p>
+  {% if evidence and evidence.documents %}
+  <div class="table-wrap" tabindex="0" role="group" aria-label="Table, scrolls sideways on a narrow screen">
+  <table class="grid" data-testid="documents">
+    <caption class="sr-only">What each attached document says, and how it compares with the record</caption>
+    <thead><tr><th scope="col">Read by</th><th scope="col">What it says</th><th scope="col">Against the record</th></tr></thead>
+    <tbody>{% for d in evidence.documents %}<tr>
+      <td>{{ d.method }}{% if d.reason %} ({{ d.reason }}){% endif %}</td>
+      <td>{% for k, v in d.fields.items() %}{{ k }}: {{ v }}{% if not loop.last %} · {% endif %}{% else %}nothing{% endfor %}</td>
+      <td>{% for k, v in d.checks.items() %}{{ k }}: {{ v }}{% if not loop.last %} · {% endif %}{% else %}no check possible{% endfor %}</td>
+    </tr>{% endfor %}</tbody>
+  </table>
+  </div>
+  {% elif attachments %}
+  <ul>{% for a in attachments %}<li>{{ a.filename }}</li>{% endfor %}</ul>
+  {% else %}
+  <p class="empty">No documents on this case.</p>
+  {% endif %}
+  {% if can_work and case.status in ["New", "Investigating", "Awaiting information"] %}
+  <form method="post" action="/cases/{{ case.id }}/attachments" enctype="multipart/form-data">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="doc-file">Add a PDF, email (.eml) or image, up to 5 MB</label>
+    <input id="doc-file" type="file" name="file" accept=".pdf,.eml,.png,.jpg" required>
+    <button type="submit" class="secondary">Add document</button>
+  </form>
+  {% endif %}
+</section>
+
 {% if case.arm == "C" and rec and rec.ai %}
 <section class="card ai-panel" aria-labelledby="ai-h" data-testid="ai-panel">
   <h2 id="ai-h">AI-written notes{% if rec.ai.mock %} (MOCK: no real model){% endif %}</h2>

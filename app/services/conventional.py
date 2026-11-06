@@ -8,6 +8,7 @@ way to ask for a credit is the engine's own recommendation.
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import asdict, dataclass
 from datetime import date
 from typing import Any
@@ -17,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.arms.conventional import signals
 from app.arms.conventional.config import conventional_config
+from app.arms.conventional.extraction import UnsafeDocument, extract, media_type_for
 from app.arms.conventional.identity import Candidate, IdentityClaim
 from app.arms.conventional.investigation import ClaimText, Evidence, Investigation, investigate, read_claim
 from app.clock import utc_now
@@ -29,6 +31,7 @@ from app.domain.roles import Identity, require_case_worker
 from app.persistence.models import (
     AdjustmentRequestRow,
     Case,
+    CaseAttachment,
     CaseEvidence,
     CaseNote,
     CaseRequest,
@@ -112,6 +115,41 @@ def recommended_close_code(rec: Recommendation) -> str | None:
     return _CLOSE_CODE_BY_ACTION.get(action)
 
 
+# ---------- attachments: evidence only (Appendix H) ----------
+
+
+def attachments_of(s: Session, case: Case) -> list[CaseAttachment]:
+    query = select(CaseAttachment).where(CaseAttachment.case_id == case.id).order_by(CaseAttachment.id)
+    return list(s.scalars(query))
+
+
+def add_attachment(s: Session, who: Identity, case: Case, filename: str, content: bytes) -> CaseAttachment:
+    """Type and size are checked before anything reads it (C.7). The name is cut to its last part and never used as a
+    path."""
+    require_case_worker(who)
+    _require_arm_b(case)
+    safe_name = filename.replace("\\", "/").rsplit("/", 1)[-1][:128]
+    try:
+        media_type = media_type_for(safe_name, content)
+    except UnsafeDocument as exc:
+        raise WorkflowError(str(exc)) from exc
+    row = CaseAttachment(
+        case_id=case.id,
+        filename=safe_name,
+        media_type=media_type,
+        size_bytes=len(content),
+        sha256=hashlib.sha256(content).hexdigest(),
+        content=content,
+        added_by=who.username,
+        added_at_utc=utc_now(),
+    )
+    s.add(row)
+    s.flush()
+    record(s, case, who, "attachment_added", media_type=media_type, size=len(content))
+    s.commit()
+    return row
+
+
 # ---------- reading the case ----------
 
 
@@ -177,10 +215,17 @@ def claim_text_for(s: Session, case: Case) -> ClaimText:
     name = next((r.form_name for r in requests if r.form_name), None) or signals.signoff_name(requests[0].text)
     email = next((r.sender_email for r in requests if r.sender_email), None)
     attachments = tuple(a for r in requests for a in r.attachment_names)
+    documents = tuple(extract(a.filename, a.content) for a in attachments_of(s, case))
+    typed = tuple(dict.fromkeys(confirmations))
+    from_documents = tuple(dict.fromkeys(x for d in documents for x in (d.confirmation, d.partner_confirmation) if x))
     return ClaimText(
         text=text,
-        identity=IdentityClaim(tuple(dict.fromkeys(numbers)), email, name, tuple(dict.fromkeys(confirmations))),
-        confirmations=tuple(dict.fromkeys(confirmations)),
+        # What a document says can point at a stay, but it's never one of the two identifiers (Appendix H: evidence
+        # only).
+        identity=IdentityClaim(tuple(dict.fromkeys(numbers)), email, name, typed),
+        confirmations=typed or from_documents[:1],
+        documents=documents,
+        from_document=not typed and bool(from_documents),
         received_at_utc=case.received_at_utc,
         attachments=attachments,
         stated_channel=answers.get("booking_channel"),
@@ -258,6 +303,7 @@ def _snapshot(found: Investigation) -> dict[str, Any]:
         "postings": [asdict(p) for p in ev.postings],
         "member_stays": list(ev.member_stays),
         "checkout_day": found.checkout_day.isoformat() if found.checkout_day else None,
+        "documents": list(found.documents),
     }
 
 

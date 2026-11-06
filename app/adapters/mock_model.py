@@ -52,8 +52,14 @@ class ScriptedModel:
     name = "scripted"
     is_mock = True
 
-    def __init__(self, turns: Sequence[ModelTurn | Exception], model_id: str = "scripted-test") -> None:
+    def __init__(
+        self,
+        turns: Sequence[ModelTurn | Exception],
+        model_id: str = "scripted-test",
+        image_fields: dict[str, str | None] | None = None,
+    ) -> None:
         self.turns, self.model_id = list(turns), model_id
+        self.image_fields = image_fields or {}
         self.calls = 0
         self.seen: list[tuple[str, list[Message]]] = []
 
@@ -66,6 +72,12 @@ class ScriptedModel:
         if isinstance(turn, Exception):
             raise turn
         return turn
+
+    def read_image(
+        self, media_type: str, content: bytes, timeout_seconds: float
+    ) -> tuple[dict[str, str | None], Usage]:
+        """A labelled fixture, never a reading of the file."""
+        return dict(self.image_fields), Usage(50, 10)
 
 
 def call(call_id: str, name: str, **arguments: Any) -> ToolCall:
@@ -147,6 +159,12 @@ class RulesMockModel:
             tool_calls=(ToolCall("s1", "submit_recommendation", self._proposal(text, chosen, evaluated)),),
             usage=usage,
         )
+
+    def read_image(
+        self, media_type: str, content: bytes, timeout_seconds: float
+    ) -> tuple[dict[str, str | None], Usage]:
+        """A mock can't see. It says so by returning nothing, and the case goes on without the image."""
+        return {}, Usage()
 
     @staticmethod
     def _proposal(text: str, chosen: list[str], evaluated: dict[Any, dict[str, Any]]) -> dict[str, Any]:
