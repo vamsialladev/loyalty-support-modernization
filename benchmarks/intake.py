@@ -70,17 +70,21 @@ def read_split(split: str, dataset_dir: Path = DATASET_DIR) -> list[DatasetCase]
     return out
 
 
-def load_case(s: Session, item: DatasetCase, customer_id: str = "hg-demo") -> list[Case]:
-    """One new case per contact in a dataset case (D10). Returns the cases created; requests already loaded are
-    skipped."""
+def load_case(s: Session, item: DatasetCase, customer_id: str = "hg-demo", arm: str = "A") -> list[Case]:
+    """One new case per contact in a dataset case (D10). Returns the cases created; requests already loaded into this
+    arm are skipped, so one request can be loaded once per arm."""
     created = []
     for request in item.requests:
         if (
             request.request_ref
-            and s.scalars(select(CaseRequest).where(CaseRequest.request_ref == request.request_ref)).first()
+            and s.scalars(
+                select(CaseRequest)
+                .join(Case, Case.id == CaseRequest.case_id)
+                .where(CaseRequest.request_ref == request.request_ref, Case.arm == arm)
+            ).first()
         ):
             continue
-        created.append(create_case(s, INTAKE, request, customer_id=customer_id, source_ref=item.case_id))
+        created.append(create_case(s, INTAKE, request, customer_id=customer_id, source_ref=item.case_id, arm=arm))
     return created
 
 
@@ -89,6 +93,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--split", choices=SPLITS, default="dev")
     parser.add_argument("--limit", type=int, default=20)
     parser.add_argument("--cases", default="", help="comma-separated case IDs, e.g. DV-001,DV-002")
+    parser.add_argument("--arm", choices=("A", "B"), default="A", help="which workflow the new cases use")
     parser.add_argument("--env-file", default=str(ROOT / ".env"))
     args = parser.parse_args(argv)
 
@@ -103,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
     created = 0
     with make_sessions(make_engine(os.environ["DATABASE_URL"]))() as s:
         for item in items:
-            created += len(load_case(s, item))
+            created += len(load_case(s, item, arm=args.arm))
     print(f"demo cases from {args.split}: {created} created from {len(items)} dataset cases (existing ones skipped)")
     return 0
 

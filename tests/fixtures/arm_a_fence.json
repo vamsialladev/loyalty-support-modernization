@@ -1,0 +1,1485 @@
+{
+ "scripted_dev_paths": {
+  "DV-001": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     14840
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-002": [
+   {
+    "path": [
+     "checklist:no_adjustment_credited"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "no_adjustment_credited",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-003": [
+   {
+    "path": [
+     "stay_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 6
+   }
+  ],
+  "DV-004": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     7740
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-005": [
+   {
+    "path": [
+     "checklist:wait_until"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "wait_until",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-006": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     3180
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-007": [
+   {
+    "path": [
+     "member_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 4
+   }
+  ],
+  "DV-008": [
+   {
+    "path": [
+     "asked_for_confirmation"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": null,
+    "status": "Awaiting information",
+    "steps": 5
+   }
+  ],
+  "DV-009": [
+   {
+    "path": [
+     "checklist:wait_until"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "wait_until",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-010": [
+   {
+    "path": [
+     "checklist:no_adjustment_credited"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "no_adjustment_credited",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-011": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     14050
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-012": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     2210
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-013": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     6340
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-014": [
+   {
+    "path": [
+     "checklist:not_checked_out"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "not_checked_out",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-015": [
+   {
+    "path": [
+     "checklist:no_adjustment_credited"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "no_adjustment_credited",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-016": [
+   {
+    "path": [
+     "checklist:wait_until"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "wait_until",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-017": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     2620
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-018": [
+   {
+    "path": [
+     "stay_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 6
+   }
+  ],
+  "DV-019": [
+   {
+    "path": [
+     "checklist:no_adjustment_credited"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "no_adjustment_credited",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-020": [
+   {
+    "path": [
+     "checklist:deny_channel_ineligible"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_channel_ineligible",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-021": [
+   {
+    "path": [
+     "checklist:deny_channel_ineligible"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_channel_ineligible",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-022": [
+   {
+    "path": [
+     "asked_for_english"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": null,
+    "status": "Awaiting information",
+    "steps": 3
+   }
+  ],
+  "DV-023": [
+   {
+    "path": [
+     "checklist:wait_until"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "wait_until",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-024": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     14600
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-025": [
+   {
+    "path": [
+     "asked_for_confirmation"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": null,
+    "status": "Awaiting information",
+    "steps": 5
+   }
+  ],
+  "DV-026": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     3480
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-027": [
+   {
+    "path": [
+     "asked_for_confirmation"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": null,
+    "status": "Awaiting information",
+    "steps": 5
+   }
+  ],
+  "DV-028": [
+   {
+    "path": [
+     "stay_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 6
+   }
+  ],
+  "DV-029": [
+   {
+    "path": [
+     "checklist:no_adjustment_credited"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "no_adjustment_credited",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-030": [
+   {
+    "path": [
+     "checklist:deny_claim_window"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_claim_window",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-031": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     1360
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-032": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     10999
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 16
+   }
+  ],
+  "DV-033": [
+   {
+    "path": [
+     "stay_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 6
+   }
+  ],
+  "DV-034": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     9499
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-035": [
+   {
+    "path": [
+     "stay_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 6
+   }
+  ],
+  "DV-036": [
+   {
+    "path": [
+     "member_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 4
+   }
+  ],
+  "DV-037": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     10800
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-038": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     6120
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-039": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     3010
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-040": [
+   {
+    "path": [
+     "checklist:deny_channel_ineligible"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_channel_ineligible",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-041": [
+   {
+    "path": [
+     "checklist:wait_until"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "wait_until",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-042": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     5580
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-043": [
+   {
+    "path": [
+     "checklist:not_checked_out"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "not_checked_out",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-044": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     7080
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-045": [
+   {
+    "path": [
+     "stay_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 6
+   }
+  ],
+  "DV-046": [
+   {
+    "path": [
+     "asked_for_english"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": null,
+    "status": "Awaiting information",
+    "steps": 3
+   }
+  ],
+  "DV-047": [
+   {
+    "path": [
+     "checklist:no_adjustment_credited"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "no_adjustment_credited",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-048": [
+   {
+    "path": [
+     "asked_for_confirmation"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": null,
+    "status": "Awaiting information",
+    "steps": 5
+   }
+  ],
+  "DV-049": [
+   {
+    "path": [
+     "stay_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 6
+   }
+  ],
+  "DV-050": [
+   {
+    "path": [
+     "checklist:deny_channel_ineligible"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_channel_ineligible",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-051": [
+   {
+    "path": [
+     "in_billing_queue"
+    ],
+    "points": [],
+    "queue": "billing",
+    "reference_prefix": "A",
+    "resolution": null,
+    "status": "New",
+    "steps": 1
+   }
+  ],
+  "DV-052": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     4780
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-053": [
+   {
+    "path": [
+     "member_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 4
+   }
+  ],
+  "DV-054": [
+   {
+    "path": [
+     "stay_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 6
+   }
+  ],
+  "DV-055": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     2960
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-056": [
+   {
+    "path": [
+     "checklist:wait_until"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "wait_until",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-057": [
+   {
+    "path": [
+     "checklist:deny_claim_window"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_claim_window",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-058": [
+   {
+    "path": [
+     "checklist:no_adjustment_credited"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "no_adjustment_credited",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-059": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     6089
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-060": [
+   {
+    "path": [
+     "stay_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 6
+   }
+  ],
+  "DV-061": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     13200
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-062": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     14900
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-063": [
+   {
+    "path": [
+     "in_billing_queue"
+    ],
+    "points": [],
+    "queue": "billing",
+    "reference_prefix": "A",
+    "resolution": null,
+    "status": "New",
+    "steps": 1
+   }
+  ],
+  "DV-064": [
+   {
+    "path": [
+     "checklist:not_checked_out"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "not_checked_out",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-065": [
+   {
+    "path": [
+     "checklist:deny_channel_ineligible"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_channel_ineligible",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-066": [
+   {
+    "path": [
+     "member_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 4
+   }
+  ],
+  "DV-067": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     4460
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-068": [
+   {
+    "path": [
+     "checklist:deny_channel_ineligible"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_channel_ineligible",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-069": [
+   {
+    "path": [
+     "asked_for_confirmation"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": null,
+    "status": "Awaiting information",
+    "steps": 5
+   }
+  ],
+  "DV-070": [
+   {
+    "path": [
+     "checklist:wait_until"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "wait_until",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-071": [
+   {
+    "path": [
+     "checklist:wait_until"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "wait_until",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-072": [
+   {
+    "path": [
+     "stay_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 6
+   }
+  ],
+  "DV-073": [
+   {
+    "path": [
+     "stay_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 6
+   }
+  ],
+  "DV-074": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     5999
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-075": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     1640
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   },
+   {
+    "path": [
+     "checklist:no_adjustment_credited"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "no_adjustment_credited",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-076": [
+   {
+    "path": [
+     "asked_for_confirmation"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": null,
+    "status": "Awaiting information",
+    "steps": 5
+   }
+  ],
+  "DV-077": [
+   {
+    "path": [
+     "checklist:deny_channel_ineligible"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_channel_ineligible",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-078": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     7259
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-079": [
+   {
+    "path": [
+     "checklist:deny_channel_ineligible"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_channel_ineligible",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-080": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     13100
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-081": [
+   {
+    "path": [
+     "checklist:wait_until"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "wait_until",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-082": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     7799
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-083": [
+   {
+    "path": [
+     "checklist:deny_claim_window"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_claim_window",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-084": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     1810
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-085": [
+   {
+    "path": [
+     "stay_not_found"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_not_found",
+    "status": "Resolved",
+    "steps": 6
+   }
+  ],
+  "DV-086": [
+   {
+    "path": [
+     "checklist:deny_channel_ineligible"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_channel_ineligible",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-087": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     3880
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-088": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     7880
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-089": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     4620
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-090": [
+   {
+    "path": [
+     "checklist:wait_until"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "wait_until",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-091": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     7100
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-092": [
+   {
+    "path": [
+     "checklist:wait_until"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "wait_until",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-093": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     8320
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-094": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     4400
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 14
+   }
+  ],
+  "DV-095": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     3260
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   }
+  ],
+  "DV-096": [
+   {
+    "path": [
+     "checklist:adjust",
+     "supervisor:approved",
+     "execute:applied"
+    ],
+    "points": [
+     5040
+    ],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "adjusted",
+    "status": "Resolved",
+    "steps": 15
+   },
+   {
+    "path": [
+     "checklist:no_adjustment_credited"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "no_adjustment_credited",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-097": [
+   {
+    "path": [
+     "checklist:no_adjustment_credited"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "no_adjustment_credited",
+    "status": "Resolved",
+    "steps": 12
+   }
+  ],
+  "DV-098": [
+   {
+    "path": [
+     "checklist:deny_channel_ineligible"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "deny_channel_ineligible",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-099": [
+   {
+    "path": [
+     "checklist:wait_until"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": "wait_until",
+    "status": "Resolved",
+    "steps": 11
+   }
+  ],
+  "DV-100": [
+   {
+    "path": [
+     "asked_for_english"
+    ],
+    "points": [],
+    "queue": "points",
+    "reference_prefix": "A",
+    "resolution": null,
+    "status": "Awaiting information",
+    "steps": 3
+   }
+  ]
+ },
+ "source": {
+  "app/arms/legacy/__init__.py": "e26bbc004dd3116730ed653b250fb0de1d312420d1c5fa5cee0a4b06227510f9",
+  "app/arms/legacy/checklist.py": "fe90f08c2b412fcdd7e6207efa8ed5f25579c987c9c550e878875b2051a55971",
+  "app/arms/legacy/intake.py": "c0a37e1a7ee8fd27f023ec85060cabd1abbf1bd905a49fc3bc8da174ffb1cd70",
+  "app/arms/legacy/keyword_index.py": "217a7b3ac0d04ffb5608bfe7dcfdb07146fec43182eb1b23e25b93508543270a",
+  "app/arms/legacy/revalidation.py": "5ba05d35d617d00c948489ca7d45cb5b1f79cb5a5e0d2459791321724231ac2a",
+  "app/arms/legacy/rules.py": "4c5773af62b55317310a80bcdd0dbc00b4a8299e0482abf6f6a810d8fce30e70",
+  "app/arms/legacy/screens.py": "1278cd37e7dd21fd8e2753bb65e72a7f19602a9eef2804467db84d96f44cc25e",
+  "benchmarks/agents/legacy_scripted.py": "e8b2db6e96fbd77059bd9301d77fec1a8378869e9dda2f322a20b19fa2015cbc",
+  "config/legacy/hg-demo-legacy-rules.yaml": "c9a7859e973f460032bf6e7364bf18152c9cae5f5a1d484429a39e0e25d8d874"
+ }
+}

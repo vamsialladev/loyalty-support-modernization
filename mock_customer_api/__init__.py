@@ -5,4 +5,4 @@ idempotency key for adjustments and commits each adjustment with its idempotency
 and can inject deterministic failures for tests and the benchmark (ADR-0038).
 """
 
-CONTRACT_VERSION = "1.0.0"
+CONTRACT_VERSION = "1.1.0"

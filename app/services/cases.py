@@ -14,6 +14,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.arms.conventional import signals
 from app.arms.legacy import intake, screens
 from app.arms.legacy.checklist import Checklist, Evidence, LedgerView, Outcome, evaluate
 from app.arms.legacy.keyword_index import KeywordIndex
@@ -32,6 +33,8 @@ from app.services.customer_config import customer_config
 from app.services.instrumentation import events, record
 
 ARM_A = "A"
+ARM_B = "B"
+ARMS = (ARM_A, ARM_B)
 REASON_MISSING_POINTS = "missing_points"
 
 # What an agent may close a case as, and the checklist outcome each code agrees with. A close that disagrees with
@@ -80,27 +83,38 @@ class IntakeRequest:
 
 
 def create_case(
-    s: Session, who: Identity, request: IntakeRequest, *, customer_id: str = "hg-demo", source_ref: str | None = None
+    s: Session,
+    who: Identity,
+    request: IntakeRequest,
+    *,
+    customer_id: str = "hg-demo",
+    source_ref: str | None = None,
+    arm: str = ARM_A,
+    group_ref: str | None = None,
 ) -> Case:
+    """The arm is fixed here and never changes: nothing offers a way to move a case between arms."""
     require_case_worker(who)
     if not request.text.strip():
         raise WorkflowError("the request text is empty")
+    if arm not in ARMS:
+        raise WorkflowError(f"unknown arm '{arm}'")
     now = utc_now()
     case = Case(
         reference="pending",
-        arm=ARM_A,
+        arm=arm,
         customer_id=customer_id,
-        queue=intake.route(request.text),
+        queue=intake.route(request.text) if arm == ARM_A else signals.route(request.text),
         status=CaseState.NEW.value,
         created_by=who.username,
         received_at_utc=request.received_at_utc,
         source_ref=source_ref,
+        group_ref=group_ref,
         created_at_utc=now,
         updated_at_utc=now,
     )
     s.add(case)
     s.flush()
-    case.reference = f"A-{case.id:06d}"
+    case.reference = f"{arm}-{case.id:06d}"
     s.add(CaseRequest(case_id=case.id, **asdict(request)))
     record(s, case, who, "case_created", queue=case.queue, channel=request.contact_channel)
     s.commit()
@@ -108,10 +122,18 @@ def create_case(
 
 
 def list_cases(
-    s: Session, who: Identity, *, queue: str = intake.POINTS_QUEUE, status: str | None = None, mine: bool = False
+    s: Session,
+    who: Identity,
+    *,
+    queue: str = intake.POINTS_QUEUE,
+    status: str | None = None,
+    mine: bool = False,
+    arm: str | None = None,
 ) -> list[Case]:
     require_case_reader(who)
     query = select(Case).where(Case.queue == queue)
+    if arm:
+        query = query.where(Case.arm == arm)
     if status:
         query = query.where(Case.status == status)
     if mine:

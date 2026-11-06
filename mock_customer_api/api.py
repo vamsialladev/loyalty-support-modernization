@@ -209,11 +209,12 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     def find_members(
         emailAddress: str | None = None,
         phoneNumber: str | None = None,
+        familyName: str | None = None,
         c: Ctx = Depends(ctx),
         s: Session = Depends(session),
     ) -> Response:
         fault = fault_for(c)
-        return respond(c, many("member", service.find_members(s, emailAddress, phoneNumber)), fault)
+        return respond(c, many("member", service.find_members(s, emailAddress, phoneNumber, familyName)), fault)
 
     # ---------- stays ----------
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import unicodedata
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -58,15 +59,25 @@ def get_member(s: Session, member_number: str) -> dict[str, Any]:
     return as_dict(member)
 
 
-def find_members(s: Session, email: str | None, phone: str | None) -> list[dict[str, Any]]:
-    if not email and not phone:
-        raise Problem(400, "missing_filter", "Give emailAddress or phoneNumber")
+def _fold(name: str) -> str:
+    """Case and accents don't count: the name search many loyalty platforms offer (contract 1.1.0, ADR-0062)."""
+    return "".join(c for c in unicodedata.normalize("NFKD", name) if not unicodedata.combining(c)).casefold().strip()
+
+
+def find_members(
+    s: Session, email: str | None, phone: str | None, family_name: str | None = None
+) -> list[dict[str, Any]]:
+    if not email and not phone and not family_name:
+        raise Problem(400, "missing_filter", "Give emailAddress, phoneNumber or familyName")
     query = select(db.Member)
     if email:
         query = query.where(db.Member.email == email)  # exact match, like the legacy search
     if phone:
         query = query.where(db.Member.phone == phone)
-    return [as_dict(m) for m in s.scalars(query.order_by(db.Member.member_number).limit(MAX_PAGE))]
+    rows = s.scalars(query.order_by(db.Member.member_number)).all()
+    if family_name:
+        rows = [m for m in rows if _fold(m.last_name) == _fold(family_name)]
+    return [as_dict(m) for m in rows[:MAX_PAGE]]
 
 
 def get_stay_records(s: Session, stay_id: str) -> list[dict[str, Any]]:
