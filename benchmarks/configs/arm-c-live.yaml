@@ -1,0 +1,15 @@
+# LIVE: spends real money, under the owner's $5 cap. The runner stops itself before the ceiling (RFC-0003).
+arm: C
+provider: live
+model: claude-haiku-5-5
+prompt_version: "1"
+tool_permissions: five read-only tools, run as the person who asked (config/ai/hg-demo.yaml, app/ai/tools.py)
+limits: config/ai/hg-demo.yaml as committed
+timeout_retry: config/ai/hg-demo.yaml as committed
+repetitions: 3
+cost_ceiling_usd: 2.50
+dataset_version: v1
+retrieval: postgres-fts or its SQLite equivalent, as the arm uses it; the same for arms B and C
+concurrency: 1
+environment: disposable SQLite per run, worker driven in one process, mock customer API (benchmark environment, not production)
+cache_state: no prompt caching; every run starts from an empty database
