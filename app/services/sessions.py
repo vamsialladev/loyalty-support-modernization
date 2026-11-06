@@ -64,10 +64,14 @@ def resolve(
     now_text = _ts(now or datetime.now(UTC))
     if row is None or row.revoked_at_utc is not None or row.expires_at_utc <= now_text:
         return None
-    identity = provider.lookup(row.user_id)
+    user_id, csrf_token = row.user_id, row.csrf_token
+    # End this read first: the provider may open its own connection. On SQLite, a read held across that can't finish
+    # while a writer waits, and the writer is waiting for this read to end, so both sit out the lock timeout.
+    s.commit()
+    identity = provider.lookup(user_id)
     if identity is None:
         return None
-    return ActiveSession(identity, row.csrf_token)
+    return ActiveSession(identity, csrf_token)
 
 
 def revoke(s: Session, token: str | None) -> None:

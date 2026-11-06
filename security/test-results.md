@@ -33,6 +33,7 @@ Final counts per run are in `docs/verification-log.md`, Milestone 9.
 |---|---|---|
 | **The approvals list showed other customers' pending requests** | **Real bug** | Found by the cross-customer tests on their first run. Fixed in `pending_approvals`, with the test kept |
 | Login-limit test failed once in 135 | Test timing | Sign-ins are slow under load, and that test ran close to a 300 s window's edge. It passed alone. The cause is **likely, not proven:** the times in the run's record allow a crossing without showing one. The test now has a fixed clock |
+| **Pages that load several things at once stalled for 30 s on SQLite** | **Real bug, in the offline setup** | CI's browser tests found it, and it reproduced locally. `/day-one` loads its charts together, and since this milestone each of those requests writes a rate-limit row. Two causes: each hit read before it wrote, and `resolve` kept a read open while the identity provider opened a second connection. A test of the real path took 965 s with 91 locked-database errors on the old code, and 3.8 s with none after both fixes (`tests/test_rate_limit_concurrency.py`). The Postgres stack had passed: its row locks don't behave this way |
 | Rate limits use fixed windows | Real limit, kept | That test exposed the cost, and a new test pins it: at most 10 tries on one account close together, not 5 |
 
 ## Not run, or not covered

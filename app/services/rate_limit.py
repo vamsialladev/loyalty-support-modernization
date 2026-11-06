@@ -10,9 +10,11 @@ from __future__ import annotations
 import contextlib
 import time
 from collections.abc import Callable
+from typing import Any, cast
 
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import Table, case, update
+from sqlalchemy.dialects.postgresql import insert as postgres_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
 from app.persistence.models import RateLimit
@@ -33,34 +35,33 @@ class RateLimited(Exception):
         self.retry_after_seconds = retry_after_seconds
 
 
-def _row(s: Session, key: str, window_start: int) -> RateLimit:
-    query = select(RateLimit).where(RateLimit.key == key).with_for_update(key_share=True)
-    row = s.scalars(query.execution_options(populate_existing=True)).first()
-    if row is None:
-        try:
-            with s.begin_nested():
-                s.add(RateLimit(key=key, window_start=window_start, hits=0))
-        except IntegrityError:
-            pass  # another request added it first
-        row = s.scalars(query.execution_options(populate_existing=True)).one()
-    return row
+def _count_one(s: Session, key: str, window_start: int) -> int:
+    """Add one hit in a single statement, and return the new count.
 
-
-def _current(row: RateLimit, window_start: int) -> None:
-    if row.window_start != window_start:
-        row.window_start, row.hits = window_start, 0
+    It's the first statement of its transaction, so no request holds a read lock while it waits to write. On SQLite,
+    those requests would wait on each other until the timeout. Postgres locks the row, so every hit is counted.
+    """
+    table = cast(Table, RateLimit.__table__)
+    insert: Any = postgres_insert if s.get_bind().dialect.name == "postgresql" else sqlite_insert
+    statement = insert(table).values(key=key, window_start=window_start, hits=1)
+    statement = statement.on_conflict_do_update(
+        index_elements=[table.c.key],
+        set_={
+            "hits": case((table.c.window_start == window_start, table.c.hits + 1), else_=1),
+            "window_start": window_start,
+        },
+    )
+    return int(s.execute(statement.returning(table.c.hits)).scalar_one())
 
 
 def hit(s: Session, key: str, limit: int, window_seconds: int, clock: Callable[[], float] = _now) -> None:
     """Count one request, in a transaction of its own. Raises once the limit is passed."""
     now = int(clock())
     window_start = now - now % window_seconds
-    row = _row(s, key, window_start)
-    _current(row, window_start)
-    row.hits += 1
-    over = row.hits > limit
+    s.commit()  # ends whatever the request read first
+    hits = _count_one(s, key, window_start)
     s.commit()
-    if over:
+    if hits > limit:
         raise RateLimited(window_start + window_seconds - now)
 
 
@@ -94,7 +95,6 @@ def record_login_failure(s: Session, username: str, address: str, clock: Callabl
 
 
 def clear_login_failures(s: Session, username: str) -> None:
-    row = s.get(RateLimit, f"login-account:{username.strip().lower()[:64]}")
-    if row is not None:
-        row.hits = 0
-        s.commit()
+    s.commit()  # a write first, as in `hit`
+    s.execute(update(RateLimit).where(RateLimit.key == f"login-account:{username.strip().lower()[:64]}").values(hits=0))
+    s.commit()
