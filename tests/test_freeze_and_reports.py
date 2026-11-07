@@ -161,3 +161,26 @@ def test_held_out_without_the_flag_is_still_refused_first() -> None:
 def test_the_variability_cases_come_from_ids_alone_and_are_stable() -> None:
     chosen = variability_cases(DATASET)
     assert len(chosen) == 10 and chosen == variability_cases(DATASET) and chosen == sorted(chosen)
+
+
+def test_an_escalation_stays_a_false_denial_in_the_main_analysis_but_not_in_the_sensitivity() -> None:
+    label_ = LABELS["1"]
+    handed = result("1", "B", outcome="escalated", first_action="escalate", final_points={})
+    assert fr.false_denial(handed, label_)
+    assert not fr.denied_if_people_work_escalations(handed, label_)
+    assert fr.success_if_people_work_escalations(handed, label_)
+    assert not fr.case_success(handed, label_)
+
+
+def test_a_real_denial_stays_one_in_the_sensitivity() -> None:
+    assert fr.denied_if_people_work_escalations(result("1", "B", right=False), LABELS["1"])
+
+
+def test_an_over_credit_stays_wrong_in_the_sensitivity() -> None:
+    over = result("1", "B", outcome="escalated", final_points={"S1": 900})
+    assert not fr.success_if_people_work_escalations(over, LABELS["1"])
+
+
+def test_where_a_beats_b_is_listed() -> None:
+    rows = fr.a_beats_b_rows(runs("A"), runs("B", ("3",)), LABELS)
+    assert ["scenario D16", "1/1", "0/1"] in rows

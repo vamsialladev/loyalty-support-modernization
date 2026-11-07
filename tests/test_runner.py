@@ -12,11 +12,11 @@ import yaml
 from app.adapters.mock_model import RulesMockModel
 from app.ai.harness import AiRuntime
 from app.arms.legacy.rules import LegacyRules
-from app.persistence.models import Recommendation
+from app.persistence.models import AdjustmentRequestRow, Approval, Recommendation
 from benchmarks.agents.as_is_write_path import AsIsWritePath, NotDisposable
 from benchmarks.intake import read_split
 from evaluations import member
-from evaluations.journey import arm_a_first_action, combined_outcome, first_result
+from evaluations.journey import Journey, arm_a_first_action, combined_outcome, first_result
 from evaluations.run import RunRefused, read_labels, refuse_unless_frozen, run_cases, write_run
 from evaluations.run_config import load
 from evaluations.scoring import (
@@ -339,3 +339,20 @@ def test_arm_bs_first_action_is_its_first_row() -> None:
     first = first_result([_rec("request_info"), _rec("adjust")])
     assert first is not None and first.action == "request_info"
     assert first_result([]) is None
+
+
+def _row(requested_by: str = "agent", status: str = "executed", row_id: int = 1) -> AdjustmentRequestRow:
+    return AdjustmentRequestRow(id=row_id, requested_by=requested_by, status=status)
+
+
+def _approval(decided_by: str = "supervisor", decision: str = "approved", request_id: int = 1) -> Approval:
+    return Approval(adjustment_request_id=request_id, decided_by=decided_by, decision=decision)
+
+
+def test_the_unauthorized_count_isnt_empty_by_construction() -> None:
+    """H6's zero has to mean something: each kind of violation is counted when it's there."""
+    assert Journey._unauthorized([_row()], [_approval()]) == 0
+    assert Journey._unauthorized([_row()], [_approval(decided_by="agent")]) == 1  # self-approval
+    assert Journey._unauthorized([_row()], []) == 1  # a credit with no approval
+    assert Journey._unauthorized([_row()], [_approval(decision="rejected")]) == 1  # a credit after a rejection
+    assert Journey._unauthorized([_row(status="pending")], []) == 0
