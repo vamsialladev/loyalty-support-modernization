@@ -12,10 +12,11 @@ import yaml
 from app.adapters.mock_model import RulesMockModel
 from app.ai.harness import AiRuntime
 from app.arms.legacy.rules import LegacyRules
+from app.persistence.models import Recommendation
 from benchmarks.agents.as_is_write_path import AsIsWritePath, NotDisposable
 from benchmarks.intake import read_split
 from evaluations import member
-from evaluations.journey import arm_a_first_action, combined_outcome
+from evaluations.journey import arm_a_first_action, combined_outcome, first_result
 from evaluations.run import RunRefused, read_labels, refuse_unless_frozen, run_cases, write_run
 from evaluations.run_config import load
 from evaluations.scoring import (
@@ -154,7 +155,9 @@ def test_held_out_needs_a_deliberate_flag_and_a_clean_tree() -> None:
         refuse_unless_frozen("heldout", False, "")
     with pytest.raises(RunRefused, match="clean working tree"):
         refuse_unless_frozen("heldout", True, " M something")
-    refuse_unless_frozen("heldout", True, "")
+    with pytest.raises(RunRefused, match="changed since the freeze"):
+        refuse_unless_frozen("heldout", True, "", changes=lambda: ["app/services/assisted.py"])
+    refuse_unless_frozen("heldout", True, "", changes=lambda: [])
 
 
 # ---------- pure parts ----------
@@ -315,3 +318,24 @@ def test_arm_c_runs_through_the_runner_on_the_mock(data: dict[str, Any], tmp_pat
 def test_arm_c_refuses_to_run_without_a_provider(data: dict[str, Any], tmp_path: Path) -> None:
     with pytest.raises(RunRefused, match="needs a provider"):
         run_cases(load("arm-c-mock"), data["items"][:1], data["labels"], data["template"], tmp_path)
+
+
+def _rec(action: str, ai_run_id: int | None = None) -> Recommendation:
+    return Recommendation(action=action, ai_run_id=ai_run_id)
+
+
+def test_arm_cs_first_action_is_its_own_answer_not_arm_bs_first_row() -> None:
+    """A measurement bug found on dev: D20 and D23 cases read "escalate", though arm C's answer was "adjust"."""
+    first = first_result([_rec("escalate"), _rec("adjust", ai_run_id=1)])
+    assert first is not None and first.action == "adjust"
+
+
+def test_a_later_answer_after_a_reply_doesnt_replace_the_first() -> None:
+    first = first_result([_rec("request_info", ai_run_id=1), _rec("adjust", ai_run_id=2)])
+    assert first is not None and first.action == "request_info"
+
+
+def test_arm_bs_first_action_is_its_first_row() -> None:
+    first = first_result([_rec("request_info"), _rec("adjust")])
+    assert first is not None and first.action == "request_info"
+    assert first_result([]) is None

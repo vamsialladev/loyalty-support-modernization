@@ -16,7 +16,7 @@ import os
 import subprocess
 import sys
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -30,6 +30,7 @@ from app.adapters.mock_model import RulesMockModel
 from app.ai.config import ai_config
 from app.ai.harness import AiRuntime, SpendCaps
 from benchmarks.intake import DatasetCase, read_split
+from evaluations.freeze import changes_since_freeze
 from evaluations.journey import Journey
 from evaluations.live_model import GuardedModel
 from evaluations.run_config import ROOT, THRESHOLDS, RunConfig, hard_cap_usd, load
@@ -66,7 +67,9 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def refuse_unless_frozen(split: str, confirm_frozen: bool, tree_status: str) -> None:
+def refuse_unless_frozen(
+    split: str, confirm_frozen: bool, tree_status: str, changes: Callable[[], list[str]] = changes_since_freeze
+) -> None:
     """Never tune on held-out data (spec E.1, F9): that run needs a deliberate flag, and a commit that says what ran."""
     if split != "heldout":
         return
@@ -74,6 +77,9 @@ def refuse_unless_frozen(split: str, confirm_frozen: bool, tree_status: str) -> 
         raise RunRefused("the held-out split needs --confirm-frozen: it's only for a frozen configuration")
     if tree_status.strip():
         raise RunRefused("the held-out split needs a clean working tree, so the commit says exactly what ran")
+    changed = changes()
+    if changed:
+        raise RunRefused(f"changed since the freeze: {changed[:5]}")
 
 
 def runtime_for(config: RunConfig, run_name: str, split: str, budget_usd: float | None) -> AiRuntime | None:

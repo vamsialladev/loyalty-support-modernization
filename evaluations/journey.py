@@ -78,6 +78,15 @@ def arm_a_first_action(path: list[str]) -> str:
     return "none"  # in the billing queue: nobody worked it
 
 
+def first_result(recommendations: list[Recommendation]) -> Recommendation | None:
+    """The arm's first recommended action. Arm C's investigation writes arm B's result first, and its own answer when
+    the model finishes, so its first answer is the first row with a model run. Arm B has only the one kind."""
+    for rec in recommendations:
+        if rec.ai_run_id is not None:
+            return rec
+    return recommendations[0] if recommendations else None
+
+
 def outcome_of(case: Case) -> str:
     state = CaseState(case.status)
     if state is CaseState.ESCALATED:
@@ -336,7 +345,7 @@ class Journey:
         if trace.first_action:
             return
         query = select(Recommendation).where(Recommendation.case_id == case.id).order_by(Recommendation.id)
-        first = self.s.scalars(query).first()
+        first = first_result(list(self.s.scalars(query)))
         trace.first_action = first.action if first else "none"
 
     def _answer_b(self, case: Case, label: Label, trace: _Trace, original: IntakeRequest) -> None:
@@ -555,7 +564,7 @@ class Journey:
         if self.arm == "A":
             return _ARM_A_ELIGIBILITY.get(trace.first_action)
         query = select(Recommendation).where(Recommendation.case_id.in_(ids)).order_by(Recommendation.id)
-        first = self.s.scalars(query).first()
+        first = first_result(list(self.s.scalars(query)))
         return first.status if first else None
 
 
@@ -572,7 +581,7 @@ def _evidence_names(row: CaseEvidence) -> set[str]:
         names.add(f"policy:{row.source_ref.split('#', 1)[0]}")
     if snapshot.get("member"):
         names.add("member_record")
-    if snapshot.get("records"):
+    if snapshot.get("records") or snapshot.get("stay_found_by"):  # looked for it, even if it's missing upstream (D24)
         names.add("stay_record")
     if "ledger" in snapshot:
         names.add("ledger")
