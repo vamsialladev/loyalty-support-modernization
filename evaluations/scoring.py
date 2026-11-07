@@ -6,7 +6,7 @@ The definitions are the pre-registered ones. If this code and `docs/hypotheses.m
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -42,7 +42,7 @@ class CaseResult:
     contacts: int = 1  # the member's first message is one contact
     identified_stays: tuple[str, ...] = ()
     evidence_seen: tuple[str, ...] = ()
-    policies: Mapping[str, str] = field(default_factory=dict)  # stay -> "policy-id@version"
+    policies: Mapping[str, Sequence[str]] = field(default_factory=dict)  # stay -> "policy-id@vN", all it relied on
     eligibility: str | None = None
     approved: bool | None = None  # None: no approval was asked for
     executed: bool = False
@@ -53,6 +53,8 @@ class CaseResult:
     output_tokens: int = 0
     cost_usd: float = 0.0
     interrupted: bool = False
+    reopened: bool = False  # the member came back (simulated)
+    simulated_days: int = 0  # simulated, never a measurement
 
 
 def expected_points(label: Label) -> dict[str, int]:
@@ -111,6 +113,17 @@ def carries_unstructured_input(label: Label) -> bool:
     return bool(UNSTRUCTURED_DEFECTS.intersection(label["scenarios"]))
 
 
+def _not_policies(evidence: Iterable[str]) -> set[str]:
+    return {name for name in evidence if not name.startswith("policy:")}
+
+
+def _right_policy_version(records: Sequence[str], wanted: str) -> bool:
+    """Fails only when a record shows another version of that policy. An arm's records don't always name every policy it
+    applied, and a missing record isn't evidence of a wrong one. Same rule for every arm."""
+    same_policy = [record for record in records if record.split("@", 1)[0] == wanted.split("@", 1)[0]]
+    return not same_policy or wanted in same_policy
+
+
 def _claimed(label: Label) -> set[str]:
     return {stay["stay_id"] for stay in label["stays"]}
 
@@ -124,8 +137,10 @@ def _link_results(result: CaseResult, label: Label) -> dict[str, bool]:
     }
     return {
         "request_understood": _claimed(label) <= set(result.identified_stays),
-        "evidence_found": set(label["required_evidence"]) <= set(result.evidence_seen),
-        "policy_version": all(result.policies.get(stay) == wanted for stay, wanted in wanted_policies.items()),
+        "evidence_found": _not_policies(label["required_evidence"]) <= _not_policies(result.evidence_seen),
+        "policy_version": all(
+            _right_policy_version(result.policies.get(stay, ()), w) for stay, w in wanted_policies.items()
+        ),
         "eligibility": result.eligibility == label["eligibility"],
         "action_proposed": correct_action(result, label),
         "approval_decision": bool(result.approved) if should_adjust else not result.approved,

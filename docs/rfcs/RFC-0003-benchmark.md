@@ -61,6 +61,40 @@ flowchart LR
 - **A as-is** lives in `benchmarks/`, on a disposable database only, and can't be imported by the app (a test enforces it). It's descriptive and excluded from H6.
 - **Statistics:** paired bootstrap, 10,000 resamples, seed 9, 95% percentile interval. Raw and re-weighted results both, using the weights in `benchmarks/datasets/v1/composition.md`.
 
+## Decision: what happens after the re-check stops a credit
+
+**Decided 2026-11-07, with the owner, before any held-out run.**
+
+**Context.** On D11, a posting lands between approval and execution, and the shared write path's re-check stops the credit. The case is then back in `Investigating`, and each scripted agent's script ends there. The label's outcome is `no_adjustment`.
+
+**Options.**
+
+1. **Scripts as written, for every arm.** The ledger is right, the case stays open, and it fails case success because no one closed it.
+2. **A second look, for every arm.** A person works the case again. I first built this, without authority from the catalog or an ADR.
+3. **Arm A as written, arm B with a second look.** Arm B wins these cases through a step the runner added.
+
+**Decision: option 1, as the owner asked.** Scripted agents follow their scripts, and don't act like careful people. `docs/hypotheses.md` section 1 says D10 and D11 are "credited to neither B nor C", and option 3 would break that. Arm C uses the same driver as arm B, so it gets the same rule.
+
+**What this isn't.** It doesn't touch D06's prediction that arm A over-credits. No re-check stops a D06 credit, so the second look never fires there. `tests/test_runner.py::test_the_second_look_only_ever_acts_on_a_stopped_credit` holds that on D06, D15, K01 and K02.
+
+**Trade-off.** Every arm fails D11 on case success, though its ledger is right. Case success therefore understates all arms by the same cases, and "Final ledger correct" and "Left unresolved" are separate rows so that's visible. Under option 1 the difference between arms doesn't change.
+
+**The three variants stay in a sensitivity report for each split the arms run on,** so the choice can be challenged. `--second-look` selects the variant, and `evaluations/sensitivity.py` writes the report.
+
+**Measured on dev, 100 cases, commit `39f96ec` (`benchmarks/reports/deterministic/dev-after-stop-sensitivity.md`). Dev only: no verdict.**
+
+| Variant | A case success | B case success | B minus A |
+|---|---|---|---|
+| 1. Both as written **(main analysis)** | 61/100 | 89/100 | +28.0 pp (95% interval +18.0 to +38.0) |
+| 2. Both with a second look | 63/100 | 91/100 | +28.0 pp (+18.0 to +38.0) |
+| 3. A as written, B with a second look **(biased, comparison only)** | 61/100 | 91/100 | +30.0 pp (+20.0 to +40.0) |
+
+The second look changes only DV-031 and DV-089, both D11, on both arms. Right ledgers are the same whichever way: A 67/100, B 93/100. Arm A's over-credits don't move: D06 1/3, D07 2/2, D15 2/2. So the choice moves both arms equally, and option 3 would have handed arm B 2 points.
+
+**A finding from the same data:** the catalog predicts arm A over-credits on D06, and it did on DV-006 (6,360 points against 3,180). DV-041 and DV-099 came out right by accident: they're Mountain Lodge stays, where arm A's stale 30-day rule (D08) says "wait", so it never credits. Their first action is still wrong.
+
+**What would change this:** a catalog or ADR change saying a person handles a stopped credit, logged in `docs/hypotheses.md` as a new experiment (F9).
+
 ## The $5 limit
 
 The owner approved live runs with a **hard cap of $5 total** across the smoke test and the live evaluation (2026-11-06).

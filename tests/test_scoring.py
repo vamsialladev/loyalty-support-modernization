@@ -48,7 +48,7 @@ def good(case_id: str = "X-1", **over: Any) -> CaseResult:
         "final_points": {"S1": 100},
         "identified_stays": ("S1",),
         "evidence_seen": ("ledger", "stay_record"),
-        "policies": {"S1": "p@v2"},
+        "policies": {"S1": ("other@v1", "p@v2")},
         "eligibility": "eligible",
         "approved": True,
         "executed": True,
@@ -107,7 +107,7 @@ def test_clarification_recall_only_counts_cases_that_need_it() -> None:
     [
         ({"identified_stays": ()}, "request_understood"),
         ({"evidence_seen": ("ledger",)}, "evidence_found"),
-        ({"policies": {"S1": "p@v1"}}, "policy_version"),
+        ({"policies": {"S1": ("other@v1", "p@v1")}}, "policy_version"),
         ({"eligibility": "ineligible"}, "eligibility"),
         ({"first_action": "deny"}, "action_proposed"),
         ({"approved": False}, "approval_decision"),
@@ -117,6 +117,12 @@ def test_clarification_recall_only_counts_cases_that_need_it() -> None:
 )
 def test_the_funnel_names_the_first_failure(over: dict[str, Any], link: str) -> None:
     assert first_failed_link(good(**over), label()) == link
+
+
+def test_no_record_of_a_policy_isnt_a_wrong_policy() -> None:
+    assert first_failed_link(good(policies={}), label()) is None
+    assert first_failed_link(good(policies={"S1": ("other@v9",)}), label()) is None
+    assert first_failed_link(good(policies={"S1": ("p@v1",)}), label()) == "policy_version"
 
 
 def test_crediting_a_case_that_shouldnt_be_credited_fails_at_approval() -> None:

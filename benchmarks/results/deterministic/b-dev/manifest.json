@@ -1,0 +1,31 @@
+{
+  "after_stop": "script as written",
+  "app_commit": "39f96ec484ce9c90d8b509b085b1912604e32fab",
+  "cases": 100,
+  "config": {
+    "arm": "B",
+    "cache_state": "no prompt caching; every run starts from an empty database",
+    "concurrency": 1,
+    "cost_ceiling_usd": null,
+    "dataset_version": "v1",
+    "environment": "disposable SQLite per run, worker driven in one process, mock customer API (benchmark environment, not production)",
+    "limits": "none; no model",
+    "model": null,
+    "name": "arm-b",
+    "prompt_version": null,
+    "provider": "none",
+    "repetitions": 2,
+    "retrieval": "postgres-fts or its SQLite equivalent, as the arm uses it; the same for arms B and C",
+    "timeout_retry": "the mock API client's own settings",
+    "tool_permissions": "arm B's conventional workflow, no generative AI"
+  },
+  "dataset_sha256": "05b7636970f5ec8bb0660216145cff8f88610fd03404530f198285dcee195f36",
+  "dataset_version": "v1",
+  "finished_at_utc": "2026-11-07T14:38:29Z",
+  "kind": "deterministic",
+  "label": "SYNTHETIC data. Scripted agents and a simulated member and supervisor: not human timing, not real people.",
+  "labels_sha256": "25841124244577a607800a14c1d8d3fd7dda39c42f2490897708ec94d18a9f1b",
+  "name": "b-dev",
+  "split": "dev",
+  "tree_clean": true
+}
