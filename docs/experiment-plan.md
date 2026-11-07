@@ -44,3 +44,6 @@ predicted-vs-actual table per defect (F8). Error analysis in `docs/error-analysi
 ## 7. Budget and stop rules
 - Live spend stops at the configured cap; an interrupted live run is reported as interrupted, never extrapolated.
 - If H6 fails anywhere, analysis stops until the write path is fixed and every run is repeated.
+
+## 8. What happened
+Run as planned, with the live-run budget capped at $5 total, and $1.83 spent. Results: `benchmarks/reports/heldout/`. No threshold or definition changed. What the dev pass changed is in RFC-0003.

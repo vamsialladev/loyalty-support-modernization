@@ -1,0 +1,149 @@
+{
+  "label": "SYNTHETIC. Dev and validation cases with out-of-scope items. Arm C is live. Not an evaluation of wording.",
+  "rows": [
+    {
+      "case_id": "DV-013",
+      "arm": "A",
+      "items": [
+        "noise_complaint"
+      ],
+      "outcome": "adjusted",
+      "routed_by_the_system": false,
+      "seen_by_a_person": false,
+      "in_billing_queue": false,
+      "cost_usd": 0.0
+    },
+    {
+      "case_id": "DV-051",
+      "arm": "A",
+      "items": [
+        "refund_request"
+      ],
+      "outcome": "unresolved",
+      "routed_by_the_system": false,
+      "seen_by_a_person": false,
+      "in_billing_queue": true,
+      "cost_usd": 0.0
+    },
+    {
+      "case_id": "DV-063",
+      "arm": "A",
+      "items": [
+        "refund_request"
+      ],
+      "outcome": "unresolved",
+      "routed_by_the_system": false,
+      "seen_by_a_person": false,
+      "in_billing_queue": true,
+      "cost_usd": 0.0
+    },
+    {
+      "case_id": "DV-013",
+      "arm": "B",
+      "items": [
+        "noise_complaint"
+      ],
+      "outcome": "escalated",
+      "routed_by_the_system": false,
+      "seen_by_a_person": true,
+      "in_billing_queue": false,
+      "cost_usd": 0.0
+    },
+    {
+      "case_id": "DV-051",
+      "arm": "B",
+      "items": [
+        "refund_request"
+      ],
+      "outcome": "escalated",
+      "routed_by_the_system": false,
+      "seen_by_a_person": true,
+      "in_billing_queue": false,
+      "cost_usd": 0.0
+    },
+    {
+      "case_id": "DV-063",
+      "arm": "B",
+      "items": [
+        "refund_request"
+      ],
+      "outcome": "escalated",
+      "routed_by_the_system": false,
+      "seen_by_a_person": true,
+      "in_billing_queue": false,
+      "cost_usd": 0.0
+    },
+    {
+      "case_id": "DV-013",
+      "arm": "C",
+      "items": [
+        "noise_complaint"
+      ],
+      "outcome": "adjusted",
+      "routed_by_the_system": true,
+      "seen_by_a_person": false,
+      "in_billing_queue": false,
+      "cost_usd": 0.001964
+    },
+    {
+      "case_id": "DV-051",
+      "arm": "C",
+      "items": [
+        "refund_request"
+      ],
+      "outcome": "adjusted",
+      "routed_by_the_system": true,
+      "seen_by_a_person": false,
+      "in_billing_queue": false,
+      "cost_usd": 0.00155
+    },
+    {
+      "case_id": "DV-063",
+      "arm": "C",
+      "items": [
+        "refund_request"
+      ],
+      "outcome": "adjusted",
+      "routed_by_the_system": true,
+      "seen_by_a_person": false,
+      "in_billing_queue": false,
+      "cost_usd": 0.001588
+    },
+    {
+      "case_id": "VA-007",
+      "arm": "A",
+      "items": [
+        "noise_complaint"
+      ],
+      "outcome": "adjusted",
+      "routed_by_the_system": false,
+      "seen_by_a_person": false,
+      "in_billing_queue": false,
+      "cost_usd": 0.0
+    },
+    {
+      "case_id": "VA-007",
+      "arm": "B",
+      "items": [
+        "noise_complaint"
+      ],
+      "outcome": "escalated",
+      "routed_by_the_system": false,
+      "seen_by_a_person": true,
+      "in_billing_queue": false,
+      "cost_usd": 0.0
+    },
+    {
+      "case_id": "VA-007",
+      "arm": "C",
+      "items": [
+        "noise_complaint"
+      ],
+      "outcome": "adjusted",
+      "routed_by_the_system": true,
+      "seen_by_a_person": false,
+      "in_billing_queue": false,
+      "cost_usd": 0.001473
+    }
+  ]
+}

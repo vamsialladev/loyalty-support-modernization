@@ -49,7 +49,7 @@ def seeded_case(
     worker.drain()
     s.expire_all()
     rec = conventional.latest_recommendation(s, case)
-    if rec is None or rec.stay_id is None or rec.member_number is None:
+    if rec is None or rec.stay_id is None or rec.member_number is None or rec.checkout_day is None:
         return {"seeded": False}
     rec.action, rec.detail, rec.points_owed = NextAction.ADJUST.value, None, SEEDED_POINTS
     s.commit()

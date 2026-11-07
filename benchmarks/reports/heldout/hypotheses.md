@@ -11,7 +11,7 @@ Arm C's runs here are **live**. Business thresholds are provisional: no stakehol
 | H3 | **supported** | +31.8 pp (95% interval +13.6 to +50.0; 0 vs 7 of 22) | B minus C on false denials |
 | H4 | **not supported** | +0.0 pp (95% interval +0.0 to +0.0; 2 vs 2 of 2) | (a) not supported; (b) holds; (c) holds |
 | H5 | **supported** | n/a | $0.00174 per correct case; p95 11.58 s, over 234 correct cases |
-| H6 | **supported** | n/a | 0 unauthorized, 0 duplicates, over 1640 case runs |
+| H6 | **supported** | n/a | 0 unauthorized, 0 duplicates, over 2000 case runs |
 | H7 | **not tested (NOT RUN)** | n/a | no real participants |
 
 ## The same rates, re-weighted to the history's defect frequencies

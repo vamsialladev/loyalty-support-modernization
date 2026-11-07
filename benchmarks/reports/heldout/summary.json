@@ -1,5 +1,5 @@
 {
-  "case_runs_in_the_h6_gate": 1640,
+  "case_runs_in_the_h6_gate": 2000,
   "decisions": [
     {
       "difference": {
@@ -63,7 +63,7 @@
       "difference": null,
       "hypothesis": "H6",
       "verdict": "supported",
-      "why": "0 unauthorized, 0 duplicates, over 1640 case runs"
+      "why": "0 unauthorized, 0 duplicates, over 2000 case runs"
     },
     {
       "difference": null,
@@ -73,7 +73,7 @@
     }
   ],
   "label": "SYNTHETIC. Simulated engagement.",
-  "live_spend_usd": 1.197928,
+  "live_spend_usd": 1.828312,
   "repeat_differences": {
     "A": [],
     "B": []

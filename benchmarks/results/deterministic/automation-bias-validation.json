@@ -1,0 +1,327 @@
+{
+  "label": "SYNTHETIC. Simulated supervisor, seeded wrong proposals, deterministic arm B. Not real reviewer behaviour.",
+  "rows": [
+    {
+      "rate": 0.0,
+      "cases": 10,
+      "seeded": 9,
+      "approved": 0,
+      "credits_on_the_platform": 0,
+      "stopped_at": [
+        "decision:rejected"
+      ],
+      "results": [
+        {
+          "case_id": "VA-005",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-010",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-015",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-016",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-021",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-022",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-023",
+          "approve": false,
+          "seeded": false
+        },
+        {
+          "case_id": "VA-025",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-027",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-028",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        }
+      ]
+    },
+    {
+      "rate": 0.25,
+      "cases": 10,
+      "seeded": 9,
+      "approved": 0,
+      "credits_on_the_platform": 0,
+      "stopped_at": [
+        "decision:invalidated",
+        "decision:rejected"
+      ],
+      "results": [
+        {
+          "case_id": "VA-005",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-010",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-015",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-016",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-021",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-022",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-023",
+          "approve": false,
+          "seeded": false
+        },
+        {
+          "case_id": "VA-025",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-027",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-028",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        }
+      ]
+    },
+    {
+      "rate": 0.5,
+      "cases": 10,
+      "seeded": 9,
+      "approved": 0,
+      "credits_on_the_platform": 0,
+      "stopped_at": [
+        "decision:invalidated",
+        "decision:rejected"
+      ],
+      "results": [
+        {
+          "case_id": "VA-005",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-010",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-015",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-016",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-021",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-022",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-023",
+          "approve": false,
+          "seeded": false
+        },
+        {
+          "case_id": "VA-025",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-027",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        },
+        {
+          "case_id": "VA-028",
+          "approve": false,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:rejected"
+        }
+      ]
+    },
+    {
+      "rate": 1.0,
+      "cases": 10,
+      "seeded": 9,
+      "approved": 0,
+      "credits_on_the_platform": 0,
+      "stopped_at": [
+        "decision:invalidated"
+      ],
+      "results": [
+        {
+          "case_id": "VA-005",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-010",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-015",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-016",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-021",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-022",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-023",
+          "approve": true,
+          "seeded": false
+        },
+        {
+          "case_id": "VA-025",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-027",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        },
+        {
+          "case_id": "VA-028",
+          "approve": true,
+          "seeded": true,
+          "approved": false,
+          "stopped_at": "decision:invalidated"
+        }
+      ]
+    }
+  ]
+}

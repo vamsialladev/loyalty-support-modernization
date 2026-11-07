@@ -47,3 +47,9 @@
 | TD-40 | Rate limits write one row per request | Shared across processes, and survives a restart | Adds a write and a lock to every request | Milestone 12's load test | M9 |
 | TD-41 | Rate limits trust the socket address | No proxy in this local setup | Behind a proxy, everyone shares one address | Any deployment behind a proxy | M9 |
 | TD-42 | Erasure doesn't rewrite free text in audit events | The audit trail is append-only by design | A reason typed into an event keeps any personal data in it | Before real data: structure those fields or restrict them | M9 |
+| TD-43 | The simulation has no person who works an escalation | Keeps the simulation deterministic and the definition as registered | Arm B's handoffs count as un-credited; H3 rests on it | Any re-run: model a person, as a new experiment | M10 |
+| TD-44 | Held-out has only 2 clarification cases | The composition was fixed before the data | H4's first part can't separate the arms | The next held-out set: at least 10 | M10 |
+| TD-45 | Case success doesn't check that a complaint was routed | It's the registered metric | Arm A scores on D20 by ignoring the complaint | Add a routing measure, as a new experiment | M10 |
+| TD-46 | Arm C isn't confirmed on real Postgres | It would cost the same again | A database difference on arm C's path wouldn't show | Milestone 12's staging pass | M10 |
+| TD-47 | D11 stays open after the re-check stops a credit | Scripts run as written (ADR-0070) | Someone has to find these cases by hand | A small workflow fix, in all arms, before a pilot | M10 |
+| TD-48 | Explanation quality isn't measured | No calibrated judge exists | A wrong but convincing explanation wouldn't show | Human rubric with UAT, Milestone 18 | M10 |

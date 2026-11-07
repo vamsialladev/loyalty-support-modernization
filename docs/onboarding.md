@@ -368,6 +368,38 @@ It starts a local Keycloak with synthetic users and signs in through a real brow
 
 **The rule to remember:** every new query that reads a record has to scope by customer. The route-walking test covers access, but it can't see what a query returns.
 
+## 4i. The benchmark, in one page (Milestone 10)
+
+**Read in this order:** `docs/hypotheses.md`, RFC-0003, `benchmarks/reports/heldout/hypotheses.md`, `docs/error-analysis.md`.
+
+**Run a deterministic arm, free:**
+
+```powershell
+uv run python -m evaluations.run --arm b --split dev --name my-try
+```
+
+**Compare two runs:**
+
+```powershell
+uv run python -m evaluations.compare benchmarks/results/deterministic/a-dev benchmarks/results/deterministic/b-dev
+```
+
+**Regenerate every report, free, from stored runs:**
+
+```powershell
+uv run python -m evaluations.final_report
+```
+
+Live runs cost money, need `--budget-usd`, and stop themselves at the owner's cap (`evaluations/spend.py`). Held-out needs `--confirm-frozen`, a clean tree and an unchanged freeze.
+
+| Symptom | Likely cause | Check |
+|---|---|---|
+| `changed since the freeze` | You changed something an arm depends on | That's a new experiment. Don't re-write the freeze to get past it |
+| A number looks too good | It may be a measurement bug | Every bug here was in the measuring. Read the case's stored record, then the arm's trail |
+| `spend` stops a run | The ledger's at its limit | `benchmarks/results/live/spend-ledger.jsonl`. It's append-only: never edit it |
+
+**The rule to remember:** look at a result before you believe it, and report the ones that go against you. Every slice where a simpler arm wins is generated, so nothing can be left out.
+
 ## 5. Common failure modes so far
 - **`ModuleNotFoundError: app`** when running pytest outside `uv run`: use `uv run pytest`.
 - **Preflight says NOT READY:** expected with an empty `.env`; it lists exactly which settings are missing.

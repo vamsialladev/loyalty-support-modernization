@@ -121,3 +121,15 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **No malware scanning on uploads.** Type, size and content checks only.
 - **Repeated red-team runs against a real model: NOT RUN.** The suite uses models scripted to obey the attacker, which shows what's reachable, not how often a model complies.
 - **No independent review:** no penetration test and no outside reviewer. See `security/residual-risks.md`.
+
+## Added in Milestone 10 (2026-11-07)
+- **No person works an escalation in the simulation,** so arm B's handoffs count as un-credited. H3 rests on this: see `docs/error-analysis.md`.
+- **One generator wrote every message,** dev and held-out alike. Arm C's numbers may not survive real messages.
+- **Case success doesn't check that a complaint reached anyone.** A separate check does, on 4 cases.
+- **H4 had 2 clarification cases,** too few to separate the arms.
+- **Explanation quality isn't scored,** and no judge is used. A wrong but convincing explanation wouldn't show up here.
+- **The labels aren't independently reviewed:** the 30-label review is still open.
+- **The simulated supervisor approves what the engine proposes.** Real reviewers and automation bias in real people are Milestone 18.
+- **Scripted timing isn't handling time.** H7 is not tested.
+- **The benchmark runs on SQLite.** Arms A and B are confirmed on Postgres. Arm C isn't: that would need the same spend again.
+- **Dollar figures rest on assumptions** nobody has confirmed, handoff cost above all.

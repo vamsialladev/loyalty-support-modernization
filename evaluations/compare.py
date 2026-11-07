@@ -55,6 +55,7 @@ class Run:
     @property
     def title(self) -> str:
         variant = " (second look)" if "second look" in self.manifest.get("after_stop", "") else ""
+        variant += f" ({self.name})" if self.name.startswith("ablation-") else ""
         return f"{self.results[0].arm}{variant} [{self.manifest['kind']}]" if self.results else self.name
 
 

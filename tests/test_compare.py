@@ -110,3 +110,12 @@ def test_the_sensitivity_report_shows_all_three_variants_and_what_changed() -> N
 
 def test_over_credits_are_counted_within_a_scenario() -> None:
     assert sensitivity.over_credits_in(run(result("2", final_points={"S2": 200})), LABELS, "D06") == "1/1"
+
+
+def test_an_ablations_column_says_which_one_it_is() -> None:
+    ablation = Run(
+        "ablation-no-repair",
+        {"kind": "live", "split": "dev", "after_stop": "script as written"},
+        (result("1", kind="live"),),
+    )
+    assert ablation.title == "A (ablation-no-repair) [live]"

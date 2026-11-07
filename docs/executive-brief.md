@@ -3,6 +3,20 @@
 > One page per phase for a non-technical sponsor (PURP-06). Plain language. **Simulated engagement, synthetic data.**
 > Newest phase first.
 
+## Phase 4: AI, security and the benchmark (Milestones 8-10, completed 2026-11-07)
+
+**The answer, on a simulation.** Better tools and corrected rules did most of the work. On 80 test cases written before the results were known, the old way got 41 right, the improved way without AI got 71, and with AI 78. Neither improved way over-credited anyone. The old way did so on 8.
+
+**What AI adds.** Mostly, it settles messy messages that the non-AI version hands to a person: 6 fewer handoffs in 80. If people handle those handoffs well, the final answers are nearly the same (78 against 77). So the question for a real customer is what a handoff costs. The AI itself costs about $0.002 a case.
+
+**The safeguards held.** Across more than 2,000 test runs, no duplicate credit and no unauthorized action. Without the shared safeguards, 45 duplicate credits appeared under the same conditions. A supervisor approving everything still couldn't move points on 9 planted wrong proposals. Zero observed doesn't prove zero risk.
+
+**What this can't tell you.** Every message came from one generator, so real messages will be messier. No real people were involved: no human timing, no real reviewers, no real satisfaction. Every dollar figure is an estimate from assumptions.
+
+**Decision needed.** None now. Before a pilot: real cases, a measured handoff cost, and an independent look at the labels.
+
+**Next.** Protocols (Milestone 11), then production readiness (Milestone 12).
+
 ## Phase 3: the core build (Milestones 4-7, completed 2026-11-06)
 
 **Where we are.** The working system exists on a simulated hotel group's data: a fake loyalty platform to talk to, the old way of
