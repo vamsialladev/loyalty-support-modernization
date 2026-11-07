@@ -10,15 +10,17 @@ verified" (or "Not applicable") counts as done.
 
 | Score | Done (verified) | Total | % | In progress (unverified / configured / docs) |
 |---|---|---|---|---|
-| Core product functionality | 75 | 108 | 69% | 5 |
+| Core product functionality | 76 | 108 | 70% | 5 |
 | Benchmarks and evaluation | 18 | 64 | 28% | 2 |
 | Actual-tool exercises | 0 | 16 | 0% | 3 |
 | Protocol labs | 0 | 16 | 0% | 0 |
-| Security controls | 9 | 55 | 16% | 5 |
+| Security controls | 27 | 55 | 49% | 7 |
 | Owner's demonstrated understanding | 0 | 3 | 0% | 1 |
-| Other tracked work (not a Part 0.5 score) | 38 | 107 | 36% | 13 |
+| Other tracked work (not a Part 0.5 score) | 39 | 107 | 36% | 13 |
 
 369 requirements: Tier 1: 190, Tier 2: 102, Tier 3: 27, Tier 4: 50
+
+New in M9: `security/` documents, customer scope, OIDC, rate limits, machine tokens, retention, erasure, legal hold and access review. SEC-19 stays unverified until the repeated tests run on a real model; SEC-10 is a guide only.
 
 New in M8: arm C (ARMC-01, ARMS-01), AI engineering (AI-01, AI-03 to AI-17), ELIG-02, POL-06, POL-07, TEST-03, TEST-04, the system card (ENT-01, ENT-02), labels and review order (ENT-05, ENT-06), documents (DOC-02 to DOC-04), the routing baseline (ML-01, ML-03). **All of it is verified on mock and scripted models; the live smoke test is NOT RUN.** Blocked: ML-05, and image OCR. Started, still `Planned`: AI-02 and ML-02 (need a live model, M10), SEC-05, ENT-12, ENT-23, DOC-06 (M9), ENT-15, LIVE-05, OPS-05 (M12), BENCH-10 (M10).
 
@@ -44,7 +46,15 @@ authorization, M9), API-01 and API-02 (moved to M7, as the owner approved). Code
 | 6 | **Implemented and verified** (Appendix C, M6: real-Postgres tests pass for idempotency atomicity, concurrent execute, duplicate prevention, timeout-after-commit reconciliation, lease recovery, approval invalidation) | `tests/test_execution_postgres.py`, `tests/test_write_path_postgres.py`, `tests/test_worker_postgres.py`, `tests/test_audit_postgres.py`, `tests/test_mock_api_postgres.py`; `scripts\compose_check.ps1 -Browser`; verification log, Milestone 6 |
 | 7 | **Implemented and verified** (Appendix C, M7: arm B works; Playwright happy path and self-approval block pass) | `tests/browser/test_arm_b_e2e.py` (offline and against the stack), `tests/test_arm_b_defects.py`, `tests/test_arm_b_console.py`, `tests/test_arm_b_rules.py`, `tests/test_arm_b_postgres.py`, `tests/test_arm_a_fence.py`, `tests/test_api.py`, `tests/test_metrics_and_day_one.py`; verification log, Milestone 7 |
 | 8 | **Implemented and verified** (Appendix C, M8: every loop stop condition and injection test passes on the mock provider; the Claude provider is implemented; its live smoke test is **NOT RUN**) | `tests/test_ai_loop.py`, `tests/test_ai_tools.py`, `tests/test_ai_provider.py`, `tests/test_arm_c.py`, `tests/test_extraction.py`, `tests/test_routing_baseline.py`; verification log, Milestone 8 |
-| 9–20 | Planned | `docs/implementation-plan.md` |
+| 9 | **Implemented and verified** (Appendix C, M9: authorization, CSRF, rate-limit, redaction and red-team tests pass on mock and scripted models; OIDC login works locally against a real Keycloak). SEC-19's repeated tests on a real model: **NOT RUN** | `tests/test_security_authz.py`, `tests/test_security_postgres.py`, `tests/test_oidc.py`, `tests/test_red_team.py`, `tests/test_red_team_shared_corpus.py`, `tests/test_security_docs.py`; `security/evidence/oidc-check-2026-11-06.txt`; verification log, Milestone 9 |
+| 10–20 | Planned | `docs/implementation-plan.md` |
+
+## Milestone 9 deliverables
+- **Authorization:** customer scope on every record, tested by walking the real routes. It found a real bug: the approvals list wasn't scoped.
+- **Identity:** OIDC through PyJWT against a real local Keycloak, group-to-role mapping, rate limits in the database, deactivation, one-use recovery links, read-only machine tokens.
+- **Governance:** retention, member export and erasure, legal hold, access review.
+- **Red team:** on business effects, with models scripted to obey the attacker. Injection isn't solved, and no real model has been tested.
+- **`security/`:** standards with versions, inventory, data flow, threat model, risks, controls, plan, results, runbooks, readiness. No certification or compliance claimed.
 
 ## Milestone 8 deliverables
 - **The loop** (`app/ai/`): an explicit state machine, with a test per stop condition, five read-only tools, validation against the engine, one repair, then arm B's result.

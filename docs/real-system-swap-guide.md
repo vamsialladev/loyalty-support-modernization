@@ -167,3 +167,17 @@ the override log, the JSON API's problem documents, the arm fence test.
 | Documents | Text-layer PDFs and emails by rules; vision through the provider | Real scans need OCR: install Tesseract or a cloud OCR, and measure it. Real layouts need new rules |
 
 **Customer-specific:** `config/prompts/`, `config/ai/`, document field rules. **Starter kit:** the loop, the stop conditions and their tests, the validation shape, the harness tables, the idea of a fence around each baseline.
+
+## Identity and machine access (Milestone 9)
+
+| Part | Here | For a real engagement |
+|---|---|---|
+| Sign-in | Keycloak locally; `AUTH_MODE=oidc` plus `OIDC_*` settings | The customer's IdP (Entra ID, Okta or similar). Discovery does the rest. Run `scripts/oidc_check.py`'s steps against a test tenant first |
+| Roles | `oidc.group_roles` in `config/customers/<id>.yaml` | The customer's real group names. No mapped group means no access |
+| MFA | **Not enforced here:** a guide in `docs/identity.md` | Enforce it in the IdP, and test it there before claiming it |
+| Provisioning | Accounts appear on first sign-in; SCIM documented, not built | SCIM if the customer needs it |
+| Machine access | Read-only tokens, shown once | A service identity from the customer's platform, if they prefer |
+| Rate limits | Per person and per address, by socket address | Set up a trusted proxy header first, or everyone shares one address |
+| Retention | `RETENTION_DAYS`, daily from the worker | The customer's policy. Add backups to the erasure process |
+
+**Customer-specific:** group mapping, retention period, regulatory notes. **Starter kit:** the OIDC adapter and its tests, the rate limiter, the red-team suite's shape, the route-walking test, the `security/` document set.

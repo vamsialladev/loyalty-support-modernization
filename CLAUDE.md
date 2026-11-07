@@ -34,6 +34,11 @@ decision. Note what moves into the starter kit and what is customer-specific.
 - **At the end of each milestone:** update `docs/session-handoff.md`, and tell the owner in 3 lines what changed and what
   they must do.
 
+## Live model approval from the owner (2026-11-06)
+- **Approved:** the live smoke test, and Milestone 10's live evaluation, with a **hard cap of $5 total** across them. Anything past the cap needs a new approval.
+- **Keep mock and live results clearly separated:** different folders, and labelled in every report.
+- The settings must be in this repo's `.env`. Check with preflight. Never look for a key anywhere else.
+
 ## Model and mode guidance (follow at the start of every milestone)
 - The owner uses **Opus for all milestones**; quality matters more than speed or usage.
 - Design-heavy milestones get an RFC in `docs/rfcs/` before the code, and don't wait for the owner unless a standing

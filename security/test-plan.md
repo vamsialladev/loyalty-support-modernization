@@ -21,4 +21,4 @@ Owned environment only. Tests assert on business effects and access boundaries, 
 | Budget and resource exhaustion | `tests/test_red_team.py`, `tests/test_ai_provider.py` |
 | Cross-user stream access | **Not applicable yet:** there's no streaming endpoint |
 
-**Repeating model-based tests to show variability:** needs a live model. NOT RUN until the owner approves it.
+**Repeating model-based tests to show variability:** needs a live model. NOT RUN yet. The owner has approved live runs with a $5 cap, so it belongs with Milestone 10's.

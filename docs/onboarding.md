@@ -345,6 +345,29 @@ After changing the API, run `uv run python -m app.api.contract --write` and look
 
 **The rule to remember:** if you're tempted to let the model's output change a decision, put a deterministic check in front of it, and give that check to arm B as well (ADR-0067).
 
+## 4h. Security, in one page (Milestone 9)
+
+**Read in this order:** `security/threat-model.md`, `security/control-matrix.md`, `security/test-results.md`, `security/residual-risks.md`, ADR-0069.
+
+**Try the real sign-in, offline:**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\oidc_check.ps1
+```
+
+It starts a local Keycloak with synthetic users and signs in through a real browser. Details: `docs/identity.md`.
+
+**Administrator tools** (Admin page, signed in as an administrator): users and deactivation, recovery links, machine tokens, access review export, legal hold, member export and erasure.
+
+| Symptom | Likely cause | Check |
+|---|---|---|
+| 429 on the console or API | A rate limit | `rate_limits` table; `RATE_LIMIT_PER_MINUTE`. Behind a proxy, everyone shares one address (`docs/known-limitations.md`) |
+| 429 at sign-in, even with the right password | 5 failures on that account in the window | It clears when the 300 s window ends; the events are `sign_in_failed` |
+| Keycloak user gets no access | No mapped group | `config/customers/hg-demo.yaml`, `oidc.group_roles`. This is on purpose |
+| A case "isn't found" that exists | It belongs to another customer | `cases.customer_id` against the person's `users.customer_id` |
+
+**The rule to remember:** every new query that reads a record has to scope by customer. The route-walking test covers access, but it can't see what a query returns.
+
 ## 5. Common failure modes so far
 - **`ModuleNotFoundError: app`** when running pytest outside `uv run`: use `uv run pytest`.
 - **Preflight says NOT READY:** expected with an empty `.env`; it lists exactly which settings are missing.

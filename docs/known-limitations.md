@@ -111,3 +111,13 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **Routing can't be judged from these numbers:** see `docs/model-card-routing.md`. Two Appendix I classes aren't in the dataset.
 - **Injection is contained, not prevented.** A model may repeat an injected instruction in its draft. Drafts aren't sent, and business effects are what the tests check.
 - **Non-English messages:** arm C's drafts in other languages are unreviewed machine text until staff read them, and staff may not read that language.
+
+## Added in Milestone 9 (2026-11-06)
+- **Customer scope is enforced by application code and tests,** not by the database. A new query can forget it. One real deployment here serves one customer, so this is the second layer (ADR-0069).
+- **Rate limits use the socket address.** Behind a proxy, everyone shares one address until a trusted header is configured.
+- **Rate limits use fixed windows.** Failures can be spent just before a window's edge and again just after: at most 10 tries on one account close together, not 5 (`test_a_new_window_starts_counting_again...`).
+- **MFA is only a guide.** Nothing here enforces it.
+- **Erasure leaves free text in some audit events,** such as a reopen reason. Backups keep erased data until they expire; none exist in this local setup.
+- **No malware scanning on uploads.** Type, size and content checks only.
+- **Repeated red-team runs against a real model: NOT RUN.** The suite uses models scripted to obey the attacker, which shows what's reachable, not how often a model complies.
+- **No independent review:** no penetration test and no outside reviewer. See `security/residual-risks.md`.
