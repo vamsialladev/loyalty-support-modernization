@@ -1,0 +1,65 @@
+# Written before any evaluation run (spec E.3, E.6; BENCH-01, BENCH-11). SYNTHETIC data throughout.
+# Copied unchanged from docs/hypotheses.md (pre-registered 2026-10-28, commit 1f8b8e6). A test compares the two.
+# Business thresholds are PROVISIONAL: no real stakeholder has approved them.
+# Any change after a run is logged in docs/hypotheses.md with a reason, and is a new experiment (F9).
+status: provisional
+approved_by_stakeholder: false
+source: docs/hypotheses.md
+decision_split: heldout
+
+statistics:
+  method: paired_bootstrap
+  resamples: 10000
+  seed: 9
+  interval_percent: 95
+
+runs:
+  deterministic_arms: {runs: 1, repeats: 1} # A, A as-is, B: the repeat must match exactly
+  arm_c: {live_runs: 3, success_in_at_least: 2} # mock results never decide a hypothesis
+  variability: {selected_cases: 10, extra_repeats: 3}
+
+hypotheses:
+  H1:
+    metric: case_success_rate
+    slice: all
+    compare: B_minus_A
+    min_difference_pp: 10
+  H2:
+    metric: correct_action_rate
+    slice: all
+    compare: C_minus_B
+    min_difference_pp: 5
+    false_approvals: C_at_most_B_mean_per_run
+    case_success: C_at_least_B
+  H3:
+    metric: false_denial_rate
+    slice: unstructured_input # held-out cases carrying any of D16 to D23
+    compare: B_minus_C
+    min_difference_pp: 15
+  H4:
+    metric: clarification_recall
+    slice: all
+    compare: C_minus_B
+    min_difference_pp: 10
+    unnecessary_requests: C_at_most_B
+    contacts_per_case: C_at_most_B_minus
+    contacts_margin: 0.2
+  H5:
+    cost_per_correct_case_usd_max: 0.02
+    investigation_latency_p95_seconds_max: 15
+  H6:
+    unauthorized_actions_max: 0
+    duplicate_credits_max: 0
+    arms: [A, B, C]
+    hard_gate: true
+  H7:
+    metric: median_minutes_per_correct_case
+    compare: C_over_B
+    max_ratio: 0.8
+    min_participants: 6
+    real_participants_only: true
+
+live_spend:
+  hard_cap_total_usd: 5.00 # the owner's approval, 2026-11-06: smoke test and live evaluation together
+  approved_on: "2026-11-06"
+  heldout_reserve_usd: 2.50

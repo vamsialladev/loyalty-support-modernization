@@ -6,7 +6,8 @@
 **It spends real money: a few hundredths of a cent.** It runs only with `LIVE_AI_SMOKE=yes`, `ANTHROPIC_API_KEY` and
 `ANTHROPIC_MODEL`. The model must be on the allowed list in `config/ai/`. It prints pass or fail, the model, tokens
 and cost, and never the key. It sends a made-up message only: no case data. It proves the adapter's request shape and
-tool call round trip, not the model's quality.
+tool call round trip, not the model's quality. Its cost goes in the live spending ledger, and it won't start if the
+most it could cost would pass the owner's cap (`evaluations/spend.py`). Live smoke test: not an evaluation (spec E.5).
 """
 
 from __future__ import annotations
@@ -24,8 +25,11 @@ from dotenv import load_dotenv  # noqa: E402
 from app.ai.config import ai_config  # noqa: E402
 from app.ai.tools import TOOL_SPECS  # noqa: E402
 from app.ports.model_provider import ProviderRejected, ProviderUnavailable, UserMessage  # noqa: E402
+from evaluations.run_config import hard_cap_usd  # noqa: E402
+from evaluations.spend import CapReached, record, require_room  # noqa: E402
 
 MAX_OUTPUT_TOKENS = 300
+MAX_INPUT_TOKENS = 3000  # far above this short message and the tool list
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -45,6 +49,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"NOT RUN: {model_id} isn't on the allowed list in config/ai/hg-demo.yaml")
         return 0
 
+    worst_case = price.cost_microusd(MAX_INPUT_TOKENS, MAX_OUTPUT_TOKENS) / 1_000_000
+    try:
+        require_room(worst_case, hard_cap_usd())
+    except CapReached as exc:
+        print(f"NOT RUN: {exc}")
+        return 0
+
     from app.adapters.anthropic_model import AnthropicModel
 
     model = AnthropicModel(model_id)
@@ -57,6 +68,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"FAIL: {type(exc).__name__}: {exc}")
         return 1
     cost = price.cost_microusd(turn.usage.input_tokens, turn.usage.output_tokens) / 1_000_000
+    record("smoke", "live-smoke", model_id, turn.usage.input_tokens, turn.usage.output_tokens, cost)
     called = [c.name for c in turn.tool_calls]
     print(f"model {model_id}: stop_reason={turn.stop_reason}, tools={called}")
     print(f"tokens in {turn.usage.input_tokens}, out {turn.usage.output_tokens}; cost at the listed price ${cost:.6f}")
