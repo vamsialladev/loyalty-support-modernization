@@ -104,7 +104,7 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **Scripted runs say nothing about human time** (spec E.7).
 
 ## Added in Milestone 8 (2026-11-06)
-- **No real model has run.** Everything about arm C is verified on a mock and scripted models only. `scripts/live_smoke_ai.py` is NOT RUN until the owner approves it.
+- **Arm C's quality isn't measured on a real model yet.** Its behaviour is verified on a mock and scripted models. One live smoke call passed on 2026-11-07, with a made-up message: it shows the connection works, and nothing about quality. Milestone 10 measures the rest.
 - **Redaction is pattern matching.** It catches emails, phone numbers, card numbers and API-key shapes. It misses a number written in words, and addresses. Names stay, because reading a request needs them.
 - **Provider data terms aren't checked.** Check retention and any data agreement before sending real data.
 - **Image OCR is blocked** (Tesseract isn't installed). A scanned PDF has no text layer, so it goes to a person.
