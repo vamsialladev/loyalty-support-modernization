@@ -72,7 +72,8 @@ def changes_since_freeze(path: Path = FREEZE, root: Path = ROOT) -> list[str]:
     """What differs from the freeze. Empty means a held-out run may start."""
     if not path.exists():
         return ["no freeze has been committed"]
-    frozen: dict[str, str] = yaml.safe_load(path.read_text(encoding="utf-8"))["files"]
+    rows = yaml.safe_load(path.read_text(encoding="utf-8"))["files"]
+    frozen = {row["path"]: row["sha256"] for row in rows}
     current = frozen_hashes(root)
     return sorted(name for name in set(frozen) | set(current) if frozen.get(name) != current.get(name))
 
@@ -81,7 +82,8 @@ def write_freeze(dataset: Path, path: Path = FREEZE) -> None:
     document = {
         "purpose": "Fixed before any held-out run. SYNTHETIC data. Changing any of these files makes a new experiment.",
         "variability_cases": variability_cases(dataset),
-        "files": frozen_hashes(),
+        # A path and its hash on separate lines: on one line, a secret scan reads "...api...: <hash>" as an API key.
+        "files": [{"path": name, "sha256": digest} for name, digest in frozen_hashes().items()],
     }
     path.write_text(yaml.safe_dump(document, sort_keys=True), encoding="utf-8", newline="\n")
 

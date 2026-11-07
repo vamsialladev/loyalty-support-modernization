@@ -12,6 +12,10 @@ All work by Claude Code (Opus 5.5). Live results are kept apart from mock and de
 | 1 | Milestone 9's close-out | PR #20 | All three CI jobs green. Merged as `1eaa45c` |
 | 2 | Foundations before any run: RFC-0003, thresholds, configs, scoring, spending ledger | PR #21; whole offline suite locally: 1,295 tests, 77 skipped, 0 failed | CI green. Merged as `2b3bb16`. Nothing had run and no score existed |
 | 3 | **Live provider smoke test** (not an evaluation) | `scripts/live_smoke_ai.py` on `2b3bb16`, after the owner saved the settings; preflight READY | **PASS.** `claude-haiku-5-5`, stop reason `tool_use`, `get_member` called as expected. 1,389 tokens in, 26 out, **$0.000152** at list price. First live call in this project. Shows the connection works, and nothing about quality. `benchmarks/results/live/smoke/live-smoke-2026-11-07.md` |
+| 4 | Runner, dev pass on arms A and B | `evaluations.run`, PR #23, merged as `c47f04d`; reports in `benchmarks/reports/deterministic/` | Found six runner bugs before believing any number (RFC-0003). No arm changed |
+| 5 | After-a-stop decision, with the owner | Three variants on dev, `1ee95c3` | B minus A +28.0 pp both as written, +28.0 both with a second look, +30.0 for the biased mix. Only DV-031 and DV-089 change, on both arms |
+| 6 | First-action measurement bug | Found on live dev, before any held-out run | Arm C's first action read arm B's row: 90/100, truly 98/100. Fixed, re-run. **Pre-freeze, with a known cause and tests, so fixed and flagged rather than stopped on** |
+| 7 | Pre-freeze runs at `1ee95c3` | `evaluations.run`, 11 runs, `benchmarks/results/` | Repeats identical on A and B. **Dev only, no verdict:** case success A 61/100, B 89/100, C 96/100; right ledgers 67, 93, 100; false approvals 7, 0, 0; false denials 26, 7, 0. **Validation:** A 18/30, B 28/30, C 30/30. Live spend $0.481 |
 
 ## Milestone 9 (2026-11-06)
 

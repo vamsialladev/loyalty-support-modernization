@@ -81,7 +81,7 @@ flowchart LR
 
 **The three variants stay in a sensitivity report for each split the arms run on,** so the choice can be challenged. `--second-look` selects the variant, and `evaluations/sensitivity.py` writes the report.
 
-**Measured on dev, 100 cases, commit `39f96ec` (`benchmarks/reports/deterministic/dev-after-stop-sensitivity.md`). Dev only: no verdict.**
+**Measured on dev, 100 cases, commit `1ee95c3` (`benchmarks/reports/deterministic/dev-after-stop-sensitivity.md`). Dev only: no verdict.**
 
 | Variant | A case success | B case success | B minus A |
 |---|---|---|---|
@@ -124,6 +124,30 @@ The owner approved live runs with a **hard cap of $5 total** across the smoke te
 6. Compare, verdicts, dashboard, RCA, error analysis, business-value report, predicted vs actual.
 
 Steps 1–3 need no key. **Step 4 onward waits for the Anthropic settings in `.env`.**
+
+## What the dev pass changed, before the freeze
+
+Every one of these is in the runner or the scoring. **No arm's code changed, no threshold changed, and no hypothesis changed.** All were fixed before any held-out run. Raw records are kept.
+
+| Found | Effect if left in | Fix |
+|---|---|---|
+| Only the first of several citations was compared | Arm B's policy link failed | All are compared; only a record of another version fails it |
+| Arm A's policy reference names no version | Arm A's link couldn't be scored | Read from the position of the rules revision it applied |
+| A case stopped by the re-check stayed open | The decision above | Scripts as written, for every arm |
+| A member told to wait came back at 00:29 UTC, still the evening before at the hotel (DV-023) | A false failure for arm B | Comes back at 15:00 UTC on that date |
+| The member never named D16's other stay | Arm B and C couldn't finish D16 | Reads the claimed stays |
+| Every run called the tree dirty, from its own results | Manifests wrong | Results don't count |
+| D10's two cases ran one after the other, so the second saw the first credit | A as-is couldn't show the catalog's prediction | Execution waits until all contacts are worked, for every arm |
+| **Arm C's first action was read from arm B's row, written before the model finishes** | **H2 would have been measured against the wrong thing, to arm C's cost: 90/100 instead of 98/100 on dev** | The first row with a model run; tests |
+| The funnel required evidence no arm records, counted an unclaimed stay, and had no outcome link | The funnel misled, with no effect on any hypothesis | Fixed; F7's last link added |
+
+**Left alone on purpose, as findings:** arm B can't read a free-text "checked out on…" answer (D19), which the catalog predicts; and arm B keeps asking a non-member (B01), where arm A wins. Held-out has no B01. Teaching arm B the generator's exact wording would be tuning to the dataset.
+
+## Live spend before the freeze
+
+$0.481 of the $5 cap: smoke test $0.0002, a first batch of 10 cases $0.019, and dev and validation twice, because the first-action fix needed a re-run. Measured cost is about $0.002 per case, close to the estimate above, so the plan fits.
+
+**A caution on these numbers.** Arm C did very well on dev (96/100) and validation (30/30). The same generator wrote these messages, in the same phrasing as held-out, so they may flatter it. Real messages will be messier.
 
 ## Risks and open questions
 

@@ -144,8 +144,10 @@ def test_a_held_out_run_is_refused_without_a_freeze_or_after_a_change(tmp_path: 
     frozen = tmp_path / "freeze.yaml"
     write_freeze(DATASET, frozen)
     assert changes_since_freeze(frozen) == []
+    text = frozen.read_text(encoding="utf-8")
+    assert "path: app/services/assisted.py\n" in text
     frozen.write_text(
-        frozen.read_text(encoding="utf-8").replace("app/services/assisted.py: ", "app/services/assisted.py: x"),
+        text.replace("path: app/services/assisted.py\n  sha256: ", "path: app/services/assisted.py\n  sha256: x"),
         encoding="utf-8",
     )
     assert changes_since_freeze(frozen) == ["app/services/assisted.py"]

@@ -19,21 +19,24 @@
 | Simulated contacts per case | 1.35 | 1.24 |
 | Simulated days per case | 3.23 | 2.61 |
 | Modelled satisfaction proxy (not real sentiment) | 4.12 | 4.52 |
-| Script time p50 / p95 (not human timing) | 0.58 s / 1.05 s | 1.65 s / 3.89 s |
+| Model cost at list price, total / per case | $0.0000 / $0.00000 | $0.0000 / $0.00000 |
+| Cases that kept arm B's result (model run ended early) | 0 | 0 |
+| Script time p50 / p95 (not human timing) | 0.53 s / 1.09 s | 1.74 s / 3.93 s |
 
 ## Where each case first went wrong (failure funnel)
 
 | First failed link | A [deterministic] | B [deterministic] |
 |---|---|---|
 | request_understood | 28 | 3 |
-| evidence_found | 7 | 4 |
-| policy_version | 21 | 0 |
+| evidence_found | 5 | 0 |
+| policy_version | 22 | 0 |
 | eligibility | 11 | 8 |
 | action_proposed | 1 | 0 |
-| approval_decision | 1 | 2 |
+| approval_decision | 0 | 0 |
 | execution | 0 | 0 |
 | final_ledger | 0 | 0 |
-| every link held | 31 | 83 |
+| case_outcome | 1 | 2 |
+| every link held | 32 | 87 |
 
 ## By scenario: cases, successes, right ledgers, false approvals, false denials
 
