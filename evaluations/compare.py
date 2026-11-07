@@ -96,6 +96,12 @@ def summary_rows(run: Run, labels: Labels) -> dict[str, str]:
         "Simulated contacts per case": f"{sum(r.contacts for r in results) / total:.2f}" if total else "n/a",
         "Simulated days per case": f"{sum(r.simulated_days for r in results) / total:.2f}" if total else "n/a",
         "Modelled satisfaction proxy (not real sentiment)": f"{sum(proxies) / total:.2f}" if total else "n/a",
+        "Model cost at list price, total / per case": (
+            f"${sum(r.cost_usd for r in results):.4f} / ${sum(r.cost_usd for r in results) / total:.5f}"
+            if total
+            else "n/a"
+        ),
+        "Cases that kept arm B's result (model run ended early)": str(sum(1 for r in results if r.ai_fallbacks)),
         "Script time p50 / p95 (not human timing)": (
             f"{median(latencies):.2f} s / {latency_p95(latencies):.2f} s" if latencies else "n/a"
         ),

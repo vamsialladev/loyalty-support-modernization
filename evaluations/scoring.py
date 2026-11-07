@@ -54,6 +54,9 @@ class CaseResult:
     cost_usd: float = 0.0
     interrupted: bool = False
     reopened: bool = False  # the member came back (simulated)
+    ai_runs: int = 0
+    ai_fallbacks: int = 0  # the run ended without a valid reading, so the case kept arm B's result
+    ai_stops: tuple[str, ...] = ()
     simulated_days: int = 0  # simulated, never a measurement
 
 

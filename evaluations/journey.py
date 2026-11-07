@@ -10,7 +10,8 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Any
+from pathlib import Path
+from typing import Any, cast
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -24,6 +25,7 @@ from app.domain.eligibility import Eligibility, NextAction
 from app.domain.roles import Identity
 from app.persistence.models import (
     AdjustmentRequestRow,
+    AiRun,
     Approval,
     Case,
     CaseEvidence,
@@ -34,7 +36,8 @@ from app.ports.customer_systems import CustomerSystems
 from app.services import cases as svc
 from app.services import conventional
 from app.services.cases import IntakeRequest
-from app.services.write_path import ExecutionResult, SharedWritePath
+from app.services.write_path import DecisionResult, ExecutionResult, SharedWritePath, WritePath
+from benchmarks.agents.as_is_write_path import AsIsWritePath
 from benchmarks.agents.conventional_scripted import ScriptedConventionalAgent
 from benchmarks.agents.legacy_scripted import ScriptedLegacyAgent
 from benchmarks.intake import INTAKE, DatasetCase, load_case
@@ -94,14 +97,55 @@ def combined_outcome(outcomes: list[str]) -> str:
     return next((name for name in _OUTCOME_ORDER if name in outcomes), "unresolved")
 
 
-class _LatePostingWritePath(SharedWritePath):
-    """Lands a planted posting between approval and execution, so the re-check can see it (D11). Evaluator only."""
+class _LostOnce:
+    """The platform completes the first attempt and drops the reply (catalog section 3a). Evaluator only."""
 
-    def __init__(self, world: World, late: dict[str, str]) -> None:
-        super().__init__(CUSTOMER, secret_key=world.secret_key)
-        self.world, self.late = world, late
+    def __init__(self, systems: CustomerSystems, lossy: CustomerSystems) -> None:
+        self._systems, self._lossy = systems, lossy
+        self._lost = False
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._systems, name)
+
+    def submit_adjustment(self, request: Any, idempotency_key: str) -> Any:
+        if self._lost:
+            return self._systems.submit_adjustment(request, idempotency_key)
+        self._lost = True
+        return self._lossy.submit_adjustment(request, idempotency_key)
+
+
+class _HarnessWritePath:
+    """What the evaluator plants around a write path, for every arm alike. It decides nothing itself.
+
+    - A late posting lands between approval and execution, so a re-check can see it (D11).
+    - With several contacts about one stay, execution waits until all of them are worked. That's the catalog's D10:
+      two cases approved before either credit lands.
+    - In the fault pass, the first submit for each request completes and its reply is lost.
+    """
+
+    def __init__(self, world: World, inner: Any, fault: str | None = None) -> None:
+        self.world, self.fault = world, fault
+        self.inner: WritePath = inner
+        self.late: dict[str, str] = {}
+        self.defer = False
+        self.waiting: list[tuple[Identity, int]] = []
+        self.faulted: set[int] = set()
+
+    def decide(
+        self, s: Session, who: Identity, request_id: int, systems: CustomerSystems, *, approve: bool, reason: str
+    ) -> DecisionResult:
+        return self.inner.decide(s, who, request_id, systems, approve=approve, reason=reason)
+
+    def check_status(self, s: Session, who: Identity, request_id: int, systems: CustomerSystems) -> ExecutionResult:
+        return self.inner.check_status(s, who, request_id, systems)
 
     def execute(self, s: Session, who: Identity, request_id: int, systems: CustomerSystems) -> ExecutionResult:
+        if self.defer:
+            self.waiting.append((who, request_id))
+            return ExecutionResult("queued", "Waiting until the other contacts about this stay are worked.")
+        return self._execute_now(s, who, request_id, systems)
+
+    def _execute_now(self, s: Session, who: Identity, request_id: int, systems: CustomerSystems) -> ExecutionResult:
         row = s.get(AdjustmentRequestRow, request_id)
         assert row is not None
         case = s.get(Case, row.case_id)
@@ -111,7 +155,28 @@ class _LatePostingWritePath(SharedWritePath):
             case.sim_now_utc = moment
             s.commit()
             systems = self.world.systems(moment)
-        return super().execute(s, who, request_id, systems)
+        if self.fault and request_id not in self.faulted:
+            self.faulted.add(request_id)
+            lossy = self.world.systems(svc.read_time(case), self.fault)
+            systems = cast(CustomerSystems, _LostOnce(systems, lossy))
+        return self.inner.execute(s, who, request_id, systems)
+
+    def flush(self, s: Session) -> None:
+        """Run what waited, in order, and check any uncertain outcome once, as the scripts do."""
+        waiting, self.waiting, self.defer = self.waiting, [], False
+        for who, request_id in waiting:
+            row = s.get(AdjustmentRequestRow, request_id)
+            assert row is not None
+            case = s.get(Case, row.case_id)
+            assert case is not None
+            s.refresh(case)
+            if CaseState(case.status) is not CaseState.APPROVED:
+                continue
+            systems = self.world.systems(svc.read_time(case))
+            self._execute_now(s, who, request_id, systems)
+            s.refresh(case)
+            if CaseState(case.status) is CaseState.EXECUTION_UNKNOWN:
+                self.inner.check_status(s, who, request_id, systems)
 
 
 def late_postings(label: Label) -> str | None:
@@ -151,13 +216,26 @@ class Journey:
     """One arm's agent, in one world, for one run."""
 
     def __init__(
-        self, world: World, s: Session, arm: str, ai_runtime: Any = None, *, second_look: bool = False
+        self,
+        world: World,
+        s: Session,
+        arm: str,
+        ai_runtime: Any = None,
+        *,
+        second_look: bool = False,
+        as_is_database: Path | None = None,
+        fault: str | None = None,
     ) -> None:
         self.world, self.s, self.arm = world, s, arm
+        self.result_arm = "A_as_is" if as_is_database else arm
+        self.provider = ai_runtime.provider if ai_runtime else None
         # Off for the main analysis: agents follow their scripts as written (RFC-0003). On only for the sensitivity run.
         self.second_look = second_look
-        self.late: dict[str, str] = {}
-        write_path = _LatePostingWritePath(world, self.late)
+        inner: Any = (
+            AsIsWritePath(as_is_database) if as_is_database else SharedWritePath(CUSTOMER, secret_key=world.secret_key)
+        )
+        write_path = _HarnessWritePath(world, inner, fault)
+        self.harness = write_path
         if arm == "A":
             self.legacy = ScriptedLegacyAgent(
                 s, world.systems, LegacyRules.load(CUSTOMER), KeywordIndex.load(), write_path
@@ -337,15 +415,17 @@ class Journey:
     def run(self, item: DatasetCase, label: Label, run_number: int, kind: str) -> CaseResult:
         moment = late_postings(label)
         if moment:
-            self.late[item.case_id] = moment
+            self.harness.late[item.case_id] = moment
         started = time.perf_counter()
         created = load_case(self.s, item, CUSTOMER, self.arm)
         trace = _Trace(contacts=len(created))
+        self.harness.defer = len(created) > 1
         for case, original in zip(created, item.requests, strict=False):
             if self.arm == "A":
                 self._work_a(case, label, trace, original)
             else:
                 self._work_b(case, label, trace, original)
+        self.harness.flush(self.s)
         elapsed = time.perf_counter() - started
         return self._result(item, label, run_number, kind, trace, elapsed)
 
@@ -363,9 +443,12 @@ class Journey:
         )
         approved = any(a.decision == "approved" for a in approvals) if approvals else None
         executed = any(r.status == "executed" for r in requests)
+        runs = list(
+            s.scalars(select(AiRun).where(AiRun.case_id.in_(ids)))
+        )  # for arm C, latency is the worst investigation
         return CaseResult(
             case_id=item.case_id,
-            arm=self.arm,
+            arm=self.result_arm,
             run=run_number,
             kind=kind,
             first_action=trace.first_action or "none",
@@ -380,7 +463,14 @@ class Journey:
             eligibility=self._eligibility(trace, ids),
             approved=approved,
             executed=executed,
-            latency_s=round(elapsed, 3),
+            latency_s=round(max((r.elapsed_ms for r in runs), default=elapsed * 1000) / 1000, 3),
+            input_tokens=sum(r.input_tokens for r in runs),
+            output_tokens=sum(r.output_tokens for r in runs),
+            cost_usd=sum(r.cost_microusd for r in runs) / 1_000_000,
+            ai_runs=len(runs),
+            ai_fallbacks=sum(1 for r in runs if r.status != "finished"),
+            ai_stops=tuple(r.stop_reason or "" for r in runs),
+            interrupted=bool(getattr(self.provider, "stopped", False)),
             reopened=trace.reopened,
             simulated_days=member.simulated_days(trace.info_requests, trace.waited_days, trace.in_billing_queue),
         )
