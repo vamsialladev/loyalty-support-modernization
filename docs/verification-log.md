@@ -31,6 +31,9 @@ All work by Claude Code (Opus 5.5). Live results are kept apart from mock and de
 | 15 | Ablations, dev, live | `evaluations.ablations` | No repair, 3 turns, half context: all 96/100. Three turns costs 19% less, and 36 cases lose the model's reading |
 | 16 | Complaints reaching someone | `evaluations.out_of_scope` | Of 4: A ignores 2, loses 2 in billing; B sends 4 to a person; C credits 4 and routes the complaint |
 | 17 | Live spend | `benchmarks/results/live/spend-ledger.jsonl` | **$1.83 of the $5 cap.** At list price: the Anthropic Console is the record of what was charged |
+| 18 | Arms A and B on real Postgres, against the stored held-out runs | `tests/test_benchmark_postgres.py`, in CI's real-Postgres job and the compose check | **Identical, case for case, on all 80 cases, both arms.** The confirming pass RFC-0003 commits to |
+| 19 | PR #25 | Actions run 42408728959 | All three jobs green: **1336 passed, 75 skipped, 89.97% coverage;** real Postgres **69 passed, 4 skipped** (the role checks that need a running stack) |
+| 20 | Compose check on PR #25's commit | `scripts\compose_check.ps1 -Browser` | **Passed:** real Postgres **73 passed,** browser **9 passed, 1 skipped,** upgrade from a real Milestone 5 volume passed |
 
 ## Milestone 9 (2026-11-06)
 
