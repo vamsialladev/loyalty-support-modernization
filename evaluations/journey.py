@@ -150,8 +150,12 @@ def _reply_request(original: IntakeRequest, answer: member.Answer, at: str | Non
 class Journey:
     """One arm's agent, in one world, for one run."""
 
-    def __init__(self, world: World, s: Session, arm: str, ai_runtime: Any = None) -> None:
+    def __init__(
+        self, world: World, s: Session, arm: str, ai_runtime: Any = None, *, second_look: bool = False
+    ) -> None:
         self.world, self.s, self.arm = world, s, arm
+        # Off for the main analysis: agents follow their scripts as written (RFC-0003). On only for the sensitivity run.
+        self.second_look = second_look
         self.late: dict[str, str] = {}
         write_path = _LatePostingWritePath(world, self.late)
         if arm == "A":
@@ -186,13 +190,14 @@ class Journey:
         self._work_a(follow_up, label, trace, original)
 
     def _look_again_a(self, case: Case) -> None:
-        """The re-check stopped a credit because the points had posted, so the case is back in `Investigating`.
+        """SENSITIVITY VARIANT ONLY: a person closes a case the re-check stopped. Not what arm A's script does.
 
-        The platform's safeguard belongs to every arm, and gets credited to neither (`docs/hypotheses.md` section 1), so
-        arm A must get the same result from it as arm B. Its checklist only reads the ledger as of the claim, and would
-        ask for the credit again. So a person closes it here, on the re-read ledger, and the close is logged as an
-        override if the checklist disagrees. The fenced script's own file stays untouched.
+        The main analysis leaves the case in `Investigating`, as the script does (RFC-0003). This shows what that choice
+        costs. Arm A's checklist reads the ledger as of the claim, and would ask for the credit again, so the variant
+        closes on the re-read ledger, logged as an override if the checklist disagrees.
         """
+        if not self.second_look:
+            return
         self.s.refresh(case)
         if CaseState(case.status) is not CaseState.INVESTIGATING:
             return
@@ -241,7 +246,9 @@ class Journey:
         self._maybe_return_b(case, label, trace, original)
 
     def _look_again_b(self, case: Case) -> None:
-        """The re-check stopped a credit, so the case is back in `Investigating`. A person would look again."""
+        """SENSITIVITY VARIANT ONLY: investigate again after the re-check stopped a credit (RFC-0003)."""
+        if not self.second_look:
+            return
         self.s.refresh(case)
         if CaseState(case.status) is CaseState.INVESTIGATING and case.queue == signals.POINTS_QUEUE:
             self.conventional.look_again(case, [])

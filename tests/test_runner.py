@@ -32,11 +32,13 @@ def scenario(data: dict[str, Any], code: str) -> str:
     return next(cid for cid, label in sorted(data["labels"].items()) if label["scenarios"] == [code])
 
 
-def run_one(data: dict[str, Any], arm: str, code: str, folder: Path) -> tuple[CaseResult, dict[str, Any]]:
+def run_one(
+    data: dict[str, Any], arm: str, code: str, folder: Path, *, second_look: bool = False
+) -> tuple[CaseResult, dict[str, Any]]:
     case_id = scenario(data, code)
     items = [item for item in data["items"] if item.case_id == case_id]
     config = load({"A": "arm-a", "B": "arm-b"}[arm])
-    results = run_cases(config, items, data["labels"], data["template"], folder)
+    results = run_cases(config, items, data["labels"], data["template"], folder, second_look=second_look)
     return results[0], data["labels"][case_id]
 
 
@@ -64,11 +66,33 @@ def test_arm_b_answers_the_channel_question_and_counts_the_contact(data: dict[st
 
 
 @pytest.mark.parametrize("arm", ["A", "B"])
-def test_a_planted_late_posting_is_stopped_by_the_re_check(data: dict[str, Any], arm: str, tmp_path: Path) -> None:
+def test_the_re_check_stops_a_planted_late_posting_and_the_script_ends_there(
+    data: dict[str, Any], arm: str, tmp_path: Path
+) -> None:
+    """The main analysis: scripts as written. The ledger is right, and nobody has closed the case."""
     result, label = run_one(data, arm, "D11", tmp_path)
-    assert result.first_action == "adjust" and not result.duplicate_credits
-    assert not result.executed
-    assert case_success(result, label), result
+    assert result.first_action == "adjust" and not result.duplicate_credits and not result.executed
+    assert result.final_points == {stay["stay_id"]: stay["expected_final_points"] for stay in label["stays"]}
+    assert result.outcome == "unresolved" and not case_success(result, label)
+
+
+@pytest.mark.parametrize("arm", ["A", "B"])
+def test_the_sensitivity_variant_closes_it_for_both_arms(data: dict[str, Any], arm: str, tmp_path: Path) -> None:
+    result, label = run_one(data, arm, "D11", tmp_path, second_look=True)
+    assert not result.executed and case_success(result, label), result
+
+
+@pytest.mark.parametrize("arm", ["A", "B"])
+def test_the_second_look_only_ever_acts_on_a_stopped_credit(data: dict[str, Any], arm: str, tmp_path: Path) -> None:
+    """Arm A's catalog prediction on D06 and D15 can't depend on this choice: no re-check stops those credits."""
+    for code in ("D06", "D15", "K01", "K02"):
+        plain, _ = run_one(data, arm, code, tmp_path / f"{code}-plain")
+        looked, _ = run_one(data, arm, code, tmp_path / f"{code}-looked", second_look=True)
+        assert (plain.outcome, plain.final_points, plain.first_action) == (
+            looked.outcome,
+            looked.final_points,
+            looked.first_action,
+        ), code
 
 
 @pytest.mark.parametrize("arm", ["A", "B"])

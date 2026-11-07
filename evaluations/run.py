@@ -69,6 +69,8 @@ def run_cases(
     template: Path,
     folder: Path,
     run_number: int = 1,
+    *,
+    second_look: bool = False,
 ) -> list[CaseResult]:
     """A fresh world per run: no run can see another's credits."""
     if config.arm not in ("A", "B"):
@@ -76,7 +78,7 @@ def run_cases(
     world = make_world(template, folder)
     try:
         with world.sessions() as s:
-            journey = Journey(world, s, config.arm)
+            journey = Journey(world, s, config.arm, second_look=second_look)
             return [journey.run(item, labels[item.case_id], run_number, config.kind) for item in items]
     finally:
         world.close()
@@ -89,6 +91,8 @@ def write_run(
     results: Sequence[CaseResult],
     dataset_dir: Path,
     root: Path = RESULTS,
+    *,
+    second_look: bool = False,
 ) -> Path:
     folder = root / config.kind / name
     folder.mkdir(parents=True, exist_ok=True)
@@ -98,6 +102,7 @@ def write_run(
     manifest = {
         "name": name,
         "kind": config.kind,
+        "after_stop": "second look (sensitivity variant)" if second_look else "script as written",
         "label": SYNTHETIC,
         "split": split,
         "cases": len(results),
@@ -120,6 +125,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--cases", default="", help="comma-separated case IDs, for a smoke run")
     parser.add_argument("--name", default="", help="the run's folder name")
     parser.add_argument("--confirm-frozen", action="store_true")
+    parser.add_argument(
+        "--second-look",
+        action="store_true",
+        help="sensitivity variant: work a case again after the re-check stops its credit (RFC-0003)",
+    )
     args = parser.parse_args(argv)
 
     config = load(CONFIG_BY_ARM[args.arm])
@@ -135,11 +145,11 @@ def main(argv: list[str] | None = None) -> int:
         with tempfile.TemporaryDirectory(prefix="benchmark-", ignore_cleanup_errors=True) as tmp:
             folder = Path(tmp)
             template = seed_template(SEED_DATA, folder)
-            results = run_cases(config, items, labels, template, folder / "run")
+            results = run_cases(config, items, labels, template, folder / "run", second_look=args.second_look)
     except RunRefused as refused:
         print(f"REFUSED: {refused}")
         return 2
-    out = write_run(name, config, args.split, results, DATASET)
+    out = write_run(name, config, args.split, results, DATASET, second_look=args.second_look)
     print(f"{config.kind} run: {len(results)} cases, stored in {out.relative_to(ROOT)}. {SYNTHETIC}")
     return 0
 
