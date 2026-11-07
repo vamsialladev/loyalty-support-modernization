@@ -35,7 +35,7 @@ from app.services.conventional import add_attachment
 
 ROOT = Path(__file__).resolve().parent.parent
 DATASET_DIR = ROOT / "benchmarks" / "datasets" / "v1"
-SPLITS = ("dev", "validation", "heldout", "stress")
+SPLITS = ("dev", "validation", "heldout", "stress", "fairness")
 INTAKE = Identity(0, "intake", "Web and email intake", Role.AGENT)
 
 

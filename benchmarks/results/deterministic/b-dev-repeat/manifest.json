@@ -1,6 +1,6 @@
 {
   "after_stop": "script as written",
-  "app_commit": "39f96ec484ce9c90d8b509b085b1912604e32fab",
+  "app_commit": "1ee95c3d4dc3abd4b8eeb96f0d343f76008bd020",
   "cases": 100,
   "config": {
     "arm": "B",
@@ -21,11 +21,16 @@
   },
   "dataset_sha256": "05b7636970f5ec8bb0660216145cff8f88610fd03404530f198285dcee195f36",
   "dataset_version": "v1",
-  "finished_at_utc": "2026-11-07T14:40:49Z",
+  "fault": null,
+  "finished_at_utc": "2026-11-07T15:50:45Z",
+  "interrupted": false,
   "kind": "deterministic",
   "label": "SYNTHETIC data. Scripted agents and a simulated member and supervisor: not human timing, not real people.",
   "labels_sha256": "25841124244577a607800a14c1d8d3fd7dda39c42f2490897708ec94d18a9f1b",
   "name": "b-dev-repeat",
+  "planned_cases": 100,
+  "run_number": 1,
   "split": "dev",
+  "total_cost_usd": 0.0,
   "tree_clean": true
 }

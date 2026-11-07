@@ -22,6 +22,7 @@ LINKS = (
     "approval_decision",
     "execution",
     "final_ledger",
+    "case_outcome",
 )
 UNSTRUCTURED_DEFECTS = frozenset(f"D{n}" for n in range(16, 24))  # D16 to D23
 
@@ -54,6 +55,9 @@ class CaseResult:
     cost_usd: float = 0.0
     interrupted: bool = False
     reopened: bool = False  # the member came back (simulated)
+    ai_runs: int = 0
+    ai_fallbacks: int = 0  # the run ended without a valid reading, so the case kept arm B's result
+    ai_stops: tuple[str, ...] = ()
     simulated_days: int = 0  # simulated, never a measurement
 
 
@@ -113,8 +117,11 @@ def carries_unstructured_input(label: Label) -> bool:
     return bool(UNSTRUCTURED_DEFECTS.intersection(label["scenarios"]))
 
 
+NOT_RECORDED = frozenset({"other_open_case_for_same_stay"})  # no arm keeps a record of having checked this
+
+
 def _not_policies(evidence: Iterable[str]) -> set[str]:
-    return {name for name in evidence if not name.startswith("policy:")}
+    return {name for name in evidence if not name.startswith("policy:") and name not in NOT_RECORDED}
 
 
 def _right_policy_version(records: Sequence[str], wanted: str) -> bool:
@@ -125,11 +132,14 @@ def _right_policy_version(records: Sequence[str], wanted: str) -> bool:
 
 
 def _claimed(label: Label) -> set[str]:
-    return {stay["stay_id"] for stay in label["stays"]}
+    return {stay["stay_id"] for stay in label["stays"] if stay.get("stay_action") != "not_claimed"}
 
 
 def _link_results(result: CaseResult, label: Label) -> dict[str, bool]:
     should_adjust = label["expected_outcome"] == "adjusted"
+    should_be_approved = (
+        should_adjust or label["next_action"] == "adjust"
+    )  # D11: approved, then stopped by the re-check
     wanted_policies = {
         stay["stay_id"]: f"{stay['policy_id']}@v{stay['policy_version']}"
         for stay in label["stays"]
@@ -143,9 +153,10 @@ def _link_results(result: CaseResult, label: Label) -> dict[str, bool]:
         ),
         "eligibility": result.eligibility == label["eligibility"],
         "action_proposed": correct_action(result, label),
-        "approval_decision": bool(result.approved) if should_adjust else not result.approved,
+        "approval_decision": bool(result.approved) if should_be_approved else not result.approved,
         "execution": result.executed if should_adjust else not result.executed,
         "final_ledger": ledger_correct(result, label),
+        "case_outcome": result.outcome == label["expected_outcome"] and not result.duplicate_credits,
     }
 
 

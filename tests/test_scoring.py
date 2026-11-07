@@ -113,6 +113,8 @@ def test_clarification_recall_only_counts_cases_that_need_it() -> None:
         ({"approved": False}, "approval_decision"),
         ({"executed": False}, "execution"),
         ({"final_points": {"S1": 1}}, "final_ledger"),
+        ({"outcome": "unresolved"}, "case_outcome"),
+        ({"duplicate_credits": 1}, "case_outcome"),
     ],
 )
 def test_the_funnel_names_the_first_failure(over: dict[str, Any], link: str) -> None:
@@ -123,6 +125,35 @@ def test_no_record_of_a_policy_isnt_a_wrong_policy() -> None:
     assert first_failed_link(good(policies={}), label()) is None
     assert first_failed_link(good(policies={"S1": ("other@v9",)}), label()) is None
     assert first_failed_link(good(policies={"S1": ("p@v1",)}), label()) == "policy_version"
+
+
+def test_an_approval_then_stopped_by_the_re_check_fails_only_at_the_outcome_if_left_open() -> None:
+    d11 = label(expected_outcome="no_adjustment", next_action="adjust")
+    open_case = good(outcome="unresolved", executed=False)
+    assert first_failed_link(open_case, d11) == "case_outcome"
+    assert first_failed_link(good(outcome="no_adjustment", executed=False), d11) is None
+
+
+def test_a_stay_the_member_didnt_claim_isnt_part_of_understanding_the_request() -> None:
+    both = label(
+        stays=[
+            {
+                "stay_id": "S1",
+                "expected_final_points": 100,
+                "policy_id": "p",
+                "policy_version": 2,
+                "stay_action": "adjust",
+            },
+            {
+                "stay_id": "S2",
+                "expected_final_points": 0,
+                "policy_id": "p",
+                "policy_version": 2,
+                "stay_action": "not_claimed",
+            },
+        ]
+    )
+    assert first_failed_link(good(), both) is None
 
 
 def test_crediting_a_case_that_shouldnt_be_credited_fails_at_approval() -> None:

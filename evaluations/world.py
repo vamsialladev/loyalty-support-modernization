@@ -17,7 +17,7 @@ from pathlib import Path
 from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
-from sqlalchemy import Engine, func, select
+from sqlalchemy import Engine, func, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.adapters.mock_customer_api import MockCustomerApiAdapter
@@ -57,13 +57,14 @@ class World:
     token: str
     secret_key: str  # a throwaway per world: approvals are bound as usual, and nothing outlives the run
 
-    def systems(self, sim_time: str | None = None) -> CustomerSystems:
+    def systems(self, sim_time: str | None = None, fault: str | None = None) -> CustomerSystems:
         return MockCustomerApiAdapter(
             "http://mock",
             self.token,
             CustomerShape.load(CUSTOMER),
             client=self.mock_client,  # type: ignore[arg-type]
             sim_time=sim_time,
+            fault=fault,
             sleep=lambda _: None,
         )
 
@@ -94,6 +95,12 @@ class World:
         self.mock_client.close()
         self.app_engine.dispose()
         self.mock_engine.dispose()
+
+
+def drop_the_duplicate_index(engine: Engine) -> None:
+    """A as-is only, on a disposable database: the legacy path has no one-live-credit-per-stay rule."""
+    with engine.begin() as connection:
+        connection.execute(text("DROP INDEX uq_adjustment_requests_live_stay"))
 
 
 def make_world(template: Path, folder: Path) -> World:
