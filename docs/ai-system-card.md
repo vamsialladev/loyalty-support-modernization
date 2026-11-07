@@ -1,6 +1,6 @@
 # AI system card: arm C (ENT-01, ENT-02, ENT-15)
 
-**Draft. SYNTHETIC: a simulated engagement for a fictional hotel group.** No result here comes from a real model yet. The live smoke test is **NOT RUN** until the owner approves it.
+**Draft. SYNTHETIC: a simulated engagement for a fictional hotel group.** No quality result here comes from a real model yet. The live smoke test passed on 2026-11-07, one call, which shows the connection works and nothing about quality (`benchmarks/results/live/smoke/`). **The live evaluation is NOT RUN:** Milestone 10 does it, under the owner's $5 cap.
 
 ## What it is
 A model reads a member's missing-points message, works out which of the member's real stays it means, explains the rules engine's result with citations, and drafts a reply for staff.

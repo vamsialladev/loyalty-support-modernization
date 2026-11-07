@@ -3,6 +3,16 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## Milestone 10 (started 2026-11-06)
+
+All work by Claude Code (Opus 5.5). Live results are kept apart from mock and deterministic ones (`benchmarks/results/`).
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | Milestone 9's close-out | PR #20 | All three CI jobs green. Merged as `1eaa45c` |
+| 2 | Foundations before any run: RFC-0003, thresholds, configs, scoring, spending ledger | PR #21; whole offline suite locally: 1,295 tests, 77 skipped, 0 failed | CI green. Merged as `2b3bb16`. Nothing had run and no score existed |
+| 3 | **Live provider smoke test** (not an evaluation) | `scripts/live_smoke_ai.py` on `2b3bb16`, after the owner saved the settings; preflight READY | **PASS.** `claude-haiku-5-5`, stop reason `tool_use`, `get_member` called as expected. 1,389 tokens in, 26 out, **$0.000152** at list price. First live call in this project. Shows the connection works, and nothing about quality. `benchmarks/results/live/smoke/live-smoke-2026-11-07.md` |
+
 ## Milestone 9 (2026-11-06)
 
 All work by Claude Code (Opus 5.5), under the owner's standing instructions. **No real model was called.** No aggregate accuracy for any arm was computed.

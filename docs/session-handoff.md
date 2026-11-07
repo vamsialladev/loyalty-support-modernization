@@ -13,7 +13,7 @@
   step 7). Anything with backslashes goes through the editor tools, never a shell heredoc (it put a tab in the log on step 2).
 
 ## Waiting on the owner
-0. **Add the Anthropic settings to this repo's `.env`.** You approved the live smoke test and Milestone 10's live evaluation on 2026-11-06, with a **hard cap of $5 total**. But preflight still shows `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` and `LLM_BUDGET_USD_DAILY` as missing here, so nothing has run and nothing was spent. Milestone 10 also needs `AI_PROVIDER=anthropic`, `FEATURE_LIVE_AI=true` and `LLM_BUDGET_USD_TOTAL=5.00`.
+0. **Set a spending limit in the Anthropic Console,** if you haven't. Live runs are approved with a **hard cap of $5 total** (2026-11-06), and the settings are in `.env` (2026-11-07). The code stops itself at the cap, but the console's limit holds even if the code is wrong.
 1. **Label review:** the 30-label sheet (`evaluations/label-review/`).
 2. Optionally, redo A-000010 with the new Reopen button. It's still `Resolved` as `deny_claim_window`.
 3. **The Codex exercise**, whenever convenient: `docs/exercises/codex-reconciliation-review.md`. It needs your Codex account.
@@ -84,4 +84,4 @@ powershell -ExecutionPolicy Bypass -File scripts\compose_check.ps1 -Browser
 `uv run python -m benchmarks.intake --split dev --limit 10 --arm B`. Steps are in `docs/onboarding.md` §4f.
 
 ## Blockers
-None for starting Milestone 10's design. Its real runs wait for the Anthropic settings in this repo's `.env`.
+None. The live smoke test passed on 2026-11-07 (`benchmarks/results/live/smoke/`). Milestone 10's live evaluation can run once its runner is ready and its configuration is frozen.

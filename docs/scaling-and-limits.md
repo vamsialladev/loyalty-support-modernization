@@ -81,7 +81,7 @@ through `arm_review.review_for`.
 - **Not measured yet:** throughput, and page times under load. No number here is a result.
 
 ## The AI loop (Milestone 8)
-- **Cost per case:** not measured. No real model has run. Milestone 10 measures it.
+- **Cost per case:** not measured. The only live call so far is one smoke test. Milestone 10 measures it.
 - **What breaks first:** the provider's rate limit, then per-run tokens as documents grow. `context_chars` caps the second; the worker's job queue absorbs bursts for the first.
 - **Concurrency:** one worker runs one job at a time, so more cases means more workers. Each run holds no lock and no open transaction during a model call.
 

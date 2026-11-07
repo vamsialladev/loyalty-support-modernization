@@ -5,7 +5,7 @@
 What the controls don't cover. Each needs an accountable decision before any real use.
 
 1. **Prompt injection isn't solved.** The tests show what a model obeying an attacker can reach. A convincing wrong explanation could still sway a reviewer.
-2. **No real model has been tested.** All AI evidence is on mock and scripted models.
+2. **No security test has run on a real model.** All AI security evidence is on mock and scripted models. The only live call so far is one smoke test, with a made-up message.
 3. **The audit log isn't tamper-proof.** The app role can't change it. A database owner can.
 4. **Redaction is pattern matching.** Names stay on purpose.
 5. **Provider data terms are unverified.** "Not used for training" wouldn't mean no retention or company approval.

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from evaluations.run_config import hard_cap_usd
 from evaluations.spend import CapReached, record, require_room, spent_usd
 
 
@@ -73,3 +74,7 @@ def test_the_ledger_holds_no_message_or_key(ledger: Path) -> None:
     text = ledger.read_text(encoding="utf-8")
     assert all(f'"{name}"' in text for name in keys.replace('"', "").split(", "))
     assert "key" not in text and "message" not in text
+
+
+def test_the_real_ledger_is_under_the_owners_cap() -> None:
+    assert 0 <= spent_usd() <= hard_cap_usd()

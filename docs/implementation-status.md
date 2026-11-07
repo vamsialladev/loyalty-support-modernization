@@ -1,7 +1,7 @@
 # Implementation status
 
 **Last updated:** 2026-11-06 · **Current milestone:** 8 of 20 complete · **Next:** Milestone 9 (security hardening).
-**Waiting on the owner:** the go-ahead for the live smoke test; the 30-label review; the Milestone 7 and 8 exercises; the Codex exercise, when convenient
+**Waiting on the owner:** the 30-label review; the Milestone 7 and 8 exercises; the Codex exercise, when convenient
 (`docs/exercises/codex-reconciliation-review.md`).
 
 ## Completion scores (spec Part 0.5)
@@ -45,7 +45,7 @@ authorization, M9), API-01 and API-02 (moved to M7, as the owner approved). Code
 | 5 | **Implemented and verified** (Appendix C, M5: legacy arm A completes a case end to end in the browser) | `tests/browser/test_legacy_e2e.py` (2, offline and against the stack), `tests/test_legacy_rules.py` (26), `tests/test_legacy_screens.py` (14), `tests/test_case_workflow.py` (36), `tests/test_console_web.py` (17), `tests/test_scripted_agent.py` (10), `tests/test_arm_a_boundaries.py` (6); verification log, Milestone 5 |
 | 6 | **Implemented and verified** (Appendix C, M6: real-Postgres tests pass for idempotency atomicity, concurrent execute, duplicate prevention, timeout-after-commit reconciliation, lease recovery, approval invalidation) | `tests/test_execution_postgres.py`, `tests/test_write_path_postgres.py`, `tests/test_worker_postgres.py`, `tests/test_audit_postgres.py`, `tests/test_mock_api_postgres.py`; `scripts\compose_check.ps1 -Browser`; verification log, Milestone 6 |
 | 7 | **Implemented and verified** (Appendix C, M7: arm B works; Playwright happy path and self-approval block pass) | `tests/browser/test_arm_b_e2e.py` (offline and against the stack), `tests/test_arm_b_defects.py`, `tests/test_arm_b_console.py`, `tests/test_arm_b_rules.py`, `tests/test_arm_b_postgres.py`, `tests/test_arm_a_fence.py`, `tests/test_api.py`, `tests/test_metrics_and_day_one.py`; verification log, Milestone 7 |
-| 8 | **Implemented and verified** (Appendix C, M8: every loop stop condition and injection test passes on the mock provider; the Claude provider is implemented; its live smoke test is **NOT RUN**) | `tests/test_ai_loop.py`, `tests/test_ai_tools.py`, `tests/test_ai_provider.py`, `tests/test_arm_c.py`, `tests/test_extraction.py`, `tests/test_routing_baseline.py`; verification log, Milestone 8 |
+| 8 | **Implemented and verified** (Appendix C, M8: every loop stop condition and injection test passes on the mock provider; the Claude provider is implemented; its live smoke test **passed on 2026-11-07**, one call with a made-up message, no quality claim) | `tests/test_ai_loop.py`, `tests/test_ai_tools.py`, `tests/test_ai_provider.py`, `tests/test_arm_c.py`, `tests/test_extraction.py`, `tests/test_routing_baseline.py`; verification log, Milestone 8 |
 | 9 | **Implemented and verified** (Appendix C, M9: authorization, CSRF, rate-limit, redaction and red-team tests pass on mock and scripted models; OIDC login works locally against a real Keycloak). SEC-19's repeated tests on a real model: **NOT RUN** | `tests/test_security_authz.py`, `tests/test_security_postgres.py`, `tests/test_oidc.py`, `tests/test_red_team.py`, `tests/test_red_team_shared_corpus.py`, `tests/test_security_docs.py`; `security/evidence/oidc-check-2026-11-06.txt`; verification log, Milestone 9 |
 | 10–20 | Planned | `docs/implementation-plan.md` |
 
@@ -53,7 +53,7 @@ authorization, M9), API-01 and API-02 (moved to M7, as the owner approved). Code
 - **Authorization:** customer scope on every record, tested by walking the real routes. It found a real bug: the approvals list wasn't scoped.
 - **Identity:** OIDC through PyJWT against a real local Keycloak, group-to-role mapping, rate limits in the database, deactivation, one-use recovery links, read-only machine tokens.
 - **Governance:** retention, member export and erasure, legal hold, access review.
-- **Red team:** on business effects, with models scripted to obey the attacker. Injection isn't solved, and no real model has been tested.
+- **Red team:** on business effects, with models scripted to obey the attacker. Injection isn't solved, and none of these tests has run on a real model.
 - **`security/`:** standards with versions, inventory, data flow, threat model, risks, controls, plan, results, runbooks, readiness. No certification or compliance claimed.
 
 ## Milestone 8 deliverables

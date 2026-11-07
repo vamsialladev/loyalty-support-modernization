@@ -51,7 +51,7 @@ are in `docs/verification-log.md` (2026-10-28). This file grows into the full Pa
 
 | Service | Category (C.3) | Needed for | Status |
 |---|---|---|---|
-| Anthropic Claude API | B. runtime model | live arm C, live smoke test | Blocked: needs `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` in `.env` (owner, Milestone 8) |
+| Anthropic Claude API | B. runtime model | live arm C, live smoke test | Available: settings in `.env` (owner, 2026-11-07). Smoke test passed. Live evaluation approved with a $5 total cap |
 | Amazon Bedrock | B. runtime model | enterprise endpoint adapter | Blocked: needs AWS SSO profile and model access (configure only) |
 | Kimi / GLM / Qwen | B. runtime model | open-model exercise | Blocked: needs one key or a local server (Milestone 15) |
 | GitHub (this repo) | A/D. dev and CI | remote, CI, PRs | Manual step required: owner approves creating the repo |
