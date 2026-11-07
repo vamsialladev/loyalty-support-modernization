@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from evaluations import sensitivity
 from evaluations.compare import Run, by_scenario, funnel, repeat_differences, report, summary_rows
 from evaluations.scoring import CaseResult
 
@@ -93,3 +94,19 @@ def test_paired_differences_need_the_same_cases() -> None:
         "dev",
     )
     assert "not the same cases" in text
+
+
+def test_the_sensitivity_report_shows_all_three_variants_and_what_changed() -> None:
+    open_case = {"outcome": "unresolved"}
+    a, b = run(result("1", **open_case)), run(result("1", arm="B", **open_case))
+    a_look = run(result("1"), after="second look (sensitivity variant)")
+    b_look = run(result("1", arm="B"), after="second look (sensitivity variant)")
+    labels = {"1": LABELS["1"]}
+    text = sensitivity.report(a, b, a_look, b_look, labels, "dev")
+    assert "**(main analysis)**" in text and "**(biased, for comparison only)**" in text
+    assert "Arm A: 1." in text and "Arm B: 1." in text
+    assert sensitivity.changed_cases(a, a) == []
+
+
+def test_over_credits_are_counted_within_a_scenario() -> None:
+    assert sensitivity.over_credits_in(run(result("2", final_points={"S2": 200})), LABELS, "D06") == "1/1"

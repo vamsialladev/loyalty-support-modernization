@@ -15,7 +15,7 @@ from evaluations import member
 from evaluations.journey import arm_a_first_action, combined_outcome
 from evaluations.run import RunRefused, read_labels, refuse_unless_frozen, run_cases, write_run
 from evaluations.run_config import load
-from evaluations.scoring import CaseResult, case_success, correct_action, first_failed_link
+from evaluations.scoring import CaseResult, case_success, correct_action, false_denial, first_failed_link
 from evaluations.world import seed_template
 from tests.conftest import ROOT
 
@@ -103,6 +103,25 @@ def test_nothing_unauthorized_or_duplicated_on_a_duplicate_submission(
     assert result.duplicate_credits == 0 and result.unauthorized_actions == 0
 
 
+def test_arm_b_handles_the_other_stay_once_the_member_names_it(data: dict[str, Any], tmp_path: Path) -> None:
+    result, label = run_one(data, "B", "D16", tmp_path)
+    assert result.contacts == 2
+    assert case_success(result, label), result
+
+
+def test_arm_a_handles_only_one_stay_as_the_catalog_predicts(data: dict[str, Any], tmp_path: Path) -> None:
+    result, label = run_one(data, "A", "D16", tmp_path)
+    assert not case_success(result, label) and false_denial(result, label)
+
+
+def test_a_member_told_to_wait_is_credited_when_they_come_back(data: dict[str, Any], tmp_path: Path) -> None:
+    """DV-023 was claimed at 00:29 UTC, which is the evening before at the hotel."""
+    items = [item for item in data["items"] if item.case_id == "DV-023"]
+    result = run_cases(load("arm-b"), items, data["labels"], data["template"], tmp_path)[0]
+    assert result.reopened and result.contacts == 2
+    assert case_success(result, data["labels"]["DV-023"]), result
+
+
 def test_a_new_world_starts_clean_each_run(data: dict[str, Any], tmp_path: Path) -> None:
     first, _ = run_one(data, "B", "K01", tmp_path / "one")
     second, _ = run_one(data, "B", "K01", tmp_path / "two")
@@ -165,6 +184,16 @@ def test_the_member_repeats_themselves_otherwise() -> None:
 def test_the_member_says_what_the_scenario_says_about_a_vague_stay() -> None:
     label = {**LABEL, "member_reply": "It was the stay that checked out on 2025-10-23."}
     assert member.answer("which_stay", label, "x").text.endswith("2025-10-23.")
+
+
+def test_the_member_names_only_stays_they_claimed_and_not_yet_handled() -> None:
+    label = {"facts": {"claimed_stay_ids": ["BR-1", "ML-2"], "unclaimed_stay_ids": ["BR-9"]}}
+    assert member.other_stays(label, {"BR-1"}) == ["ML-2"]
+    assert member.other_stays(label, {"BR-1", "ML-2"}) == []
+
+
+def test_a_member_comes_back_on_the_date_they_were_given() -> None:
+    assert member.return_moment("2026-02-21") == "2026-02-21T15:00:00Z"
 
 
 def test_the_proxy_is_the_synthetic_historys_formula() -> None:

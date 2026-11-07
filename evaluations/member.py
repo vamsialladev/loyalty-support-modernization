@@ -46,9 +46,14 @@ def answer(question: str, label: Label, original_text: str) -> Answer:
     return Answer(text=original_text, repeated=True)
 
 
-def other_stays(label: Label) -> list[str]:
-    """The stays a member mentioned and can name when asked (D16)."""
-    return list(label["facts"].get("unclaimed_stay_ids") or [])
+def other_stays(label: Label, handled: set[str]) -> list[str]:
+    """The other stays in the member's own claim, which they can name when asked (D16). Only what they claimed."""
+    return [stay for stay in label["facts"].get("claimed_stay_ids") or [] if stay not in handled]
+
+
+def return_moment(wait_until: str) -> str:
+    """When a member told to wait comes back: on that date at the hotel. 15:00 UTC is that date at every property."""
+    return f"{wait_until[:10]}T15:00:00Z"
 
 
 def simulated_days(info_requests: int, waited_days: int = 0, sat_in_the_wrong_queue: bool = False) -> int:

@@ -284,9 +284,13 @@ class Journey:
             self.s.refresh(case)
 
     def _other_stays_b(self, case: Case, label: Label, trace: _Trace, original: IntakeRequest) -> None:
-        for stay in member.other_stays(label):
+        """The member names the other stay they mentioned (D16), with their first message, so they can be identified."""
+        ids = [c.id for c in trace.cases]
+        rows = self.s.scalars(select(Recommendation.stay_id).where(Recommendation.case_id.in_(ids)))
+        handled = {stay for stay in rows if stay}
+        for stay in member.other_stays(label, handled):
             trace.contacts += 1
-            answer = member.Answer(text=f"The other stay is {stay}.", confirmation=stay)
+            answer = member.Answer(text=f"{original.text}\nThe other stay is {stay}.", confirmation=stay)
             request = _reply_request(original, answer)
             other = svc.create_case(
                 self.s, INTAKE, request, customer_id=CUSTOMER, source_ref=case.source_ref, arm=self.arm
@@ -305,7 +309,7 @@ class Journey:
     def _return_after_waiting(
         self, case: Case, wait_until: str, label: Label, trace: _Trace, original: IntakeRequest
     ) -> None:
-        moment = f"{wait_until[:10]}T{original.received_at_utc[11:]}"
+        moment = member.return_moment(wait_until)
         stays = [stay["stay_id"] for stay in label["stays"]]
         earned = {stay["stay_id"]: stay["expected_final_points"] for stay in label["stays"]}
         if all(self.world.points_by(stay, moment) >= earned[stay] for stay in stays):

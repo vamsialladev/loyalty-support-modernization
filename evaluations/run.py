@@ -48,6 +48,11 @@ def _git(*args: str) -> str:
     return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()  # noqa: S603, S607
 
 
+def tree_status() -> str:
+    """What's changed in the code and data. A run's own results don't make the tree dirty."""
+    return _git("status", "--porcelain", "--", ".", ":!benchmarks/results", ":!benchmarks/reports")
+
+
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -111,7 +116,7 @@ def write_run(
         "dataset_sha256": _sha256(dataset_dir / f"{split}.jsonl"),
         "labels_sha256": _sha256(dataset_dir / "labels" / f"{split}.jsonl"),
         "app_commit": _git("rev-parse", "HEAD"),
-        "tree_clean": not _git("status", "--porcelain"),
+        "tree_clean": not tree_status(),
         "finished_at_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
     (folder / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -134,7 +139,7 @@ def main(argv: list[str] | None = None) -> int:
 
     config = load(CONFIG_BY_ARM[args.arm])
     try:
-        refuse_unless_frozen(args.split, args.confirm_frozen, _git("status", "--porcelain"))
+        refuse_unless_frozen(args.split, args.confirm_frozen, tree_status())
         items = read_split(args.split, DATASET)
         wanted = {c.strip() for c in args.cases.split(",") if c.strip()}
         if wanted:
