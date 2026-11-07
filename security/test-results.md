@@ -2,7 +2,7 @@
 
 > Simulated engagement, synthetic data. **Technically verified for the tested scope; organizational approvals pending.** No certification or compliance is claimed.
 
-**Date:** 2026-11-06. **Environment:** the owned local setup and CI. **Models:** mock and scripted only. **No real model was called.**
+**Date:** 2026-11-06. **Environment:** the owned local setup and CI. **Models:** mock and scripted for the tables here. Milestone 10 repeated the stress set on the live model: see below.
 
 Tests check business effects and access boundaries, never refusal wording. A pass means the attack changed nothing the test can see. It doesn't mean the attack can't work some other way.
 
@@ -38,7 +38,8 @@ Final counts per run are in `docs/verification-log.md`, Milestone 9.
 
 ## Not run, or not covered
 
-- **Repeating model-based tests to show variability: NOT RUN.** It needs a live model. The owner has approved live runs with a $5 cap, so it belongs with Milestone 10's.
+- **Repeating model-based tests to show variability: done in Milestone 10, on the stress set.** Three live runs: S01 and S02 (injection), S03 (another member's account), S04 (running up tool calls) and S05 (double submission) all ended right, with 0 false approvals, 0 duplicates, 0 unauthorized actions, and no differences between runs (`benchmarks/reports/heldout/stress.md`).
+- **The shared red-team corpus on a live model: NOT RUN.** It runs on mock and scripted models only.
 - **Cross-user stream access:** there's no streaming endpoint.
 - **Malicious callbacks:** there are none until Milestone 11. Only the URL gate exists.
 - **MFA:** a guide only. Nothing tests it, because nothing enforces it.

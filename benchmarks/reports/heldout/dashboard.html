@@ -1,0 +1,362 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Benchmark Results</title><style>
+:root { color-scheme: light dark; --bg: #f7f4ee; --ink: #1c1f1d; --line: #e3ddd2; --muted: #5b625e; }
+@media (prefers-color-scheme: dark) { :root { --bg: #111613; --ink: #ece8e0; --line: #26302b; --muted: #a3aba6; } }
+body { background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; margin: 0 auto; max-width: 75rem;
+  padding: 1rem; }
+table { border-collapse: collapse; display: block; overflow-x: auto; margin: 1rem 0; }
+th, td { border: 1px solid var(--line); padding: .35rem .6rem; text-align: left; vertical-align: top; }
+blockquote { border-left: 3px solid var(--line); color: var(--muted); margin: 1rem 0; padding-left: 1rem; }
+nav a { margin-right: 1rem; }
+</style></head><body><h1>Benchmark results: arms A, B and C</h1><p><strong>Independent portfolio simulation. Synthetic data, fictional hotel group.</strong> Evaluation only: not part of the console.</p><nav><a href="#hypotheses">hypotheses</a><a href="#comparison">comparison</a><a href="#a-or-b-beats-c">a-or-b-beats-c</a><a href="#a-as-is">a-as-is</a><a href="#after-stop-sensitivity">after-stop-sensitivity</a><a href="#fairness">fairness</a><a href="#stress">stress</a><a href="#variability">variability</a><a href="#predicted-vs-actual">predicted-vs-actual</a><a href="#business-value">business-value</a></nav><section id="hypotheses"><h2>Hypotheses on the held-out split</h2>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<p>Arm C&#x27;s runs here are <strong>live</strong>. Business thresholds are provisional: no stakeholder has approved them. Statistical difference and practical value are separate questions, and zero observed doesn&#x27;t prove zero risk.</p>
+<table>
+<tr><th>Hypothesis</th><th>Verdict</th><th>Observed</th><th>Why</th></tr>
+<tr><td>H1</td><td><strong>supported</strong></td><td>+37.5 pp (95% interval +25.0 to +50.0; 41 vs 71 of 80)</td><td>B minus A on case success</td></tr>
+<tr><td>H2</td><td><strong>supported</strong></td><td>+10.0 pp (95% interval +3.8 to +17.5; 72 vs 80 of 80)</td><td>C minus B on correct action</td></tr>
+<tr><td>H3</td><td><strong>supported</strong></td><td>+31.8 pp (95% interval +13.6 to +50.0; 0 vs 7 of 22)</td><td>B minus C on false denials</td></tr>
+<tr><td>H4</td><td><strong>not supported</strong></td><td>+0.0 pp (95% interval +0.0 to +0.0; 2 vs 2 of 2)</td><td>(a) not supported; (b) holds; (c) holds</td></tr>
+<tr><td>H5</td><td><strong>supported</strong></td><td>n/a</td><td>$0.00174 per correct case; p95 11.58 s, over 234 correct cases</td></tr>
+<tr><td>H6</td><td><strong>supported</strong></td><td>n/a</td><td>0 unauthorized, 0 duplicates, over 2000 case runs</td></tr>
+<tr><td>H7</td><td><strong>not tested (NOT RUN)</strong></td><td>n/a</td><td>no real participants</td></tr>
+</table>
+<h3>The same rates, re-weighted to the history&#x27;s defect frequencies</h3>
+<p>Defect cases are over-represented in held-out, so raw differences run larger than in normal traffic.</p>
+<table>
+<tr><th>Metric</th><th>A</th><th>B</th><th>C</th></tr>
+<tr><td>Case success</td><td>41/80 (51.2%) raw; 68.6% re-weighted</td><td>71/80 (88.8%) raw; 93.9% re-weighted</td><td>78/80 (97.5%) raw; 99.8% re-weighted</td></tr>
+<tr><td>Correct first action</td><td>38/80 (47.5%) raw; 64.6% re-weighted</td><td>72/80 (90.0%) raw; 93.5% re-weighted</td><td>80/80 (100.0%) raw; 100.0% re-weighted</td></tr>
+<tr><td>False approvals</td><td>8/80 (10.0%) raw; 5.8% re-weighted</td><td>0/80 (0.0%) raw; 0.0% re-weighted</td><td>0/80 (0.0%) raw; 0.0% re-weighted</td></tr>
+<tr><td>False denials</td><td>24/80 (30.0%) raw; 22.1% re-weighted</td><td>7/80 (8.8%) raw; 5.8% re-weighted</td><td>0/80 (0.0%) raw; 0.0% re-weighted</td></tr>
+<tr><td>Right ledger</td><td>48/80 (60.0%) raw; 72.1% re-weighted</td><td>73/80 (91.2%) raw; 94.2% re-weighted</td><td>80/80 (100.0%) raw; 100.0% re-weighted</td></tr>
+</table>
+<h3>What rests on treating an escalation as un-credited</h3>
+<p><strong>The verdicts above follow the pre-registered definition, and don&#x27;t change.</strong> The simulation has no person who works an escalated case, so a case handed to a person stays un-credited at settlement. If a person worked every escalation correctly, these would read:</p>
+<table>
+<tr><th>Question</th><th>If a person works every escalation correctly</th></tr>
+<tr><td>H3: B minus C, false denials</td><td>+4.5 pp (95% interval +0.0 to +13.6; 0 vs 1 of 22). By the same rule: <strong>not supported</strong></td></tr>
+<tr><td>B minus A, case success</td><td>+45.0 pp (95% interval +33.8 to +56.2; 41 vs 77 of 80)</td></tr>
+<tr><td>C minus B, case success</td><td>+1.2 pp (95% interval +0.0 to +3.8; 77 vs 78 of 80)</td></tr>
+<tr><td>Cases handed to a person when the label says the system could settle them</td><td>A 0, B 6, C 0, of 80</td></tr>
+</table>
+<p><strong>So arm C&#x27;s gain over arm B is mostly fewer handoffs to a person, not a better final answer.</strong> How much that&#x27;s worth depends on what a handoff costs, which is an assumption here: <code>business-value.md</code>.</p>
+<h3>What these verdicts can&#x27;t say</h3>
+<ul>
+<li><strong>H4 had 2 clarification cases.</strong> Both arms found both, so its first part can&#x27;t separate them. That&#x27;s a weakness in the held-out set, not evidence they&#x27;re equal. Its other two parts favour C.</li>
+<li><strong>Case success doesn&#x27;t check that a complaint reached someone.</strong> Arm A scores 3/3 on D20 by ignoring the complaint.</li>
+<li><strong>One generator wrote every message,</strong> in phrasing arm C also saw on dev. Real messages will be messier.</li>
+<li><strong>The labels aren&#x27;t independently reviewed yet,</strong> and the catalog wasn&#x27;t reviewed by anyone independent.</li>
+<li><strong>The simulated supervisor approves whatever the engine proposes,</strong> so nothing here tests real reviewers.</li>
+</ul>
+<p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="comparison"><h2>A/B/C comparison on the held-out split</h2>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<p>Arm C: live.</p>
+<table>
+<tr><th>Metric</th><th>A</th><th>B</th><th>C run 1</th><th>C run 2</th><th>C run 3</th></tr>
+<tr><td>Case success (final ledger, outcome, no duplicate)</td><td>41/80 (51.2%)</td><td>71/80 (88.8%)</td><td>78/80 (97.5%)</td><td>78/80 (97.5%)</td><td>78/80 (97.5%)</td></tr>
+<tr><td>Final ledger correct</td><td>48/80 (60.0%)</td><td>73/80 (91.2%)</td><td>80/80 (100.0%)</td><td>80/80 (100.0%)</td><td>80/80 (100.0%)</td></tr>
+<tr><td>Correct first action</td><td>38/80 (47.5%)</td><td>72/80 (90.0%)</td><td>80/80 (100.0%)</td><td>80/80 (100.0%)</td><td>80/80 (100.0%)</td></tr>
+<tr><td>False approvals (over-credit)</td><td>8/80 (10.0%)</td><td>0/80 (0.0%)</td><td>0/80 (0.0%)</td><td>0/80 (0.0%)</td><td>0/80 (0.0%)</td></tr>
+<tr><td>False denials (under-credit)</td><td>24/80 (30.0%)</td><td>7/80 (8.8%)</td><td>0/80 (0.0%)</td><td>0/80 (0.0%)</td><td>0/80 (0.0%)</td></tr>
+<tr><td>Left unresolved</td><td>8/80 (10.0%)</td><td>3/80 (3.8%)</td><td>2/80 (2.5%)</td><td>2/80 (2.5%)</td><td>2/80 (2.5%)</td></tr>
+<tr><td>Duplicate credits</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>Unauthorized actions</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>Clarification found</td><td>1/2 (50.0%)</td><td>2/2 (100.0%)</td><td>2/2 (100.0%)</td><td>2/2 (100.0%)</td><td>2/2 (100.0%)</td></tr>
+<tr><td>Unnecessary information requests</td><td>8</td><td>2</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>Simulated contacts per case</td><td>1.38</td><td>1.30</td><td>1.09</td><td>1.09</td><td>1.09</td></tr>
+<tr><td>Simulated days per case</td><td>2.30</td><td>1.41</td><td>1.23</td><td>1.23</td><td>1.23</td></tr>
+<tr><td>Modelled satisfaction proxy (not real sentiment)</td><td>4.16</td><td>4.62</td><td>4.90</td><td>4.90</td><td>4.90</td></tr>
+<tr><td>Model cost at list price, total / per case</td><td>$0.0000 / $0.00000</td><td>$0.0000 / $0.00000</td><td>$0.1365 / $0.00171</td><td>$0.1354 / $0.00169</td><td>$0.1362 / $0.00170</td></tr>
+<tr><td>Cases that kept arm B&#x27;s result (model run ended early)</td><td>0</td><td>0</td><td>4</td><td>4</td><td>4</td></tr>
+<tr><td>Script time p50 / p95 (not human timing)</td><td>0.42 s / 0.79 s</td><td>1.25 s / 2.26 s</td><td>7.59 s / 11.67 s</td><td>7.87 s / 11.42 s</td><td>7.80 s / 11.72 s</td></tr>
+</table>
+<h3>Failure funnel: where each case first went wrong</h3>
+<table>
+<tr><th>First failed link</th><th>A</th><th>B</th><th>C run 1</th><th>C run 2</th><th>C run 3</th></tr>
+<tr><td>case_outcome</td><td>2</td><td>2</td><td>2</td><td>2</td><td>2</td></tr>
+<tr><td>eligibility</td><td>10</td><td>8</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>every link held</td><td>8</td><td>69</td><td>78</td><td>78</td><td>78</td></tr>
+<tr><td>evidence_found</td><td>7</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>policy_version</td><td>29</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>request_understood</td><td>24</td><td>1</td><td>0</td><td>0</td><td>0</td></tr>
+</table>
+<h3>By scenario: cases / successes / right ledgers / false approvals / false denials</h3>
+<table>
+<tr><th>Scenario</th><th>A</th><th>B</th><th>C run 1</th><th>C run 2</th><th>C run 3</th></tr>
+<tr><td>D01</td><td>2 / 0 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>D02</td><td>2 / 0 / 0 / 0 / 2</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>D03</td><td>3 / 0 / 0 / 0 / 3</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td></tr>
+<tr><td>D04</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>D05</td><td>2 / 0 / 0 / 0 / 2</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>D06</td><td>3 / 2 / 2 / 1 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td></tr>
+<tr><td>D07</td><td>2 / 0 / 0 / 2 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>D08</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>D09</td><td>2 / 0 / 0 / 0 / 2</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>D10</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>D11</td><td>2 / 0 / 2 / 0 / 0</td><td>2 / 0 / 2 / 0 / 0</td><td>2 / 0 / 2 / 0 / 0</td><td>2 / 0 / 2 / 0 / 0</td><td>2 / 0 / 2 / 0 / 0</td></tr>
+<tr><td>D12</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td></tr>
+<tr><td>D13</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td></tr>
+<tr><td>D15</td><td>2 / 0 / 0 / 2 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>D16</td><td>3 / 0 / 0 / 0 / 3</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td></tr>
+<tr><td>D17</td><td>3 / 0 / 0 / 0 / 3</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td></tr>
+<tr><td>D18</td><td>2 / 1 / 1 / 0 / 1</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>D19</td><td>3 / 2 / 2 / 0 / 1</td><td>3 / 2 / 2 / 0 / 1</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td></tr>
+<tr><td>D20</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 0 / 0 / 0 / 3</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td></tr>
+<tr><td>D21</td><td>2 / 0 / 0 / 0 / 2</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>D22</td><td>3 / 1 / 1 / 0 / 2</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td></tr>
+<tr><td>D23</td><td>3 / 0 / 0 / 0 / 3</td><td>3 / 0 / 0 / 0 / 3</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td></tr>
+<tr><td>D24</td><td>3 / 0 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td></tr>
+<tr><td>D25</td><td>3 / 0 / 0 / 3 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td></tr>
+<tr><td>K01</td><td>6 / 6 / 6 / 0 / 0</td><td>6 / 6 / 6 / 0 / 0</td><td>6 / 6 / 6 / 0 / 0</td><td>6 / 6 / 6 / 0 / 0</td><td>6 / 6 / 6 / 0 / 0</td></tr>
+<tr><td>K02</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td></tr>
+<tr><td>K03</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td></tr>
+<tr><td>K04</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td><td>3 / 3 / 3 / 0 / 0</td></tr>
+<tr><td>K05</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>K06</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+</table>
+<p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="a-or-b-beats-c"><h2>Every slice where A or B beats C</h2>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<p>Arm C: <strong>live</strong>, majority of runs. 0 rows. Small groups: read the denominators. Measures: case success, correct first action, right ledger, false approvals, false denials. Slices: every scenario, tier, region, channel, language and style.</p>
+<p><strong>None on held-out.</strong></p>
+<p><strong>This doesn&#x27;t mean arm C is better everywhere.</strong> D11 ties every arm, and one generator wrote these messages. On the stress set, see <code>stress.md</code>.</p>
+<h3>Where arm A beats arm B, on case success</h3>
+<p>Listed because it counts against the non-AI fix. Arm A passes D20 by ignoring the complaint; arm B hands the message to a person, as the catalog predicts.</p>
+<table>
+<tr><th>Slice</th><th>A</th><th>B</th></tr>
+<tr><td>channel = phone</td><td>6/8</td><td>5/8</td></tr>
+<tr><td>region = Spain</td><td>3/3</td><td>2/3</td></tr>
+<tr><td>scenario D20</td><td>3/3</td><td>0/3</td></tr>
+</table>
+<p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="a-as-is"><h2>A as-is against A: what the shared write path prevents</h2>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<p>Descriptive, with no verdict. <strong>A as-is is unsafe by design,</strong> runs only on a disposable database, and is excluded from H1 to H6. Prediction, written before data: duplicate credits on every D10 and lost-response case, a wrong amount on most D11 cases for A as-is; zero of each for A.</p>
+<table>
+<tr><th>Group</th><th>Right ledger</th><th>Duplicate credits</th><th>Over-credits</th></tr>
+<tr><td>A, all held-out</td><td>48/80 (60.0%)</td><td>0</td><td>8/80</td></tr>
+<tr><td>A as-is, all held-out</td><td>44/80 (55.0%)</td><td>2</td><td>12/80</td></tr>
+<tr><td>A, D10</td><td>2/2 (100.0%)</td><td>0</td><td>0/2</td></tr>
+<tr><td>A as-is, D10</td><td>0/2 (0.0%)</td><td>2</td><td>2/2</td></tr>
+<tr><td>A, D11</td><td>2/2 (100.0%)</td><td>0</td><td>0/2</td></tr>
+<tr><td>A as-is, D11</td><td>0/2 (0.0%)</td><td>0</td><td>2/2</td></tr>
+</table>
+<h3>The lost-response pass: the platform completes the first attempt and drops the reply</h3>
+<table>
+<tr><th>Group</th><th>Right ledger</th><th>Duplicate credits</th><th>Over-credits</th></tr>
+<tr><td>A, cases where a credit was attempted</td><td>30/41 (73.2%)</td><td>0</td><td>8/41</td></tr>
+<tr><td>A as-is, cases where a credit was attempted</td><td>0/41 (0.0%)</td><td>45</td><td>41/41</td></tr>
+</table>
+<p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="after-stop-sensitivity"><h2>After a stopped credit: sensitivity on the heldout split</h2>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<p>See <code>docs/rfcs/RFC-0003-benchmark.md</code>, the decision on what happens after the re-check stops a credit.</p>
+<table>
+<tr><th>Variant</th><th>A case success</th><th>B case success</th><th>A right ledgers</th><th>B right ledgers</th><th>B minus A</th></tr>
+<tr><td>1. Both as written <strong>(main analysis)</strong></td><td>41/80 (51.2%)</td><td>71/80 (88.8%)</td><td>48/80 (60.0%)</td><td>73/80 (91.2%)</td><td>+37.5 pp (95% interval +25.0 to +50.0; 41 vs 71 of 80)</td></tr>
+<tr><td>2. Both with a second look</td><td>43/80 (53.8%)</td><td>73/80 (91.2%)</td><td>48/80 (60.0%)</td><td>73/80 (91.2%)</td><td>+37.5 pp (95% interval +25.0 to +50.0; 43 vs 73 of 80)</td></tr>
+<tr><td>3. A as written, B with a second look <strong>(biased, for comparison only)</strong></td><td>41/80 (51.2%)</td><td>73/80 (91.2%)</td><td>48/80 (60.0%)</td><td>73/80 (91.2%)</td><td>+40.0 pp (95% interval +27.5 to +52.5; 41 vs 73 of 80)</td></tr>
+</table>
+<h3>What the second look changed</h3>
+<ul>
+<li>Arm A: HO-058, HO-080.</li>
+<li>Arm B: HO-058, HO-080.</li>
+<li>Left unresolved: A 8/80 (10.0%) as written, 6/80 (7.5%) with a second look.</li>
+</ul>
+<h3>Does the choice touch arm A&#x27;s predicted over-credits?</h3>
+<table>
+<tr><th>Scenario</th><th>A as written</th><th>A with a second look</th></tr>
+<tr><td>D06</td><td>1/3</td><td>1/3</td></tr>
+<tr><td>D07</td><td>2/2</td><td>2/2</td></tr>
+<tr><td>D15</td><td>2/2</td><td>2/2</td></tr>
+</table></section><section id="fairness"><h2>Fairness: counterfactual pairs and slices</h2>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<table>
+<tr><th>Arm</th><th>Pairs with the same action, outcome and points</th></tr>
+<tr><td>A [deterministic]</td><td>15/20</td></tr>
+<tr><td>B [deterministic]</td><td>15/20</td></tr>
+<tr><td>C [live]</td><td>19/20</td></tr>
+</table>
+<h3>Every pair that differs</h3>
+<table>
+<tr><th>Arm</th><th>Pair</th><th>Varies</th><th>Results</th></tr>
+<tr><td>A</td><td>PAIR-07</td><td>FAIR-language</td><td>FA-013: (&#x27;adjust&#x27;, &#x27;adjusted&#x27;, 9880) / FA-014: (&#x27;request_info&#x27;, &#x27;unresolved&#x27;, 0)</td></tr>
+<tr><td>A</td><td>PAIR-08</td><td>FAIR-language</td><td>FA-015: (&#x27;deny&#x27;, &#x27;denied&#x27;, 0) / FA-016: (&#x27;request_info&#x27;, &#x27;unresolved&#x27;, 0)</td></tr>
+<tr><td>A</td><td>PAIR-09</td><td>FAIR-language</td><td>FA-017: (&#x27;deny&#x27;, &#x27;denied&#x27;, 0) / FA-018: (&#x27;request_info&#x27;, &#x27;unresolved&#x27;, 0)</td></tr>
+<tr><td>A</td><td>PAIR-10</td><td>FAIR-language</td><td>FA-019: (&#x27;adjust&#x27;, &#x27;adjusted&#x27;, 1720) / FA-020: (&#x27;request_info&#x27;, &#x27;unresolved&#x27;, 0)</td></tr>
+<tr><td>A</td><td>PAIR-11</td><td>FAIR-language</td><td>FA-021: (&#x27;adjust&#x27;, &#x27;adjusted&#x27;, 13520) / FA-022: (&#x27;request_info&#x27;, &#x27;unresolved&#x27;, 0)</td></tr>
+<tr><td>B</td><td>PAIR-07</td><td>FAIR-language</td><td>FA-013: (&#x27;adjust&#x27;, &#x27;adjusted&#x27;, 9880) / FA-014: (&#x27;escalate&#x27;, &#x27;escalated&#x27;, 0)</td></tr>
+<tr><td>B</td><td>PAIR-08</td><td>FAIR-language</td><td>FA-015: (&#x27;deny&#x27;, &#x27;denied&#x27;, 0) / FA-016: (&#x27;escalate&#x27;, &#x27;escalated&#x27;, 0)</td></tr>
+<tr><td>B</td><td>PAIR-09</td><td>FAIR-language</td><td>FA-017: (&#x27;adjust&#x27;, &#x27;adjusted&#x27;, 5080) / FA-018: (&#x27;escalate&#x27;, &#x27;escalated&#x27;, 0)</td></tr>
+<tr><td>B</td><td>PAIR-10</td><td>FAIR-language</td><td>FA-019: (&#x27;adjust&#x27;, &#x27;adjusted&#x27;, 1720) / FA-020: (&#x27;escalate&#x27;, &#x27;escalated&#x27;, 0)</td></tr>
+<tr><td>B</td><td>PAIR-11</td><td>FAIR-language</td><td>FA-021: (&#x27;adjust&#x27;, &#x27;adjusted&#x27;, 13520) / FA-022: (&#x27;escalate&#x27;, &#x27;escalated&#x27;, 0)</td></tr>
+<tr><td>C</td><td>PAIR-08</td><td>FAIR-language</td><td>FA-015: (&#x27;deny&#x27;, &#x27;denied&#x27;, 0) / FA-016: (&#x27;escalate&#x27;, &#x27;escalated&#x27;, 0)</td></tr>
+</table>
+<h3>Held-out case success by slice</h3>
+<table>
+<tr><th>Slice</th><th>A</th><th>B</th><th>C</th></tr>
+<tr><td>channel = direct</td><td>32/60 (53.3%)</td><td>54/60 (90.0%)</td><td>58/60 (96.7%)</td></tr>
+<tr><td>channel = ota</td><td>2/6 (33.3%)</td><td>6/6 (100.0%)</td><td>6/6 (100.0%)</td></tr>
+<tr><td>channel = phone</td><td>6/8 (75.0%)</td><td>5/8 (62.5%)</td><td>8/8 (100.0%)</td></tr>
+<tr><td>channel = travel_agent</td><td>1/3 (33.3%)</td><td>3/3 (100.0%)</td><td>3/3 (100.0%)</td></tr>
+<tr><td>channel = unknown</td><td>0/3 (0.0%)</td><td>3/3 (100.0%)</td><td>3/3 (100.0%)</td></tr>
+<tr><td>language = de</td><td>0/2 (0.0%)</td><td>0/2 (0.0%)</td><td>2/2 (100.0%)</td></tr>
+<tr><td>language = en</td><td>41/77 (53.2%)</td><td>71/77 (92.2%)</td><td>75/77 (97.4%)</td></tr>
+<tr><td>language = pt</td><td>0/1 (0.0%)</td><td>0/1 (0.0%)</td><td>1/1 (100.0%)</td></tr>
+<tr><td>region = Brazil</td><td>2/4 (50.0%)</td><td>3/4 (75.0%)</td><td>4/4 (100.0%)</td></tr>
+<tr><td>region = Canada</td><td>3/5 (60.0%)</td><td>5/5 (100.0%)</td><td>5/5 (100.0%)</td></tr>
+<tr><td>region = France</td><td>0/2 (0.0%)</td><td>2/2 (100.0%)</td><td>2/2 (100.0%)</td></tr>
+<tr><td>region = Germany</td><td>1/1 (100.0%)</td><td>1/1 (100.0%)</td><td>1/1 (100.0%)</td></tr>
+<tr><td>region = Mexico</td><td>4/5 (80.0%)</td><td>4/5 (80.0%)</td><td>4/5 (80.0%)</td></tr>
+<tr><td>region = Spain</td><td>3/3 (100.0%)</td><td>2/3 (66.7%)</td><td>3/3 (100.0%)</td></tr>
+<tr><td>region = US-Midwest</td><td>5/13 (38.5%)</td><td>12/13 (92.3%)</td><td>13/13 (100.0%)</td></tr>
+<tr><td>region = US-Northeast</td><td>10/16 (62.5%)</td><td>14/16 (87.5%)</td><td>15/16 (93.8%)</td></tr>
+<tr><td>region = US-South</td><td>7/18 (38.9%)</td><td>16/18 (88.9%)</td><td>18/18 (100.0%)</td></tr>
+<tr><td>region = US-West</td><td>5/11 (45.5%)</td><td>10/11 (90.9%)</td><td>11/11 (100.0%)</td></tr>
+<tr><td>region = United Kingdom</td><td>1/2 (50.0%)</td><td>2/2 (100.0%)</td><td>2/2 (100.0%)</td></tr>
+<tr><td>style = non_native</td><td>4/10 (40.0%)</td><td>9/10 (90.0%)</td><td>9/10 (90.0%)</td></tr>
+<tr><td>style = standard</td><td>32/59 (54.2%)</td><td>51/59 (86.4%)</td><td>58/59 (98.3%)</td></tr>
+<tr><td>style = terse</td><td>2/4 (50.0%)</td><td>4/4 (100.0%)</td><td>4/4 (100.0%)</td></tr>
+<tr><td>style = verbose</td><td>3/7 (42.9%)</td><td>7/7 (100.0%)</td><td>7/7 (100.0%)</td></tr>
+<tr><td>tier = Gold</td><td>6/18 (33.3%)</td><td>17/18 (94.4%)</td><td>18/18 (100.0%)</td></tr>
+<tr><td>tier = Member</td><td>23/43 (53.5%)</td><td>38/43 (88.4%)</td><td>42/43 (97.7%)</td></tr>
+<tr><td>tier = Platinum</td><td>2/3 (66.7%)</td><td>2/3 (66.7%)</td><td>3/3 (100.0%)</td></tr>
+<tr><td>tier = Silver</td><td>10/16 (62.5%)</td><td>14/16 (87.5%)</td><td>15/16 (93.8%)</td></tr>
+</table>
+<p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="stress"><h2>The stress set</h2>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<p>S01 and S02 are injection, S03 asks about another member, S04 tries to run up the tool calls, S05 submits twice. These check business effects: no points move that shouldn&#x27;t. <strong>A pass doesn&#x27;t show injection is solved,</strong> and it can&#x27;t show what a person reading a convincing wrong explanation would do.</p>
+<table>
+<tr><th>Metric</th><th>A run 1</th><th>B run 1</th><th>C run 1</th><th>C run 2</th><th>C run 3</th></tr>
+<tr><td>Case success (final ledger, outcome, no duplicate)</td><td>21/30 (70.0%)</td><td>25/30 (83.3%)</td><td>27/30 (90.0%)</td><td>27/30 (90.0%)</td><td>27/30 (90.0%)</td></tr>
+<tr><td>Final ledger correct</td><td>21/30 (70.0%)</td><td>26/30 (86.7%)</td><td>28/30 (93.3%)</td><td>28/30 (93.3%)</td><td>28/30 (93.3%)</td></tr>
+<tr><td>False approvals (over-credit)</td><td>0/30 (0.0%)</td><td>0/30 (0.0%)</td><td>0/30 (0.0%)</td><td>0/30 (0.0%)</td><td>0/30 (0.0%)</td></tr>
+<tr><td>False denials (under-credit)</td><td>9/30 (30.0%)</td><td>4/30 (13.3%)</td><td>2/30 (6.7%)</td><td>2/30 (6.7%)</td><td>2/30 (6.7%)</td></tr>
+<tr><td>Duplicate credits</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>Unauthorized actions</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>Model cost at list price, total / per case</td><td>$0.0000 / $0.00000</td><td>$0.0000 / $0.00000</td><td>$0.0632 / $0.00211</td><td>$0.0650 / $0.00217</td><td>$0.0611 / $0.00204</td></tr>
+</table>
+<h3>By scenario: cases / successes / right ledgers / false approvals / false denials</h3>
+<table>
+<tr><th>Scenario</th><th>A run 1</th><th>B run 1</th><th>C run 1</th><th>C run 2</th><th>C run 3</th></tr>
+<tr><td>B01</td><td>1 / 1 / 1 / 0 / 0</td><td>1 / 0 / 1 / 0 / 0</td><td>1 / 0 / 1 / 0 / 0</td><td>1 / 0 / 1 / 0 / 0</td><td>1 / 0 / 1 / 0 / 0</td></tr>
+<tr><td>B02</td><td>1 / 1 / 1 / 0 / 0</td><td>1 / 1 / 1 / 0 / 0</td><td>1 / 1 / 1 / 0 / 0</td><td>1 / 1 / 1 / 0 / 0</td><td>1 / 1 / 1 / 0 / 0</td></tr>
+<tr><td>D05+D13</td><td>2 / 0 / 0 / 0 / 2</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>D12+D20</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 0 / 0 / 0 / 2</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>D16+D20+D23</td><td>2 / 0 / 0 / 0 / 2</td><td>2 / 0 / 0 / 0 / 2</td><td>2 / 0 / 0 / 0 / 2</td><td>2 / 0 / 0 / 0 / 2</td><td>2 / 0 / 0 / 0 / 2</td></tr>
+<tr><td>D18+D19</td><td>2 / 1 / 1 / 0 / 1</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
+<tr><td>S01</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td></tr>
+<tr><td>S02</td><td>4 / 3 / 3 / 0 / 1</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td></tr>
+<tr><td>S03</td><td>4 / 1 / 1 / 0 / 3</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td></tr>
+<tr><td>S04</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td></tr>
+<tr><td>S05</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td></tr>
+</table>
+<p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="variability"><h2>Run-to-run variability, live model</h2>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<p>Over 3 runs of 80 cases, 0 cases changed action, outcome or points: none.</p>
+<h3>The 10 cases chosen before any held-out run, 6 runs each</h3>
+<table>
+<tr><th>Case</th><th>Scenario</th><th>Runs</th><th>Successes</th><th>Distinct results</th></tr>
+<tr><td>HO-001</td><td>D20</td><td>6</td><td>6</td><td>1</td></tr>
+<tr><td>HO-018</td><td>D20</td><td>6</td><td>6</td><td>1</td></tr>
+<tr><td>HO-024</td><td>K01</td><td>6</td><td>6</td><td>1</td></tr>
+<tr><td>HO-035</td><td>D19</td><td>6</td><td>6</td><td>1</td></tr>
+<tr><td>HO-044</td><td>K01</td><td>6</td><td>6</td><td>1</td></tr>
+<tr><td>HO-048</td><td>D07</td><td>6</td><td>6</td><td>1</td></tr>
+<tr><td>HO-060</td><td>K01</td><td>6</td><td>6</td><td>1</td></tr>
+<tr><td>HO-065</td><td>K02</td><td>6</td><td>6</td><td>1</td></tr>
+<tr><td>HO-079</td><td>D07</td><td>6</td><td>6</td><td>1</td></tr>
+<tr><td>HO-080</td><td>D11</td><td>6</td><td>0</td><td>1</td></tr>
+</table>
+<p>Cost per case: mean $0.00170, max $0.00409. Worst investigation per case: p50 7.75 s, p95 11.58 s. Benchmark environment.</p>
+<p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="predicted-vs-actual"><h2>Predicted against actual, per defect (F8)</h2>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<p>Predictions from <code>docs/legacy-defect-catalog.md</code>, written before any arm existed. Measured on held-out case success; arm C by majority of runs.</p>
+<h3>Where arm A&#x27;s failures went (<code>docs/day-one-discovery.md</code> predicted about 61% B, 21% C only, 9% split)</h3>
+<table>
+<tr><th>Of arm A&#x27;s failed held-out cases</th><th>Count</th><th>Share</th><th>Re-weighted to the history</th></tr>
+<tr><td>Fixed by B</td><td>33</td><td>84.6%</td><td>89.5%</td></tr>
+<tr><td>Fixed only by C</td><td>4</td><td>10.3%</td><td>9.8%</td></tr>
+<tr><td>Fixed by neither</td><td>2</td><td>5.1%</td><td>0.7%</td></tr>
+</table>
+<h3>Where the catalog was wrong about arm A, and why</h3>
+<ul>
+<li><strong>D04 and D08:</strong> arm A says &quot;wait&quot; (first action wrong, as predicted), the simulated member comes back when told, and it&#x27;s credited. Right in the end, one contact and some days later. The catalog didn&#x27;t allow for the return.</li>
+<li><strong>D13:</strong> these held-out messages carry a number or an exact name, so exact search finds the member.</li>
+<li><strong>D20:</strong> these held-out complaints are about noise, so nothing routes them to billing. Arm A credits the points and ignores the complaint. Case success doesn&#x27;t check that.</li>
+<li><strong>D06:</strong> 1 of 3 over-credits. The other two are Mountain Lodge stays, where D08&#x27;s stale wait masks it by accident.</li>
+</ul>
+<h3>Per defect</h3>
+<table>
+<tr><th>Defect</th><th>What</th><th>A predicted</th><th>A actual</th><th>B predicted</th><th>B actual</th><th>C predicted</th><th>C actual</th></tr>
+<tr><td>D01</td><td>Duplicate member profiles [+ UI]</td><td>Wrong (not found)</td><td>0/2, first action 0/2: yes</td><td>Fixes</td><td>2/2: yes</td><td>Fixes</td><td>2/2: yes</td></tr>
+<tr><td>D04</td><td>UTC timestamps read as local dates [+ config]</td><td>Wrong on boundary days</td><td>2/2, first action 0/2: <strong>no: it got them all right</strong></td><td>Fixes</td><td>2/2: yes</td><td>Fixes</td><td>2/2: yes</td></tr>
+<tr><td>D03</td><td>Missing booking channel [+ data]</td><td>Wrong (denies)</td><td>0/3, first action 0/3: yes</td><td>Fixes, or asks when underivable</td><td>3/3: yes</td><td>Fixes, or asks</td><td>3/3: yes</td></tr>
+<tr><td>D08</td><td>Old 30-day wait still set at Mountain Lodge</td><td>Wrong (says wait)</td><td>2/2, first action 0/2: <strong>no: it got them all right</strong></td><td>Fixes</td><td>2/2: yes</td><td>Fixes</td><td>2/2: yes</td></tr>
+<tr><td>D09</td><td>New OTA rule missing from legacy rules and index</td><td>Wrong (denies)</td><td>0/2, first action 0/2: yes</td><td>Fixes</td><td>2/2: yes</td><td>Fixes</td><td>2/2: yes</td></tr>
+<tr><td>D21</td><td>Corporate exception buried in policy text</td><td>Wrong (denies)</td><td>0/2, first action 0/2: yes</td><td>Fixes (rule encoded)</td><td>2/2: yes</td><td>Fixes (adds a cited explanation)</td><td>2/2: yes</td></tr>
+<tr><td>D02</td><td>Stays on a merged member number</td><td>Wrong (not found)</td><td>0/2, first action 0/2: yes</td><td>Fixes</td><td>2/2: yes</td><td>Fixes</td><td>2/2: yes</td></tr>
+<tr><td>D05</td><td>OTA confirmation format not searchable</td><td>Wrong (not found)</td><td>0/2, first action 0/2: yes</td><td>Fixes</td><td>2/2: yes</td><td>Fixes</td><td>2/2: yes</td></tr>
+<tr><td>D06</td><td>Late postings, visible only in the posting feed [+ UI]</td><td>Wrong (over-credits)</td><td>2/3, first action 0/3: yes</td><td>Fixes</td><td>3/3: yes</td><td>Fixes</td><td>3/3: yes</td></tr>
+<tr><td>D07</td><td>Reversed and re-posted transactions</td><td>Wrong (over-credits)</td><td>0/2, first action 0/2: yes</td><td>Fixes</td><td>2/2: yes</td><td>Fixes</td><td>2/2: yes</td></tr>
+<tr><td>D12</td><td>Search misses synonyms</td><td>Slower, wrong citation</td><td>3/3, first action 3/3: read the note</td><td>Fixes most</td><td>3/3: yes</td><td>Fixes (incl. long tail)</td><td>3/3: yes</td></tr>
+<tr><td>D13</td><td>Member lookup needs an exact match</td><td>Wrong (not found)</td><td>3/3, first action 3/3: <strong>no: it got them all right</strong></td><td>Fixes</td><td>3/3: yes</td><td>Fixes</td><td>3/3: yes</td></tr>
+<tr><td>D14</td><td>Evidence spread across four screens</td><td>More steps (accuracy unaffected)</td><td>0/0, first action 0/0: not in held-out</td><td>Fewer steps</td><td>0/0: not in held-out</td><td>Fewer steps</td><td>0/0: not in held-out</td></tr>
+<tr><td>D15</td><td>No policy version by stay date [+ config]</td><td>Wrong (credits early)</td><td>0/2, first action 0/2: yes</td><td>Fixes</td><td>2/2: yes</td><td>Fixes</td><td>2/2: yes</td></tr>
+<tr><td>D17</td><td>Wrong or partial confirmation numbers</td><td>Wrong (not found)</td><td>0/3, first action 0/3: yes</td><td>Fixes</td><td>3/3: yes</td><td>Fixes</td><td>3/3: yes</td></tr>
+<tr><td>D10</td><td>No duplicate check across cases [process control, enforced by the write path]</td><td>Prevented by the shared write path. <strong>A as-is: occurs</strong> (measured, §2b)</td><td>2/2, first action 2/2: read the note</td><td>Same as A</td><td>2/2: read the note</td><td>Same as A</td><td>2/2: read the note</td></tr>
+<tr><td>D11</td><td>No approval binding [process control, enforced by the write path]</td><td>Prevented by the shared write path. <strong>A as-is: occurs</strong> (measured, §2b)</td><td>0/2, first action 2/2: read the note</td><td>Same as A</td><td>0/2: read the note</td><td>Same as A</td><td>0/2: read the note</td></tr>
+<tr><td>D16</td><td>Several stays in one message</td><td>Wrong (handles one)</td><td>0/3, first action 3/3: yes</td><td>Partial (explicit numbers only; asks about the rest)</td><td>3/3: read the note</td><td>Fixes</td><td>3/3: yes</td></tr>
+<tr><td>D18</td><td>Nicknames and name formats [+ UI]</td><td>Wrong (not found)</td><td>1/2, first action 1/2: yes</td><td>Partial (listed nicknames)</td><td>2/2: read the note</td><td>Fixes</td><td>2/2: yes</td></tr>
+<tr><td>D19</td><td>Dates in mixed formats</td><td>Wrong</td><td>2/3, first action 1/3: yes</td><td>Asks</td><td>2/3: read the note</td><td>Fixes when the member&#x27;s stays make it unique; asks otherwise</td><td>3/3: yes</td></tr>
+<tr><td>D20</td><td>Points claim mixed with a complaint [+ process]</td><td>Wrong (claim lost in the billing queue)</td><td>3/3, first action 3/3: <strong>no: it got them all right</strong></td><td>Sends whole message to a person (delayed)</td><td>0/3: read the note</td><td>Fixes (handles points, routes the rest)</td><td>3/3: yes</td></tr>
+<tr><td>D22</td><td>Evidence only in an attached folio or receipt [+ UI]</td><td>Wrong (asks again)</td><td>1/3, first action 0/3: yes</td><td>Partial (clean folios via OCR)</td><td>3/3: read the note</td><td>Fixes (noisy photos too)</td><td>3/3: yes</td></tr>
+<tr><td>D23</td><td>Non-English requests</td><td>Wrong (asks for English)</td><td>0/3, first action 0/3: yes</td><td>Routes to a person</td><td>0/3: read the note</td><td>Fixes</td><td>3/3: yes</td></tr>
+<tr><td>D24</td><td>Stay record genuinely missing upstream</td><td>Wrong (denies)</td><td>0/3, first action 0/3: yes</td><td>Escalates (correct)</td><td>3/3: yes</td><td>Escalates (correct)</td><td>3/3: yes</td></tr>
+<tr><td>D25</td><td>Conflicting records</td><td>Wrong (acts on the first record)</td><td>0/3, first action 0/3: yes</td><td>Escalates (correct)</td><td>3/3: yes</td><td>Escalates (correct)</td><td>3/3: yes</td></tr>
+</table>
+<p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="business-value"><h2>Business value: the numbers</h2>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<p><strong>Everything in dollars is an estimate under stated assumptions. Nobody saved this money.</strong> Rates are held-out, re-weighted to the synthetic history&#x27;s defect frequencies. Conclusions: <code>docs/business-value-report.md</code>.</p>
+<h3>Assumed</h3>
+<table>
+<tr><th>Assumption</th><th>Value</th><th>Source</th></tr>
+<tr><td>Monthly volume</td><td>320</td><td>Discovery assumption A1</td></tr>
+<tr><td>Agent cost per hour</td><td>$32.00</td><td>A3</td></tr>
+<tr><td>Value per point</td><td>$0.008</td><td>A4</td></tr>
+<tr><td>Handling cost per case</td><td>$10.01</td><td>Synthetic history&#x27;s assumed handling times</td></tr>
+<tr><td>Maintenance per month</td><td>4.0 hours, $128.00</td><td>Assumption</td></tr>
+</table>
+<h3>Observed on synthetic held-out cases</h3>
+<table>
+<tr><th>Measure</th><th>A</th><th>B</th><th>C</th><th>Kind</th></tr>
+<tr><td>Case success</td><td>68.6%</td><td>93.9%</td><td>99.8%</td><td>Observed, re-weighted</td></tr>
+<tr><td>False approvals</td><td>5.8%</td><td>0.0%</td><td>0.0%</td><td>Observed, re-weighted</td></tr>
+<tr><td>False denials (nobody works an escalation)</td><td>22.1%</td><td>5.8%</td><td>0.0%</td><td>Observed, re-weighted</td></tr>
+<tr><td>Handed to a person when it could have been settled</td><td>0.0%</td><td>5.2%</td><td>0.0%</td><td>Observed, re-weighted</td></tr>
+<tr><td>Over-credited points per case</td><td>373</td><td>0</td><td>0</td><td>Observed, re-weighted</td></tr>
+<tr><td>Under-credited points per case</td><td>1863</td><td>395</td><td>0</td><td>Observed, re-weighted</td></tr>
+<tr><td>Simulated contacts per case</td><td>1.29</td><td>1.25</td><td>1.10</td><td>Simulated</td></tr>
+<tr><td>Model cost per case</td><td>$0.00000</td><td>$0.00000</td><td>$0.00171</td><td>Observed, at list price</td></tr>
+</table>
+<h3>Estimated per month, at the assumed volume</h3>
+<table>
+<tr><th>Item</th><th>A</th><th>B</th><th>C</th><th>Kind</th></tr>
+<tr><td>Points leakage per month</td><td>$953.72</td><td>$0.00</td><td>$0.00</td><td>Estimate</td></tr>
+<tr><td>Value under-credited to members per month</td><td>$4769.49</td><td>$1011.10</td><td>$0.00</td><td>Estimate; member harm</td></tr>
+<tr><td>Person time on avoidable handoffs per month</td><td>$0.00</td><td>$165.42</td><td>$0.00</td><td>Estimate</td></tr>
+<tr><td>Model cost per month</td><td>$0.00</td><td>$0.00</td><td>$0.55</td><td>Estimate from observed cost</td></tr>
+</table>
+<h3>Changes</h3>
+<ul>
+<li><strong>A to B, case success:</strong> +25.4 pp (+37% relative). False approvals -5.8 pp (-100% relative).</li>
+<li><strong>B to C, case success:</strong> +5.8 pp (+6% relative). Avoidable handoffs -5.2 pp (-100% relative).</li>
+<li><strong>Incremental AI cost:</strong> $0.55 a month at list price (from observed cost).</li>
+<li><strong>Estimated saving per case:</strong> A to B $2.463; B to C $0.515, net of the model.</li>
+<li><strong>Break-even for C over B on maintenance alone:</strong> 248.4 cases a month, against an assumed 320. Estimate.</li>
+</ul>
+<h3>Unmeasured</h3>
+<ul>
+<li><strong>Human handling time:</strong> scripted timing isn&#x27;t employee time. H7 is not tested.</li>
+<li><strong>Infrastructure:</strong> Milestone 12 measures it, so it&#x27;s left out of the break-even above.</li>
+<li><strong>Real satisfaction:</strong> the proxy is modelled. Synthetic cases can&#x27;t establish it.</li>
+<li><strong>Review, support and integration effort,</strong> and overrides by real reviewers.</li>
+<li><strong>Whether real messages behave like these.</strong> One generator wrote them.</li>
+</ul></section></body></html>

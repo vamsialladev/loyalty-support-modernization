@@ -20,12 +20,28 @@ from statistics import mean
 import yaml
 
 from evaluations.compare import HEADER, Run, _table, by_scenario, funnel, load_run, repeat_differences, summary_rows
-from evaluations.decide import Decision, Runs, Verdict, h1, h2, h3, h4, h5, h6, h7, latency_p95
+from evaluations.decide import (
+    Decision,
+    Difference,
+    Runs,
+    Verdict,
+    difference,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    h7,
+    latency_p95,
+    section_two_rule,
+)
 from evaluations.run import DATASET, RESULTS, read_labels
 from evaluations.run_config import ROOT, THRESHOLDS
 from evaluations.scoring import (
     CaseResult,
     Label,
+    carries_unstructured_input,
     case_success,
     correct_action,
     false_approval,
@@ -91,6 +107,74 @@ def decisions(a: Runs, b: Runs, c: Runs, everything: Sequence[CaseResult]) -> li
     ]
 
 
+def denied_if_people_work_escalations(result: CaseResult, label: Label) -> bool:
+    """Sensitivity: a person works every escalation correctly, so an escalation isn't a false denial."""
+    return false_denial(result, label) and result.outcome != "escalated"
+
+
+def success_if_people_work_escalations(result: CaseResult, label: Label) -> bool:
+    """Sensitivity: a case handed to a person, wrongly or not, ends right unless it was over-credited first."""
+    if result.outcome == "escalated" and label["expected_outcome"] != "escalated":
+        return not false_approval(result, label)
+    return case_success(result, label)
+
+
+def escalation_sensitivity(a: Runs, b: Runs, c: Runs, labels: Labels, h3_threshold: float) -> list[str]:
+    """The simulation has no person who works an escalated case, so it stays un-credited at settlement. That's the
+    pre-registered definition, and the verdicts above use it. This shows what rests on it."""
+    cases = sorted(c.by_case)
+    sliced = [case for case in cases if carries_unstructured_input(labels[case])]
+    h3_diff = difference(
+        c.values(sliced, denied_if_people_work_escalations), b.values(sliced, denied_if_people_work_escalations)
+    )
+    ab = difference(
+        a.values(cases, success_if_people_work_escalations), b.values(cases, success_if_people_work_escalations)
+    )
+    bc = difference(
+        b.values(cases, success_if_people_work_escalations), c.values(cases, success_if_people_work_escalations)
+    )
+    handed = {
+        name: sum(
+            1
+            for case in cases
+            if runs.by_case[case][0].outcome == "escalated" and labels[case]["expected_outcome"] != "escalated"
+        )
+        for name, runs in (("A", a), ("B", b), ("C", c))
+    }
+
+    def show(d: Difference) -> str:
+        counts = f"{d.numerator_a} vs {d.numerator_b} of {d.denominator}"
+        return f"{d.points:+.1f} pp (95% interval {d.low:+.1f} to {d.high:+.1f}; {counts})"
+
+    return [
+        "## What rests on treating an escalation as un-credited",
+        "",
+        "**The verdicts above follow the pre-registered definition, and don't change.** The simulation has no person "
+        "who works an escalated case, so a case handed to a person stays un-credited at settlement. If a person worked "
+        "every escalation correctly, these would read:",
+        "",
+        *_table(
+            ["Question", "If a person works every escalation correctly"],
+            [
+                [
+                    "H3: B minus C, false denials",
+                    f"{show(h3_diff)}. By the same rule: **{section_two_rule(h3_diff, h3_threshold).value}**",
+                ],
+                ["B minus A, case success", show(ab)],
+                ["C minus B, case success", show(bc)],
+                [
+                    "Cases handed to a person when the label says the system could settle them",
+                    f"A {handed['A']}, B {handed['B']}, C {handed['C']}, of {len(cases)}",
+                ],
+            ],
+        ),
+        "",
+        "**So arm C's gain over arm B is mostly fewer handoffs to a person, not a better final answer.** How much "
+        "that's worth depends on what a handoff costs, which is an assumption here: `business-value.md`.",
+        "",
+    ]
+
+
 def hypotheses_report(ds: Sequence[Decision], a: Runs, b: Runs, c: Runs, labels: Labels) -> str:
     rows = []
     for d in ds:
@@ -132,7 +216,25 @@ def hypotheses_report(ds: Sequence[Decision], a: Runs, b: Runs, c: Runs, labels:
             values = by_case(runs, test)
             cells.append(f"{_rate(values.values())} raw; {weighted_rate(values, labels, table):.1f}% re-weighted")
         weighted_rows.append(cells)
-    lines += [*_table(["Metric", "A", "B", "C"], weighted_rows), "", FOOTER, ""]
+    lines += [*_table(["Metric", "A", "B", "C"], weighted_rows), ""]
+    h3 = yaml.safe_load(THRESHOLDS.read_text(encoding="utf-8"))["hypotheses"]["H3"]["min_difference_pp"]
+    if c.kind == "live":
+        lines += escalation_sensitivity(a, b, c, labels, h3)
+    lines += [
+        "## What these verdicts can't say",
+        "",
+        "- **H4 had 2 clarification cases.** Both arms found both, so its first part can't separate them. That's a "
+        "weakness in "
+        "the held-out set, not evidence they're equal. Its other two parts favour C.",
+        "- **Case success doesn't check that a complaint reached someone.** Arm A scores 3/3 on D20 by ignoring the "
+        "complaint.",
+        "- **One generator wrote every message,** in phrasing arm C also saw on dev. Real messages will be messier.",
+        "- **The labels aren't independently reviewed yet,** and the catalog wasn't reviewed by anyone independent.",
+        "- **The simulated supervisor approves whatever the engine proposes,** so nothing here tests real reviewers.",
+        "",
+        FOOTER,
+        "",
+    ]
     return "\n".join(lines)
 
 
@@ -206,17 +308,41 @@ def beats_c_rows(a: Runs, b: Runs, c: Runs, labels: Labels) -> list[list[str]]:
     return rows
 
 
+def a_beats_b_rows(a: Runs, b: Runs, labels: Labels) -> list[list[str]]:
+    rows = []
+    for group, cases in groups(labels, sorted(a.by_case)).items():
+        counts = [sum(runs.holds(case, case_success) for case in cases) for runs in (a, b)]
+        if counts[0] > counts[1]:
+            rows.append([group, f"{counts[0]}/{len(cases)}", f"{counts[1]}/{len(cases)}"])
+    return rows
+
+
 def beats_c_report(a: Runs, b: Runs, c: Runs, labels: Labels) -> str:
     rows = beats_c_rows(a, b, c, labels)
+    against_b = a_beats_b_rows(a, b, labels)
     return "\n".join(
         [
             "# Every slice where A or B beats C",
             "",
             HEADER,
             "",
-            f"Arm C: **{c.kind}**, majority of runs. {len(rows)} rows. Small groups: read the denominators.",
+            f"Arm C: **{c.kind}**, majority of runs. {len(rows)} rows. Small groups: read the denominators. "
+            "Measures: case success, correct first action, right ledger, false approvals, false denials. "
+            "Slices: every scenario, tier, region, channel, language and style.",
             "",
-            *(_table(["Slice", "Measure", "Arm", "That arm", "C"], rows) if rows else ["None."]),
+            *(_table(["Slice", "Measure", "Arm", "That arm", "C"], rows) if rows else ["**None on held-out.**"]),
+            "",
+            "**This doesn't mean arm C is better everywhere.** D11 ties every arm, and one generator wrote these "
+            "messages. "
+            "On the stress set, see `stress.md`.",
+            "",
+            "## Where arm A beats arm B, on case success",
+            "",
+            "Listed because it counts against the non-AI fix. Arm A passes D20 by ignoring the complaint; arm B "
+            "hands the "
+            "message to a person, as the catalog predicts.",
+            "",
+            *(_table(["Slice", "A", "B"], against_b) if against_b else ["None."]),
             "",
             FOOTER,
             "",
@@ -365,12 +491,14 @@ def predicted_vs_actual(a: Runs, b: Runs, c: Runs, labels: Labels) -> str:
     for defect, name, pred_a, pred_b, pred_c in catalog_rows():
         cases = [case for case in sorted(a.by_case) if defect in labels[case]["scenarios"]]
         counts = [sum(runs.holds(case, case_success) for case in cases) for runs in (a, b, c)]
+        first_a = sum(a.holds(case, correct_action) for case in cases)
         rows.append(
             [
                 defect,
                 name,
                 pred_a,
-                f"{counts[0]}/{len(cases)}: {as_predicted(pred_a, counts[0], len(cases))}",
+                f"{counts[0]}/{len(cases)}, first action {first_a}/{len(cases)}: "
+                f"{as_predicted(pred_a, counts[0], len(cases))}",
                 pred_b,
                 f"{counts[1]}/{len(cases)}: {as_predicted(pred_b, counts[1], len(cases))}",
                 pred_c,
@@ -392,6 +520,19 @@ def predicted_vs_actual(a: Runs, b: Runs, c: Runs, labels: Labels) -> str:
             ["Of arm A's failed held-out cases", "Count", "Share", "Re-weighted to the history"],
             [[k, str(v[0]), f"{v[1]:.1f}%", f"{v[2]:.1f}%"] for k, v in fixed.items()],
         ),
+        "",
+        "## Where the catalog was wrong about arm A, and why",
+        "",
+        '- **D04 and D08:** arm A says "wait" (first action wrong, as predicted), the simulated member comes back '
+        "when told, "
+        "and it's credited. Right in the end, one contact and some days later. The catalog didn't allow for the "
+        "return.",
+        "- **D13:** these held-out messages carry a number or an exact name, so exact search finds the member.",
+        "- **D20:** these held-out complaints are about noise, so nothing routes them to billing. Arm A credits the "
+        "points and "
+        "ignores the complaint. Case success doesn't check that.",
+        "- **D06:** 1 of 3 over-credits. The other two are Mountain Lodge stays, where D08's stale wait masks it by "
+        "accident.",
         "",
         "## Per defect",
         "",
@@ -478,6 +619,48 @@ def variability_report(runs: Sequence[Run], extra: Sequence[Run], labels: Labels
     return "\n".join(lines)
 
 
+def stress_report(runs: Mapping[str, Sequence[Run]], labels: Labels) -> str:
+    """Adversarial and messy cases. Arm C's runs are repeated, because a live model varies (SEC-19, ENT-40)."""
+    columns = {f"{arm} run {i}": run for arm, items in runs.items() for i, run in enumerate(items, 1)}
+    tables = {name: by_scenario(run, labels) for name, run in columns.items()}
+    scenarios = sorted({s for table in tables.values() for s in table})
+    rows = {name: summary_rows(run, labels) for name, run in columns.items()}
+    keys = [
+        "Case success (final ledger, outcome, no duplicate)",
+        "Final ledger correct",
+        "False approvals (over-credit)",
+        "False denials (under-credit)",
+        "Duplicate credits",
+        "Unauthorized actions",
+        "Model cost at list price, total / per case",
+    ]
+    return "\n".join(
+        [
+            "# The stress set",
+            "",
+            HEADER,
+            "",
+            "S01 and S02 are injection, S03 asks about another member, S04 tries to run up the tool calls, S05 "
+            "submits twice. "
+            "These check business effects: no points move that shouldn't. **A pass doesn't show injection is "
+            "solved,** and "
+            "it can't show what a person reading a convincing wrong explanation would do.",
+            "",
+            *_table(["Metric", *rows], [[k, *(rows[n][k] for n in rows)] for k in keys]),
+            "",
+            "## By scenario: cases / successes / right ledgers / false approvals / false denials",
+            "",
+            *_table(
+                ["Scenario", *tables],
+                [[s, *(" / ".join(str(v) for v in t.get(s, ())) for t in tables.values())] for s in scenarios],
+            ),
+            "",
+            FOOTER,
+            "",
+        ]
+    )
+
+
 def _run(kind: str, name: str) -> Run | None:
     folder = RESULTS / kind / name
     return load_run(folder) if (folder / "manifest.json").exists() else None
@@ -541,6 +724,17 @@ def main() -> int:
     write(
         "fairness.md",
         fairness_report(fairness_runs, fairness_labels, {"A": a_runs, "B": b_runs, "C": c_set}, labels),
+    )
+    stress_labels = read_labels("stress", DATASET)
+    stress_c = [
+        run for run in (_run(c_kind, name) for name in ("c-stress", "c-stress-r2", "c-stress-r3")) if run is not None
+    ]
+    write(
+        "stress.md",
+        stress_report(
+            {"A": [_require("deterministic", "a-stress")], "B": [_require("deterministic", "b-stress")], "C": stress_c},
+            stress_labels,
+        ),
     )
     repeats = {
         "A": repeat_differences(a, _require("deterministic", "a-heldout-repeat")),

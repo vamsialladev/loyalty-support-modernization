@@ -1,10 +1,10 @@
 # Session handoff
 
-**Updated:** 2026-11-06, after Milestone 9. Milestone 10 is next.
+**Updated:** 2026-11-07, after Milestone 10. Milestone 11 is next.
 
 ## Where things stand
-- Milestones 1-9 are on `main` in the **private** GitHub repository, merged through pull requests #3 onward. Latest results:
-  `docs/verification-log.md`, section "Milestone 9".
+- Milestones 1-10 are on `main` in the **private** GitHub repository, merged through pull requests #3 onward. Latest results:
+  `docs/verification-log.md`, section "Milestone 10".
 - **Work on a branch and open a pull request.** Merge with a merge commit, not squash or rebase, so cited hashes stay valid.
   **Standing permission for Milestones 7-20 (`CLAUDE.md`): push, open pull requests and merge when CI is green.** Push with:
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (two accounts are signed in to `gh`).
@@ -13,11 +13,18 @@
   step 7). Anything with backslashes goes through the editor tools, never a shell heredoc (it put a tab in the log on step 2).
 
 ## Waiting on the owner
-0. **Set a spending limit in the Anthropic Console,** if you haven't. Live runs are approved with a **hard cap of $5 total** (2026-11-06), and the settings are in `.env` (2026-11-07). The code stops itself at the cap, but the console's limit holds even if the code is wrong.
+0. **Switch `.env` back:** `AI_PROVIDER=mock`, `FEATURE_LIVE_AI=false` and `LLM_BUDGET_USD_DAILY=1.00`. Milestone 10's live runs are done, and $1.83 of the $5 cap is spent. Compare with the Anthropic Console, which is the record of what was charged.
+0a. **Decide how to read H3,** and tell me if you want anything changed. Its verdict is "supported" under the registered definition, and it rests on nobody working escalations: `docs/error-analysis.md`.
+0b. **The eval-harness export (REUSE-03):** say if you want Stage 9 registered there. It's a PR to another repo.
 1. **Label review:** the 30-label sheet (`evaluations/label-review/`).
 2. Optionally, redo A-000010 with the new Reopen button. It's still `Resolved` as `deny_claim_window`.
 3. **The Codex exercise**, whenever convenient: `docs/exercises/codex-reconciliation-review.md`. It needs your Codex account.
 4. **The email block:** tick "Block command line pushes that expose my email" again, if not done already.
+
+## The Milestone 10 exercise (K.1)
+Arm C beat arm B by 78 to 71 of 80, and H3 is "supported". But if a person worked every escalation correctly, it would be 78 to 77, and H3 wouldn't be supported.
+
+**Say which reading you'd give a hotel's operations director, in two sentences, and what you'd measure in a pilot to settle it. Then say what handoff cost would make arm C not worth running.** Your answer goes in `docs/owner-exercises.md`.
 
 ## The Milestone 9 exercise (K.1)
 Customer scope is enforced by our queries and tests, not by the database. The tests found one real gap already: the approvals list showed other customers' requests.
@@ -73,15 +80,13 @@ powershell -ExecutionPolicy Bypass -File scripts\compose_check.ps1 -Browser
 
 3. Follow the standing instructions in `CLAUDE.md`.
 
-## Milestone 10 scope (spec N.1 item 10)
-- Benchmark runner, thresholds, A/B/C comparison, error analysis, business-value report. **RFC first** (`docs/rfcs/`).
-- Thresholds are committed before any aggregate score (ADR-0048). Held-out data isn't for tuning.
-- SEC-19's repeated model tests belong with the real runs.
-- Real runs are approved with a **hard cap of $5 total**, across the smoke test and the live evaluation. The runner must stop itself at the cap, and not rely on the settings alone. Keep mock and live results separate: different folders, and labelled in every report.
+## Milestone 11 scope (spec N.1 item 11; Appendix C)
+- MCP, then A2A, then AG-UI. Done when tests pass against an independent client or peer where available. **RFC first** (`docs/rfcs/`). SEC-01's remaining protocol specs and SEC-16's callbacks finish here.
+- It needs no money and no accounts. A key isn't needed: protocols run on the mock.
 
 ## Trying arm B on your own stack
 `stack.ps1 -Action up` rebuilds and migrates to `0010`; your data stays. Then load cases with
 `uv run python -m benchmarks.intake --split dev --limit 10 --arm B`. Steps are in `docs/onboarding.md` §4f.
 
 ## Blockers
-None. The live smoke test passed on 2026-11-07 (`benchmarks/results/live/smoke/`). Milestone 10's live evaluation can run once its runner is ready and its configuration is frozen.
+None for Milestone 11.

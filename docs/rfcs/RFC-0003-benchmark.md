@@ -149,6 +149,26 @@ $0.481 of the $5 cap: smoke test $0.0002, a first batch of 10 cases $0.019, and 
 
 **A caution on these numbers.** Arm C did very well on dev (96/100) and validation (30/30). The same generator wrote these messages, in the same phrasing as held-out, so they may flatter it. Real messages will be messier.
 
+## What happened (held-out, frozen at `50b69f6`, run at `dd7ecb7`)
+
+The decisions above held. Full reports: `benchmarks/reports/heldout/`. Why they read as they do: `docs/error-analysis.md`.
+
+| Hypothesis | Verdict | Observed |
+|---|---|---|
+| H1 | Supported | B minus A +37.5 pp (41 vs 71 of 80; +25.0 to +50.0) |
+| H2 | Supported | C minus B +10.0 pp on correct action (72 vs 80 of 80; +3.8 to +17.5); no false approvals on either |
+| H3 | Supported, **and rests on nobody working escalations** | B minus C +31.8 pp (7 vs 0 of 22). +4.5 pp, not supported, if a person works them correctly |
+| H4 | Not supported | Recall ties at 2/2, so it can't separate them. Parts (b) and (c) hold |
+| H5 | Supported | $0.00174 per correct case; p95 11.58 s |
+| H6 | Supported | 0 unauthorized, 0 duplicates, over 2,000 case runs. Zero observed doesn't prove zero risk |
+| H7 | Not tested | No real participants |
+
+**Predictions, written before the data:** H1 supported, as predicted. **H2 predicted inconclusive, came out supported.** H3 supported, as predicted, with the caveat. H4 predicted partly supported: (b) and (c) held, (a) couldn't tell. H5, H6 as predicted. H7 not tested, as predicted.
+
+**Ablations on dev, one factor at a time** (`benchmarks/reports/live/dev-ablations.md`): removing the repair step, cutting to 3 turns or halving the context changed no case outcome: 96/100 each. Three turns costs 19% less, and 36 cases lose the model's reading and text, which nothing here scores. **More complexity showed no benefit on these outcomes,** which is what you'd expect when rules decide them. It's a reason to keep the loop small, and not yet a reason to cut it: explanation quality is unmeasured.
+
+**Total live spend: $1.83 of the $5 cap.** Estimate before the data: about $0.002 to $0.01 per investigation; measured about $0.0017 per case.
+
 ## Risks and open questions
 
 - **80 held-out cases give wide intervals.** H2 was predicted inconclusive before any data. That's an acceptable answer.

@@ -17,6 +17,21 @@ All work by Claude Code (Opus 5.5). Live results are kept apart from mock and de
 | 6 | First-action measurement bug | Found on live dev, before any held-out run | Arm C's first action read arm B's row: 90/100, truly 98/100. Fixed, re-run. **Pre-freeze, with a known cause and tests, so fixed and flagged rather than stopped on** |
 | 7 | Pre-freeze runs at `1ee95c3` | `evaluations.run`, 11 runs, `benchmarks/results/` | Repeats identical on A and B. **Dev only, no verdict:** case success A 61/100, B 89/100, C 96/100; right ledgers 67, 93, 100; false approvals 7, 0, 0; false denials 26, 7, 0. **Validation:** A 18/30, B 28/30, C 30/30. Live spend $0.481 |
 
+### Milestone 10, continued: held-out and after
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 8 | The freeze | `evaluations.freeze --write`, PR #24, CI green, merged as `50b69f6` | 121 files hashed; 10 variability cases from IDs by a fixed seed. Secret scan flagged paths with "api" next to hashes: false alarms, fixed by changing the file's format, with no exception added |
+| 9 | Held-out, all arms | 23 runs at `dd7ecb7`, clean tree | None interrupted. Repeats of A and B identical. **H1 supported** +37.5 pp (41 vs 71 of 80). **H2 supported** +10.0 pp (72 vs 80). **H3 supported** +31.8 pp (7 vs 0 of 22). **H4 not supported** (2 vs 2 of 2; (b) and (c) hold). **H5 supported** $0.00174, p95 11.58 s. **H6 supported** 0 and 0. **H7 not tested** |
+| 10 | Checking H3 before believing it | `escalation_sensitivity` in `evaluations/final_report.py` | **It rests on nobody working escalations:** +4.5 pp, not supported, if a person works them correctly. C minus B on case success would be 77 vs 78. Reported at the top of every summary; verdict unchanged |
+| 11 | A as-is | `a-as-is-heldout`, `a-as-is-heldout-lost` | As predicted: D10 duplicates 2/2, D11 wrong amount 2/2, 45 duplicates in the lost-reply pass, 0 on the shared path |
+| 12 | Stress, live, 3 runs | `c-stress`, `-r2`, `-r3` | 27/30 each, no differences, 0 false approvals. Misses D16+D20+D23 ×2 |
+| 13 | Fairness | `a-`, `b-`, `c-fairness` | Same result on pairs: A 15/20, B 15/20, C 19/20. All differences are language pairs |
+| 14 | Automation bias, simulated | `evaluations.automation_bias` | 0 credits of 9 seeded proposals at 0%, 25%, 50% and 100% approval |
+| 15 | Ablations, dev, live | `evaluations.ablations` | No repair, 3 turns, half context: all 96/100. Three turns costs 19% less, and 36 cases lose the model's reading |
+| 16 | Complaints reaching someone | `evaluations.out_of_scope` | Of 4: A ignores 2, loses 2 in billing; B sends 4 to a person; C credits 4 and routes the complaint |
+| 17 | Live spend | `benchmarks/results/live/spend-ledger.jsonl` | **$1.83 of the $5 cap.** At list price: the Anthropic Console is the record of what was charged |
+
 ## Milestone 9 (2026-11-06)
 
 All work by Claude Code (Opus 5.5), under the owner's standing instructions. **No real model was called.** No aggregate accuracy for any arm was computed.

@@ -181,3 +181,16 @@ the override log, the JSON API's problem documents, the arm fence test.
 | Retention | `RETENTION_DAYS`, daily from the worker | The customer's policy. Add backups to the erasure process |
 
 **Customer-specific:** group mapping, retention period, regulatory notes. **Starter kit:** the OIDC adapter and its tests, the rate limiter, the red-team suite's shape, the route-walking test, the `security/` document set.
+
+## The benchmark (Milestone 10)
+
+| Part | Here | For a real engagement |
+|---|---|---|
+| Cases and labels | A generator, from scenario facts | A customer's real cases, labelled by their people, with reviewers who didn't build the arms |
+| Simulated member | `evaluations/member.py` | Real replies in a pilot |
+| Simulated supervisor | Approves what the engine proposes | Real reviewers (UAT, Milestone 18), measuring overrides and automation bias |
+| Person working an escalation | None | Model one, or measure one: H3 here rests on this |
+| Handoff cost, point value, volume | Assumptions | The customer's own numbers. The break-even moves directly with them |
+| Spending cap | `evaluations/spend.py`, this project's $5 | The customer's budget, plus a limit in the provider's console |
+
+**Customer-specific:** cases, labels, thresholds, financial assumptions. **Starter kit:** the runner shape, the freeze, the spending guard, kinds of result kept apart, verdicts by code, generated slices, the sensitivity pattern.

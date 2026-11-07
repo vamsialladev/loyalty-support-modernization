@@ -1,7 +1,7 @@
 # Implementation status
 
 **Last updated:** 2026-11-06 · **Current milestone:** 8 of 20 complete · **Next:** Milestone 9 (security hardening).
-**Waiting on the owner:** the 30-label review; the Milestone 7 and 8 exercises; the Codex exercise, when convenient
+**Waiting on the owner:** switching `.env` back to mock; how to read H3; the eval-harness export; the 30-label review; the Milestone 7 and 8 exercises; the Codex exercise, when convenient
 (`docs/exercises/codex-reconciliation-review.md`).
 
 ## Completion scores (spec Part 0.5)
@@ -11,14 +11,16 @@ verified" (or "Not applicable") counts as done.
 | Score | Done (verified) | Total | % | In progress (unverified / configured / docs) |
 |---|---|---|---|---|
 | Core product functionality | 76 | 108 | 70% | 5 |
-| Benchmarks and evaluation | 18 | 64 | 28% | 2 |
+| Benchmarks and evaluation | 46 | 64 | 72% | 3 |
 | Actual-tool exercises | 0 | 16 | 0% | 3 |
 | Protocol labs | 0 | 16 | 0% | 0 |
-| Security controls | 27 | 55 | 49% | 7 |
+| Security controls | 28 | 55 | 51% | 6 |
 | Owner's demonstrated understanding | 0 | 3 | 0% | 1 |
 | Other tracked work (not a Part 0.5 score) | 39 | 107 | 36% | 13 |
 
 369 requirements: Tier 1: 190, Tier 2: 102, Tier 3: 27, Tier 4: 50
+
+New in M10: the benchmark, with held-out verdicts, on live arm C. Open: REUSE-03 needs the owner's OK; BIZ-02 and ENT-07/08 need real participants; ENT-17's caching and BENCH-13's release gate are Milestone 12.
 
 New in M9: `security/` documents, customer scope, OIDC, rate limits, machine tokens, retention, erasure, legal hold and access review. SEC-19 stays unverified until the repeated tests run on a real model; SEC-10 is a guide only.
 
@@ -47,7 +49,14 @@ authorization, M9), API-01 and API-02 (moved to M7, as the owner approved). Code
 | 7 | **Implemented and verified** (Appendix C, M7: arm B works; Playwright happy path and self-approval block pass) | `tests/browser/test_arm_b_e2e.py` (offline and against the stack), `tests/test_arm_b_defects.py`, `tests/test_arm_b_console.py`, `tests/test_arm_b_rules.py`, `tests/test_arm_b_postgres.py`, `tests/test_arm_a_fence.py`, `tests/test_api.py`, `tests/test_metrics_and_day_one.py`; verification log, Milestone 7 |
 | 8 | **Implemented and verified** (Appendix C, M8: every loop stop condition and injection test passes on the mock provider; the Claude provider is implemented; its live smoke test **passed on 2026-11-07**, one call with a made-up message, no quality claim) | `tests/test_ai_loop.py`, `tests/test_ai_tools.py`, `tests/test_ai_provider.py`, `tests/test_arm_c.py`, `tests/test_extraction.py`, `tests/test_routing_baseline.py`; verification log, Milestone 8 |
 | 9 | **Implemented and verified** (Appendix C, M9: authorization, CSRF, rate-limit, redaction and red-team tests pass on mock and scripted models; OIDC login works locally against a real Keycloak). SEC-19's repeated tests on a real model: **NOT RUN** | `tests/test_security_authz.py`, `tests/test_security_postgres.py`, `tests/test_oidc.py`, `tests/test_red_team.py`, `tests/test_red_team_shared_corpus.py`, `tests/test_security_docs.py`; `security/evidence/oidc-check-2026-11-06.txt`; verification log, Milestone 9 |
-| 10–20 | Planned | `docs/implementation-plan.md` |
+| 10 | **Implemented and verified** (Appendix C, M10: thresholds committed before runs; A/B/C reports generated from actual runs; error analysis written). H7 **not tested**: no participants | `benchmarks/benchmark-thresholds.yaml`, `benchmarks/results/`, `benchmarks/reports/heldout/`, `docs/error-analysis.md`, `tests/test_scoring.py`, `tests/test_runner.py`, `tests/test_compare.py`, `tests/test_benchmark_docs.py`, `tests/test_benchmark_postgres.py`; verification log, Milestone 10 |
+| 11–20 | Planned | `docs/implementation-plan.md` |
+
+## Milestone 10 deliverables
+- **Held-out verdicts, by code from the pre-registered rules:** H1, H2, H3, H5, H6 supported; H4 not supported; H7 not tested. Case success A 41, B 71, C 78 of 80. False approvals 8, 0, 0.
+- **What H3 rests on:** nobody works an escalation in the simulation. If a person did, C and B would be 78 and 77.
+- **Conclusion by the evidence:** non-AI fixes deliver most of the value, and AI helps only in certain categories. $1.83 of the $5 cap spent.
+- **`evaluations/`:** runner, scoring, verdicts, spending guard, freeze, comparison, sensitivity, final reports, business value, RCA, automation bias, ablations, dashboard.
 
 ## Milestone 9 deliverables
 - **Authorization:** customer scope on every record, tested by walking the real routes. It found a real bug: the approvals list wasn't scoped.
