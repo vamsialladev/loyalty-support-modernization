@@ -2,6 +2,26 @@
 
 **Updated:** 2026-11-06, after Milestone 9. Milestone 10 is next.
 
+## Milestone 10 in progress (the owner is away, and asked for it to be finished without waiting)
+
+**The configuration is frozen** (`benchmarks/configs/freeze.yaml`, merged in `50b69f6`). Held-out runs are on branch `feat/m10-heldout`. Live spend is capped at $5 (`benchmarks/results/live/spend-ledger.jsonl`).
+
+**To continue:** see which runs exist under `benchmarks/results/`. The list and flags are in `docs/rfcs/RFC-0003-benchmark.md`, "Order of work", and any missing one runs like this:
+
+```powershell
+uv run python -m evaluations.run --arm c-live --split heldout --name c-heldout-r1 --run-number 1 --confirm-frozen --budget-usd 0.50
+```
+
+Then generate the reports:
+
+```powershell
+uv run python -m evaluations.final_report
+```
+
+**Don't change** `app/`, `config/`, `benchmarks/agents/` or the runner files the freeze lists: held-out runs refuse to start, and rightly. Scoring and reports can change, because raw records re-score. **Stop and leave a note** if live spend would pass $5, a pre-registered threshold or hypothesis would need changing, a held-out result looks like a scoring bug, or something needs the owner's accounts or money.
+
+**At the end, remind the owner** to switch `.env` back to `AI_PROVIDER=mock`, `FEATURE_LIVE_AI=false` and `LLM_BUDGET_USD_DAILY=1.00`.
+
 ## Where things stand
 - Milestones 1-9 are on `main` in the **private** GitHub repository, merged through pull requests #3 onward. Latest results:
   `docs/verification-log.md`, section "Milestone 9".
