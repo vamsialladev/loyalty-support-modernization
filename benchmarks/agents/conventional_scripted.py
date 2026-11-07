@@ -100,6 +100,17 @@ class ScriptedConventionalAgent:
             case.reference, case.source_ref, case.status, case.resolution_code, steps, elapsed, path, linked
         )
 
+    def look_again(self, case: Case, path: list[str]) -> None:
+        """Investigate again and act on the new result: after the re-check stopped a credit, for example."""
+        self._investigate(case)
+        self._act(case, path)
+
+    def after_reply(self, case: Case, path: list[str]) -> None:
+        """The member's answer is stored and an investigation queued: run it, and act on the new result."""
+        self.worker.drain()
+        self.s.expire_all()
+        self._act(case, path)
+
     def _siblings(self, case: Case) -> list[Case]:
         self.s.refresh(case)
         return [c for c in conventional.group_cases(self.s, case) if c.id != case.id]
