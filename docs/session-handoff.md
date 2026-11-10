@@ -1,6 +1,6 @@
 # Session handoff
 
-**Updated:** 2026-11-07, after Milestone 10. Milestone 11 is next.
+**Updated:** 2026-11-10, after Milestone 10 and the owner's decisions. Milestone 11 is next, in a fresh session.
 
 ## Where things stand
 - Milestones 1-10 are on `main` in the **private** GitHub repository, merged through pull requests #3 onward. Latest results:
@@ -13,15 +13,19 @@
   step 7). Anything with backslashes goes through the editor tools, never a shell heredoc (it put a tab in the log on step 2).
 
 ## Waiting on the owner
-0. **Switch `.env` back:** `AI_PROVIDER=mock`, `FEATURE_LIVE_AI=false` and `LLM_BUDGET_USD_DAILY=1.00`. Milestone 10's live runs are done, and $1.83 of the $5 cap is spent. Compare with the Anthropic Console, which is the record of what was charged.
-0a. **Decide how to read H3,** and tell me if you want anything changed. Its verdict is "supported" under the registered definition, and it rests on nobody working escalations: `docs/error-analysis.md`.
-0b. **The eval-harness export (REUSE-03):** say if you want Stage 9 registered there. It's a PR to another repo.
-1. **Label review:** the 30-label sheet (`evaluations/label-review/`).
+0. **Review the eval-harness PR** that registers Stage 9 (REUSE-03). You asked to see the diff before it merges, so it stays open until you say. **Merging publishes Stage 9's 180 synthetic cases and arm C's verdicts in the public eval-harness repo,** while this repo is private. After it merges: tag a harness release, then add the gate to this repo's CI.
+1. **Label review (you're doing this next):** the 30-label sheet (`evaluations/label-review/`).
 2. Optionally, redo A-000010 with the new Reopen button. It's still `Resolved` as `deny_claim_window`.
 3. **The Codex exercise**, whenever convenient: `docs/exercises/codex-reconciliation-review.md`. It needs your Codex account.
 4. **The email block:** tick "Block command line pushes that expose my email" again, if not done already.
 
-## The Milestone 10 exercise (K.1)
+## Decided by the owner on 2026-11-10 (also in `CLAUDE.md`)
+- `.env` is back on mock. Further live runs need a new approval.
+- **H3:** keep the registered definition, and keep showing both readings in every report.
+- **Measurement bugs:** before a freeze, with a known cause and a test, fix and log them. **After a freeze, stop and leave a note.**
+- The Milestone 10 exercise is answered: `docs/owner-exercises.md`.
+
+## The Milestone 10 exercise (K.1), answered
 Arm C beat arm B by 78 to 71 of 80, and H3 is "supported". But if a person worked every escalation correctly, it would be 78 to 77, and H3 wouldn't be supported.
 
 **Say which reading you'd give a hotel's operations director, in two sentences, and what you'd measure in a pilot to settle it. Then say what handoff cost would make arm C not worth running.** Your answer goes in `docs/owner-exercises.md`.

@@ -34,6 +34,8 @@ All work by Claude Code (Opus 5.5). Live results are kept apart from mock and de
 | 18 | Arms A and B on real Postgres, against the stored held-out runs | `tests/test_benchmark_postgres.py`, in CI's real-Postgres job and the compose check | **Identical, case for case, on all 80 cases, both arms.** The confirming pass RFC-0003 commits to |
 | 19 | PR #25 | Actions run 42408728959 | All three jobs green: **1336 passed, 75 skipped, 89.97% coverage;** real Postgres **69 passed, 4 skipped** (the role checks that need a running stack) |
 | 20 | Compose check on PR #25's commit | `scripts\compose_check.ps1 -Browser` | **Passed:** real Postgres **73 passed,** browser **9 passed, 1 skipped,** upgrade from a real Milestone 5 volume passed |
+| 21 | The owner's decisions, 2026-11-10 | `CLAUDE.md`, `docs/owner-exercises.md` | `.env` back on mock. H3 keeps the registered definition, with both readings. The pre-freeze fix accepted; after a freeze, stop. The Milestone 10 exercise answered. My assessment first said arm C breaks even below about $5 a handoff; computed from the stored values, it's $7.78. Corrected before committing |
+| 22 | Eval-harness export (REUSE-03) | `evaluations.export_eval_harness` | 180 cases, 340 live outputs. The harness PR is open for the owner's review |
 
 ## Milestone 9 (2026-11-06)
 

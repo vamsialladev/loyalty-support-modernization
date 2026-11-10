@@ -39,6 +39,11 @@ decision. Note what moves into the starter kit and what is customer-specific.
 - **Keep mock and live results clearly separated:** different folders, and labelled in every report.
 - The settings must be in this repo's `.env`. Check with preflight. Never look for a key anywhere else.
 
+## The owner's decisions after Milestone 10 (2026-11-10)
+- **H3:** keep the registered definition, and keep showing both readings (with and without a person working escalations) in every report.
+- **Measurement bugs:** one found on dev or validation, before a freeze, with a known cause and a test, may be fixed and logged, as long as no arm, threshold or hypothesis changes. **Anything found after a freeze: stop and leave a note for the owner.**
+- `.env` is back on mock. Further live runs need a new approval.
+
 ## Model and mode guidance (follow at the start of every milestone)
 - The owner uses **Opus for all milestones**; quality matters more than speed or usage.
 - Design-heavy milestones get an RFC in `docs/rfcs/` before the code, and don't wait for the owner unless a standing
