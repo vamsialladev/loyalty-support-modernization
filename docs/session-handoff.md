@@ -13,7 +13,7 @@
   step 7). Anything with backslashes goes through the editor tools, never a shell heredoc (it put a tab in the log on step 2).
 
 ## Waiting on the owner
-0. **Review the eval-harness PR** that registers Stage 9 (REUSE-03). You asked to see the diff before it merges, so it stays open until you say. **Merging publishes Stage 9's 180 synthetic cases and arm C's verdicts in the public eval-harness repo,** while this repo is private. After it merges: tag a harness release, then add the gate to this repo's CI.
+0. **Eval-harness registers Stage 9** (merged as `ccbdcd4` after the review you asked for; verification log, Milestone 10, rows 23–28). Next, when you want it: tag a harness release, then add `hoteleval gate` to this repo's CI. The live dashboard still shows only Projects 1 and 2: adding Stage 9 to its pages is a separate change.
 1. **Label review (you're doing this next):** the 30-label sheet (`evaluations/label-review/`).
 2. Optionally, redo A-000010 with the new Reopen button. It's still `Resolved` as `deny_claim_window`.
 3. **The Codex exercise**, whenever convenient: `docs/exercises/codex-reconciliation-review.md`. It needs your Codex account.
