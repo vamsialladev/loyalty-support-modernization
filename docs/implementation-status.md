@@ -1,7 +1,7 @@
 # Implementation status
 
 **Last updated:** 2026-11-06 · **Current milestone:** 8 of 20 complete · **Next:** Milestone 9 (security hardening).
-**Waiting on the owner:** switching `.env` back to mock; how to read H3; the eval-harness export; the 30-label review; the Milestone 7 and 8 exercises; the Codex exercise, when convenient
+**Waiting on the owner:** the 30-label review; the Milestone 7 and 8 exercises; the Codex exercise, when convenient
 (`docs/exercises/codex-reconciliation-review.md`).
 
 ## Completion scores (spec Part 0.5)

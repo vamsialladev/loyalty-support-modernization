@@ -1,0 +1,18 @@
+{
+ "run_id": "p9-arm-c-live-2026-11-07",
+ "project": "loyalty-support-modernization",
+ "label": "Stage 9 arm C, live (Milestone 10)",
+ "date": "2026-11-07",
+ "mode": "live",
+ "kind": "candidate",
+ "model": "claude-haiku-5-5",
+ "settings": {
+  "arm": "C",
+  "configuration": "frozen at 50b69f6"
+ },
+ "price_in": 0.1,
+ "price_out": 0.5,
+ "description": "Arm C on dev (1 run) and held-out (3 runs). Verdicts from Stage 9's own scoring. SYNTHETIC.",
+ "ref": "1ee95c3, dd7ecb7",
+ "source": "live runs of loyalty-support-modernization @ 1ee95c3, dd7ecb7"
+}
