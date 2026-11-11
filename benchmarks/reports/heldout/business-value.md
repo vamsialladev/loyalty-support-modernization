@@ -40,6 +40,7 @@
 
 - **A to B, case success:** +25.4 pp (+37% relative). False approvals -5.8 pp (-100% relative).
 - **B to C, case success:** +5.8 pp (+6% relative). Avoidable handoffs -5.2 pp (-100% relative).
+- **H2 rests on one case, HO-062, alone.** Read without the simulated member's reply, arm C's credit there would count as a false approval in 3 of 3 runs, and H2 would be not supported. The owner checked the planted reply (it names only ML-8565) and kept the label (`benchmarks/reports/heldout/label-review-sensitivity.md`).
 - **Incremental AI cost:** $0.55 a month at list price (from observed cost).
 - **Estimated saving per case:** A to B $2.463; B to C $0.515, net of the model.
 - **Break-even for C over B on maintenance alone:** 248.4 cases a month, against an assumed 320. Estimate.

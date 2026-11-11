@@ -40,3 +40,12 @@ def test_the_report_regenerates_from_the_stored_runs_and_starts_from_the_publish
     published = json.loads((REPORTS / "summary.json").read_text(encoding="utf-8"))
     baseline = stored["readings"]["As labelled (the published results)"]["verdicts"]
     assert baseline == {d["hypothesis"]: d["verdict"] for d in published["decisions"]}
+
+
+def test_every_results_text_says_h2_rests_on_ho_062_alone() -> None:
+    """The owner's rule (2026-11-10): wherever results appear, so does H2's dependence on one case."""
+    from evaluations.compare import H2_RESTS_ON_HO_062
+
+    for path in (REPORTS / "hypotheses.md", REPORTS / "business-value.md", ROOT / "docs/business-value-report.md"):
+        assert H2_RESTS_ON_HO_062 in path.read_text(encoding="utf-8"), path
+    assert "rests on a single test case" in (ROOT / "docs/executive-brief.md").read_text(encoding="utf-8")

@@ -44,7 +44,8 @@ Defect cases are over-represented in held-out, so raw differences run larger tha
 - **H4 had 2 clarification cases.** Both arms found both, so its first part can't separate them. That's a weakness in the held-out set, not evidence they're equal. Its other two parts favour C.
 - **Case success doesn't check that a complaint reached someone.** Arm A scores 3/3 on D20 by ignoring the complaint.
 - **One generator wrote every message,** in phrasing arm C also saw on dev. Real messages will be messier.
-- **The labels aren't independently reviewed.** The owner reviewed 30 of 280 (human review, AI-assisted): 2 disagreed, 1 unsure, none confirmed wrong. **H2 rests on one disputed case, HO-062:** read without the member's reply, H2 is not supported (`label-review-sensitivity.md`). The catalog wasn't reviewed by anyone independent.
+- **H2 rests on one case, HO-062, alone.** Read without the simulated member's reply, arm C's credit there would count as a false approval in 3 of 3 runs, and H2 would be not supported. The owner checked the planted reply (it names only ML-8565) and kept the label (`benchmarks/reports/heldout/label-review-sensitivity.md`).
+- **The labels aren't independently reviewed.** The owner reviewed 30 of 280 (human review, AI-assisted): 2 disagreed, 1 unsure, none confirmed wrong. The catalog wasn't reviewed by anyone independent.
 - **The simulated supervisor approves whatever the engine proposes,** so nothing here tests real reviewers.
 
 Every number comes from a stored run in `benchmarks/results/`. Simulated member and supervisor.

@@ -19,7 +19,17 @@ from statistics import mean
 
 import yaml
 
-from evaluations.compare import HEADER, Run, _table, by_scenario, funnel, load_run, repeat_differences, summary_rows
+from evaluations.compare import (
+    H2_RESTS_ON_HO_062,
+    HEADER,
+    Run,
+    _table,
+    by_scenario,
+    funnel,
+    load_run,
+    repeat_differences,
+    summary_rows,
+)
 from evaluations.decide import (
     Decision,
     Difference,
@@ -229,10 +239,9 @@ def hypotheses_report(ds: Sequence[Decision], a: Runs, b: Runs, c: Runs, labels:
         "- **Case success doesn't check that a complaint reached someone.** Arm A scores 3/3 on D20 by ignoring the "
         "complaint.",
         "- **One generator wrote every message,** in phrasing arm C also saw on dev. Real messages will be messier.",
+        "- " + H2_RESTS_ON_HO_062,
         "- **The labels aren't independently reviewed.** The owner reviewed 30 of 280 (human review, AI-assisted): 2 "
-        "disagreed, 1 unsure, none confirmed wrong. **H2 rests on one disputed case, HO-062:** read without the "
-        "member's reply, H2 is not supported (`label-review-sensitivity.md`). The catalog wasn't reviewed by anyone "
-        "independent.",
+        "disagreed, 1 unsure, none confirmed wrong. The catalog wasn't reviewed by anyone independent.",
         "- **The simulated supervisor approves whatever the engine proposes,** so nothing here tests real reviewers.",
         "",
         FOOTER,
