@@ -20,6 +20,7 @@ from app.services import conventional
 from app.services.job_handlers import build_handlers
 from app.services.write_path import SharedWritePath
 from app.worker import Worker
+from benchmarks.intake import load_case, read_split
 from protocols.a2a.coordinator import CoordinatorConfig, request_evidence
 from protocols.a2a.specialist import SCOPE, SpecialistConfig, build_app
 from protocols.common.tokens import ResourceServer, StaticKeys, TokenVerifier
@@ -46,8 +47,9 @@ def arm(pg: tuple[ArmA, Engine]) -> ArmA:
 
 
 def investigated(arm: ArmA) -> int:
+    item = next(c for c in read_split("dev", arm.datasets) if c.case_id == K01)
     with arm.sessions() as s:
-        (case,) = arm.load(s, K01)
+        (case,) = load_case(s, item, arm="B")  # arm A is worked by hand: it has no investigation to ask about
         conventional.start_investigation(s, arm.who("agent.ana"), case)
         cid = case.id
     Worker(arm.sessions, build_handlers(SharedWritePath("hg-demo"), arm.factory(), None)).drain()
