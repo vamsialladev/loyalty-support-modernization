@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 
@@ -40,6 +41,28 @@ def test_the_report_regenerates_from_the_stored_runs_and_starts_from_the_publish
     published = json.loads((REPORTS / "summary.json").read_text(encoding="utf-8"))
     baseline = stored["readings"]["As labelled (the published results)"]["verdicts"]
     assert baseline == {d["hypothesis"]: d["verdict"] for d in published["decisions"]}
+
+
+REVIEWER_COLUMNS = ("reviewer_verdict", "reviewer_corrected_fields", "reviewer_note")
+
+
+def _sheet(path: Path) -> list[dict[str, str]]:
+    """Rows of a review sheet, with line breaks inside cells normalized (git stores the CSV as LF, checks out CRLF)."""
+    with path.open(encoding="utf-8-sig", newline="") as fh:
+        return [{k: v.replace("\r\n", "\n") for k, v in row.items()} for row in csv.DictReader(fh)]
+
+
+def _facts(row: dict[str, str]) -> dict[str, str]:
+    return {k: v for k, v in row.items() if k not in REVIEWER_COLUMNS}
+
+
+def test_the_owners_filled_sheet_keeps_its_verdicts_and_the_generated_facts(generated: Path) -> None:
+    """The owner's filled sheet (2026-11-11): a regeneration that blanks it, or an edit to its facts, fails here."""
+    filled = _sheet(ROOT / "evaluations/label-review/review-sheet.csv")
+    fresh = _sheet(generated / "evaluations/label-review/review-sheet.csv")
+    assert [_facts(row) for row in filled] == [_facts(row) for row in fresh]
+    assert [row["reviewer_verdict"] for row in filled] == ["agree"] * 30
+    assert all(row["reviewer_corrected_fields"] == "" and row["reviewer_note"] for row in filled)
 
 
 def test_every_results_text_says_h2_rests_on_ho_062_alone() -> None:
