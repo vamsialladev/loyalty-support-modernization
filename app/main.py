@@ -83,4 +83,8 @@ def create_app(
     systems_for = systems_factory or mock_systems_factory(settings)
     install_console(app, settings, make_sessions(engine), systems_for)
     install_api(app, settings, systems_for)
+    if settings.feature_ag_ui:  # spec G.2: each protocol behind its own flag; imported only when on
+        from protocols.ag_ui.routes import install_ag_ui
+
+        install_ag_ui(app, settings)
     return app

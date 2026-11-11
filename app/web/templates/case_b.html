@@ -198,6 +198,16 @@
 </section>
 {% endif %}
 
+{% if case.arm == "C" and live_run %}
+<section class="card" aria-labelledby="live-h" data-testid="live-run">
+  <h2 id="live-h">Live run (AG-UI)</h2>
+  <p class="muted">Follows this case's investigation as it runs: steps and tool names, not the model's reasoning. Approving still happens on this page.</p>
+  <button type="button" class="secondary" id="live-run-watch" data-case="{{ case.id }}" data-thread="{{ case.reference }}">Watch the investigation</button>
+  <ol id="live-run-events" aria-live="polite" data-testid="live-run-events"></ol>
+</section>
+<script src="/static/ag-ui-panel.js" defer></script>
+{% endif %}
+
 {% if can_work and case.status == "Investigating" and rec and not job_active %}
 <section class="card" aria-labelledby="act-h">
   <h2 id="act-h">Decide</h2>

@@ -127,6 +127,7 @@ def stack(
         "MOCK_API_TOKEN": token,
         "MOCK_API_SIM_CLOCK": "true",
     }
+    app_env |= getattr(request.module, "app_env_extra", {})  # a module may switch a feature on (M11: AG-UI)
     uvicorn = [sys.executable, "-m", "uvicorn", "--factory", "--host", "127.0.0.1", "--log-level", "warning"]
     mock_log, app_log = tmp / "mock.log", tmp / "app.log"
     procs = []
