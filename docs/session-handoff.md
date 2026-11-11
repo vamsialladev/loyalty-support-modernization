@@ -14,7 +14,7 @@
 
 ## Waiting on the owner
 0. **Eval-harness registers Stage 9** (merged as `ccbdcd4` after the review you asked for; verification log, Milestone 10, rows 23–28). Next, when you want it: tag a harness release, then add `hoteleval gate` to this repo's CI. The live dashboard still shows only Projects 1 and 2: adding Stage 9 to its pages is a separate change.
-1. **Label review (you're doing this next):** the 30-label sheet (`evaluations/label-review/`).
+1. **Label review: recorded (2026-11-10), one decision left for you.** Both disagreements follow the written rules, so no label changed and no new experiment started. Decide whether HO-062 and HO-078 stand, now that you can see the facts the sheet left out (`evaluations/label-review/README.md`). **HO-062 decides H2:** read without the member's reply, H2 is not supported (`benchmarks/reports/heldout/label-review-sensitivity.md`). The sheet's reviewer columns came back empty, so per-row verdicts aren't on file: save the filled sheet if you have it. If a label should change: fix it in the labeler, regenerate, and log it in `docs/hypotheses.md` as a new experiment. The eval-harness's Stage 9 cases would then need a follow-up PR there (public repo).
 2. Optionally, redo A-000010 with the new Reopen button. It's still `Resolved` as `deny_claim_window`.
 3. **The Codex exercise**, whenever convenient: `docs/exercises/codex-reconciliation-review.md`. It needs your Codex account.
 4. **The email block:** tick "Block command line pushes that expose my email" again, if not done already.

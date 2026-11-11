@@ -7,8 +7,8 @@ table { border-collapse: collapse; display: block; overflow-x: auto; margin: 1re
 th, td { border: 1px solid var(--line); padding: .35rem .6rem; text-align: left; vertical-align: top; }
 blockquote { border-left: 3px solid var(--line); color: var(--muted); margin: 1rem 0; padding-left: 1rem; }
 nav a { margin-right: 1rem; }
-</style></head><body><h1>Benchmark results: arms A, B and C</h1><p><strong>Independent portfolio simulation. Synthetic data, fictional hotel group.</strong> Evaluation only: not part of the console.</p><nav><a href="#hypotheses">hypotheses</a><a href="#comparison">comparison</a><a href="#a-or-b-beats-c">a-or-b-beats-c</a><a href="#a-as-is">a-as-is</a><a href="#after-stop-sensitivity">after-stop-sensitivity</a><a href="#fairness">fairness</a><a href="#stress">stress</a><a href="#variability">variability</a><a href="#predicted-vs-actual">predicted-vs-actual</a><a href="#business-value">business-value</a></nav><section id="hypotheses"><h2>Hypotheses on the held-out split</h2>
-<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+</style></head><body><h1>Benchmark results: arms A, B and C</h1><p><strong>Independent portfolio simulation. Synthetic data, fictional hotel group.</strong> Evaluation only: not part of the console.</p><nav><a href="#hypotheses">hypotheses</a><a href="#comparison">comparison</a><a href="#a-or-b-beats-c">a-or-b-beats-c</a><a href="#a-as-is">a-as-is</a><a href="#after-stop-sensitivity">after-stop-sensitivity</a><a href="#label-review-sensitivity">label-review-sensitivity</a><a href="#fairness">fairness</a><a href="#stress">stress</a><a href="#variability">variability</a><a href="#predicted-vs-actual">predicted-vs-actual</a><a href="#business-value">business-value</a></nav><section id="hypotheses"><h2>Hypotheses on the held-out split</h2>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (<code>evaluations/label-review/</code>).</blockquote>
 <p>Arm C&#x27;s runs here are <strong>live</strong>. Business thresholds are provisional: no stakeholder has approved them. Statistical difference and practical value are separate questions, and zero observed doesn&#x27;t prove zero risk.</p>
 <table>
 <tr><th>Hypothesis</th><th>Verdict</th><th>Observed</th><th>Why</th></tr>
@@ -45,11 +45,11 @@ nav a { margin-right: 1rem; }
 <li><strong>H4 had 2 clarification cases.</strong> Both arms found both, so its first part can&#x27;t separate them. That&#x27;s a weakness in the held-out set, not evidence they&#x27;re equal. Its other two parts favour C.</li>
 <li><strong>Case success doesn&#x27;t check that a complaint reached someone.</strong> Arm A scores 3/3 on D20 by ignoring the complaint.</li>
 <li><strong>One generator wrote every message,</strong> in phrasing arm C also saw on dev. Real messages will be messier.</li>
-<li><strong>The labels aren&#x27;t independently reviewed yet,</strong> and the catalog wasn&#x27;t reviewed by anyone independent.</li>
+<li><strong>The labels aren&#x27;t independently reviewed.</strong> The owner reviewed 30 of 280 (human review, AI-assisted): 2 disagreed, 1 unsure, none confirmed wrong. <strong>H2 rests on one disputed case, HO-062:</strong> read without the member&#x27;s reply, H2 is not supported (<code>label-review-sensitivity.md</code>). The catalog wasn&#x27;t reviewed by anyone independent.</li>
 <li><strong>The simulated supervisor approves whatever the engine proposes,</strong> so nothing here tests real reviewers.</li>
 </ul>
 <p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="comparison"><h2>A/B/C comparison on the held-out split</h2>
-<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (<code>evaluations/label-review/</code>).</blockquote>
 <p>Arm C: live.</p>
 <table>
 <tr><th>Metric</th><th>A</th><th>B</th><th>C run 1</th><th>C run 2</th><th>C run 3</th></tr>
@@ -115,7 +115,7 @@ nav a { margin-right: 1rem; }
 <tr><td>K06</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td><td>2 / 2 / 2 / 0 / 0</td></tr>
 </table>
 <p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="a-or-b-beats-c"><h2>Every slice where A or B beats C</h2>
-<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (<code>evaluations/label-review/</code>).</blockquote>
 <p>Arm C: <strong>live</strong>, majority of runs. 0 rows. Small groups: read the denominators. Measures: case success, correct first action, right ledger, false approvals, false denials. Slices: every scenario, tier, region, channel, language and style.</p>
 <p><strong>None on held-out.</strong></p>
 <p><strong>This doesn&#x27;t mean arm C is better everywhere.</strong> D11 ties every arm, and one generator wrote these messages. On the stress set, see <code>stress.md</code>.</p>
@@ -128,7 +128,7 @@ nav a { margin-right: 1rem; }
 <tr><td>scenario D20</td><td>3/3</td><td>0/3</td></tr>
 </table>
 <p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="a-as-is"><h2>A as-is against A: what the shared write path prevents</h2>
-<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (<code>evaluations/label-review/</code>).</blockquote>
 <p>Descriptive, with no verdict. <strong>A as-is is unsafe by design,</strong> runs only on a disposable database, and is excluded from H1 to H6. Prediction, written before data: duplicate credits on every D10 and lost-response case, a wrong amount on most D11 cases for A as-is; zero of each for A.</p>
 <table>
 <tr><th>Group</th><th>Right ledger</th><th>Duplicate credits</th><th>Over-credits</th></tr>
@@ -146,7 +146,7 @@ nav a { margin-right: 1rem; }
 <tr><td>A as-is, cases where a credit was attempted</td><td>0/41 (0.0%)</td><td>45</td><td>41/41</td></tr>
 </table>
 <p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="after-stop-sensitivity"><h2>After a stopped credit: sensitivity on the heldout split</h2>
-<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (<code>evaluations/label-review/</code>).</blockquote>
 <p>See <code>docs/rfcs/RFC-0003-benchmark.md</code>, the decision on what happens after the re-check stops a credit.</p>
 <table>
 <tr><th>Variant</th><th>A case success</th><th>B case success</th><th>A right ledgers</th><th>B right ledgers</th><th>B minus A</th></tr>
@@ -166,8 +166,70 @@ nav a { margin-right: 1rem; }
 <tr><td>D06</td><td>1/3</td><td>1/3</td></tr>
 <tr><td>D07</td><td>2/2</td><td>2/2</td></tr>
 <tr><td>D15</td><td>2/2</td><td>2/2</td></tr>
-</table></section><section id="fairness"><h2>Fairness: counterfactual pairs and slices</h2>
-<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+</table></section><section id="label-review-sensitivity"><h2>Label review: would any held-out result change?</h2>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (<code>evaluations/label-review/</code>).</blockquote>
+<p>The owner reviewed 30 of 280 labels (human review, AI-assisted; <code>evaluations/label-review/README.md</code>). This</p>
+<p>re-scores the <strong>stored</strong> held-out runs (A and B deterministic, C live, 3 runs) under the reviewer&#x27;s readings.</p>
+<p>Nothing was re-run. No label file was changed: on investigation, neither disagreement is a label error, so</p>
+<p>these readings are a sensitivity check, not a new experiment. C counts a case when it holds in 2 of 3 runs.</p>
+<h3>Verdicts</h3>
+<table>
+<tr><th>Reading</th><th>H1</th><th>H2</th><th>H3</th><th>H4</th><th>H5</th><th>H6</th><th>H7</th></tr>
+<tr><td>As labelled (the published results)</td><td>supported</td><td>supported</td><td>supported</td><td>not supported</td><td>supported</td><td>supported</td><td>not tested (NOT RUN)</td></tr>
+<tr><td>HO-078 as a pending posting</td><td>supported</td><td>supported</td><td>supported</td><td>not supported</td><td>supported</td><td>supported</td><td>not tested (NOT RUN)</td></tr>
+<tr><td>HO-062 without the member&#x27;s reply</td><td>supported</td><td>not supported</td><td>supported</td><td>not supported</td><td>supported</td><td>supported</td><td>not tested (NOT RUN)</td></tr>
+<tr><td>Waiting-period cases called eligible</td><td>supported</td><td>supported</td><td>supported</td><td>not supported</td><td>supported</td><td>supported</td><td>not tested (NOT RUN)</td></tr>
+<tr><td>All three together</td><td>supported</td><td>not supported</td><td>supported</td><td>not supported</td><td>supported</td><td>supported</td><td>not tested (NOT RUN)</td></tr>
+</table>
+<h3>What each reading changes</h3>
+<ul>
+<li><strong>As labelled (the published results):</strong> no verdict changes.</li>
+<li><strong>HO-078 as a pending posting:</strong> no verdict changes.</li>
+<li><strong>HO-062 without the member&#x27;s reply:</strong> H2: supported to not supported.</li>
+</ul>
+<p>  - Why H2 moves: C has more false approvals than B.</p>
+<ul>
+<li><strong>Waiting-period cases called eligible:</strong> no verdict changes.</li>
+<li><strong>All three together:</strong> H2: supported to not supported.</li>
+</ul>
+<p>  - Why H2 moves: C has more false approvals than B.</p>
+<h3>Per arm, held-out (80 cases)</h3>
+<table>
+<tr><th>Reading</th><th>Arm</th><th>Case success</th><th>Correct first action</th><th>Ledger correct</th><th>False approvals per run</th><th>Every proof link held</th></tr>
+<tr><td>As labelled (the published results)</td><td>A</td><td>41/80</td><td>38/80</td><td>48/80</td><td>8</td><td>8/80</td></tr>
+<tr><td>As labelled (the published results)</td><td>B</td><td>71/80</td><td>72/80</td><td>73/80</td><td>0</td><td>69/80</td></tr>
+<tr><td>As labelled (the published results)</td><td>C</td><td>78/80</td><td>80/80</td><td>80/80</td><td>0</td><td>78/80</td></tr>
+<tr><td>HO-078 as a pending posting</td><td>A</td><td>41/80</td><td>38/80</td><td>48/80</td><td>8</td><td>8/80</td></tr>
+<tr><td>HO-078 as a pending posting</td><td>B</td><td>71/80</td><td>71/80</td><td>73/80</td><td>0</td><td>68/80</td></tr>
+<tr><td>HO-078 as a pending posting</td><td>C</td><td>78/80</td><td>79/80</td><td>80/80</td><td>0</td><td>77/80</td></tr>
+<tr><td>HO-062 without the member&#x27;s reply</td><td>A</td><td>41/80</td><td>38/80</td><td>49/80</td><td>8</td><td>8/80</td></tr>
+<tr><td>HO-062 without the member&#x27;s reply</td><td>B</td><td>71/80</td><td>72/80</td><td>74/80</td><td>0</td><td>69/80</td></tr>
+<tr><td>HO-062 without the member&#x27;s reply</td><td>C</td><td>77/80</td><td>80/80</td><td>79/80</td><td>1</td><td>77/80</td></tr>
+<tr><td>Waiting-period cases called eligible</td><td>A</td><td>41/80</td><td>38/80</td><td>48/80</td><td>8</td><td>5/80</td></tr>
+<tr><td>Waiting-period cases called eligible</td><td>B</td><td>71/80</td><td>72/80</td><td>73/80</td><td>0</td><td>64/80</td></tr>
+<tr><td>Waiting-period cases called eligible</td><td>C</td><td>78/80</td><td>80/80</td><td>80/80</td><td>0</td><td>73/80</td></tr>
+<tr><td>All three together</td><td>A</td><td>41/80</td><td>38/80</td><td>49/80</td><td>8</td><td>5/80</td></tr>
+<tr><td>All three together</td><td>B</td><td>71/80</td><td>71/80</td><td>74/80</td><td>0</td><td>64/80</td></tr>
+<tr><td>All three together</td><td>C</td><td>77/80</td><td>79/80</td><td>79/80</td><td>1</td><td>72/80</td></tr>
+</table>
+<h3>Reading the result</h3>
+<ul>
+<li><strong>HO-078 and the waiting-period wording move no verdict.</strong> They change only correct-action and proof-chain</li>
+</ul>
+<p>  counts, by one or a few cases.</p>
+<ul>
+<li><strong>HO-062 decides H2.</strong> If its final outcome didn&#x27;t presume the member&#x27;s reply, arm C&#x27;s credit after the</li>
+</ul>
+<p>  reply would count as a false approval in each of its 3 runs, and H2&#x27;s rule (C may not have more false</p>
+<p>  approvals than B) would fail. So H2 rests on this one case.</p>
+<ul>
+<li><strong>Why the label keeps the reply:</strong> the pre-registered simulated member (<code>docs/hypotheses.md</code>, F6) answers</li>
+</ul>
+<p>  with what the scenario holds. HO-062&#x27;s planted reply is the checkout date 2026-04-02, which only ML-8565</p>
+<p>  fits. All three arms asked which stay and got that reply. C then credited ML-8565 (3 of 3 runs, 2</p>
+<p>  contacts); A and B left the case unresolved after 4 contacts. The review sheet didn&#x27;t show the reply,</p>
+<p>  which is the likely cause of the disagreement. The owner decides whether the label stands.</p></section><section id="fairness"><h2>Fairness: counterfactual pairs and slices</h2>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (<code>evaluations/label-review/</code>).</blockquote>
 <table>
 <tr><th>Arm</th><th>Pairs with the same action, outcome and points</th></tr>
 <tr><td>A [deterministic]</td><td>15/20</td></tr>
@@ -221,7 +283,7 @@ nav a { margin-right: 1rem; }
 <tr><td>tier = Silver</td><td>10/16 (62.5%)</td><td>14/16 (87.5%)</td><td>15/16 (93.8%)</td></tr>
 </table>
 <p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="stress"><h2>The stress set</h2>
-<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (<code>evaluations/label-review/</code>).</blockquote>
 <p>S01 and S02 are injection, S03 asks about another member, S04 tries to run up the tool calls, S05 submits twice. These check business effects: no points move that shouldn&#x27;t. <strong>A pass doesn&#x27;t show injection is solved,</strong> and it can&#x27;t show what a person reading a convincing wrong explanation would do.</p>
 <table>
 <tr><th>Metric</th><th>A run 1</th><th>B run 1</th><th>C run 1</th><th>C run 2</th><th>C run 3</th></tr>
@@ -249,7 +311,7 @@ nav a { margin-right: 1rem; }
 <tr><td>S05</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td><td>4 / 4 / 4 / 0 / 0</td></tr>
 </table>
 <p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="variability"><h2>Run-to-run variability, live model</h2>
-<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (<code>evaluations/label-review/</code>).</blockquote>
 <p>Over 3 runs of 80 cases, 0 cases changed action, outcome or points: none.</p>
 <h3>The 10 cases chosen before any held-out run, 6 runs each</h3>
 <table>
@@ -267,7 +329,7 @@ nav a { margin-right: 1rem; }
 </table>
 <p>Cost per case: mean $0.00170, max $0.00409. Worst investigation per case: p50 7.75 s, p95 11.58 s. Benchmark environment.</p>
 <p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="predicted-vs-actual"><h2>Predicted against actual, per defect (F8)</h2>
-<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (<code>evaluations/label-review/</code>).</blockquote>
 <p>Predictions from <code>docs/legacy-defect-catalog.md</code>, written before any arm existed. Measured on held-out case success; arm C by majority of runs.</p>
 <h3>Where arm A&#x27;s failures went (<code>docs/day-one-discovery.md</code> predicted about 61% B, 21% C only, 9% split)</h3>
 <table>
@@ -313,7 +375,7 @@ nav a { margin-right: 1rem; }
 <tr><td>D25</td><td>Conflicting records</td><td>Wrong (acts on the first record)</td><td>0/3, first action 0/3: yes</td><td>Escalates (correct)</td><td>3/3: yes</td><td>Escalates (correct)</td><td>3/3: yes</td></tr>
 </table>
 <p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="business-value"><h2>Business value: the numbers</h2>
-<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed yet.</blockquote>
+<blockquote><strong>SYNTHETIC data, simulated engagement.</strong> Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren&#x27;t independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (<code>evaluations/label-review/</code>).</blockquote>
 <p><strong>Everything in dollars is an estimate under stated assumptions. Nobody saved this money.</strong> Rates are held-out, re-weighted to the synthetic history&#x27;s defect frequencies. Conclusions: <code>docs/business-value-report.md</code>.</p>
 <h3>Assumed</h3>
 <table>

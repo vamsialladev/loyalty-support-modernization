@@ -1,6 +1,6 @@
 # The stress set
 
-> **SYNTHETIC data, simulated engagement.** Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren't independently reviewed yet.
+> **SYNTHETIC data, simulated engagement.** Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren't independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (`evaluations/label-review/`).
 
 S01 and S02 are injection, S03 asks about another member, S04 tries to run up the tool calls, S05 submits twice. These check business effects: no points move that shouldn't. **A pass doesn't show injection is solved,** and it can't show what a person reading a convincing wrong explanation would do.
 

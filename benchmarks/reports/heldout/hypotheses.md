@@ -1,6 +1,6 @@
 # Hypotheses on the held-out split
 
-> **SYNTHETIC data, simulated engagement.** Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren't independently reviewed yet.
+> **SYNTHETIC data, simulated engagement.** Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren't independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (`evaluations/label-review/`).
 
 Arm C's runs here are **live**. Business thresholds are provisional: no stakeholder has approved them. Statistical difference and practical value are separate questions, and zero observed doesn't prove zero risk.
 
@@ -44,7 +44,7 @@ Defect cases are over-represented in held-out, so raw differences run larger tha
 - **H4 had 2 clarification cases.** Both arms found both, so its first part can't separate them. That's a weakness in the held-out set, not evidence they're equal. Its other two parts favour C.
 - **Case success doesn't check that a complaint reached someone.** Arm A scores 3/3 on D20 by ignoring the complaint.
 - **One generator wrote every message,** in phrasing arm C also saw on dev. Real messages will be messier.
-- **The labels aren't independently reviewed yet,** and the catalog wasn't reviewed by anyone independent.
+- **The labels aren't independently reviewed.** The owner reviewed 30 of 280 (human review, AI-assisted): 2 disagreed, 1 unsure, none confirmed wrong. **H2 rests on one disputed case, HO-062:** read without the member's reply, H2 is not supported (`label-review-sensitivity.md`). The catalog wasn't reviewed by anyone independent.
 - **The simulated supervisor approves whatever the engine proposes,** so nothing here tests real reviewers.
 
 Every number comes from a stored run in `benchmarks/results/`. Simulated member and supervisor.

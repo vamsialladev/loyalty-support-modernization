@@ -21,6 +21,7 @@ ORDER = (
     "a-or-b-beats-c.md",
     "a-as-is.md",
     "after-stop-sensitivity.md",
+    "label-review-sensitivity.md",
     "fairness.md",
     "stress.md",
     "variability.md",

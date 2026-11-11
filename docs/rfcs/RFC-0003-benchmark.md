@@ -25,7 +25,7 @@ Requirements: BENCH-01 to BENCH-13, LEG-01, LEG-03, UI-02, BIZ-01, BIZ-02, BIZ-0
 | Arm C gets credit for arm B's gains | C's comparison is against B on paired cases. Write-path gains go to the platform (A vs A as-is) |
 | Only flattering slices reported | The report lists every slice where A or B beats C, generated, not chosen |
 | Labels leak into the app | Labels load only in `evaluations/` and `benchmarks/`. `tests/test_generator.py` already forbids the reverse |
-| Unreviewed labels presented as truth | Reports state how many labels had a human review. The 30-label review is still open with the owner: until then they say "generated from scenario facts; not independently reviewed" |
+| Unreviewed labels presented as truth | Reports state how many labels had a human review. The owner's 30-label review (2026-11-10, human review, AI-assisted) confirmed no label error; reports say so, and still say the labels aren't independently reviewed. H2 depends on one disputed case: `benchmarks/reports/heldout/label-review-sensitivity.md` |
 
 ## Options considered
 

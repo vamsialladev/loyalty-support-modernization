@@ -1,6 +1,6 @@
 # After a stopped credit: sensitivity on the heldout split
 
-> **SYNTHETIC data, simulated engagement.** Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren't independently reviewed yet.
+> **SYNTHETIC data, simulated engagement.** Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren't independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (`evaluations/label-review/`).
 
 See `docs/rfcs/RFC-0003-benchmark.md`, the decision on what happens after the re-check stops a credit.
 
