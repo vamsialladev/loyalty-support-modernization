@@ -448,3 +448,37 @@ class SystemSwitch(Base):
     reason: Mapped[str | None] = mapped_column(Text, default=None)
     changed_by: Mapped[str | None] = mapped_column(String(64), default=None)
     changed_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
+
+
+class A2aTask(Base):
+    """One request from the loyalty coordinator to the reservation evidence specialist over A2A (spec G.4; RFC-0004).
+
+    Kept with the case, so a restart doesn't lose it and a duplicate isn't sent. One active task per case. The
+    artifact is evidence for a person to review; nothing here changes the engine's inputs or the case's state.
+    """
+
+    __tablename__ = "a2a_tasks"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), index=True)
+    requested_by: Mapped[str] = mapped_column(String(64))
+    peer: Mapped[str] = mapped_column(String(255))  # the configured specialist URL
+    remote_task_id: Mapped[str | None] = mapped_column(String(64), default=None)
+    # submitted | completed | failed | canceled | rejected | timed_out | peer_unavailable | invalid_artifact
+    state: Mapped[str] = mapped_column(String(24))
+    notification_token_hash: Mapped[str | None] = mapped_column(String(64), default=None)
+    artifact: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
+    artifact_sha256: Mapped[str | None] = mapped_column(String(64), default=None)
+    detail: Mapped[str | None] = mapped_column(String(120), default=None)
+    correlation_id: Mapped[str | None] = mapped_column(String(32), default=None)
+    created_at_utc: Mapped[str] = mapped_column(String(20))
+    finished_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
+
+    __table_args__ = (
+        Index(
+            "uq_a2a_tasks_active",
+            "case_id",
+            unique=True,
+            postgresql_where=text("state = 'submitted'"),
+            sqlite_where=text("state = 'submitted'"),
+        ),
+    )

@@ -94,5 +94,5 @@ strict = true
 files = ["app", "protocols", "benchmarks", "scripts", "seed_data", "evaluations", "mock_customer_api", "customer_shapes"]
 
 [[tool.mypy.overrides]]
-module = ["reportlab.*", "sklearn.*"]
+module = ["reportlab.*", "sklearn.*", "google.protobuf.*"]
 ignore_missing_imports = true  # reportlab ships no type information

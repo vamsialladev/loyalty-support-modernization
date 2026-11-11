@@ -76,6 +76,12 @@ FAKE = {
     "PROTOCOL_TOKEN_ISSUER": "https://fake-issuer.test/realms/loyalty",
     "MCP_PORT": "8030",
     "MCP_RESOURCE_URL": "http://127.0.0.1:8030/mcp",
+    "A2A_SPECIALIST_PORT": "8041",
+    "A2A_SPECIALIST_URL": "http://127.0.0.1:8041",
+    "A2A_CALLBACK_BASES": "http://127.0.0.1:8050",
+    "A2A_CALLBACK_URL": "http://127.0.0.1:8050/a2a/notifications",
+    "A2A_COORDINATOR_CLIENT_ID": "fake-a2a-coordinator",
+    "A2A_COORDINATOR_CLIENT_SECRET": "fake-a2a-coordinator-secret-1122",
 }
 
 PORTFOLIO_KEYS = [
