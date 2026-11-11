@@ -400,6 +400,43 @@ Live runs cost money, need `--budget-usd`, and stop themselves at the owner's ca
 
 **The rule to remember:** look at a result before you believe it, and report the ones that go against you. Every slice where a simpler arm wins is generated, so nothing can be left out.
 
+## 4j. Protocols, in one page (Milestone 11)
+
+**Read in this order:** `docs/protocol-selection.md` (why, and when REST is enough), RFC-0004, `docs/mcp.md`,
+`docs/a2a-vs-rest.md`, `docs/protocol-test-results.md`.
+
+**The one rule:** a protocol is a door, not a new room. MCP, A2A and AG-UI reach the same services, permission checks
+and audit tables as REST, and none can approve, credit or change a case. With every flag off (the default), the app
+is what it was at Milestone 10.
+
+| Protocol | What it's for here | Where | Start (each needs its flag) |
+|---|---|---|---|
+| MCP 2026-07-28 | AI clients read one case's facts, exactly what arm C's model sees | `protocols/mcp/` | `uv run python -m protocols.mcp.server` |
+| A2A 1.0 | The loyalty coordinator asks a reservations agent for stay evidence | `protocols/a2a/` | `... -m protocols.a2a.specialist`, then `... -m protocols.a2a.coordinator --case <id>` |
+| AG-UI 1.0 | Watch an arm C investigation live on the case page | `protocols/ag_ui/` | `... -m protocols.ag_ui.server` (the console with the endpoint on) |
+
+**Run the tests, free, offline:**
+
+```powershell
+uv run pytest tests/test_protocol_auth.py tests/test_mcp_server.py tests/test_a2a.py tests/test_ag_ui.py
+```
+
+**Tokens against a real local Keycloak, free (Docker):**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\protocol_token_check.ps1
+```
+
+| Symptom | Likely cause | Check |
+|---|---|---|
+| MCP or A2A answers 401 to a token that "should" work | Wrong audience: a token for one service isn't accepted by another | The token's `aud` must be that service's URL; `scripts/protocol_clients.py` sets it per client |
+| A2A returns `-32009` | No `A2A-Version: 1.0` header: the SDK reads the request as 0.3 | The official client sends it; a hand-written client must too |
+| An A2A artifact fails its hash | A number turned into a float on the way (protobuf `Struct`) | `content_hash` compares whole numbers as integers; don't hash raw JSON yourself |
+| The AG-UI panel shows nothing | The page refreshed itself and replaced the button | The script uses one delegated listener; check the browser console for CSP errors |
+
+**Customer-specific:** the tool list, field allowlists, scopes, Keycloak clients, which protocols are on. **Starter
+kit:** the token verifier, the flag-and-start-command pattern, the G.13 test checklist, "same SDK isn't interop".
+
 ## 5. Common failure modes so far
 - **`ModuleNotFoundError: app`** when running pytest outside `uv run`: use `uv run pytest`.
 - **Preflight says NOT READY:** expected with an empty `.env`; it lists exactly which settings are missing.

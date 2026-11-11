@@ -93,3 +93,15 @@ through `arm_review.review_for`.
 ## The benchmark (Milestone 10)
 - **Measured per case on the live model, one at a time:** about $0.0017 at list price, worst investigation p50 7.8 s, p95 11.6 s. One worker does about 5 to 6 cases a minute, so the assumed 320 a month is well within one worker.
 - **What breaks first:** nothing here measures load. Milestone 12 does. Live held-out takes about 14 minutes a run at concurrency 1.
+
+## Protocols (Milestone 11)
+- **MCP is stateless** (2026-07-28: no sessions), so it scales out behind a load balancer like the API. Each call is
+  one rate-limit write plus one audit row, the same per-request cost as REST (estimate; not load-tested).
+- **AG-UI holds a connection per viewer** and polls the database every half second while a run is active, for at most
+  two minutes. At 100 concurrent viewers that's about 200 small queries a second (estimate). What breaks first: the
+  connection pool, then the database. The response: Postgres `LISTEN`/`NOTIFY` or a shared cache in front of the
+  stored rows, so viewers don't each poll.
+- **A2A** adds one table row per request and keeps at most one open task per case. The specialist's own task store is
+  in memory (a lab): two replicas wouldn't share tasks. A real partner agent would run its own durable store.
+- **Token checks are local** (no call to the issuer per request), so the issuer isn't a bottleneck; the price is
+  TD-49 (a disabled client's last token works until it expires).

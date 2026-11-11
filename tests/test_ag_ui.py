@@ -236,3 +236,17 @@ def test_the_panel_appears_only_with_the_endpoint_and_renders_text_only(arm: Arm
     script = (Path(__file__).resolve().parent.parent / "app/web/static/ag-ui-panel.js").read_text(encoding="utf-8")
     assert "textContent" in script and "innerHTML" not in script and "eval(" not in script
     assert '"start"' not in script  # watch only: the panel never starts an investigation
+
+
+def test_the_protocol_lab_page_is_for_administrators_and_only_with_a_protocol_on(arm: ArmA) -> None:
+    on = Browser(TestClient(create_app(AppSettings(database_url=arm.app_url, feature_mcp=True), arm.factory())))
+    on.login("admin.ada", arm.password, landing="")
+    page = on.get("/admin/protocols")
+    assert page.status_code == 200 and page.text.count('data-testid="protocol"') == 3
+    assert "FEATURE_MCP: on" in page.text and "FEATURE_A2A: off" in page.text
+    assert page.text.count("NOT RUN") == 3  # no independent run is claimed before it happens
+    on.login("agent.ana", arm.password)
+    assert on.get("/admin/protocols").status_code == 403
+    off = Browser(TestClient(create_app(AppSettings(database_url=arm.app_url), arm.factory())))
+    off.login("admin.ada", arm.password, landing="")
+    assert off.get("/admin/protocols").status_code == 404

@@ -26,6 +26,7 @@ All work by Claude Code (Opus 5.5). Everything runs on the mock and synthetic da
 | 15 | AG-UI panel in Chromium | `uv run pytest tests/browser/test_ag_ui_panel.py` | 1 passed, with a real worker and the strict CSP, no console errors. **Found:** the first version bound its click to the button, and htmx replaced the button when the investigation finished, so nothing happened. Now one delegated listener |
 | 16 | AG-UI against `@ag-ui/client` | — | **NOT RUN:** installs an npm package; left for the owner's OK |
 | 17 | Merging | `gh pr merge 32 --merge` | **Refused by Claude Code's auto mode** ("Merge Without Review"), although `CLAUDE.md` gives standing permission to merge on green. Not worked around: PRs #32 onward wait for the owner to merge, in order |
+| 18 | Protocol Lab page and close-out documents | `uv run pytest tests/test_ag_ui.py -k protocol_lab tests/test_protocol_docs.py tests/test_matrix_scores.py` | Pass: the page lists 3 protocols for an administrator, says NOT RUN for all 3 independent peers, 403 for an agent, 404 with every flag off. Scores (`scripts/matrix_scores.py`): protocol labs 3 of 16 verified, 5 in progress; security controls 30 of 55 |
 
 ## Milestone 10 (started 2026-11-06)
 

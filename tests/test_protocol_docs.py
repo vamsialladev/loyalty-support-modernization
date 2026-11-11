@@ -97,3 +97,12 @@ def test_the_milestone_11_rfc_has_every_template_section() -> None:
         assert heading in text
     assert "## Open questions" in text
     assert "RFC-0004" in read("docs/rfcs/README.md")
+
+
+def test_the_protocol_work_cites_the_earlier_stages_instead_of_repeating_them() -> None:
+    """REUSE-06, REUSE-09: stage 7's MCP conventions and the protocols lab are cited where they're reused."""
+    rfc = read("docs/rfcs/RFC-0004-protocols.md")
+    for source in ("hotel-tools-mcp", "agent-protocols-lab", "a2a_kit.py", "rbac.py"):
+        assert source in rfc, source
+    assert "agent-protocols-lab" in read("docs/protocol-catalog.md")
+    assert "agent-protocols-lab" in read("docs/protocol-learning-labs.md")
