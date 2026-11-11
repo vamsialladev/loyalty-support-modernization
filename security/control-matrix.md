@@ -43,8 +43,8 @@ Status words follow spec 0.4. "Planned (M11)" rows become "Pass" only when their
 | Item | Here | Status |
 |---|---|---|
 | ASI01 Agent Goal Hijack | Same as LLM01: request text and tool results are data; rules decide; a person approves. Through MCP, A2A or AG-UI nothing can approve or execute | Arm C: pass (M8–9 red team). Protocols: planned (M11) |
-| ASI02 Tool Misuse and Exploitation | MCP exposes six read-only tools from an explicit list, per role, each call re-checked and audited; no write tool exists to misuse | Planned (M11) |
-| ASI03 Identity and Privilege Abuse | Tokens verified for issuer, audience, expiry and scope; one audience per service; no token passthrough; the customer comes from the token, never the message | Planned (M11) |
+| ASI02 Tool Misuse and Exploitation | MCP exposes six read-only tools from an explicit list, per role, each call re-checked and audited; no write tool exists to misuse | MCP: pass (`tests/test_mcp_server.py`). A2A, AG-UI: planned (M11) |
+| ASI03 Identity and Privilege Abuse | Tokens verified for issuer, audience, expiry and scope; one audience per service; no token passthrough; the customer comes from the token, never the message | Pass for the verifier and MCP (`tests/test_protocol_auth.py`, `tests/test_mcp_server.py`, a real Keycloak in `security/evidence/protocol-token-check-2026-11-11.txt`). A2A: planned (M11) |
 | ASI04 Agentic Supply Chain Vulnerabilities | Locked SDK versions with hashes, `pip-audit`, OSV and malware-advisory checks before adding a protocol package; peer Agent Cards read only from configured URLs | Planned (M11) |
 | ASI05 Unexpected Code Execution (RCE) | No tool runs code, SQL or shell; no model-generated HTML or JavaScript is rendered | Pass for arm C (M8–9); protocols add no such tool |
 | ASI06 Memory and Context Poisoning | No long-term agent memory. A specialist's artifact is evidence for a person to review, with provenance, not an instruction | Planned (M11) |

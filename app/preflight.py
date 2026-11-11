@@ -155,6 +155,8 @@ VARS: dict[str, Var] = {
         Var("FEATURE_A2A", _bool, "true or false"),
         Var("FEATURE_AG_UI", _bool, "true or false"),
         Var("PROTOCOL_TOKEN_ISSUER", _url("http", "https"), "an http(s) URL"),
+        Var("MCP_PORT", _regex(r"\d{2,5}"), "a port number"),
+        Var("MCP_RESOURCE_URL", _url("http", "https"), "an http(s) URL"),
     ]
 }
 

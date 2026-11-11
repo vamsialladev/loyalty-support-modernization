@@ -143,6 +143,7 @@ def _scopes(claims: Mapping[str, Any]) -> frozenset[str]:
 class TokenVerifier:
     server: ResourceServer
     keys: KeySource
+    require_any_scope: bool = True  # False when the SDK in front answers the 403 itself (MCP)
 
     def verify(self, token: str) -> Caller:
         if not token or len(token) > MAX_TOKEN_CHARS:
@@ -178,7 +179,7 @@ class TokenVerifier:
         if not isinstance(customer, str) or not customer:
             raise TokenRejected("no_customer_claim")
         scopes = _scopes(claims)
-        if not scopes & self.server.scopes:
+        if self.require_any_scope and not scopes & self.server.scopes:
             raise TokenRejected("no_scope_for_this_service", status=403, scope=" ".join(sorted(self.server.scopes)))
         client_id = str(claims.get("azp") or claims.get("client_id") or claims["sub"])
         return Caller(
