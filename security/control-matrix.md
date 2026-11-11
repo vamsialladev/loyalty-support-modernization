@@ -35,3 +35,20 @@
 | LLM08 Vector and Embedding Weaknesses | No vectors or embeddings are used |
 | LLM09 Misinformation | Engine's result first; validation on actions, amounts and citations; a person decides. Free text can still mislead |
 | LLM10 Unbounded Consumption | Turn, call, deadline and spend limits; rate limits |
+
+## OWASP Top 10 for Agentic Applications, 2026 edition (read 2026-11-11; Milestone 11 protocols)
+
+Status words follow spec 0.4. "Planned (M11)" rows become "Pass" only when their test exists and passes.
+
+| Item | Here | Status |
+|---|---|---|
+| ASI01 Agent Goal Hijack | Same as LLM01: request text and tool results are data; rules decide; a person approves. Through MCP, A2A or AG-UI nothing can approve or execute | Arm C: pass (M8–9 red team). Protocols: planned (M11) |
+| ASI02 Tool Misuse and Exploitation | MCP exposes six read-only tools from an explicit list, per role, each call re-checked and audited; no write tool exists to misuse | Planned (M11) |
+| ASI03 Identity and Privilege Abuse | Tokens verified for issuer, audience, expiry and scope; one audience per service; no token passthrough; the customer comes from the token, never the message | Planned (M11) |
+| ASI04 Agentic Supply Chain Vulnerabilities | Locked SDK versions with hashes, `pip-audit`, OSV and malware-advisory checks before adding a protocol package; peer Agent Cards read only from configured URLs | Planned (M11) |
+| ASI05 Unexpected Code Execution (RCE) | No tool runs code, SQL or shell; no model-generated HTML or JavaScript is rendered | Pass for arm C (M8–9); protocols add no such tool |
+| ASI06 Memory and Context Poisoning | No long-term agent memory. A specialist's artifact is evidence for a person to review, with provenance, not an instruction | Planned (M11) |
+| ASI07 Insecure Inter-Agent Communication | A2A: authenticated per request, per-task authorization, callbacks only to allowlisted destinations with a per-task token, duplicates handled idempotently | Planned (M11) |
+| ASI08 Cascading Failures | Peer timeout, cancellation and "peer unavailable" leave the case unchanged; one bounded loop, no agent chains | Planned (M11) |
+| ASI09 Human-Agent Trust Exploitation | AG-UI shows tool names and status, not persuasive model reasoning; approval stays on the console's own form with its separation of duties | Planned (M11) |
+| ASI10 Rogue Agents | A remote agent can only return evidence; it holds no write permission and its card isn't trusted as proof of identity | Planned (M11) |

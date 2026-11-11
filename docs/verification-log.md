@@ -3,6 +3,17 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## Milestone 11 (started 2026-11-11)
+
+All work by Claude Code (Opus 5.5). Everything runs on the mock and synthetic data; no API key, no account, no money.
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | The owner's filled review sheet, left uncommitted by the previous session | PR #30; `uv run pytest tests/test_label_review.py` | Committed as `23dcd2f` with the owner's OK; tests pass; gitleaks: no leaks (91 commits) |
+| 2 | Primary sources read for MCP, A2A, AG-UI and the OWASP agentic list | Specs, SDK pages and release notes (links in `docs/protocol-catalog.md`) | MCP 2026-07-28 / `mcp` 2.3.0; A2A 1.0 (1.0.1) / `a2a-sdk` 1.3.0; AG-UI 1.0 (1.1 draft) / `ag-ui-protocol` 1.0.0. The OWASP agentic item list came from the published PDF (text extracted with `pypdf` 5.1.0 in a throwaway environment), page dated 2025-12-09. Not found: whether the MCP Inspector speaks 2026-07-28 |
+| 3 | Supply-chain check for `ag-ui-protocol` before adding it | GitHub malware advisories; OSV | Malware advisories: 0. OSV: no results. GitHub also lists unreviewed CVE entries titled "ag-ui-protocol ag-ui" with an unconfirmed ecosystem; `pip-audit` runs on the locked version (step 2) |
+| 4 | Research documents and RFC-0004 | `uv run pytest tests/test_protocol_docs.py tests/test_security_docs.py` | 13 + 36 passed. Every core protocol has the full G.1 record; each "ACP" is spelled out; AG-UI's draft isn't the pin; no adoption claim without evidence |
+
 ## Milestone 10 (started 2026-11-06)
 
 All work by Claude Code (Opus 5.5). Live results are kept apart from mock and deterministic ones (`benchmarks/results/`).
