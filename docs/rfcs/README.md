@@ -7,6 +7,9 @@ ADRs they produce.
 | RFC | Title | Milestone | Status |
 |---|---|---|---|
 | [RFC-0001](RFC-0001-write-path-integrity.md) | Approvals, idempotency, reconciliation and durable jobs | 6 | Accepted 2026-11-04 |
+| [RFC-0002](RFC-0002-ai-loop-and-harness.md) | The AI loop and harness (arm C) | 8 | Accepted 2026-11-05 |
+| [RFC-0003](RFC-0003-benchmark.md) | The benchmark (arms A, B and C) | 10 | Accepted 2026-11-06 |
+| [RFC-0004](RFC-0004-protocols.md) | Protocol interfaces (MCP, A2A, AG-UI) | 11 | Accepted 2026-11-11 |
 
 ## Template
 
