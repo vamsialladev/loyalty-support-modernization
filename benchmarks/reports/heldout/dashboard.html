@@ -45,7 +45,8 @@ nav a { margin-right: 1rem; }
 <li><strong>H4 had 2 clarification cases.</strong> Both arms found both, so its first part can&#x27;t separate them. That&#x27;s a weakness in the held-out set, not evidence they&#x27;re equal. Its other two parts favour C.</li>
 <li><strong>Case success doesn&#x27;t check that a complaint reached someone.</strong> Arm A scores 3/3 on D20 by ignoring the complaint.</li>
 <li><strong>One generator wrote every message,</strong> in phrasing arm C also saw on dev. Real messages will be messier.</li>
-<li><strong>The labels aren&#x27;t independently reviewed.</strong> The owner reviewed 30 of 280 (human review, AI-assisted): 2 disagreed, 1 unsure, none confirmed wrong. <strong>H2 rests on one disputed case, HO-062:</strong> read without the member&#x27;s reply, H2 is not supported (<code>label-review-sensitivity.md</code>). The catalog wasn&#x27;t reviewed by anyone independent.</li>
+<li><strong>H2 rests on one case, HO-062, alone.</strong> Read without the simulated member&#x27;s reply, arm C&#x27;s credit there would count as a false approval in 3 of 3 runs, and H2 would be not supported. The owner checked the planted reply (it names only ML-8565) and kept the label (<code>benchmarks/reports/heldout/label-review-sensitivity.md</code>).</li>
+<li><strong>The labels aren&#x27;t independently reviewed.</strong> The owner reviewed 30 of 280 (human review, AI-assisted): 2 disagreed, 1 unsure, none confirmed wrong. The catalog wasn&#x27;t reviewed by anyone independent.</li>
 <li><strong>The simulated supervisor approves whatever the engine proposes,</strong> so nothing here tests real reviewers.</li>
 </ul>
 <p>Every number comes from a stored run in <code>benchmarks/results/</code>. Simulated member and supervisor.</p></section><section id="comparison"><h2>A/B/C comparison on the held-out split</h2>
@@ -410,6 +411,7 @@ nav a { margin-right: 1rem; }
 <ul>
 <li><strong>A to B, case success:</strong> +25.4 pp (+37% relative). False approvals -5.8 pp (-100% relative).</li>
 <li><strong>B to C, case success:</strong> +5.8 pp (+6% relative). Avoidable handoffs -5.2 pp (-100% relative).</li>
+<li><strong>H2 rests on one case, HO-062, alone.</strong> Read without the simulated member&#x27;s reply, arm C&#x27;s credit there would count as a false approval in 3 of 3 runs, and H2 would be not supported. The owner checked the planted reply (it names only ML-8565) and kept the label (<code>benchmarks/reports/heldout/label-review-sensitivity.md</code>).</li>
 <li><strong>Incremental AI cost:</strong> $0.55 a month at list price (from observed cost).</li>
 <li><strong>Estimated saving per case:</strong> A to B $2.463; B to C $0.515, net of the model.</li>
 <li><strong>Break-even for C over B on maintenance alone:</strong> 248.4 cases a month, against an assumed 320. Estimate.</li>

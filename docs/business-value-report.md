@@ -22,6 +22,8 @@ Of arm A's 39 failed held-out cases, arm B fixed 33 (85%), and arm C alone fixed
 
 Raw, of 80: case success 41, 71, 78. H1 to H7's verdicts: `benchmarks/reports/heldout/hypotheses.md`.
 
+**H2 rests on one case, HO-062, alone.** Read without the simulated member's reply, arm C's credit there would count as a false approval in 3 of 3 runs, and H2 would be not supported. The owner checked the planted reply (it names only ML-8565) and kept the label (`benchmarks/reports/heldout/label-review-sensitivity.md`).
+
 **A caution on arm C's false denials.** If a person works every escalation correctly, arm B's 7 false denials fall to 1, and arm C's case success is 78 against arm B's 77 of 80. Arm C's value is then fewer handoffs, not better answers. See `docs/error-analysis.md`.
 
 ## What was estimated

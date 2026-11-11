@@ -47,6 +47,19 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **Control endpoints share the data token** locally and are off in public demo mode (TD-11).
 - **The app is a placeholder**: health, readiness, migrations and the seed command only.
 
+## Added after the label review (2026-11-10)
+- **H2 rests on one case, HO-062, alone.** Read without the simulated member's reply, arm C's credit there would count as a false approval in 3 of 3 runs, and H2 would be not supported. The owner checked the planted reply (it names only ML-8565) and kept the label (`benchmarks/reports/heldout/label-review-sensitivity.md`).
+- **A waiting-period stay is labelled `ineligible`, with `existing_credit: none`, even when a posting is already
+  queued.** Spec B.7 has no "not yet" value, so `ineligible` plus `wait_until:<date>` carries it; the queue isn't
+  recorded as evidence when the policy in force (v1) has no pending-posting rule (HO-078). A reader can take
+  `ineligible` to mean "never". Owner's decision: a limitation of the vocabulary, not a label error.
+- **A waiting-period stay's `earned_points` is 0** while its `expected_final_points` is the full amount (DV-070: 0
+  and 5,850), because the labeler zeroes earned points for any `ineligible` stay. No metric reads `earned_points`.
+- **The label-review sheet left out facts the reviewer needed:** the received date, the member's planted reply,
+  out-of-scope items and the other member referenced. Add them before a second labeler reviews.
+- **The S03 refusal isn't recorded:** the benchmark checks that a request about another member changes nothing,
+  not whether a reply shows that member's data.
+
 ## Added in Milestone 3 (2026-10-29)
 - **The history restates our assumptions.** Its outcomes come from the outcome model in
   `seed_data/generator/config/scenario_mix.yaml`, so the day-one numbers (27% wrong; 61% of failures predicted

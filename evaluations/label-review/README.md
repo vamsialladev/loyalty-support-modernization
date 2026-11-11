@@ -9,7 +9,7 @@ enforces that, so expected answers can't leak into any arm.
 | Field | Value |
 |---|---|
 | Reviewer | Vamsi Alla (project owner; not independent of the project, but independent of the label generator) |
-| Status | **Done (2026-11-10): 2 disagree, 1 unsure, 27 not flagged. No label error confirmed on investigation; no label changed.** The owner decides whether HO-062 and HO-078 stand (below) |
+| Status | **Done (2026-11-10): 2 disagree, 1 unsure, 27 not flagged, 0 corrected.** On the evidence below the owner kept both disputed labels. Two wording issues are recorded as known limitations |
 | Sample | 30 cases (plan below); drawn with seed 20261102, stream `label-review` (`seed_data/generator/review_sheet.py`) |
 | Result | See "Result of the review" below |
 | How it was done | **Human review, AI-assisted** (the owner's words). Which assistant was used, and how, isn't recorded. If it was a Claude model, the assistance isn't independent of the generator's author |
@@ -49,9 +49,18 @@ before a second labeler reviews (`seed_data/generator/review_sheet.py`).
 `earned_points` is 0 while `expected_final_points` is the full amount (DV-070: 0 and 5,850), because the labeler
 zeroes earned points for any `ineligible` stay. No metric reads `earned_points`; it isn't on the sheet. Not changed.
 
-**What happens next is the owner's call:** if HO-062 or HO-078 should change after seeing these facts, the fix goes
-in the labeler, the labels are regenerated, and the change is logged in `docs/hypotheses.md` as a new experiment
-(F9). The published v1 results stay as they are.
+**The owner's decisions (2026-11-10):**
+- **HO-062 stands as labelled.** The owner's test: if the planted reply clearly identifies ML-8565, the label
+  stands; if it's missing or ambiguous, the label is wrong. The facts: `member_reply` is "It was the stay that
+  checked out on 2026-04-02." The member, GR-52140, has exactly two stays in the seeded upstream data: ML-8565,
+  checkout 2026-04-02 09:55 Eastern (13:55 UTC), and ML-7988, checkout 2026-04-12. The reply fits only ML-8565.
+- **HO-078 stands as labelled.** The `existing_credit` and `ineligible` wording for waiting-period stays, and their
+  0 `earned_points`, are known limitations, not label errors (`docs/known-limitations.md`).
+- **The disclosure stays:** H2 rests on HO-062 alone. It appears in the hypotheses report, the business-value
+  reports, the executive brief, and must appear in any website or portfolio text about Stage 9
+  (`tests/test_label_review.py` checks the repo's copies).
+
+No label changed, so `docs/hypotheses.md`'s change log still reads "None yet." and no new experiment started.
 
 ## Why this review matters
 Labels decide every benchmark number. They come from the generator's scenario facts and the written policy, never

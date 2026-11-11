@@ -15,7 +15,7 @@ from collections.abc import Mapping
 from statistics import mean
 from typing import Any
 
-from evaluations.compare import HEADER, _table
+from evaluations.compare import H2_RESTS_ON_HO_062, HEADER, _table
 from evaluations.decide import Runs
 from evaluations.final_report import OUT, driver_of, weights
 from evaluations.financial_model import Assumptions, break_even_volume, history_estimate, load_history
@@ -175,6 +175,7 @@ def report(arms: Mapping[str, Runs], labels: Labels, a: Assumptions, history: di
             "",
             f"- **A to B, case success:** {pp('success', 'A', 'B')}. False approvals {pp('false_approval', 'A', 'B')}.",
             f"- **B to C, case success:** {pp('success', 'B', 'C')}. Avoidable handoffs {pp('to_a_person', 'B', 'C')}.",
+            "- " + H2_RESTS_ON_HO_062,
             f"- **Incremental AI cost:** ${money['C']['model']:.2f} a month at list price (from observed cost).",
             f"- **Estimated saving per case:** A to B ${saving_ab:.3f}; B to C ${saving_bc:.3f}, net of the model.",
             "- **Break-even for C over B on maintenance alone:** "

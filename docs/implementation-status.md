@@ -1,7 +1,7 @@
 # Implementation status
 
 **Last updated:** 2026-11-06 · **Current milestone:** 8 of 20 complete · **Next:** Milestone 9 (security hardening).
-**Waiting on the owner:** whether label-review cases HO-062 and HO-078 stand (`evaluations/label-review/README.md`); the Milestone 7 and 8 exercises; the Codex exercise, when convenient
+**Waiting on the owner:** the Milestone 7 and 8 exercises; the Codex exercise, when convenient
 (`docs/exercises/codex-reconciliation-review.md`).
 
 ## Completion scores (spec Part 0.5)

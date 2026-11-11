@@ -7,7 +7,7 @@
 
 **The answer, on a simulation.** Better tools and corrected rules did most of the work. On 80 test cases written before the results were known, the old way got 41 right, the improved way without AI got 71, and with AI 78. Neither improved way over-credited anyone. The old way did so on 8.
 
-**What AI adds.** Mostly, it settles messy messages that the non-AI version hands to a person: 6 fewer handoffs in 80. If people handle those handoffs well, the final answers are nearly the same (78 against 77). So the question for a real customer is what a handoff costs. The AI itself costs about $0.002 a case.
+**What AI adds.** Mostly, it settles messy messages that the non-AI version hands to a person: 6 fewer handoffs in 80. If people handle those handoffs well, the final answers are nearly the same (78 against 77). So the question for a real customer is what a handoff costs. The AI itself costs about $0.002 a case. One caution: the finding that AI picks the right first step without over-crediting rests on a single test case. Read one way, it would not hold. The owner checked that case and kept it.
 
 **The safeguards held.** Across more than 2,000 test runs, no duplicate credit and no unauthorized action. Without the shared safeguards, 45 duplicate credits appeared under the same conditions. A supervisor approving everything still couldn't move points on 9 planted wrong proposals. Zero observed doesn't prove zero risk.
 

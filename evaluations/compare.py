@@ -43,6 +43,11 @@ HEADER = (
     "timing and not real people. Labels come from scenario facts, and aren't independently reviewed: the owner "
     "reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (`evaluations/label-review/`)."
 )
+H2_RESTS_ON_HO_062 = (
+    "**H2 rests on one case, HO-062, alone.** Read without the simulated member's reply, arm C's credit there would "
+    "count as a false approval in 3 of 3 runs, and H2 would be not supported. The owner checked the planted reply "
+    "(it names only ML-8565) and kept the label (`benchmarks/reports/heldout/label-review-sensitivity.md`)."
+)
 Labels = Mapping[str, Label]
 IGNORED_IN_REPEATS = ("latency_s",)  # a repeat must match on everything but the clock
 
