@@ -1,6 +1,6 @@
 # Predicted against actual, per defect (F8)
 
-> **SYNTHETIC data, simulated engagement.** Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren't independently reviewed yet.
+> **SYNTHETIC data, simulated engagement.** Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren't independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (`evaluations/label-review/`).
 
 Predictions from `docs/legacy-defect-catalog.md`, written before any arm existed. Measured on held-out case success; arm C by majority of runs.
 

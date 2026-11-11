@@ -1,0 +1,220 @@
+{
+ "label": "SYNTHETIC. Simulated engagement.",
+ "readings": {
+  "As labelled (the published results)": {
+   "verdicts": {
+    "H1": "supported",
+    "H2": "supported",
+    "H3": "supported",
+    "H4": "not supported",
+    "H5": "supported",
+    "H6": "supported",
+    "H7": "not tested (NOT RUN)"
+   },
+   "why": {
+    "H1": "B minus A on case success",
+    "H2": "C minus B on correct action",
+    "H3": "B minus C on false denials",
+    "H4": "(a) not supported; (b) holds; (c) holds",
+    "H5": "$0.00174 per correct case; p95 11.58 s, over 234 correct cases",
+    "H6": "0 unauthorized, 0 duplicates, over 2000 case runs",
+    "H7": "no real participants"
+   },
+   "arms": {
+    "A": {
+     "case_success": "41/80",
+     "correct_action": "38/80",
+     "ledger_correct": "48/80",
+     "false_approvals_per_run": 8,
+     "every_link_held": "8/80"
+    },
+    "B": {
+     "case_success": "71/80",
+     "correct_action": "72/80",
+     "ledger_correct": "73/80",
+     "false_approvals_per_run": 0,
+     "every_link_held": "69/80"
+    },
+    "C": {
+     "case_success": "78/80",
+     "correct_action": "80/80",
+     "ledger_correct": "80/80",
+     "false_approvals_per_run": 0,
+     "every_link_held": "78/80"
+    }
+   }
+  },
+  "HO-078 as a pending posting": {
+   "verdicts": {
+    "H1": "supported",
+    "H2": "supported",
+    "H3": "supported",
+    "H4": "not supported",
+    "H5": "supported",
+    "H6": "supported",
+    "H7": "not tested (NOT RUN)"
+   },
+   "why": {
+    "H1": "B minus A on case success",
+    "H2": "C minus B on correct action",
+    "H3": "B minus C on false denials",
+    "H4": "(a) not supported; (b) holds; (c) holds",
+    "H5": "$0.00174 per correct case; p95 11.58 s, over 234 correct cases",
+    "H6": "0 unauthorized, 0 duplicates, over 2000 case runs",
+    "H7": "no real participants"
+   },
+   "arms": {
+    "A": {
+     "case_success": "41/80",
+     "correct_action": "38/80",
+     "ledger_correct": "48/80",
+     "false_approvals_per_run": 8,
+     "every_link_held": "8/80"
+    },
+    "B": {
+     "case_success": "71/80",
+     "correct_action": "71/80",
+     "ledger_correct": "73/80",
+     "false_approvals_per_run": 0,
+     "every_link_held": "68/80"
+    },
+    "C": {
+     "case_success": "78/80",
+     "correct_action": "79/80",
+     "ledger_correct": "80/80",
+     "false_approvals_per_run": 0,
+     "every_link_held": "77/80"
+    }
+   }
+  },
+  "HO-062 without the member's reply": {
+   "verdicts": {
+    "H1": "supported",
+    "H2": "not supported",
+    "H3": "supported",
+    "H4": "not supported",
+    "H5": "supported",
+    "H6": "supported",
+    "H7": "not tested (NOT RUN)"
+   },
+   "why": {
+    "H1": "B minus A on case success",
+    "H2": "C has more false approvals than B",
+    "H3": "B minus C on false denials",
+    "H4": "(a) not supported; (b) holds; (c) holds",
+    "H5": "$0.00177 per correct case; p95 11.58 s, over 231 correct cases",
+    "H6": "0 unauthorized, 0 duplicates, over 2000 case runs",
+    "H7": "no real participants"
+   },
+   "arms": {
+    "A": {
+     "case_success": "41/80",
+     "correct_action": "38/80",
+     "ledger_correct": "49/80",
+     "false_approvals_per_run": 8,
+     "every_link_held": "8/80"
+    },
+    "B": {
+     "case_success": "71/80",
+     "correct_action": "72/80",
+     "ledger_correct": "74/80",
+     "false_approvals_per_run": 0,
+     "every_link_held": "69/80"
+    },
+    "C": {
+     "case_success": "77/80",
+     "correct_action": "80/80",
+     "ledger_correct": "79/80",
+     "false_approvals_per_run": 1,
+     "every_link_held": "77/80"
+    }
+   }
+  },
+  "Waiting-period cases called eligible": {
+   "verdicts": {
+    "H1": "supported",
+    "H2": "supported",
+    "H3": "supported",
+    "H4": "not supported",
+    "H5": "supported",
+    "H6": "supported",
+    "H7": "not tested (NOT RUN)"
+   },
+   "why": {
+    "H1": "B minus A on case success",
+    "H2": "C minus B on correct action",
+    "H3": "B minus C on false denials",
+    "H4": "(a) not supported; (b) holds; (c) holds",
+    "H5": "$0.00174 per correct case; p95 11.58 s, over 234 correct cases",
+    "H6": "0 unauthorized, 0 duplicates, over 2000 case runs",
+    "H7": "no real participants"
+   },
+   "arms": {
+    "A": {
+     "case_success": "41/80",
+     "correct_action": "38/80",
+     "ledger_correct": "48/80",
+     "false_approvals_per_run": 8,
+     "every_link_held": "5/80"
+    },
+    "B": {
+     "case_success": "71/80",
+     "correct_action": "72/80",
+     "ledger_correct": "73/80",
+     "false_approvals_per_run": 0,
+     "every_link_held": "64/80"
+    },
+    "C": {
+     "case_success": "78/80",
+     "correct_action": "80/80",
+     "ledger_correct": "80/80",
+     "false_approvals_per_run": 0,
+     "every_link_held": "73/80"
+    }
+   }
+  },
+  "All three together": {
+   "verdicts": {
+    "H1": "supported",
+    "H2": "not supported",
+    "H3": "supported",
+    "H4": "not supported",
+    "H5": "supported",
+    "H6": "supported",
+    "H7": "not tested (NOT RUN)"
+   },
+   "why": {
+    "H1": "B minus A on case success",
+    "H2": "C has more false approvals than B",
+    "H3": "B minus C on false denials",
+    "H4": "(a) not supported; (b) holds; (c) holds",
+    "H5": "$0.00177 per correct case; p95 11.58 s, over 231 correct cases",
+    "H6": "0 unauthorized, 0 duplicates, over 2000 case runs",
+    "H7": "no real participants"
+   },
+   "arms": {
+    "A": {
+     "case_success": "41/80",
+     "correct_action": "38/80",
+     "ledger_correct": "49/80",
+     "false_approvals_per_run": 8,
+     "every_link_held": "5/80"
+    },
+    "B": {
+     "case_success": "71/80",
+     "correct_action": "71/80",
+     "ledger_correct": "74/80",
+     "false_approvals_per_run": 0,
+     "every_link_held": "64/80"
+    },
+    "C": {
+     "case_success": "77/80",
+     "correct_action": "79/80",
+     "ledger_correct": "79/80",
+     "false_approvals_per_run": 1,
+     "every_link_held": "72/80"
+    }
+   }
+  }
+ }
+}

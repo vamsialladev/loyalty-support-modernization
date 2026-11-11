@@ -40,7 +40,8 @@ from evaluations.scoring import (
 REPORTS = ROOT / "benchmarks" / "reports"
 HEADER = (
     "> **SYNTHETIC data, simulated engagement.** Scripted agents, with a simulated member and supervisor: not human "
-    "timing and not real people. Labels come from scenario facts, and aren't independently reviewed yet."
+    "timing and not real people. Labels come from scenario facts, and aren't independently reviewed: the owner "
+    "reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (`evaluations/label-review/`)."
 )
 Labels = Mapping[str, Label]
 IGNORED_IN_REPEATS = ("latency_s",)  # a repeat must match on everything but the clock

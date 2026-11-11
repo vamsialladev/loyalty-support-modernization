@@ -1,6 +1,6 @@
 # A as-is against A: what the shared write path prevents
 
-> **SYNTHETIC data, simulated engagement.** Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren't independently reviewed yet.
+> **SYNTHETIC data, simulated engagement.** Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren't independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (`evaluations/label-review/`).
 
 Descriptive, with no verdict. **A as-is is unsafe by design,** runs only on a disposable database, and is excluded from H1 to H6. Prediction, written before data: duplicate credits on every D10 and lost-response case, a wrong amount on most D11 cases for A as-is; zero of each for A.
 

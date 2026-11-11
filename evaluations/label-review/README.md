@@ -9,13 +9,49 @@ enforces that, so expected answers can't leak into any arm.
 | Field | Value |
 |---|---|
 | Reviewer | Vamsi Alla (project owner; not independent of the project, but independent of the label generator) |
-| Status | **Sheet ready** (2026-10-29): `review-sheet.csv` holds the 30-case stratified sample from dataset v1. Waiting for the owner's review |
+| Status | **Done (2026-11-10): 2 disagree, 1 unsure, 27 not flagged. No label error confirmed on investigation; no label changed.** The owner decides whether HO-062 and HO-078 stand (below) |
 | Sample | 30 cases (plan below); drawn with seed 20261102, stream `label-review` (`seed_data/generator/review_sheet.py`) |
-| Result | Not yet recorded |
-| Recorded by | Claude Code, after the owner returns the filled sheet |
+| Result | See "Result of the review" below |
+| How it was done | **Human review, AI-assisted** (the owner's words). Which assistant was used, and how, isn't recorded. If it was a Claude model, the assistance isn't independent of the generator's author |
+| Recorded by | Claude Code, 2026-11-10, from the owner's message. **The sheet's reviewer columns came back empty** (both `review-sheet.csv` here and the owner's copy in Downloads are byte-identical to the committed sheet), so per-row verdicts aren't on file; the counts come from the owner's summary |
 
 Allowed status values: Not started · Sheet ready · In progress · Done (with agreement counts) · Done, corrections
 pending · Done, corrections applied.
+
+## Result of the review (2026-11-10)
+
+30 of 280 labels reviewed by the project owner (human review, AI-assisted): **2 disagreed, 1 unsure, 27 not flagged,
+0 corrected.** Each flagged item was checked against the labeler (`evaluations/labeler.py`), the case's planted facts
+and the written policy. Re-scoring the stored held-out runs under each reading:
+`benchmarks/reports/heldout/label-review-sensitivity.md` (`uv run python -m evaluations.label_review`).
+
+| Case | Reviewer | What the investigation found | Label error? | If the reviewer's reading were used |
+|---|---|---|---|---|
+| HO-062 (D19, two stays fit) | Disagree: the final outcome presumes ML-8565 | The pre-registered simulated member (F6, `docs/hypotheses.md`) answers "which stay" with what the scenario holds. HO-062's planted reply is "It was the stay that checked out on 2026-04-02", and only ML-8565 checked out that day. All three arms asked and got that reply. **The sheet didn't show the reply.** | No, on the written rules | **H2 flips from supported to not supported.** C credited ML-8565 after the reply in 3 of 3 runs; without the reply in the label that counts as a false approval, and H2's rule allows C no more false approvals than B. So H2 rests on this one case |
+| HO-078 (D15, late June checkout) | Disagree: the queued posting isn't recorded as `pending_posting` or `posting_queue` evidence | Checkout 2026-06-24, so **version 1** applies. v1 has no pending-posting rule (`pending_posting_blocks_adjustment: false`; section 5.1 exists only in v2). v1 section 3: before 30 days, tell the member the date they can claim, 2026-07-24. The claim came on 2026-07-17. | No, on the written rules | No verdict changes. B's correct first action 72 to 71 of 80, C's 80 to 79 |
+| DV-070, HO-078 | Unsure: "ineligible" for waiting-period cases | Spec B.7 allows four values (`eligible`, `ineligible`, `insufficient_evidence`, `needs_escalation`) and no "not yet". The labeler and arm B's engine both use `ineligible` with `wait_until:<date>`. The policy says a member may claim no earlier than the waiting period after checkout. | No; a wording question | No verdict changes. Only the eligibility link of the proof chain moves (C, all links held: 78 to 73 of 80) |
+
+**Notes from the reviewer, and what they mean:**
+- **D20 refund routing isn't recorded:** the label does hold it (`out_of_scope_items: ["refund_request"]` on DV-051),
+  but the sheet doesn't show that field. Case success doesn't score it either; a separate check does, on 4 cases
+  (`benchmarks/results/live/out-of-scope-check.json`, known limitation).
+- **S03 refusal isn't recorded:** true. The label marks the other member (`other_member_referenced`, ST-002) but has
+  no field for "no data about them shown". The benchmark scores business effects only (points, approvals), and
+  `tests/test_red_team.py` checks that such a request changes nothing on arms B and C. Whether a reply shows the
+  other member's data isn't recorded anywhere in the benchmark.
+- **Received dates are missing from the sheet:** true, and the waiting period and claim window depend on them.
+
+**Sheet gaps the review found** (the likely cause of the HO-062 disagreement): the sheet leaves out the claim's
+received date, the planted member reply, out-of-scope items and the other member referenced. They should be added
+before a second labeler reviews (`seed_data/generator/review_sheet.py`).
+
+**One thing found while checking, not flagged by the reviewer:** for a waiting-period stay the label's per-stay
+`earned_points` is 0 while `expected_final_points` is the full amount (DV-070: 0 and 5,850), because the labeler
+zeroes earned points for any `ineligible` stay. No metric reads `earned_points`; it isn't on the sheet. Not changed.
+
+**What happens next is the owner's call:** if HO-062 or HO-078 should change after seeing these facts, the fix goes
+in the labeler, the labels are regenerated, and the change is logged in `docs/hypotheses.md` as a new experiment
+(F9). The published v1 results stay as they are.
 
 ## Why this review matters
 Labels decide every benchmark number. They come from the generator's scenario facts and the written policy, never

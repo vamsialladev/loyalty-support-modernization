@@ -1,6 +1,6 @@
 # Business value: the numbers
 
-> **SYNTHETIC data, simulated engagement.** Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren't independently reviewed yet.
+> **SYNTHETIC data, simulated engagement.** Scripted agents, with a simulated member and supervisor: not human timing and not real people. Labels come from scenario facts, and aren't independently reviewed: the owner reviewed 30 of 280 (human review, AI-assisted), and no label error was confirmed (`evaluations/label-review/`).
 
 **Everything in dollars is an estimate under stated assumptions. Nobody saved this money.** Rates are held-out, re-weighted to the synthetic history's defect frequencies. Conclusions: `docs/business-value-report.md`.
 

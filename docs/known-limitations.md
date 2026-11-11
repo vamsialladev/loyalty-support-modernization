@@ -52,13 +52,15 @@ Kept current at every milestone. Each line says what is limited, why, and what w
   `seed_data/generator/config/scenario_mix.yaml`, so the day-one numbers (27% wrong; 61% of failures predicted
   fixable without AI, 21% AI-only) demonstrate the method, not a finding.
 - **Labels were written by the same author as the generator and (later) the arms.** The independent labeler and the
-  owner's 30-label review reduce that risk; the review hasn't happened yet.
+  owner's 30-label review reduce that risk. The review (2026-11-10, human review, AI-assisted) confirmed no label
+  error, but the sheet left out facts the reviewer needed (received date, the member's planted reply).
 - **Request text is templated** (ADR-0032); the Spanish, French, Portuguese and German templates are unchecked by
   native speakers. A model-written slice comes in Milestone 15 (EVAL-06).
 - **D15 held-out cases are dated July 2026**, outside the Sep–Oct held-out window, because the policy change pins
   them there (catalog change log).
 - **D19's two-stay variant labels the unclaimed stay `not_claimed`** (no credit without a claim). This is a judgement
-  call flagged for the label review.
+  call flagged for the label review. The reviewer disagreed on HO-062, and H2 depends on it
+  (`evaluations/label-review/README.md`).
 - **The day-one dashboard page is deferred to Milestone 7** (ADR-0034); only the report and charts exist.
 - **Generation speed depends on the machine:** about 5 s warm, about 70 s on a cold first run here.
 
@@ -128,7 +130,8 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **Case success doesn't check that a complaint reached anyone.** A separate check does, on 4 cases.
 - **H4 had 2 clarification cases,** too few to separate the arms.
 - **Explanation quality isn't scored,** and no judge is used. A wrong but convincing explanation wouldn't show up here.
-- **The labels aren't independently reviewed:** the 30-label review is still open.
+- **The labels aren't independently reviewed:** the owner reviewed 30 of 280 (human review, AI-assisted). None was
+  confirmed wrong, but **H2 rests on one disputed case, HO-062** (`benchmarks/reports/heldout/label-review-sensitivity.md`).
 - **The simulated supervisor approves what the engine proposes.** Real reviewers and automation bias in real people are Milestone 18.
 - **Scripted timing isn't handling time.** H7 is not tested.
 - **The benchmark runs on SQLite.** Arms A and B are confirmed on Postgres. Arm C isn't: that would need the same spend again.

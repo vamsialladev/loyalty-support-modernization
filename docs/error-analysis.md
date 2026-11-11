@@ -40,7 +40,7 @@ So arm C's gain over arm B is mostly **6 fewer handoffs to a person out of 80**,
 
 **5. Zero run-to-run change** in action, outcome or points, over 3 runs of 80 cases, and 6 runs of the 10 cases chosen at the freeze. Costs did differ between runs, so these were real calls. This is mostly the design: the model can only influence a little, and rules decide the rest. It says nothing about the variation in the text it writes, which isn't scored.
 
-**6. The labels aren't independently reviewed.** The 30-label review is still open with the owner. The same author wrote the scenarios, the arms and the scoring.
+**6. The labels aren't independently reviewed.** The owner reviewed 30 of 280 (human review, AI-assisted, 2026-11-10): 2 disagreed, 1 unsure, none confirmed wrong on investigation. **H2 rests on one of the disputed cases, HO-062:** read without the member's planted reply, arm C's credit becomes a false approval in 3 of 3 runs and H2 is not supported (`benchmarks/reports/heldout/label-review-sensitivity.md`). The same author wrote the scenarios, the arms and the scoring.
 
 ## Where arms lost to simpler ones
 
