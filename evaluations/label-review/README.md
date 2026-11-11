@@ -9,11 +9,11 @@ enforces that, so expected answers can't leak into any arm.
 | Field | Value |
 |---|---|
 | Reviewer | Vamsi Alla (project owner; not independent of the project, but independent of the label generator) |
-| Status | **Done (2026-11-10): 2 disagree, 1 unsure, 27 not flagged, 0 corrected.** On the evidence below the owner kept both disputed labels. Two wording issues are recorded as known limitations |
+| Status | **Done. First pass (2026-11-10): 2 disagree, 1 unsure, 27 not flagged. Final verdicts on the filled sheet, after the owner's decisions: 30 agree, 0 corrected.** On the evidence below the owner kept both disputed labels. Two wording issues are recorded as known limitations |
 | Sample | 30 cases (plan below); drawn with seed 20261102, stream `label-review` (`seed_data/generator/review_sheet.py`) |
 | Result | See "Result of the review" below |
-| How it was done | **Human review, AI-assisted** (the owner's words). Which assistant was used, and how, isn't recorded. If it was a Claude model, the assistance isn't independent of the generator's author |
-| Recorded by | Claude Code, 2026-11-10, from the owner's message. **The sheet's reviewer columns came back empty** (both `review-sheet.csv` here and the owner's copy in Downloads are byte-identical to the committed sheet), so per-row verdicts aren't on file; the counts come from the owner's summary |
+| How it was done | **Human review, AI-assisted** (the owner's words). The per-row notes were drafted with AI help from the owner's decisions (the owner's words, 2026-11-11). Which assistant was used isn't recorded. If it was a Claude model, the assistance isn't independent of the generator's author |
+| Recorded by | Claude Code. 2026-11-10: the first-pass counts, from the owner's message, because the sheet then had empty reviewer columns. 2026-11-11: the owner saved the filled `review-sheet.csv`, committed as the owner saved it. Claude Code checked that only the three reviewer columns changed and didn't edit the file |
 
 Allowed status values: Not started · Sheet ready · In progress · Done (with agreement counts) · Done, corrections
 pending · Done, corrections applied.
@@ -30,6 +30,20 @@ and the written policy. Re-scoring the stored held-out runs under each reading:
 | HO-062 (D19, two stays fit) | Disagree: the final outcome presumes ML-8565 | The pre-registered simulated member (F6, `docs/hypotheses.md`) answers "which stay" with what the scenario holds. HO-062's planted reply is "It was the stay that checked out on 2026-04-02", and only ML-8565 checked out that day. All three arms asked and got that reply. **The sheet didn't show the reply.** | No, on the written rules | **H2 flips from supported to not supported.** C credited ML-8565 after the reply in 3 of 3 runs; without the reply in the label that counts as a false approval, and H2's rule allows C no more false approvals than B. So H2 rests on this one case |
 | HO-078 (D15, late June checkout) | Disagree: the queued posting isn't recorded as `pending_posting` or `posting_queue` evidence | Checkout 2026-06-24, so **version 1** applies. v1 has no pending-posting rule (`pending_posting_blocks_adjustment: false`; section 5.1 exists only in v2). v1 section 3: before 30 days, tell the member the date they can claim, 2026-07-24. The claim came on 2026-07-17. | No, on the written rules | No verdict changes. B's correct first action 72 to 71 of 80, C's 80 to 79 |
 | DV-070, HO-078 | Unsure: "ineligible" for waiting-period cases | Spec B.7 allows four values (`eligible`, `ineligible`, `insufficient_evidence`, `needs_escalation`) and no "not yet". The labeler and arm B's engine both use `ineligible` with `wait_until:<date>`. The policy says a member may claim no earlier than the waiting period after checkout. | No; a wording question | No verdict changes. Only the eligibility link of the proof chain moves (C, all links held: 78 to 73 of 80) |
+
+**The filled sheet (saved by the owner, 2026-11-11):**
+- 30 rows, all `agree`; `reviewer_corrected_fields` is empty in every row. The 18 fact and label columns are
+  unchanged from the generated sheet (`tests/test_label_review.py` checks this).
+- **These are final verdicts, written after the owner's 2026-11-10 decisions,** not the first pass. HO-062 and HO-078
+  (first pass: disagree) and DV-070 (first pass: unsure) read `agree`, and their notes say what was disputed and why
+  the label stands. The first-pass counts come only from the owner's message; the sheet doesn't hold them.
+- **The notes were drafted with AI help from the owner's decisions.** 13 of 30 rows carry the same standard note
+  ("Facts, policy version and points (10 per USD, rounded down) checked; label correct."), and every note ends
+  "AI-assisted review; owner decision." Read them as the owner's decisions, not 30 separately written checks.
+- Two notes say what the sheet couldn't show: DV-030 (claim window; received date missing, so timing not verified)
+  and DV-041 (received date missing).
+- `make generate` / `make reset` rewrite this sheet blank. The filled copy is in git, and the test above fails if
+  the verdicts are lost.
 
 **Notes from the reviewer, and what they mean:**
 - **D20 refund routing isn't recorded:** the label does hold it (`out_of_scope_items: ["refund_request"]` on DV-051),
