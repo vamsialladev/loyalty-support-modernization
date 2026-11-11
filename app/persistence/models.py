@@ -345,7 +345,7 @@ class CaseEvent(Base):
     case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"))
     step: Mapped[int] = mapped_column(Integer)
     actor: Mapped[str] = mapped_column(String(64))
-    actor_kind: Mapped[str] = mapped_column(String(16))  # human | scripted
+    actor_kind: Mapped[str] = mapped_column(String(16))  # human | scripted | system | service
     action: Mapped[str] = mapped_column(String(48))
     detail: Mapped[dict[str, Any]] = mapped_column(JSON)
     at_utc: Mapped[str] = mapped_column(String(32))  # wall clock, with milliseconds
@@ -360,7 +360,7 @@ class SystemEvent(Base):
     __tablename__ = "system_events"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     actor: Mapped[str] = mapped_column(String(64))
-    actor_kind: Mapped[str] = mapped_column(String(16))  # human | scripted | system
+    actor_kind: Mapped[str] = mapped_column(String(16))  # human | scripted | system | service
     action: Mapped[str] = mapped_column(String(48))
     detail: Mapped[dict[str, Any]] = mapped_column(JSON)
     at_utc: Mapped[str] = mapped_column(String(32))

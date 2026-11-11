@@ -24,7 +24,7 @@ from dotenv import dotenv_values
 
 Check = Callable[[str], bool]
 
-PROFILES_ALLOWED = ("portfolio", "live-model", "discovery", "staging", "approved", "enterprise-identity")
+PROFILES_ALLOWED = ("portfolio", "live-model", "discovery", "staging", "approved", "enterprise-identity", "protocols")
 PROVIDERS = ("mock", "anthropic", "bedrock", "moonshot", "zai", "dashscope")
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", "db", "postgres"}
 
@@ -151,6 +151,10 @@ VARS: dict[str, Var] = {
         Var("FEATURE_LIVE_AI", _bool, "true or false"),
         Var("FEATURE_ADJUSTMENT_EXECUTION", _bool, "true or false"),
         Var("FEATURE_PROTOCOL_LABS", _bool, "true or false"),
+        Var("FEATURE_MCP", _bool, "true or false"),
+        Var("FEATURE_A2A", _bool, "true or false"),
+        Var("FEATURE_AG_UI", _bool, "true or false"),
+        Var("PROTOCOL_TOKEN_ISSUER", _url("http", "https"), "an http(s) URL"),
     ]
 }
 
@@ -190,6 +194,7 @@ _LOCAL_DB = (
     "DEMO_USER_PASSWORD",
 )
 _OIDC = ("OIDC_ISSUER_URL", "OIDC_CLIENT_ID", "OIDC_CLIENT_SECRET")
+PROTOCOL_FLAGS = ("FEATURE_MCP", "FEATURE_A2A", "FEATURE_AG_UI")
 
 
 # ---------- reading configuration ----------
@@ -323,6 +328,16 @@ def _check_hosted(settings: Settings) -> list[str]:
     return problems
 
 
+def _check_protocols(settings: Settings) -> list[str]:
+    """The protocol services need an issuer for their access tokens, and at least one of them switched on."""
+    problems = []
+    if not any(_flag(settings, name) for name in PROTOCOL_FLAGS):
+        problems.append("protocols needs at least one of " + ", ".join(PROTOCOL_FLAGS) + " set to true")
+    if not (settings.values.get("PROTOCOL_TOKEN_ISSUER") or settings.values.get("OIDC_ISSUER_URL")):
+        problems.append("protocols needs PROTOCOL_TOKEN_ISSUER or OIDC_ISSUER_URL: tokens are checked against it")
+    return problems
+
+
 def _check_approved(settings: Settings) -> list[str]:
     problems = _check_hosted(settings)
     issuer = settings.values.get("OIDC_ISSUER_URL", "")
@@ -397,6 +412,13 @@ PROFILES: dict[str, Profile] = {
             _COMMON_CHECKS,
             accepts_app_profile=("portfolio",),
         ),
+        Profile(
+            "protocols",
+            "Portfolio plus the MCP, A2A and AG-UI services, with access tokens from the local Keycloak (RFC-0004).",
+            _CORE + _LOCAL_DB + ("KEYCLOAK_ADMIN_PASSWORD",),
+            (*_COMMON_CHECKS, _check_protocols),
+            accepts_app_profile=("portfolio",),
+        ),
     ]
 }
 
@@ -410,6 +432,7 @@ FEATURES: dict[str, tuple[str, ...]] = {
     "Qwen exercise": ("DASHSCOPE_API_KEY",),
     "Local open model": ("LOCAL_MODEL_BASE_URL",),
     "Enterprise identity demo (Keycloak)": (*_OIDC, "KEYCLOAK_ADMIN_PASSWORD"),
+    "Protocol services (MCP, A2A, AG-UI; tokens from Keycloak)": ("PROTOCOL_TOKEN_ISSUER", "KEYCLOAK_ADMIN_PASSWORD"),
     "Supabase profile": ("SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SECRET_KEY", "SUPABASE_DB_URL"),
     "GitHub API scripts": ("GH_TOKEN",),
     "Vercel deploy (only when authorized)": ("VERCEL_TOKEN", "VERCEL_PROJECT_ID", "VERCEL_ORG_ID"),
