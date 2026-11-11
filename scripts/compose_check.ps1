@@ -47,8 +47,11 @@ Step "real-Postgres integration tests (incl. stored role passwords, blank passwo
     $env:TEST_APP_DATABASE_URL = "postgresql+psycopg://loyalty_app:$($values['APP_DB_PASSWORD'])@127.0.0.1:$dbPort/loyalty_test"
     $env:TEST_APP_OWNER_DATABASE_URL = "postgresql+psycopg://loyalty_owner:$($values['APP_OWNER_DB_PASSWORD'])@127.0.0.1:$dbPort/loyalty_test"
     $env:TEST_DB_ROLES_CONTAINER = "$project-db-1"
+    # The check stack has its own port. Without this, the blank-password test reached 127.0.0.1:5432: the owner's
+    # stack when it was up (so it checked the wrong database), and nothing at all when it was down (M11).
+    $env:TEST_DB_ROLES_HOST = "127.0.0.1:$dbPort"
     uv run pytest -m postgres -p no:cacheprovider -rs
-    Remove-Item Env:TEST_MOCK_API_DATABASE_URL, Env:TEST_APP_DATABASE_URL, Env:TEST_APP_OWNER_DATABASE_URL, Env:TEST_DB_ROLES_CONTAINER
+    Remove-Item Env:TEST_MOCK_API_DATABASE_URL, Env:TEST_APP_DATABASE_URL, Env:TEST_APP_OWNER_DATABASE_URL, Env:TEST_DB_ROLES_CONTAINER, Env:TEST_DB_ROLES_HOST
 }
 if ($Browser) {
     Step "Playwright: legacy arm A end to end in the browser, against the stack (real Postgres)" {
