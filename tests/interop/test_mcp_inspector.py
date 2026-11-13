@@ -32,7 +32,7 @@ from protocols.mcp.tools import McpReader
 from tests.arm_a import ArmA, make_arm_a
 from tests.conftest import ROOT
 from tests.protocol_tokens import ISSUER, TestIssuer
-from tests.test_mcp_server import case_id as _case_id  # noqa: F401  (fixture reuse)
+from tests.test_mcp_server import case_id  # noqa: F401  (fixture reuse: pytest finds it by this name)
 
 INSPECTOR = "@modelcontextprotocol/inspector@2.14.0"
 EVIDENCE = ROOT / "security" / "evidence" / "mcp-inspector-run.txt"
@@ -77,7 +77,7 @@ def inspector(url: str, token: str, *args: str) -> subprocess.CompletedProcess[s
     )
 
 
-def test_the_mcp_inspector_lists_and_calls_tools(arm: ArmA, case_id: int) -> None:
+def test_the_mcp_inspector_lists_and_calls_tools(arm: ArmA, case_id: int) -> None:  # noqa: F811  (the fixture)
     port = free_port()
     url = f"http://127.0.0.1:{port}/mcp"
     idp = TestIssuer()

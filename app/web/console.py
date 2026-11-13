@@ -18,7 +18,7 @@ from datetime import date
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import Depends, FastAPI, File, Form, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -1025,6 +1025,16 @@ def install_console(
         return FileResponse(DAY_ONE_DIR / name, media_type="image/png")
 
     # ---------- configuration: policy versions (administrators) and exact excerpts ----------
+
+    @app.get("/admin/protocols", response_class=HTMLResponse)
+    def protocol_lab(request: Request, active: User) -> HTMLResponse:
+        """Spec G.13: developer-only, and only when a protocol is switched on. Plain data, no protocol SDK."""
+        require_administrator(active.identity)
+        from protocols import lab
+
+        if not lab.any_enabled(settings):
+            raise HTTPException(status_code=404)  # off: as if the page didn't exist
+        return render(request, "protocol_lab.html", active, protocols=lab.entries(settings))
 
     @app.get("/admin", response_class=HTMLResponse)
     def admin_page(request: Request, s: DB, active: User) -> HTMLResponse:

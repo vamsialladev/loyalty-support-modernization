@@ -1,0 +1,43 @@
+A2A specialist against the A2A TCK (an independent peer; spec G.4, Appendix C M11)
+Date: 2026-11-13
+Command: $env:RUN_INTEROP='1'; $env:A2A_TCK_DIR='<scratch>\a2a-tck'; uv run pytest tests/interop/test_a2a_tck.py -s
+Peer: a2aproject/a2a-tck at 70f6f73c30208e80c889141907e094899e6e9f05 (pinned 70f6f73c30208e80c889141907e094899e6e9f05); its own httpx client, no a2a-sdk
+TCK command: run_tck.py --sut-host http://127.0.0.1:54435 --transport jsonrpc -v; exit 1
+Server: protocols/a2a/specialist.py on a2a-sdk 1.3.0, A2A 1.0, JSON-RPC over HTTP, 127.0.0.1
+A2A-Version headers the TCK sent: '', '1.0', '99.0'
+Requests the specialist received: 78
+Tokens: the TCK can't send one at this commit, so the harness added a test-signed token (scope reservation.evidence) to each request without one; the specialist verified it
+pytest summary: 5 failed, 57 passed, 201 skipped in 12.59s
+Outcomes: {'FAILED': 5, 'PASSED': 57, 'SKIPPED': 201}
+TCK compatibility by level (automated checks only): {'overall_compatibility': '70.8%', 'must_compatibility': '70.3%', 'should_compatibility': '66.7%', 'may_compatibility': '100.0%'}
+TCK per transport: {'agent_card': {'total': 11, 'passed': 9, 'failed': 0, 'skipped': 2}, 'grpc': {'total': 72, 'passed': 0, 'failed': 0, 'skipped': 72}, 'jsonrpc': {'total': 76, 'passed': 52, 'failed': 5, 'skipped': 19}, 'http_json': {'total': 82, 'passed': 3, 'failed': 0, 'skipped': 79}}
+Requirements marked FAIL: ['DM-ART-001 (MUST)', 'DM-MSG-001 (MUST)']
+Failed tests:
+  tests/compatibility/core_operations/test_artifacts.py::TestTextArtifact::test_task_has_text_artifact[jsonrpc]
+  tests/compatibility/core_operations/test_artifacts.py::TestFileArtifact::test_task_has_file_artifact[jsonrpc]
+  tests/compatibility/core_operations/test_artifacts.py::TestFileUrlArtifact::test_task_has_file_url_artifact[jsonrpc]
+  tests/compatibility/core_operations/test_artifacts.py::TestDataArtifact::test_task_has_data_artifact[jsonrpc]
+  tests/compatibility/core_operations/test_artifacts.py::TestMessageResponse::test_returns_message_with_text_part[jsonrpc]
+Skip reasons (count):
+  47 x Transport 'http_json' not configured
+  41 x Transport 'grpc' not configured
+  20 x Agent does not support streaming
+  17 x Transport 'grpc' not configured (filtered by --transport)
+  17 x Transport 'http_json' not configured (filtered by --transport)
+  12 x Agent card does not declare capabilities for: ['streaming']
+  11 x Expected task state 'TASK_STATE_COMPLETED' but got 'TASK_STATE_REJECTED'
+  8 x Expected task state 'TASK_STATE_INPUT_REQUIRED' but got 'TASK_STATE_REJECTED'
+  6 x Agent does not declare extendedAgentCard capability
+  3 x Follow-up send_message failed: Task <id> is in terminal state: TASK_STATE_REJECTED
+  3 x No requirements at this level
+  3 x HTTP+JSON transport not configured
+  2 x Agent supports push notifications
+  2 x Agent card does not declare urn:a2a:tck:required-extension as required
+  2 x gRPC transport not configured
+  2 x Agent supports push notifications; cannot trigger error
+  1 x Agent Card declares no custom binding
+  1 x Optional Last-Modified header is not provided
+  1 x Streaming not supported: Streaming is not supported by the agent
+  1 x Agent supports push notifications; cannot trigger -32003
+  1 x Server did not return an error for wrong Content-Type
+Full report: security/evidence/a2a-tck-compatibility.json; pytest output: a2a-tck-pytest-output.txt

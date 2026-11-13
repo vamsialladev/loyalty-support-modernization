@@ -182,6 +182,19 @@ the override log, the JSON API's problem documents, the arm fence test.
 
 **Customer-specific:** group mapping, retention period, regulatory notes. **Starter kit:** the OIDC adapter and its tests, the rate limiter, the red-team suite's shape, the route-walking test, the `security/` document set.
 
+## Protocols (Milestone 11)
+
+| Part | Here | For a real engagement | Who approves |
+|---|---|---|---|
+| Token issuer | Local Keycloak, clients created by `scripts/protocol_clients.py` | The client's IdP (Entra ID, Okta, their Keycloak): one client per caller, an audience per protocol service, short token lifetimes | Client's identity team |
+| MCP clients | Claude Code (owner step), MCP Inspector | The AI tools the client's staff already use, each with its own client and scopes | Client's security team, per tool |
+| Reservation specialist | Our agent over the mock PMS | The reservations team's own agent, or no A2A at all if their API is enough (`docs/a2a-vs-rest.md`) | Reservations team owner |
+| Push-notification callbacks | `A2A_CALLBACK_BASES` on loopback | A public HTTPS endpoint behind the client's gateway, on an allowlist | Client's network team |
+| AG-UI frontend | The console's panel | The client's own staff UI, if they build one; same endpoint, same session checks | Product owner |
+
+**What changes:** configuration only (issuer, audiences, URLs, scopes). **What doesn't:** the verifier, the tool and
+artifact checks, and the rule that no protocol writes.
+
 ## The benchmark (Milestone 10)
 
 | Part | Here | For a real engagement |

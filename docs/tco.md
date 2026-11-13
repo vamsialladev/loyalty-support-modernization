@@ -16,6 +16,7 @@
 | Worker process (added in Milestone 6) | not measured yet | — | — | One more container beside the app; no new paid service. Priced with hosting in M12 |
 | Upstream calls for re-checks (added in Milestone 6) | not measured yet | — | — | About 4 more reads at approve and at execute. Free on the mock; a real vendor's API terms may charge or limit them |
 | Data generation | $0 | $0 | $0 | Local, deterministic, no external service |
+| Protocol services (added in Milestone 11) | not measured yet | — | — | Up to three more small processes (MCP server, A2A specialist, coordinator) and the issuer the client already runs; no paid service. Off by default. Mostly engineering time to keep up with protocol versions (estimate: a version review each quarter) |
 
 ## Sensitivity (to fill)
 The inputs most likely to move TCO: request volume, model price per token, supervisor time per approval, and the

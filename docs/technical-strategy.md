@@ -32,6 +32,13 @@ flag. **Reading this as a standard:** `docs/rfcs/RFC-0001-write-path-integrity.m
   comparison believable. It's a candidate for the starter kit.
 - **Keep arm B a real product, not a straw man.** It's the fallback when AI is down, and it sets the bar AI has to beat.
 
+## Added in Milestone 11
+- **Protocols at the edge, never in the core.** MCP, A2A and AG-UI are doors onto the same services (RFC-0004). The
+  standard to share with other teams: one resource-server token verifier, one audience per service, a flag and a
+  start command per protocol, and the G.13 checklist with "same SDK isn't interop".
+- **Build the protocol when the caller exists.** MCP for several AI clients, A2A for another team's agent, AG-UI for a
+  live frontend. For one internal client, REST wins (`docs/protocol-selection.md`).
+
 ## What not to build
 A general agent framework; a vector database before a measured need; multitenancy inside one database; a workflow
 automation platform; anything that lets a model move points.
@@ -46,4 +53,5 @@ automation platform; anything that lets a model move points.
 | A Postgres queue is enough for durable work (Milestone 6) | The M12 load test shows claiming or heartbeats limiting the primary database at the volumes in `docs/scaling-and-limits.md` |
 | A re-check plus idempotency makes a double credit vanishingly unlikely (Milestone 6) | A real vendor's lookup lag outlasts the settle window, or it forgets keys sooner than our retries end (RFC-0001, open questions) |
 | Append-only by database role is enough for this stage (Milestone 6) | A real customer's auditors need evidence against an insider with database access: then a hash chain anchored outside, or a separate audit store |
+| Released protocol versions are stable enough to build on (Milestone 11) | MCP's 2026-07-28 removed sessions and `initialize` a year after 2025-06-18; if 1.1-style breaking changes keep coming, the protocols stay labs and REST stays the contract |
 | A legacy baseline modelled from a defect catalog is fair (Milestone 5) | A reviewer finds an arm A limit that isn't in the catalog, or a catalog defect that arm A can't actually exhibit; either is logged as a new experiment (F9) |

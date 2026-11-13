@@ -146,6 +146,30 @@ class RequireToken:
         await self.app(scope, receive, send)
 
 
+CARD_CACHE_CONTROL = "public, max-age=300"
+
+
+class CardCacheControl:
+    """A2A 1.0 §8.6.1: the Agent Card response SHOULD carry Cache-Control with max-age. Found by the A2A TCK
+    (CARD-CACHE-001). Five minutes, so a changed card reaches clients quickly."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or scope["path"] != CARD_PATH:
+            await self.app(scope, receive, send)
+            return
+
+        async def with_header(message: Any) -> None:
+            if message["type"] == "http.response.start":
+                headers = [(k, v) for k, v in message.get("headers", []) if k.lower() != b"cache-control"]
+                message = {**message, "headers": [*headers, (b"cache-control", CARD_CACHE_CONTROL.encode())]}
+            await send(message)
+
+        await self.app(scope, receive, with_header)
+
+
 class CallerContextBuilder(DefaultServerCallContextBuilder):
     def build(self, request: Request) -> Any:
         context = super().build(request)
@@ -255,6 +279,7 @@ def build_app(
     routes = [*create_agent_card_routes(card), *create_jsonrpc_routes(handler, "/", CallerContextBuilder())]
     app = Starlette(routes=routes)
     app.add_middleware(RequireToken, verifier=verifier)
+    app.add_middleware(CardCacheControl)
     return app
 
 

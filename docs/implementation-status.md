@@ -1,8 +1,8 @@
 # Implementation status
 
-**Last updated:** 2026-11-06 · **Current milestone:** 8 of 20 complete · **Next:** Milestone 9 (security hardening).
-**Waiting on the owner:** the Milestone 7 and 8 exercises; the Codex exercise, when convenient
-(`docs/exercises/codex-reconciliation-review.md`).
+**Last updated:** 2026-11-12 · **Current milestone:** 11 of 20, merged (PRs #32 to #36, in order) · **Next:** Milestone 12
+(performance, observability, CI/CD, hardening). **Waiting on the owner:** a look at PROTO-04's status (the A2A TCK is
+partial); the Milestone 7 to 9 exercises; the Codex exercise, when convenient.
 
 ## Completion scores (spec Part 0.5)
 Counted from `docs/requirements-matrix.md` by `uv run python scripts/matrix_scores.py`. Only "Implemented and
@@ -13,12 +13,14 @@ verified" (or "Not applicable") counts as done.
 | Core product functionality | 76 | 108 | 70% | 5 |
 | Benchmarks and evaluation | 46 | 64 | 72% | 3 |
 | Actual-tool exercises | 0 | 16 | 0% | 3 |
-| Protocol labs | 0 | 16 | 0% | 0 |
-| Security controls | 28 | 55 | 51% | 6 |
+| Protocol labs | 6 | 16 | 38% | 2 |
+| Security controls | 30 | 55 | 55% | 6 |
 | Owner's demonstrated understanding | 0 | 3 | 0% | 1 |
-| Other tracked work (not a Part 0.5 score) | 39 | 107 | 36% | 13 |
+| Other tracked work (not a Part 0.5 score) | 40 | 107 | 37% | 13 |
 
 369 requirements: Tier 1: 190, Tier 2: 102, Tier 3: 27, Tier 4: 50
+
+New in M11: MCP, A2A and AG-UI over the same services (PROTO-01 to PROTO-05, PROTO-14's M11 part), the protocol specs and the OWASP agentic list (SEC-01), callbacks and card fetching (SEC-16), RFC-0004 (PURP-05), reuse cited (REUSE-06, REUSE-09). Verified on the same SDK on both sides, and tokens against a real Keycloak. **Independent peers run 2026-11-12 with the owner's OK:** the MCP Inspector and `@ag-ui/client` passed; the A2A TCK passed partially (scenario tests the specialist doesn't act out; one SHOULD gap found and fixed). So PROTO-03 to PROTO-05 are verified (`docs/protocol-test-results.md`).
 
 New in M10: the benchmark, with held-out verdicts, on live arm C. Open: REUSE-03 needs the owner's OK; BIZ-02 and ENT-07/08 need real participants; ENT-17's caching and BENCH-13's release gate are Milestone 12.
 
@@ -50,7 +52,16 @@ authorization, M9), API-01 and API-02 (moved to M7, as the owner approved). Code
 | 8 | **Implemented and verified** (Appendix C, M8: every loop stop condition and injection test passes on the mock provider; the Claude provider is implemented; its live smoke test **passed on 2026-11-07**, one call with a made-up message, no quality claim) | `tests/test_ai_loop.py`, `tests/test_ai_tools.py`, `tests/test_ai_provider.py`, `tests/test_arm_c.py`, `tests/test_extraction.py`, `tests/test_routing_baseline.py`; verification log, Milestone 8 |
 | 9 | **Implemented and verified** (Appendix C, M9: authorization, CSRF, rate-limit, redaction and red-team tests pass on mock and scripted models; OIDC login works locally against a real Keycloak). SEC-19's repeated tests on a real model: **NOT RUN** | `tests/test_security_authz.py`, `tests/test_security_postgres.py`, `tests/test_oidc.py`, `tests/test_red_team.py`, `tests/test_red_team_shared_corpus.py`, `tests/test_security_docs.py`; `security/evidence/oidc-check-2026-11-06.txt`; verification log, Milestone 9 |
 | 10 | **Implemented and verified** (Appendix C, M10: thresholds committed before runs; A/B/C reports generated from actual runs; error analysis written). H7 **not tested**: no participants | `benchmarks/benchmark-thresholds.yaml`, `benchmarks/results/`, `benchmarks/reports/heldout/`, `docs/error-analysis.md`, `tests/test_scoring.py`, `tests/test_runner.py`, `tests/test_compare.py`, `tests/test_benchmark_docs.py`, `tests/test_benchmark_postgres.py`; verification log, Milestone 10 |
-| 11–20 | Planned | `docs/implementation-plan.md` |
+| 11 | **Built, tests pass; independent peers run 2026-11-12** (Appendix C, M11): MCP Inspector pass, `@ag-ui/client` pass, A2A TCK partial (5 scenario tests fail by design; card 9 of 9 after a fix) | `tests/interop/` (opt-in), `security/evidence/mcp-inspector-run.txt`, `a2a-tck-run.txt`, `ag-ui-client-run.txt`, `tests/test_protocol_auth.py`, `tests/test_mcp_server.py`, `tests/test_a2a.py`, `tests/test_a2a_postgres.py`, `tests/test_ag_ui.py`, `tests/browser/test_ag_ui_panel.py`, `tests/test_protocols_off.py`, `tests/test_protocol_docs.py`; `security/evidence/protocol-token-check-2026-11-11.txt`; verification log, Milestone 11 |
+| 12–20 | Planned | `docs/implementation-plan.md` |
+
+## Milestone 11 deliverables
+- **Research first:** six protocol documents from primary sources (2026-11-11), RFC-0004, ADR-0071. MCP 2026-07-28, A2A 1.0, AG-UI 1.0 (the 1.1 draft isn't used).
+- **Shared:** a resource-server token verifier (PyJWT), one audience per service, 9 of 9 checks against a real Keycloak. A disabled client's last token works until it expires (TD-49).
+- **MCP:** six read-only case tools, the same reach as arm C's model; scopes decide which tools a caller sees.
+- **A2A:** a reservation specialist and a loyalty coordinator; one open task per case (migration 0011); a real cancel on timeout; SSRF-safe cards and callbacks.
+- **AG-UI:** a live view built from stored rows, with no reasoning, arguments or results; a watch-only panel in the console.
+- **What building found:** each finding, with the test that now covers it, is in the verification log, Milestone 11, rows 8, 9, 12, 14 and 15.
 
 ## Milestone 10 deliverables
 - **Held-out verdicts, by code from the pre-registered rules:** H1, H2, H3, H5, H6 supported; H4 not supported; H7 not tested. Case success A 41, B 71, C 78 of 80. False approvals 8, 0, 0.
@@ -138,5 +149,5 @@ The owner's stack is upgraded and ready, with their data kept (verification log,
 - ADR-0035 to ADR-0042; swap guide, onboarding, scaling, tech debt, tool map and role coverage updated.
 
 ## Work attribution
-All work was done by Claude Code (Opus 5.5). The owner approved the Milestone 5 plan and its six design choices, approved the
+All work was done by Claude Code (Opus 5.5). The owner approved the Milestone 11 plan on 2026-11-11. The owner approved the Milestone 5 plan and its six design choices, approved the
 Milestone 6 plan and its ten choices (ADR-0055), and answered the M4 and M5 exercises. No other tool touched the repository.

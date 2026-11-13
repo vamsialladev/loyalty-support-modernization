@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Protocol Lab{% endblock %}
+{% block main %}
+<h1>Protocol Lab</h1>
+<p class="notice">Developer page. Optional interfaces over the same services: none can approve, credit or change a case, and the app works the same with all of them off. Results and their limits: <code>docs/protocol-test-results.md</code>.</p>
+{% for p in protocols %}
+<section class="card" aria-labelledby="p{{ loop.index }}-h" data-testid="protocol">
+  <h2 id="p{{ loop.index }}-h">{{ p.name }}</h2>
+  <dl class="facts">
+    <dt>Group</dt><dd>{{ p.group }}</dd>
+    <dt>Specification</dt><dd>{{ p.spec }}</dd>
+    <dt>Package</dt><dd>{{ p.package }}</dd>
+    <dt>Transport</dt><dd>{{ p.transport }}</dd>
+    <dt>Capabilities</dt><dd>{{ p.capabilities }}</dd>
+    <dt>Flag</dt><dd data-testid="protocol-flag">{{ p.flag }}: {{ "on" if p.enabled else "off" }}</dd>
+    <dt>Start</dt><dd><code>{{ p.start }}</code></dd>
+    <dt>Independent peer</dt><dd data-testid="protocol-peer">{{ p.peer }}: {{ p.peer_result }}</dd>
+    <dt>Tests</dt><dd><code>{{ p.tests }}</code></dd>
+    <dt>Limits</dt><dd>{{ p.limits }}</dd>
+  </dl>
+</section>
+{% endfor %}
+<p class="muted">Sanitized traces and the lab protocols (A2UI, MCP Apps, the three ACPs, ANP, commerce and payments) come with Milestone 16.</p>
+{% endblock %}

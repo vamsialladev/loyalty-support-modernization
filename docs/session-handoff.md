@@ -1,18 +1,33 @@
 # Session handoff
 
-**Updated:** 2026-11-10, after Milestone 10 and the owner's decisions. Milestone 11 is next, in a fresh session.
+**Updated:** 2026-11-12, at the end of Milestone 11: independent peers run, five pull requests merged in order.
 
 ## Where things stand
-- Milestones 1-10 are on `main` in the **private** GitHub repository, merged through pull requests #3 onward. Latest results:
-  `docs/verification-log.md`, section "Milestone 10".
-- **Work on a branch and open a pull request.** Merge with a merge commit, not squash or rebase, so cited hashes stay valid.
-  **Standing permission for Milestones 7-20 (`CLAUDE.md`): push, open pull requests and merge when CI is green.** Push with:
+- Milestones 1-11 are on `main` in the **private** GitHub repository. Milestone 11 merged as five pull requests, in order,
+  with merge commits: #32 foundation (`db6cbc6`), #33 MCP (`b81f60c`), #34 A2A (`c22b349`), #35 AG-UI, #36 close-out
+  (this file's PR, so it's the last one in). Each was merged only with its CI green.
+- **CI red on #34-#36 was the runner, not the code** (2026-11-12): apt couldn't resolve Ubuntu's mirrors during
+  `playwright install --with-deps`, so the tests never started; one rerun then hit the 30-minute job limit, at 83% of the
+  tests, with no failures, because apt took 13 minutes. Re-run, then green. Verification log, Milestone 11, row 22.
+- **Independent peers, run with the owner's OK** (`docs/protocol-test-results.md`; all opt-in, `tests/interop/`):
+  - MCP Inspector CLI 2.14.0: **pass**. It negotiated MCP 2025-11-25, so the 2026-07-28 handshake has same-SDK tests only.
+  - A2A TCK at `70f6f73`: **partial**, 57 passed, 5 failed, 201 skipped. The 5 are TCK scenarios the specialist doesn't
+    act out, by design. It found one real gap, no `Cache-Control` on the Agent Card, now fixed and tested. The TCK can't send
+    tokens at that commit, so the harness adds a test-signed one. A wrong `Content-Type` isn't refused: TD-53.
+  - `@ag-ui/client` 1.0.4: **pass**, 4 runs (watch, start, closed window, 401).
+  - Found too: the Inspector test had never run (a fixture import bug); fixed. Row 24.
+- PROTO-03 to PROTO-05 are now "Implemented and verified". Protocol labs score: 6 of 16.
+- **Work on a branch and open a pull request.** Merge with a merge commit, not squash or rebase, so cited hashes stay valid. Push with:
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (two accounts are signed in to `gh`).
 - This repo's `user.email` is the noreply address. Run gitleaks before pushing; the command is in `docs/fde-tool-map.md`.
-- Commit messages from PowerShell: use `git commit -F <file>`. A here-string with double quotes gets mangled (it happened on
-  step 7). Anything with backslashes goes through the editor tools, never a shell heredoc (it put a tab in the log on step 2).
+- Commit messages from PowerShell: use `git commit -F <file>`. Anything with backslashes goes through the editor tools, never a shell heredoc.
 
 ## Waiting on the owner
+A. **Check one judgement call:** PROTO-04 is marked "Implemented and verified" although the A2A TCK is partial. The 2 failing
+   MUST requirements (DM-ART-001, DM-MSG-001) only test TCK scenarios, and 45 MUST requirements pass. If you'd rather keep it
+   "unverified" until a TCK version can send tokens, change the row in `docs/requirements-matrix.md`.
+B. Optional: connect your Claude Code to the local MCP server (`docs/mcp.md`, "Connect a client"). It changes your Claude Code
+   config, so it's yours to do. It would also test the 2026-07-28 handshake, which the Inspector didn't use.
 0. **Eval-harness registers Stage 9** (merged as `ccbdcd4` after the review you asked for; verification log, Milestone 10, rows 23–28). Next, when you want it: tag a harness release, then add `hoteleval gate` to this repo's CI. The live dashboard still shows only Projects 1 and 2: adding Stage 9 to its pages is a separate change.
 1. **Label review: done (2026-11-10).** You kept HO-062 (its planted reply names only ML-8565) and HO-078; no label changed. The wording issues are known limitations. **Keep the disclosure that H2 rests on HO-062 alone** in every results text, including the Milestone 19 case study and any website or LinkedIn text (`docs/known-limitations.md`). Your filled sheet is committed (2026-11-11): 30 agree after your decisions, notes drafted with AI help.
 2. Optionally, redo A-000010 with the new Reopen button. It's still `Resolved` as `deny_claim_window`.
@@ -24,6 +39,25 @@
 - **H3:** keep the registered definition, and keep showing both readings in every report.
 - **Measurement bugs:** before a freeze, with a known cause and a test, fix and log them. **After a freeze, stop and leave a note.**
 - The Milestone 10 exercise is answered: `docs/owner-exercises.md`.
+
+## Milestone 11, in K.1 form
+**What changed.** Three optional doors onto the same services: an MCP server for AI clients, an A2A coordinator and
+specialist, and an AG-UI live view. None can approve, credit or change a case. With every flag off, nothing changes.
+
+**Why.** The client's roadmap names other AI clients and another team's agent. Building the safe version now, behind
+flags, is cheaper than retrofitting it. `docs/protocol-selection.md` says when REST is enough (today, mostly).
+
+**How to verify.** `uv run pytest tests/test_protocol_auth.py tests/test_mcp_server.py tests/test_a2a.py tests/test_ag_ui.py`;
+`scripts\protocol_token_check.ps1` against a real Keycloak; the independent peers with `RUN_INTEROP=1` (setup commands at the
+top of each `tests/interop/*.py`); `docs/protocol-test-results.md` for the checklist.
+
+**Common failure modes.** A token for the wrong audience (401 by design). A missing `A2A-Version` header (-32009). Floats
+from protobuf breaking a hash. A live panel bound to an element htmx replaced. All in `docs/onboarding.md` §4j.
+
+## The Milestone 11 exercise (K.1), answered (2026-11-12)
+A stolen MCP token can read one customer's case data, read-only, until it expires. Introspection or a revocation list would come
+for a real deployment with personal data; short lifetimes are enough for this demo. Recorded in `docs/owner-exercises.md`. One
+note added there: nothing alerts on read volume yet, so that control is Milestone 12's monitoring work, not one in place.
 
 ## The Milestone 10 exercise (K.1), answered
 Arm C beat arm B by 78 to 71 of 80, and H3 is "supported". But if a person worked every escalation correctly, it would be 78 to 77, and H3 wouldn't be supported.
@@ -84,13 +118,18 @@ powershell -ExecutionPolicy Bypass -File scripts\compose_check.ps1 -Browser
 
 3. Follow the standing instructions in `CLAUDE.md`.
 
-## Milestone 11 scope (spec N.1 item 11; Appendix C)
-- MCP, then A2A, then AG-UI. Done when tests pass against an independent client or peer where available. **RFC first** (`docs/rfcs/`). SEC-01's remaining protocol specs and SEC-16's callbacks finish here.
-- It needs no money and no accounts. A key isn't needed: protocols run on the mock.
+## Milestone 12 scope (spec N.1 item 12; Appendix C)
+- Performance and load tests, observability, CI/CD, Docker hardening, IaC (validate only), rollback, hosting options.
+  Done when: the local CI equivalent passes, a load test report is saved, and Terraform validates.
+- Carried in from Milestone 11: the protocol services as Compose services, with one issuer hostname (TD-52); load the AG-UI
+  stream and MCP (`docs/scaling-and-limits.md`, Protocols).
+- Hosting options and costs go to the owner before anything is created (Appendix L1).
 
 ## Trying arm B on your own stack
 `stack.ps1 -Action up` rebuilds and migrates to `0010`; your data stays. Then load cases with
 `uv run python -m benchmarks.intake --split dev --limit 10 --arm B`. Steps are in `docs/onboarding.md` §4f.
 
+- Carried in from the interop runs: alerting on unusual protocol read volume (the M11 exercise); TD-53 (`Content-Type`).
+
 ## Blockers
-None for Milestone 11.
+None for Milestone 12.

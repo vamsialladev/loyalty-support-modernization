@@ -33,7 +33,7 @@ are in `docs/verification-log.md` (2026-10-28). This file grows into the full Pa
 | uv | dependencies, lockfile | Available | 0.13.5 |
 | ruff | lint, format | Available | 0.17.0 (also pinned in the dev group) |
 | Docker Desktop | Postgres, Compose, Keycloak | Available, daemon running | 27.0.3 |
-| Node.js / npm | React frontend (Milestone 15) | Available | v24.22.1 / 11.19.1. Not needed for the browser tests: they use Playwright for Python |
+| Node.js / npm | React frontend (Milestone 15); independent protocol clients (Milestone 11) | Available | v24.22.1 / 11.19.1. Not needed for the browser tests: they use Playwright for Python. The MCP Inspector and `@ag-ui/client` runs need the owner's OK before `npx`/`npm` downloads them |
 | Playwright for Python + Chromium | browser tests (Milestone 5) | Installed 2026-10-29 | `playwright` 1.64.1, `pytest-playwright` 0.10.0 (dev group); Chromium from `uv run playwright install chromium` (Playwright's official download, outside the repo). Tests skip with the reason if it is missing |
 | ffmpeg | demo video | Available | on PATH |
 | Cursor | Cursor exercise | Installed (`cursor` on PATH) | exercise in Milestone 15 |
