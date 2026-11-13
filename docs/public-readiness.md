@@ -1,8 +1,16 @@
 # Public-readiness check
 
-> Prepared on 2026-11-13 for the owner's decision whether to make this repository public. **The repository is still
-> private; making it public is the owner's decision.** Every result below comes from a command run that day; the
-> commands are in `docs/verification-log.md`, Milestone 12.
+> Prepared on 2026-11-13 for the owner's decision whether to make this repository public. Every result below comes
+> from a command run that day; the commands are in `docs/verification-log.md`, Milestone 12.
+
+## Made public (2026-11-13)
+- **Decided by the owner** after reading this report. Made public at **22:07 UTC on 2026-11-13**, with `main` at
+  **`f76c1d6`** (the merge of PR #38), by the command at the end of this page.
+- **Then turned on and confirmed** through the GitHub API: secret scanning **enabled**, push protection **enabled**.
+  Secret-scanning alerts right after: 0.
+- **Held-out labels are public from this date.** The Milestone 10 results were frozen before it and stand. **Any future
+  held-out claim needs a new split written after 2026-11-13.**
+- The minutes limit in ADR-0076 is lifted: Actions minutes on a public repository are free.
 
 ## Result
 

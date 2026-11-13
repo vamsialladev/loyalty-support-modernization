@@ -9,7 +9,7 @@ points ledger right, with a supervisor approving every adjustment.**
 > Discovery and scoping (stage 0): [hotel-ai-discovery](https://github.com/vamsialladev/hotel-ai-discovery).
 
 > **Status: work in progress. Milestones 1–11 of 20 are complete; Milestone 12 (performance, observability, CI/CD,
-> hardening) is under way.** Nothing here is deployed or published yet. Progress and every requirement's status:
+> hardening) is under way.** No app is deployed yet. Progress and every requirement's status:
 > [docs/implementation-status.md](docs/implementation-status.md).
 
 ## What exists today (Milestones 1–11)
@@ -38,7 +38,7 @@ uv sync
 powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 ```
 
-The whole CI pipeline, on your machine (needs Docker Desktop; uses no GitHub Actions minutes):
+The whole CI pipeline, on your machine (needs Docker Desktop):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\ci_local.ps1
