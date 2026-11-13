@@ -232,6 +232,13 @@ def test_the_agent_card_is_public_and_describes_oauth_not_a_secret(arm: ArmA, id
     assert "secret" not in json.dumps(card).lower() and "SYNTHETIC" in card["name"]
 
 
+def test_the_agent_card_can_be_cached_for_five_minutes_and_nothing_else_is(arm: ArmA, idp: TestIssuer) -> None:
+    """A2A 1.0 §8.6.1 (SHOULD), found by the A2A TCK as CARD-CACHE-001: only the card gets the header."""
+    app = specialist(arm, idp)
+    assert call_specialist(app, {}, path=CARD_PATH).headers["cache-control"] == "public, max-age=300"
+    assert "cache-control" not in call_specialist(app, {}, SEND).headers
+
+
 def test_a_malformed_request_is_rejected_not_guessed(arm: ArmA, idp: TestIssuer) -> None:
     from protocols.a2a.specialist import EvidenceExecutor  # noqa: F401  (the executor validates with EvidenceRequest)
 
