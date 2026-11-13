@@ -989,6 +989,10 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   (the offline suite took 64 minutes under load on 2026-11-13, against about 3 on CI).
 - **Result:** the trigger change and `scripts\ci_local.ps1`; minutes per run in the verification log.
 - **What would change this decision:** a public repository (minutes are free), or a paid plan.
+- **Superseded the same day (owner, 2026-11-13):** the repository was made public at 22:07 UTC, `main` at
+  `f76c1d6`, so standard GitHub-hosted runners cost no minutes. CI is back to its earlier triggers (every pull
+  request; pushes to `main` and `ci/**`), the 70% stop line is removed, and pull requests go back to their normal size.
+  `scripts\ci_local.ps1` and the shared Postgres setup stay, as a way to check before pushing.
 
 ## ADR-0077: Traces and logs: OpenTelemetry, one scrubbing exporter, GenAI names in one module
 - **Context:** spec F.1 asks for structured logs with correlation IDs, OpenTelemetry traces with context propagation,
