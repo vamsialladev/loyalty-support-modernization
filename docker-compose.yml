@@ -5,12 +5,30 @@
 #   docker compose exec app python -m app.seed --dataset demo
 # Values come from .env (see .env.example); `python -m app.preflight` checks them without printing them.
 # Generate seed_data/v1 first (`scripts\data.ps1 -Action generate`); it is mounted read-only, never baked in.
+#
+# Profiles (Milestone 12, DEL-01; docs/onboarding.md §4k). The services without a profile are the default stack and
+# start on their own, so the quickstart is unchanged.
+#   --profile demo                 + demo-seed: loads the demo accounts and cases once the app is healthy
+#   --profile test                 + test-db: a throwaway Postgres (no volume) for `pytest -m postgres` from the host
+#   --profile enterprise-identity  + keycloak: the local sign-in provider, with one public issuer (ADR-0073)
+#   --profile labs                 + keycloak, mcp, a2a-specialist: the Milestone 11 protocol services (TD-52)
+# Every service: no privilege escalation, no Linux capabilities beyond what it needs, CPU and memory limits. All but
+# Postgres and Keycloak run as a non-root user from the image.
 name: loyalty
+
+x-hardening: &hardening
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: [ALL]
+
+x-limits: &limits
+  deploy:
+    resources:
+      limits: {cpus: "1.0", memory: 512M}
 
 services:
   db:
     image: postgres:16.15-alpine
-    environment:
+    environment: &db-env
       POSTGRES_USER: ${POSTGRES_USER:-loyalty}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-loyalty}
@@ -29,9 +47,11 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
-    deploy:
-      resources:
-        limits: {cpus: "1.0", memory: 512M}
+    # The entrypoint starts as root, fixes the data folder's owner, then drops to the postgres user: it needs these.
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    <<: *limits
 
   mock-api:
     build:
@@ -58,15 +78,14 @@ services:
       timeout: 10s  # includes starting Python, which takes seconds on a busy machine (ADR-0052)
       retries: 30
       start_period: 120s  # migrations run before the server starts; a slow cold start isn't a failure
-    deploy:
-      resources:
-        limits: {cpus: "1.0", memory: 512M}
+    <<: [*hardening, *limits]
 
   # One-shot: the only service with the owner role's password (ADR-0058). The app and worker can't change the schema.
   migrate:
     build:
       context: .
       dockerfile: Dockerfile.app
+      target: app
     command: ["alembic", "upgrade", "head"]
     environment:
       DATABASE_URL: postgresql+psycopg://loyalty_owner:${APP_OWNER_DB_PASSWORD:?set APP_OWNER_DB_PASSWORD in .env}@db:5432/loyalty
@@ -74,23 +93,25 @@ services:
       db: {condition: service_healthy}
     read_only: true
     tmpfs: [/tmp]
-    deploy:
-      resources:
-        limits: {cpus: "1.0", memory: 512M}
+    healthcheck: {disable: true}  # a one-shot; the image's HTTP check is for the app
+    <<: [*hardening, *limits]
 
   app:
     build:
       context: .
       dockerfile: Dockerfile.app
-    environment:
+      target: app
+    environment: &app-env
       DATABASE_URL: postgresql+psycopg://loyalty_app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/loyalty
       MOCK_API_URL: http://mock-api:8020
       MOCK_API_TOKEN: ${MOCK_API_TOKEN:?set MOCK_API_TOKEN in .env}
       APP_SECRET_KEY: ${APP_SECRET_KEY:?set APP_SECRET_KEY in .env}
       AI_PROVIDER: ${AI_PROVIDER:-mock}
       FEATURE_LIVE_AI: ${FEATURE_LIVE_AI:-false}
+      FEATURE_AG_UI: ${FEATURE_AG_UI:-false}
       AUTH_MODE: ${AUTH_MODE:-local}
       OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:-}
+      OIDC_FETCH_URL: ${OIDC_FETCH_URL:-}
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
       APP_BASE_URL: ${APP_BASE_URL:-http://127.0.0.1:8010}
@@ -112,9 +133,7 @@ services:
       timeout: 10s  # includes starting Python, which takes seconds on a busy machine (ADR-0052)
       retries: 30
       start_period: 120s  # migrations run before the server starts; a slow cold start isn't a failure
-    deploy:
-      resources:
-        limits: {cpus: "1.0", memory: 512M}
+    <<: [*hardening, *limits]
 
   # Runs the durable jobs (ADR-0060). Stops claiming on SIGTERM and finishes the job in hand; a hard kill is recovered by
   # the job's lease. `stop_grace_period` is longer than one job's upstream timeouts and retries.
@@ -122,6 +141,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.app
+      target: app
     command: ["python", "-m", "app.worker"]
     environment:
       DATABASE_URL: postgresql+psycopg://loyalty_app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/loyalty
@@ -150,9 +170,152 @@ services:
       timeout: 10s
       retries: 30
       start_period: 120s
+    <<: [*hardening, *limits]
+
+  # ---------- profile: demo ----------
+  # Loads the demo accounts and cases once the app is healthy, then exits. Running it again skips loaded data.
+  demo-seed:
+    profiles: [demo]
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+      target: app
+    command: ["python", "-m", "app.seed", "--dataset", "demo"]
+    environment: *app-env
+    depends_on:
+      app: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp]
+    healthcheck: {disable: true}
+    <<: [*hardening, *limits]
+
+  # ---------- profile: test ----------
+  # A disposable Postgres with the same roles and databases, held in memory: nothing survives `down`.
+  #   docker compose --profile test up -d --wait test-db
+  # then point TEST_*_DATABASE_URL at 127.0.0.1:${TEST_DB_HOST_PORT:-55432}, with the role passwords from your .env.
+  # (scripts\ci_local.ps1 uses a CI-shaped Postgres instead, so it matches the CI job exactly.)
+  test-db:
+    profiles: [test]
+    image: postgres:16.15-alpine
+    environment: *db-env
+    volumes:
+      - ./infrastructure/postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./infrastructure/postgres/sql:/pg-sql:ro
+      - ./infrastructure/postgres/upgrade:/pg-upgrade:ro
+    tmpfs: [/var/lib/postgresql/data]
+    ports:
+      - "127.0.0.1:${TEST_DB_HOST_PORT:-55432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    <<: *limits
+
+  # ---------- profiles: enterprise-identity, labs ----------
+  # One public issuer for host and containers (TD-52, ADR-0073): tokens always name
+  # http://127.0.0.1:<KEYCLOAK_HOST_PORT>/realms/hotel, wherever they were requested. Containers reach the same
+  # Keycloak at http://keycloak:8080 (the backchannel) and still check `iss` against the public issuer.
+  # Same image and realm as docker-compose.oidc.yml (which scripts\oidc_check.ps1 still uses on its own). Not `extends`:
+  # Compose interpolates every service, even outside the active profiles, so a required `${...:?}` there would stop
+  # the default stack. The empty-password check is done at start instead, and only this service fails.
+  keycloak:
+    profiles: [enterprise-identity, labs]
+    image: quay.io/keycloak/keycloak:26.4.2
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - >-
+        test -n "$$KC_BOOTSTRAP_ADMIN_PASSWORD" || { echo "set KEYCLOAK_ADMIN_PASSWORD in .env"; exit 1; };
+        exec /opt/keycloak/bin/kc.sh start-dev --import-realm --health-enabled=true
+        --hostname=http://127.0.0.1:${KEYCLOAK_HOST_PORT:-8090} --hostname-backchannel-dynamic=true
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-}
+    ports:
+      - "127.0.0.1:${KEYCLOAK_HOST_PORT:-8090}:8080"
+    volumes:
+      - ./infrastructure/keycloak/realm-hotel.json:/opt/keycloak/data/import/realm-hotel.json:ro
+    healthcheck:
+      # The image has no curl, so this opens the management port with bash.
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q UP <&3"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
     deploy:
       resources:
-        limits: {cpus: "1.0", memory: 512M}
+        limits: {cpus: "1.0", memory: 1G}  # Keycloak's JVM needs more than the Python services
+
+  # ---------- profile: labs (the Milestone 11 protocol services; read-only, each behind its own flag) ----------
+  mcp:
+    profiles: [labs]
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+      target: protocols
+    command: ["python", "-m", "protocols.mcp.server"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://loyalty_app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/loyalty
+      MOCK_API_URL: http://mock-api:8020
+      MOCK_API_TOKEN: ${MOCK_API_TOKEN:?set MOCK_API_TOKEN in .env}
+      FEATURE_MCP: "true"
+      PROTOCOL_TOKEN_ISSUER: http://127.0.0.1:${KEYCLOAK_HOST_PORT:-8090}/realms/hotel
+      PROTOCOL_TOKEN_FETCH_URL: http://keycloak:8080/realms/hotel
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: "8030"
+      MCP_RESOURCE_URL: http://127.0.0.1:${MCP_HOST_PORT:-8030}/mcp  # the token audience: the URL clients use
+    ports:
+      - "127.0.0.1:${MCP_HOST_PORT:-8030}:8030"
+    depends_on:
+      app: {condition: service_healthy}
+      keycloak: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8030), 5).close()"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+    <<: [*hardening, *limits]
+
+  a2a-specialist:
+    profiles: [labs]
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+      target: protocols
+    command: ["python", "-m", "protocols.a2a.specialist"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://loyalty_app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/loyalty
+      MOCK_API_URL: http://mock-api:8020
+      MOCK_API_TOKEN: ${MOCK_API_TOKEN:?set MOCK_API_TOKEN in .env}
+      FEATURE_A2A: "true"
+      PROTOCOL_TOKEN_ISSUER: http://127.0.0.1:${KEYCLOAK_HOST_PORT:-8090}/realms/hotel
+      PROTOCOL_TOKEN_FETCH_URL: http://keycloak:8080/realms/hotel
+      A2A_SPECIALIST_HOST: 0.0.0.0
+      A2A_SPECIALIST_PORT: "8041"
+      A2A_SPECIALIST_URL: http://127.0.0.1:${A2A_HOST_PORT:-8041}  # the token audience and the card's URL
+      A2A_CALLBACK_BASES: ${A2A_CALLBACK_BASES:-}
+    ports:
+      - "127.0.0.1:${A2A_HOST_PORT:-8041}:8041"
+    depends_on:
+      mock-api: {condition: service_healthy}
+      keycloak: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8041), 5).close()"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+    <<: [*hardening, *limits]
 
 volumes:
   pgdata:

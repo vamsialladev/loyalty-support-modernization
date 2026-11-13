@@ -165,6 +165,48 @@ def test_discovery_must_name_the_same_issuer() -> None:
         client.discovery()
 
 
+def test_an_unreachable_provider_is_a_sign_in_failure_not_a_crash() -> None:
+    """Before Milestone 12 a connection error escaped as httpx.HTTPError (found moving onto the shared helper)."""
+
+    def down(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("refused", request=request)
+
+    client = OidcClient(
+        OidcSettings(ISSUER, CLIENT, "s", "http://app.test/cb", GROUPS),
+        httpx.Client(transport=httpx.MockTransport(down)),
+    )
+    with pytest.raises(OidcError, match="provider_unreachable"):
+        client.discovery()
+
+
+def test_a_container_reaches_the_provider_by_service_name_and_the_browser_by_the_public_url() -> None:
+    """TD-52 (ADR-0073): backchannel calls go to the fetch URL; the authorize URL and the issuer stay public."""
+    internal = "http://keycloak:8080/realms/hotel"
+    hosts: list[str] = []
+
+    def provider(request: httpx.Request) -> httpx.Response:
+        hosts.append(request.url.host)
+        if request.url.path.endswith("/.well-known/openid-configuration"):
+            body = {
+                "issuer": ISSUER,
+                "authorization_endpoint": f"{ISSUER}/auth",
+                "token_endpoint": f"{internal}/token",
+                "jwks_uri": f"{internal}/certs",
+            }
+            return httpx.Response(200, json=body)
+        if request.url.path.endswith("/certs"):
+            return httpx.Response(200, json={"keys": [jwk(KEY_1, "k1")]})
+        return httpx.Response(200, json={"id_token": token()})
+
+    client = OidcClient(
+        OidcSettings(ISSUER, CLIENT, "s", "http://app.test/cb", GROUPS, fetch_url=internal),
+        httpx.Client(transport=httpx.MockTransport(provider)),
+    )
+    assert client.start().url.startswith(f"{ISSUER}/auth?")
+    assert client.verify(client.exchange("code", "verifier"), "n")["sub"] == "user-1"
+    assert set(hosts) == {"keycloak"}
+
+
 def test_the_start_uses_pkce_state_and_nonce() -> None:
     begun = client_for(Provider()).start()
     query = parse_qs(urlsplit(begun.url).query)

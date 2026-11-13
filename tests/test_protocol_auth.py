@@ -150,6 +150,67 @@ def test_a_discovery_document_naming_another_issuer_is_refused(idp: TestIssuer) 
     assert refused.value.reason == "issuer_mismatch_in_discovery"
 
 
+INTERNAL = "http://keycloak:8080/realms/hotel"  # how a container reaches the same provider (TD-52, ADR-0073)
+
+
+def test_a_container_fetches_keys_by_service_name_but_still_needs_the_public_issuer(idp: TestIssuer) -> None:
+    hosts: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        hosts.append(request.url.host)
+        if request.url.path.endswith("/.well-known/openid-configuration"):
+            return httpx.Response(200, json={"issuer": ISSUER, "jwks_uri": f"{INTERNAL}/certs"})
+        return httpx.Response(200, json=idp.jwks())
+
+    keys = IssuerKeys(ISSUER, httpx.Client(transport=httpx.MockTransport(handler)), fetch_url=INTERNAL)
+    assert keys.key_for(idp.kid).key_id == idp.kid
+    assert set(hosts) == {"keycloak"}  # never the public host, which a container can't reach
+
+
+def test_with_a_fetch_url_a_document_naming_another_issuer_is_still_refused(idp: TestIssuer) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"issuer": INTERNAL, "jwks_uri": f"{INTERNAL}/certs"})
+
+    keys = IssuerKeys(ISSUER, httpx.Client(transport=httpx.MockTransport(handler)), fetch_url=INTERNAL)
+    with pytest.raises(TokenRejected) as refused:
+        keys.key_for(idp.kid)
+    assert refused.value.reason == "issuer_mismatch_in_discovery" and refused.value.status == 503
+
+
+def test_with_a_fetch_url_keys_on_the_public_or_any_other_host_are_not_fetched(idp: TestIssuer) -> None:
+    for jwks_uri in (f"{ISSUER}/certs", "http://169.254.169.254/latest/meta-data"):
+
+        def handler(request: httpx.Request, uri: str = jwks_uri) -> httpx.Response:
+            return httpx.Response(200, json={"issuer": ISSUER, "jwks_uri": uri})
+
+        keys = IssuerKeys(ISSUER, httpx.Client(transport=httpx.MockTransport(handler)), fetch_url=INTERNAL)
+        with pytest.raises(Exception, match="isn't a configured destination"):
+            keys.key_for(idp.kid)
+
+
+def test_an_unreachable_provider_is_a_503_not_a_crash(idp: TestIssuer) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("refused", request=request)
+
+    keys = IssuerKeys(ISSUER, httpx.Client(transport=httpx.MockTransport(handler)), fetch_url=INTERNAL)
+    with pytest.raises(TokenRejected) as refused:
+        keys.key_for(idp.kid)
+    assert (refused.value.reason, refused.value.status) == ("issuer_unreachable", 503)
+
+
+def test_settings_fall_back_from_the_protocol_fetch_url_to_the_oidc_one(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.settings import AppSettings
+
+    monkeypatch.setenv("DATABASE_URL", "sqlite://")
+    monkeypatch.setenv("OIDC_ISSUER_URL", ISSUER)
+    monkeypatch.setenv("OIDC_FETCH_URL", INTERNAL)
+    monkeypatch.delenv("PROTOCOL_TOKEN_ISSUER", raising=False)
+    monkeypatch.delenv("PROTOCOL_TOKEN_FETCH_URL", raising=False)
+    assert AppSettings.from_env().protocol_token_fetch_url == INTERNAL
+    monkeypatch.setenv("PROTOCOL_TOKEN_ISSUER", "http://other-idp/realms/x")  # another issuer: don't borrow its URL
+    assert AppSettings.from_env().protocol_token_fetch_url == ""
+
+
 def test_keys_are_never_fetched_from_another_host(idp: TestIssuer) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"issuer": ISSUER, "jwks_uri": "http://169.254.169.254/latest/meta-data"})

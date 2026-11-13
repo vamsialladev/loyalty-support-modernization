@@ -20,6 +20,7 @@ import os
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlsplit
 
 import anyio
 from mcp.server import MCPServer
@@ -180,15 +181,20 @@ def build_server(reader: McpReader, verifier: TokenVerifier, config: McpConfig) 
 
 
 def build_app(server: MCPServer, config: McpConfig) -> Starlette:
-    authority = f"{config.host}:{config.port}"
+    """DNS-rebinding protection allows the host clients actually use: the resource URL's (the token audience), not
+    the bind address. In a container they differ (bound to 0.0.0.0:8030, reached at 127.0.0.1:<host port>); the
+    Milestone 12 labs check found the bind address there answering 421 to every call."""
+    public = urlsplit(config.resource_url)
+    authority = public.netloc
+    port = public.port or config.port
     return server.streamable_http_app(
         json_response=True,
         stateless_http=True,
         host=config.host,
         transport_security=TransportSecuritySettings(
             enable_dns_rebinding_protection=True,
-            allowed_hosts=[authority, f"localhost:{config.port}"],
-            allowed_origins=[f"http://{authority}", f"http://localhost:{config.port}"],
+            allowed_hosts=[authority, f"localhost:{port}"],
+            allowed_origins=[f"{public.scheme}://{authority}", f"{public.scheme}://localhost:{port}"],
         ),
     )
 
@@ -212,10 +218,12 @@ def main() -> int:  # pragma: no cover - the start command; tests build the app 
         print("PROTOCOL_TOKEN_ISSUER (or OIDC_ISSUER_URL) isn't set: there is no issuer to check tokens against.")
         return 2
     port = int(os.environ.get("MCP_PORT", "8030"))
+    host = os.environ.get("MCP_HOST", "").strip() or "127.0.0.1"  # 0.0.0.0 only inside a container (Compose)
     resource = os.environ.get("MCP_RESOURCE_URL", "").strip() or f"http://127.0.0.1:{port}/mcp"
-    config = McpConfig(resource, settings.protocol_token_issuer, port=port)
+    config = McpConfig(resource, settings.protocol_token_issuer, host=host, port=port)
     server = ResourceServer("mcp", config.issuer, config.resource_url, frozenset(SCOPES_SUPPORTED))
-    verifier = TokenVerifier(server, IssuerKeys(config.issuer), require_any_scope=False)
+    keys = IssuerKeys(config.issuer, fetch_url=settings.protocol_token_fetch_url)
+    verifier = TokenVerifier(server, keys, require_any_scope=False)
     reader = McpReader(make_sessions(make_engine(settings.database_url)), mock_systems_factory(settings))
     uvicorn.run(build_app(build_server(reader, verifier, config), config), host=config.host, port=config.port)
     return 0

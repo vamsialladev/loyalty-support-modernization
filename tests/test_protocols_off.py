@@ -58,6 +58,17 @@ def test_no_core_module_imports_the_protocols_package_at_load_time() -> None:
 
 
 def test_the_core_image_doesnt_install_the_protocol_packages() -> None:
+    """Since Milestone 12 the file also builds a `protocols` target (ADR-0074), so this checks the core image's own
+    stages: `deps` installs only the api group and the `app` stage copies that and no protocol code. The compose
+    check also looks inside the built image for /srv/protocols."""
+    import re
+
     dockerfile = (ROOT / "Dockerfile.app").read_text(encoding="utf-8")
-    assert "--no-default-groups --group api" in dockerfile
-    assert "--group protocols" not in dockerfile
+    stages = {
+        s.split()[2]: s for s in re.split(r"^FROM ", dockerfile, flags=re.MULTILINE)[1:] if " AS " in s.split("\n")[0]
+    }
+    assert "--no-default-groups --group api --no-install-project" in stages["deps"]
+    assert "--group protocols" not in stages["deps"]
+    assert "COPY --from=deps /opt/venv" in stages["app"]
+    assert "protocols" not in stages["app"] and "protocols" not in stages["code"]
+    assert list(stages)[-1] == "app", "the default target must be the core image"

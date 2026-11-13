@@ -5,7 +5,7 @@ PROFILE ?= portfolio
 SEED ?= 20261102
 SCALE ?= 1.0
 
-.PHONY: install test lint typecheck preflight leaks scores data data-reset data-clean data-verify discovery dictionary up down migrate seed reset-demo demo-cases clean logs test-integration compose-check contract
+.PHONY: install test lint typecheck preflight leaks scores data data-reset data-clean data-verify discovery dictionary up down migrate seed reset-demo demo-cases clean logs test-integration compose-check contract ci labs-check
 
 install:
 	uv sync
@@ -80,6 +80,13 @@ test-integration:
 
 compose-check:
 	powershell -ExecutionPolicy Bypass -File scripts/compose_check.ps1
+
+# The CI pipeline locally, no Actions minutes (ADR-0076). pwsh on macOS/Linux; on Windows use scripts\ci_local.ps1.
+ci:
+	pwsh -File scripts/ci_local.ps1
+
+labs-check:
+	pwsh -File scripts/labs_check.ps1
 
 contract:
 	uv run python -m mock_customer_api.contract --check

@@ -44,6 +44,19 @@ decision. Note what moves into the starter kit and what is customer-specific.
 - **Measurement bugs:** one found on dev or validation, before a freeze, with a known cause and a test, may be fixed and logged, as long as no arm, threshold or hypothesis changes. **Anything found after a freeze: stop and leave a note for the owner.**
 - `.env` is back on mock. Further live runs need a new approval.
 
+## The owner's decisions for Milestone 12 (2026-11-13)
+- **Hosting:** option A, Render free web service + Neon free Postgres, **$0 a month, no credit card**. When the code is
+  ready, give the owner exact sign-up and setup steps; the owner creates the Render account and a new Neon project,
+  and pastes secrets only into those dashboards or `.env`. Render gets access to this one repository only. The demo
+  is labelled "mock AI, synthetic data" everywhere it shows.
+- **No live model calls in Milestone 12:** ENT-17 (prompt caching) and LIVE-05 (caps against the live deploy) stay
+  NOT RUN.
+- **GitHub Actions minutes** (private repo, limited free minutes): heavy jobs (Trivy, Terraform, SBOM, container
+  build, Playwright) run only on pull requests to `main` and pushes to `main`, never on every branch push. Report
+  minutes per run. **Stop and tell the owner if monthly usage passes 70% of the free allowance.**
+- **Merges:** standing permission applies. If auto mode refuses a merge, don't work around it: list the green pull
+  requests for the owner to merge, or to switch to Manual mode.
+
 ## Model and mode guidance (follow at the start of every milestone)
 - The owner uses **Opus for all milestones**; quality matters more than speed or usage.
 - Design-heavy milestones get an RFC in `docs/rfcs/` before the code, and don't wait for the owner unless a standing

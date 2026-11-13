@@ -50,6 +50,10 @@ class AppSettings:
     feature_a2a: bool = False
     feature_ag_ui: bool = False
     protocol_token_issuer: str = ""  # who issues protocol access tokens; empty means OIDC_ISSUER_URL
+    # Where this process reaches the provider when that isn't the issuer URL: a container reaching Keycloak by its
+    # service name while tokens name the public issuer (TD-52, ADR-0073). Empty means the issuer URL itself.
+    oidc_fetch_url: str = ""
+    protocol_token_fetch_url: str = ""
 
     @property
     def cookie_secure(self) -> bool:
@@ -85,5 +89,14 @@ class AppSettings:
             feature_ag_ui=_flag("FEATURE_AG_UI"),
             protocol_token_issuer=(
                 os.environ.get("PROTOCOL_TOKEN_ISSUER", "").strip() or os.environ.get("OIDC_ISSUER_URL", "").strip()
+            ),
+            oidc_fetch_url=os.environ.get("OIDC_FETCH_URL", "").strip(),
+            protocol_token_fetch_url=(
+                os.environ.get("PROTOCOL_TOKEN_FETCH_URL", "").strip()
+                or (
+                    os.environ.get("OIDC_FETCH_URL", "").strip()
+                    if not os.environ.get("PROTOCOL_TOKEN_ISSUER", "").strip()
+                    else ""
+                )
             ),
         )

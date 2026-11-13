@@ -916,3 +916,76 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   limitations: PROTO-04" under the score table; `docs/known-limitations.md` carries the rule for portfolio text.
 - **What would change this decision:** a TCK release that sends bearer tokens, or a way to run its scenario tests
   against a separate test agent. If both pass, PROTO-04 becomes plain "Implemented and verified".
+
+## ADR-0073: One public issuer for host and containers, keys fetched by service name (TD-52)
+- **Context:** the Milestone 11 protocol services had start commands but no Compose services. In Compose, Keycloak's
+  issuer differed by who asked: a host client got `iss` = `http://127.0.0.1:8090/...`, a container
+  `http://keycloak:8080/...`, so a token from one side failed the issuer check on the other (TD-52).
+- **Options considered:** (1) a hostname both sides resolve, such as `host.docker.internal` (Docker Desktop adds it to
+  the Windows hosts file, Linux CI doesn't, and it reaches a 127.0.0.1-bound port differently per platform); (2) put
+  every client inside Compose (the owner's own tools and the interop peers run on the host); (3) one public issuer,
+  Keycloak `--hostname=http://127.0.0.1:<port>` with `--hostname-backchannel-dynamic=true`, and a separate fetch URL
+  for documents and keys.
+- **Decision:** option 3. Tokens always name the public issuer. Containers fetch discovery and keys from
+  `PROTOCOL_TOKEN_FETCH_URL` / `OIDC_FETCH_URL` (`http://keycloak:8080/realms/hotel`) and still check `iss` against
+  the public issuer. Documents and keys come only from that one base (`app.outbound.check_url`), so a discovery
+  document can't point us anywhere else. The shared code is `app/adapters/oidc_discovery.py`, which also pays TD-51:
+  console sign-in and the protocol services now use one helper.
+- **Tradeoff:** two URLs per provider to configure in containers, against one that silently differs by caller.
+- **Result:** `scripts\labs_check.ps1` against a real Keycloak 26.4.2, 10 of 10: a token requested inside a container
+  names the same issuer as one from the host, and MCP and A2A in containers accept both (verification log, M12).
+  Found on the way: MCP's DNS-rebinding guard allowed the bind address (`0.0.0.0:8030` in a container), so every
+  call got 421; it now allows the resource URL's host, with a test.
+- **What would change this decision:** a real identity provider behind one TLS hostname that both sides resolve (a
+  hosted deployment): then the fetch URLs stay empty.
+
+## ADR-0074: Multi-stage images, a protocols target, and Compose profiles
+- **Context:** spec F.2 asks for non-root containers with limits and the profiles demo, test, enterprise-identity and
+  labs. The images had uv in the runtime layer and no healthcheck; there were no profiles.
+- **Options considered:** separate Compose files per profile (the earlier `docker-compose.oidc.yml` way: more files,
+  and `-f` combinations to remember); one file with `profiles:`; a separate Dockerfile for the protocol services.
+- **Decision:** one Compose file with profiles; services without one are the default stack, so the quickstart is
+  unchanged. `Dockerfile.app` has dependency stages (uv only there), a `protocols` target and the core `app` target
+  last (the default). Every service drops all Linux capabilities and privilege escalation; only the Postgres
+  containers add back the five their entrypoint needs. `test-db` keeps its data in memory. Keycloak refuses to start
+  without its admin password at start time, because Compose interpolates every service even outside the active
+  profiles, so a required variable there would have stopped the default stack (found by `docker compose config`).
+- **Tradeoff:** a longer Compose file and Keycloak defined twice (`docker-compose.oidc.yml` stays for
+  `scripts\oidc_check.ps1`), against one place to read the whole system.
+- **Result:** `tests/test_compose.py` (profiles, hardening, image stages); the compose check also checks for no `uv`
+  and no protocol code in the core images; `scripts\labs_check.ps1` runs the labs profile.
+- **What would change this decision:** Kubernetes or a managed container service as the main target: then the
+  profiles become separate deployments, and the image targets carry over as they are.
+
+## ADR-0075: Environment files, and no default credentials in hosted profiles
+- **Context:** spec F.2 asks for separate local, staging and production configurations, and production checks: no
+  debug mode and no default credentials. Preflight already refused debug and local databases in hosted profiles.
+- **Options considered:** one `.env` per environment with secrets in it (secrets in more files); settings only in
+  the hosting platform (nothing to review in the repo); non-secret settings per environment in the repo, secrets only
+  in the platform's store, and preflight checks on both.
+- **Decision:** `config/environments/{local,staging,production}.env` hold non-secret settings only (a test refuses a
+  secret name there). Hosted profiles (`staging`, `approved`) refuse any secret that is a known default, a template
+  or test value, or shorter than 16 characters, by name only. `approved` refuses `DEMO_USER_PASSWORD` (no shared demo
+  accounts). Production starts with adjustment execution off: rollout stage 4 is a decision, not a default (F.3).
+- **Tradeoff:** a heuristic list of default values can miss a weak secret it doesn't know; length and the platform's
+  own generation cover the rest.
+- **Result:** `tests/test_preflight.py` (six refusals, a pass, the laptop exemption, the environment files).
+- **What would change this decision:** a secrets manager that generates and rotates every value (AWS Secrets
+  Manager in the Terraform path): then the check becomes "the value is a reference", not a string test.
+
+## ADR-0076: CI runs once per change, and the same pipeline runs locally
+- **Context:** the repository is private, and GitHub Free includes about 2,000 Linux minutes a month (shown as $12).
+  On 2026-11-13 this repository had used about 1,572 minutes since 2026-11-01 (90 runs; job times rounded up per job,
+  from the Actions API; the billing page wasn't read). 632 of them were push runs: every branch push ran CI, and the
+  pull request ran it again. The owner set a 70% stop line.
+- **Options considered:** keep the triggers and wait for the monthly reset (no merges for two weeks); make the
+  repository public (free minutes; the owner's decision, not yet made); run CI once per change and move the rest of
+  the checking to this machine.
+- **Decision (owner, 2026-11-13):** CI runs on pull requests into `main` and pushes to `main` only. Every step also
+  runs locally in `scripts\ci_local.ps1` (`make ci`), which is run before every push; a pull request is opened only
+  when it passes. The Postgres job's setup moved into `scripts/ci_postgres_setup.sh`, used by both, so they can't
+  drift. Milestone 12 uses fewer, larger pull requests, and reports minutes per run.
+- **Tradeoff:** a branch gets no remote check until its pull request opens, and the local run is slow on this machine
+  (the offline suite took 64 minutes under load on 2026-11-13, against about 3 on CI).
+- **Result:** the trigger change and `scripts\ci_local.ps1`; minutes per run in the verification log.
+- **What would change this decision:** a public repository (minutes are free), or a paid plan.

@@ -23,8 +23,8 @@ import httpx
 import jwt
 from jwt import PyJWK, PyJWKSet
 
+from app.adapters.oidc_discovery import DiscoveryFailed, ProviderMetadata
 from app.domain.roles import Identity, Role
-from app.outbound import check_url
 
 ALLOWED_ALGORITHMS = ("RS256", "ES256", "PS256")
 REQUIRED_CLAIMS = ["exp", "iat", "sub", "aud", "iss"]
@@ -93,41 +93,29 @@ class StaticKeys:
 
 @dataclass
 class IssuerKeys:
-    """The provider's published keys, found through its discovery document and fetched only from the issuer's own
-    host. An unknown key ID triggers one refetch, which is how key rotation works; never more than one per call."""
+    """The provider's published keys, through `app.adapters.oidc_discovery` (shared with console sign-in; TD-51).
+    Fetched only from one base: `fetch_url` if set (a container reaching Keycloak by its service name; TD-52),
+    else the issuer. The discovery document must still name the public issuer that tokens carry."""
 
     issuer: str
     http: httpx.Client = field(default_factory=lambda: httpx.Client(timeout=TIMEOUT_SECONDS, follow_redirects=False))
-    _keys: PyJWKSet | None = None
-    _jwks_uri: str | None = None
-
-    def _get_json(self, url: str) -> dict[str, Any]:
-        check_url(url, (self.issuer,))
-        try:
-            response = self.http.get(url)
-        except httpx.HTTPError as exc:
-            raise TokenRejected("issuer_unreachable", status=503) from exc
-        if response.status_code != 200 or len(response.content) > MAX_RESPONSE_BYTES:
-            raise TokenRejected(f"issuer_response_{response.status_code}", status=503)
-        data: dict[str, Any] = response.json()
-        return data
-
-    def _uri(self) -> str:
-        if self._jwks_uri is None:
-            found = self._get_json(self.issuer.rstrip("/") + "/.well-known/openid-configuration")
-            if found.get("issuer") != self.issuer:
-                raise TokenRejected("issuer_mismatch_in_discovery", status=503)
-            self._jwks_uri = str(found["jwks_uri"])
-        return self._jwks_uri
+    fetch_url: str = ""
+    _provider: ProviderMetadata | None = None
 
     def key_for(self, kid: str | None) -> PyJWK:
-        for refetch in (False, True):
-            if self._keys is None or refetch:
-                self._keys = PyJWKSet.from_dict(self._get_json(self._uri()))
-            for key in self._keys.keys:
-                if key.key_id == kid:
-                    return key
-        raise TokenRejected("unknown_signing_key")
+        if self._provider is None:
+            self._provider = ProviderMetadata(self.issuer, self.http, self.fetch_url)
+        try:
+            return self._provider.key_for(kid)
+        except DiscoveryFailed as failed:
+            if failed.kind == "unknown_key":
+                raise TokenRejected("unknown_signing_key") from failed
+            reason = {
+                "unreachable": "issuer_unreachable",
+                "bad_response": f"issuer_response_{failed.status_code}",
+                "issuer_mismatch": "issuer_mismatch_in_discovery",
+            }[failed.kind]
+            raise TokenRejected(reason, status=503) from failed
 
 
 def _scopes(claims: Mapping[str, Any]) -> frozenset[str]:

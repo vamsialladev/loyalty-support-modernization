@@ -74,6 +74,10 @@ FAKE = {
     "FEATURE_A2A": "false",
     "FEATURE_AG_UI": "false",
     "PROTOCOL_TOKEN_ISSUER": "https://fake-issuer.test/realms/loyalty",
+    "OIDC_FETCH_URL": "http://fake-keycloak:8080/realms/loyalty",
+    "PROTOCOL_TOKEN_FETCH_URL": "http://fake-keycloak:8080/realms/loyalty",
+    "MCP_HOST": "127.0.0.1",
+    "A2A_SPECIALIST_HOST": "127.0.0.1",
     "MCP_PORT": "8030",
     "MCP_RESOURCE_URL": "http://127.0.0.1:8030/mcp",
     "A2A_SPECIALIST_PORT": "8041",
@@ -315,6 +319,71 @@ def test_approved_requires_https_issuer_and_no_demo_mode():
     report = build_report("approved", settings_from(values))
     assert any("https" in p for p in report.problems)
     assert any("PUBLIC_DEMO_MODE" in p for p in report.problems)
+
+
+HOSTED_EXTRAS = ("SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SECRET_KEY", "NEXT_PUBLIC_API_BASE_URL")
+
+
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("APP_SECRET_KEY", "changeme-changeme-changeme-changeme"),
+        ("MOCK_API_TOKEN", "ci-only-throwaway"),
+        ("APP_DB_PASSWORD", "admin"),
+        ("DEMO_USER_PASSWORD", "x-check-only-123456"),
+        ("MOCK_API_TOKEN", "short-but-ok12"),
+        ("DATABASE_URL", "postgresql+psycopg://loyalty_app:password@db.managed.test:5432/loyalty"),
+    ],
+)
+def test_hosted_profiles_refuse_default_test_or_short_secrets_by_name_only(name, value, capsys):
+    """DEL-05 (ADR-0075): production checks include no default credentials. The value is never printed."""
+    values = portfolio(APP_PROFILE="staging") | {k: FAKE[k] for k in HOSTED_EXTRAS} | {name: value}
+    report = build_report("staging", settings_from(values))
+    assert any(p.startswith(f"{name} ") for p in report.problems), report.problems
+    assert all(value not in p for p in report.problems)
+
+
+def test_real_looking_secrets_pass_the_default_credentials_check():
+    report = build_report(
+        "staging", settings_from(portfolio(APP_PROFILE="staging") | {k: FAKE[k] for k in HOSTED_EXTRAS})
+    )
+    assert not any("default or test value" in p or "shorter than" in p for p in report.problems)
+
+
+def test_the_portfolio_profile_doesnt_apply_the_hosted_secret_rules():
+    """A laptop may use generated short values; the hosted rules are for hosted profiles only."""
+    report = build_report("portfolio", settings_from(portfolio(MOCK_API_TOKEN="ci-only-throwaway")))
+    assert not any("default or test value" in p for p in report.problems)
+
+
+def test_approved_refuses_shared_demo_accounts():
+    values = portfolio(APP_PROFILE="approved")
+    values.update({k: FAKE[k] for k in ("OIDC_CLIENT_ID", "OIDC_CLIENT_SECRET", "OTEL_EXPORTER_OTLP_ENDPOINT")})
+    report = build_report("approved", settings_from(values))
+    assert any("DEMO_USER_PASSWORD must be empty" in p for p in report.problems)
+
+
+ENVIRONMENTS = Path(__file__).resolve().parent.parent / "config" / "environments"
+
+
+@pytest.mark.parametrize(
+    ("env", "profile"), [("local", "portfolio"), ("staging", "staging"), ("production", "approved")]
+)
+def test_each_environment_file_holds_known_non_secret_settings_for_its_profile(env, profile):
+    values = dotenv_values(ENVIRONMENTS / f"{env}.env")
+    assert set(values) <= set(VARS), set(values) - set(VARS)
+    assert not set(values) & preflight.SECRET_NAMES, "secrets live in .env or the platform's store, never here"
+    assert values["APP_PROFILE"] == profile
+    assert values["PUBLIC_DEMO_MODE"] == "false" and values["MOCK_API_FAULTS"] == "false"
+    assert values["MOCK_API_SIM_CLOCK"] == "false" and values["FEATURE_LIVE_AI"] == "false"
+    if env != "local":
+        assert values["LOG_LEVEL"] != "DEBUG"
+
+
+def test_production_starts_with_execution_off_and_enterprise_sign_in():
+    """Rollout stage 4 (human-approved execution) is a decision, not a default (spec F.3)."""
+    values = dotenv_values(ENVIRONMENTS / "production.env")
+    assert values["FEATURE_ADJUSTMENT_EXECUTION"] == "false" and values["AUTH_MODE"] == "oidc"
 
 
 def test_app_profile_mismatch_is_reported():

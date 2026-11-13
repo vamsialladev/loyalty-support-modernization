@@ -437,6 +437,54 @@ powershell -ExecutionPolicy Bypass -File scripts\protocol_token_check.ps1
 **Customer-specific:** the tool list, field allowlists, scopes, Keycloak clients, which protocols are on. **Starter
 kit:** the token verifier, the flag-and-start-command pattern, the G.13 test checklist, "same SDK isn't interop".
 
+## 4k. Containers, profiles and environments (Milestone 12)
+
+**Read:** ADR-0073 (one issuer), ADR-0074 (images and profiles), ADR-0075 (environments).
+
+`docker compose up --build -d` still starts only the default stack (db, mock-api, migrate, app, worker). Add a
+profile for more:
+
+| Profile | Adds | Use it for |
+|---|---|---|
+| `demo` | `demo-seed` (runs `app.seed --dataset demo` once the app is healthy) | A seeded stack in one command |
+| `test` | `test-db` (Postgres in memory, port 55432) | `pytest -m postgres` without touching your data |
+| `enterprise-identity` | `keycloak` | Sign-in through OpenID Connect |
+| `labs` | `keycloak`, `mcp`, `a2a-specialist` | The Milestone 11 protocol services in containers |
+
+```powershell
+docker compose --profile labs up --build -d --wait
+```
+
+The labs profile needs `KEYCLOAK_ADMIN_PASSWORD` in `.env`; Keycloak refuses to start without it, and nothing else
+does. To prove the whole thing works, free and on throwaway ports:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\labs_check.ps1
+```
+
+**One issuer:** tokens always name `http://127.0.0.1:<KEYCLOAK_HOST_PORT>/realms/hotel`. A container can't reach
+127.0.0.1 on your machine, so it fetches keys from `http://keycloak:8080` (`PROTOCOL_TOKEN_FETCH_URL`) and still checks
+`iss` against the public issuer.
+
+**Environments:** `config/environments/{local,staging,production}.env` hold the non-secret settings for each.
+Secrets never go there. Hosted profiles (`staging`, `approved`) refuse default, test or short secrets, by name only:
+
+```powershell
+uv run python -m app.preflight --profile approved
+```
+
+**Pre-commit:** `uv run pre-commit install` once per clone; gitleaks then checks every commit (through Docker, same
+version as CI).
+
+| Symptom | Likely cause | Check |
+|---|---|---|
+| `docker compose` stops with "required variable KEYCLOAK_ADMIN_PASSWORD" | An old Compose file, or `extends` from `docker-compose.oidc.yml` | Compose reads every service, even outside the active profiles; this file avoids required variables there |
+| MCP in a container answers 421 | The client used a host the server doesn't allow | It allows the host in `MCP_RESOURCE_URL`; use that URL |
+| A protocol service in a container answers 503 to every token | It can't reach Keycloak | `PROTOCOL_TOKEN_FETCH_URL` must be `http://keycloak:8080/realms/hotel`, and Keycloak healthy |
+
+**Starter kit:** the profile layout, the hardening anchors, the one-issuer pattern, the environment files and the
+default-credentials check. **Customer-specific:** which profiles a customer runs, ports, the realm.
+
 ## 5. Common failure modes so far
 - **`ModuleNotFoundError: app`** when running pytest outside `uv run`: use `uv run pytest`.
 - **Preflight says NOT READY:** expected with an empty `.env`; it lists exactly which settings are missing.

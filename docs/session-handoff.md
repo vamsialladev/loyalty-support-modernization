@@ -1,5 +1,22 @@
 # Session handoff
 
+**Updated:** 2026-11-13, during Milestone 12 (part 1 of a few larger pull requests).
+
+## Milestone 12, so far (2026-11-13)
+- **Owner's decisions** are in `CLAUDE.md` (hosting option A at $0; no live model calls; CI minutes; merges).
+- **Actions minutes:** about 1,572 used this month before any Milestone 12 CI (~79% of GitHub Free's ~2,000). So CI
+  now runs only on pull requests into `main` and pushes to `main` (ADR-0076), every pull request is checked first with
+  `scripts\ci_local.ps1`, and Milestone 12 uses fewer, larger pull requests. **Report minutes per run; stop at the
+  allowance.** Recount with the scratch script approach in the verification log, M12 row 2.
+- **Part 1 (branch `feat/m12-containers`):** multi-stage images, Compose profiles (demo, test, enterprise-identity,
+  labs), protocol services in Compose with one issuer (TD-52, labs check 10 of 10), TD-51 and TD-53 paid, environment
+  files and default-credential checks, gitleaks pre-commit, `scripts\ci_local.ps1`, `opentelemetry-api` 1.45.2 (a CVE).
+- **Public-readiness check** for the owner's decision: `docs/public-readiness.md` (no blocker; five points to decide).
+- **Still to do in Milestone 12:** observability (OTel, logs, metrics, alerts, security events), reliability
+  (breakers, backpressure, execution flag), the load test, CI/CD additions (heavy jobs on `main` PRs only), Terraform
+  (validate only), rollback and backup docs, demo hosting prep and the Render + Neon setup steps for the owner.
+
+## Before Milestone 12
 **Updated:** 2026-11-12, at the end of Milestone 11: independent peers run, five pull requests merged in order.
 
 ## Where things stand

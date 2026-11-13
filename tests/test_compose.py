@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -36,7 +37,10 @@ def test_dockerfiles_copy_only_service_code_and_run_as_non_root(dockerfile: Path
         )
         assert source not in (".", "./"), f"{dockerfile.name} copies the whole build context"
     assert re.search(r"^USER 10001$", text, re.MULTILINE)
+    stages = set(re.findall(r"^FROM \S+ AS (\S+)", text, re.MULTILINE))
     for image in re.findall(r"^FROM (\S+)", text, re.MULTILINE):
+        if image in stages:  # a reference to an earlier stage of this file (Milestone 12 multi-stage builds)
+            continue
         assert ":" in image and not image.endswith(":latest"), f"unpinned image {image}"
 
 
@@ -226,7 +230,8 @@ def test_only_the_migrate_service_holds_the_owner_password() -> None:
     services = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))["services"]
     assert "loyalty_owner" in services["migrate"]["environment"]["DATABASE_URL"]
     assert services["app"]["depends_on"]["migrate"] == {"condition": "service_completed_successfully"}
-    for name in set(services) - {"migrate", "db"}:
+    # The database servers create the roles, so they hold every role's password; test-db is a second one (M12).
+    for name in set(services) - {"migrate", "db", "test-db"}:
         environment = str(services[name].get("environment", ""))
         assert "OWNER" not in environment and "loyalty_owner" not in environment, name
     assert "alembic" not in (ROOT / "Dockerfile.app").read_text(encoding="utf-8").splitlines()[-1]
@@ -258,10 +263,92 @@ def test_the_real_milestone_5_upgrade_runs_in_the_compose_check_and_ci() -> None
     upgrade = (ROOT / "scripts/upgrade_check_m5.ps1").read_text(encoding="utf-8")
     assert '$lastMilestone5Commit = "68deba1"' in upgrade and "git worktree add --detach" in upgrade
     workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
-    assert "{=T/loyalty_app,loyalty_app=CTc/loyalty_app}" in workflow
+    assert "sh scripts/ci_postgres_setup.sh" in workflow  # one setup for CI and scripts/ci_local.ps1 (M12)
+    setup = (ROOT / "scripts/ci_postgres_setup.sh").read_text(encoding="utf-8")
+    assert "{=T/loyalty_app,loyalty_app=CTc/loyalty_app}" in setup
 
 
 def test_the_upgrade_checks_worker_step_needs_a_real_claim_and_the_whole_log() -> None:
     upgrade = (ROOT / "scripts/upgrade_check_m5.ps1").read_text(encoding="utf-8")
     assert "upgrade_check_probe" in upgrade and "dead|unknown_kind" in upgrade
     assert "--tail" not in upgrade, "a tail can scroll a failed claim away"
+
+
+# ---------- Milestone 12: profiles, hardening, image targets (DEL-01, TD-52; ADR-0073, ADR-0074) ----------
+
+DEFAULT_STACK = {"db", "mock-api", "migrate", "app", "worker"}
+
+
+def _services() -> dict[str, Any]:
+    services: dict[str, Any] = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))["services"]
+    return services
+
+
+def test_the_default_stack_is_unchanged_and_every_extra_service_sits_in_a_profile() -> None:
+    services = _services()
+    assert {name for name, svc in services.items() if "profiles" not in svc} == DEFAULT_STACK
+    profiles = {p for svc in services.values() for p in svc.get("profiles", [])}
+    assert profiles == {"demo", "test", "enterprise-identity", "labs"}
+    assert services["keycloak"]["profiles"] == ["enterprise-identity", "labs"]
+    assert set(services["mcp"]["profiles"]) == set(services["a2a-specialist"]["profiles"]) == {"labs"}
+
+
+def test_every_service_drops_capabilities_and_privilege_escalation() -> None:
+    for name, svc in _services().items():
+        assert "no-new-privileges:true" in svc["security_opt"], name
+        assert svc["cap_drop"] == ["ALL"], name
+        assert set(svc.get("cap_add", [])) <= {"CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"}, name
+        if svc.get("cap_add"):
+            assert svc.get("image", "").startswith("postgres:"), f"{name}: only Postgres' entrypoint needs these"
+
+
+def test_protocol_services_use_one_public_issuer_and_fetch_keys_by_service_name() -> None:
+    services = _services()
+    for name in ("mcp", "a2a-specialist"):
+        env = services[name]["environment"]
+        assert env["PROTOCOL_TOKEN_ISSUER"] == "http://127.0.0.1:${KEYCLOAK_HOST_PORT:-8090}/realms/hotel", name
+        assert env["PROTOCOL_TOKEN_FETCH_URL"] == "http://keycloak:8080/realms/hotel", name
+        assert services[name]["build"]["target"] == "protocols", name
+        assert services[name]["read_only"] is True, name
+    command = " ".join(services["keycloak"]["command"])
+    assert "--hostname=http://127.0.0.1:${KEYCLOAK_HOST_PORT:-8090}" in command
+    assert "--hostname-backchannel-dynamic=true" in command
+
+
+def test_keycloak_refuses_to_start_without_its_admin_password_but_the_default_stack_needs_none() -> None:
+    keycloak = _services()["keycloak"]
+    assert 'test -n "$$KC_BOOTSTRAP_ADMIN_PASSWORD" ||' in keycloak["command"][0]
+    assert keycloak["environment"]["KC_BOOTSTRAP_ADMIN_PASSWORD"] == "${KEYCLOAK_ADMIN_PASSWORD:-}"
+
+
+def test_the_test_database_keeps_nothing_and_the_demo_seed_runs_after_the_app() -> None:
+    services = _services()
+    assert "volumes" not in services["test-db"] or all("pgdata" not in v for v in services["test-db"]["volumes"])
+    assert services["test-db"]["tmpfs"] == ["/var/lib/postgresql/data"]
+    assert services["demo-seed"]["depends_on"] == {"app": {"condition": "service_healthy"}}
+    assert services["demo-seed"]["command"] == ["python", "-m", "app.seed", "--dataset", "demo"]
+
+
+def _stages(dockerfile: Path) -> dict[str, str]:
+    text = dockerfile.read_text(encoding="utf-8")
+    parts = re.split(r"^FROM ", text, flags=re.MULTILINE)[1:]
+    return {part.split()[2] if " AS " in part.split("\n")[0] else "?": part for part in parts}
+
+
+@pytest.mark.parametrize("dockerfile", DOCKERFILES, ids=lambda p: p.name)
+def test_uv_stays_in_the_build_stages_and_the_runtime_runs_as_10001_with_a_healthcheck(dockerfile: Path) -> None:
+    stages = _stages(dockerfile)
+    runtime = list(stages)[-1]
+    assert runtime in ("app", "runtime")
+    for name, body in stages.items():
+        if "COPY --from=uv" in body:
+            assert name.startswith("deps"), f"uv is copied into {name}"
+    assert "USER 10001" in stages[runtime] and "HEALTHCHECK" in stages[runtime]
+
+
+def test_the_core_image_has_no_protocol_sdks_and_the_protocols_image_has_them() -> None:
+    stages = _stages(ROOT / "Dockerfile.app")
+    assert "--group protocols" in stages["deps-protocols"]
+    assert "--group protocols" not in stages["deps"]
+    assert "COPY --from=deps /opt/venv" in stages["app"] and "COPY protocols" not in stages["app"]
+    assert "COPY --from=deps-protocols /opt/venv" in stages["protocols"]
