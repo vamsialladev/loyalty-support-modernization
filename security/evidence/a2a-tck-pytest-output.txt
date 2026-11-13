@@ -1,0 +1,396 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- <a2a-tck>\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+metadata: {'Python': '3.12.10', 'Platform': 'Windows-11-10.0.26200-SP0', 'Packages': {'pytest': '9.0.2', 'pluggy': '1.6.0'}, 'Plugins': {'anyio': '4.12.1', 'asyncio': '1.3.0', 'html': '4.2.0', 'metadata': '3.1.1'}}
+rootdir: <a2a-tck>
+configfile: pyproject.toml
+plugins: anyio-4.12.1, asyncio-1.3.0, html-4.2.0, metadata-3.1.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 263 items
+
+tests/compatibility/agent_card/test_agent_card.py::TestAgentCardDiscovery::test_agent_card_retrievable PASSED [  0%]
+tests/compatibility/agent_card/test_agent_card.py::TestAgentCardStructure::test_agent_card_validates_against_schema PASSED [  0%]
+tests/compatibility/agent_card/test_agent_card.py::TestAgentCardStructure::test_required_fields_present PASSED [  1%]
+tests/compatibility/agent_card/test_agent_card.py::TestAgentCardProtocol::test_supported_interfaces_non_empty PASSED [  1%]
+tests/compatibility/agent_card/test_agent_card.py::TestAgentCardProtocol::test_each_interface_validates_against_schema PASSED [  1%]
+tests/compatibility/agent_card/test_agent_card.py::TestBindingFieldDeclaration::test_all_protocols_declared PASSED [  2%]
+tests/compatibility/agent_card/test_agent_card.py::TestCustomBindingIdentifiers::test_custom_binding_identifiers_are_uris SKIPPED [  2%]
+tests/compatibility/agent_card/test_agent_card_caching.py::TestAgentCardCacheControl::test_cache_control_present PASSED [  3%]
+tests/compatibility/agent_card/test_agent_card_caching.py::TestAgentCardCacheControl::test_cache_control_has_max_age PASSED [  3%]
+tests/compatibility/agent_card/test_agent_card_caching.py::TestAgentCardETag::test_etag_present PASSED [  3%]
+tests/compatibility/agent_card/test_agent_card_caching.py::TestAgentCardLastModified::test_last_modified_present SKIPPED [  4%]
+tests/compatibility/core_operations/test_artifacts.py::TestTextArtifact::test_task_has_text_artifact[grpc] SKIPPED [  4%]
+tests/compatibility/core_operations/test_artifacts.py::TestTextArtifact::test_task_has_text_artifact[jsonrpc] FAILED [  4%]
+tests/compatibility/core_operations/test_artifacts.py::TestTextArtifact::test_task_has_text_artifact[http_json] SKIPPED [  5%]
+tests/compatibility/core_operations/test_artifacts.py::TestFileArtifact::test_task_has_file_artifact[grpc] SKIPPED [  5%]
+tests/compatibility/core_operations/test_artifacts.py::TestFileArtifact::test_task_has_file_artifact[jsonrpc] FAILED [  6%]
+tests/compatibility/core_operations/test_artifacts.py::TestFileArtifact::test_task_has_file_artifact[http_json] SKIPPED [  6%]
+tests/compatibility/core_operations/test_artifacts.py::TestFileUrlArtifact::test_task_has_file_url_artifact[grpc] SKIPPED [  6%]
+tests/compatibility/core_operations/test_artifacts.py::TestFileUrlArtifact::test_task_has_file_url_artifact[jsonrpc] FAILED [  7%]
+tests/compatibility/core_operations/test_artifacts.py::TestFileUrlArtifact::test_task_has_file_url_artifact[http_json] SKIPPED [  7%]
+tests/compatibility/core_operations/test_artifacts.py::TestDataArtifact::test_task_has_data_artifact[grpc] SKIPPED [  7%]
+tests/compatibility/core_operations/test_artifacts.py::TestDataArtifact::test_task_has_data_artifact[jsonrpc] FAILED [  8%]
+tests/compatibility/core_operations/test_artifacts.py::TestDataArtifact::test_task_has_data_artifact[http_json] SKIPPED [  8%]
+tests/compatibility/core_operations/test_artifacts.py::TestMessageResponse::test_returns_message_with_text_part[grpc] SKIPPED [  9%]
+tests/compatibility/core_operations/test_artifacts.py::TestMessageResponse::test_returns_message_with_text_part[jsonrpc] FAILED [  9%]
+tests/compatibility/core_operations/test_artifacts.py::TestMessageResponse::test_returns_message_with_text_part[http_json] SKIPPED [  9%]
+tests/compatibility/core_operations/test_data_model.py::TestSendMessageResponseSchema::test_response_validates_against_schema PASSED [ 10%]
+tests/compatibility/core_operations/test_data_model.py::TestCamelCaseFieldNames::test_no_snake_case_keys PASSED [ 10%]
+tests/compatibility/core_operations/test_data_model.py::TestEnumSerialization::test_enum_values_are_strings PASSED [ 11%]
+tests/compatibility/core_operations/test_data_model.py::TestTimestampFormat::test_timestamps_are_iso8601_utc PASSED [ 11%]
+tests/compatibility/core_operations/test_data_model.py::TestIgnoreUnrecognizedFields::test_extra_fields_ignored_jsonrpc PASSED [ 11%]
+tests/compatibility/core_operations/test_data_model.py::TestIgnoreUnrecognizedFields::test_extra_fields_ignored_rest SKIPPED [ 12%]
+tests/compatibility/core_operations/test_error_handling.py::TestCoreErrorStructure::test_error_has_code_and_message_jsonrpc PASSED [ 12%]
+tests/compatibility/core_operations/test_error_handling.py::TestCoreErrorStructure::test_error_has_code_and_message_rest SKIPPED [ 12%]
+tests/compatibility/core_operations/test_error_handling.py::TestCoreInputValidation::test_malformed_request_rejected_jsonrpc PASSED [ 13%]
+tests/compatibility/core_operations/test_error_handling.py::TestCoreInputValidation::test_malformed_request_rejected_rest SKIPPED [ 13%]
+tests/compatibility/core_operations/test_error_handling.py::TestCapabilityPushNotifications::test_push_not_supported_jsonrpc SKIPPED [ 14%]
+tests/compatibility/core_operations/test_error_handling.py::TestCapabilityPushNotifications::test_push_not_supported_rest SKIPPED [ 14%]
+tests/compatibility/core_operations/test_error_handling.py::TestCapabilityStreaming::test_streaming_not_supported_jsonrpc PASSED [ 14%]
+tests/compatibility/core_operations/test_error_handling.py::TestCapabilityExtensionRequired::test_missing_required_extension_returns_error_jsonrpc SKIPPED [ 15%]
+tests/compatibility/core_operations/test_error_handling.py::TestCapabilityExtensionRequired::test_missing_required_extension_returns_error_http_json SKIPPED [ 15%]
+tests/compatibility/core_operations/test_error_handling.py::TestCapabilityExtendedCard::test_extended_card_not_supported_jsonrpc PASSED [ 15%]
+tests/compatibility/core_operations/test_error_handling.py::TestExtendedCardNotConfigured::test_extended_card_not_configured_jsonrpc SKIPPED [ 16%]
+tests/compatibility/core_operations/test_error_handling.py::TestExtendedCardNotConfigured::test_extended_card_not_configured_http_json SKIPPED [ 16%]
+tests/compatibility/core_operations/test_error_handling.py::TestExtendedCardNotConfigured::test_extended_card_not_configured_grpc SKIPPED [ 17%]
+tests/compatibility/core_operations/test_error_handling.py::TestExtendedCardRequiresAuth::test_extended_card_requires_auth_jsonrpc SKIPPED [ 17%]
+tests/compatibility/core_operations/test_error_handling.py::TestExtendedCardRequiresAuth::test_extended_card_requires_auth_http_json SKIPPED [ 17%]
+tests/compatibility/core_operations/test_error_handling.py::TestExtendedCardRequiresAuth::test_extended_card_requires_auth_grpc SKIPPED [ 18%]
+tests/compatibility/core_operations/test_error_handling.py::TestVersionErrors::test_unsupported_version_returns_error_jsonrpc PASSED [ 18%]
+tests/compatibility/core_operations/test_error_handling.py::TestVersionErrors::test_unsupported_version_returns_error_rest SKIPPED [ 19%]
+tests/compatibility/core_operations/test_error_handling.py::TestVersionErrors::test_empty_version_treated_as_default_jsonrpc PASSED [ 19%]
+tests/compatibility/core_operations/test_error_handling.py::TestJsonRpcErrorStructure::test_error_object_structure PASSED [ 19%]
+tests/compatibility/core_operations/test_error_handling.py::TestJsonRpcErrorStructure::test_a2a_error_codes_in_range PASSED [ 20%]
+tests/compatibility/core_operations/test_error_handling.py::TestJsonRpcErrorStructure::test_a2a_error_type_mappings PASSED [ 20%]
+tests/compatibility/core_operations/test_error_handling.py::TestJsonRpcErrorStructure::test_error_data_contains_error_info PASSED [ 20%]
+tests/compatibility/core_operations/test_error_handling.py::TestRestErrorStructure::test_error_uses_aip193_format SKIPPED [ 21%]
+tests/compatibility/core_operations/test_error_handling.py::TestRestErrorStructure::test_a2a_error_info_in_details SKIPPED [ 21%]
+tests/compatibility/core_operations/test_error_handling.py::TestGrpcErrorStructure::test_grpc_error_for_nonexistent_task SKIPPED [ 22%]
+tests/compatibility/core_operations/test_multi_stream.py::TestMultiStreamOrdering::test_events_broadcast_to_all_streams[grpc] SKIPPED [ 22%]
+tests/compatibility/core_operations/test_multi_stream.py::TestMultiStreamOrdering::test_events_broadcast_to_all_streams[jsonrpc] SKIPPED [ 22%]
+tests/compatibility/core_operations/test_multi_stream.py::TestMultiStreamOrdering::test_events_broadcast_to_all_streams[http_json] SKIPPED [ 23%]
+tests/compatibility/core_operations/test_multi_stream.py::TestMultiStreamOrdering::test_streams_receive_same_events_in_order[grpc] SKIPPED [ 23%]
+tests/compatibility/core_operations/test_multi_stream.py::TestMultiStreamOrdering::test_streams_receive_same_events_in_order[jsonrpc] SKIPPED [ 23%]
+tests/compatibility/core_operations/test_multi_stream.py::TestMultiStreamOrdering::test_streams_receive_same_events_in_order[http_json] SKIPPED [ 24%]
+tests/compatibility/core_operations/test_multi_stream.py::TestMultiStreamOrdering::test_closing_one_stream_does_not_affect_others[grpc] SKIPPED [ 24%]
+tests/compatibility/core_operations/test_multi_stream.py::TestMultiStreamOrdering::test_closing_one_stream_does_not_affect_others[jsonrpc] SKIPPED [ 25%]
+tests/compatibility/core_operations/test_multi_stream.py::TestMultiStreamOrdering::test_closing_one_stream_does_not_affect_others[http_json] SKIPPED [ 25%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_create_push_config[grpc] SKIPPED [ 25%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_create_push_config[jsonrpc] SKIPPED [ 26%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_create_push_config[http_json] SKIPPED [ 26%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_config_persists[grpc] SKIPPED [ 26%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_config_persists[jsonrpc] SKIPPED [ 27%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_config_persists[http_json] SKIPPED [ 27%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_get_push_config[grpc] SKIPPED [ 28%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_get_push_config[jsonrpc] SKIPPED [ 28%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_get_push_config[http_json] SKIPPED [ 28%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_get_nonexistent_config_returns_error[grpc] SKIPPED [ 29%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_get_nonexistent_config_returns_error[jsonrpc] SKIPPED [ 29%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_get_nonexistent_config_returns_error[http_json] SKIPPED [ 30%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_list_push_configs[grpc] SKIPPED [ 30%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_list_push_configs[jsonrpc] SKIPPED [ 30%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_list_push_configs[http_json] SKIPPED [ 31%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_delete_push_config[grpc] SKIPPED [ 31%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_delete_push_config[jsonrpc] SKIPPED [ 31%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_delete_push_config[http_json] SKIPPED [ 32%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_delete_is_idempotent[grpc] SKIPPED [ 32%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_delete_is_idempotent[jsonrpc] SKIPPED [ 33%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationCrud::test_delete_is_idempotent[http_json] SKIPPED [ 33%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationDelivery::test_delivery_includes_auth[grpc] SKIPPED [ 33%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationDelivery::test_delivery_includes_auth[jsonrpc] SKIPPED [ 34%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationDelivery::test_delivery_includes_auth[http_json] SKIPPED [ 34%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationDelivery::test_delivery_at_least_once[grpc] SKIPPED [ 34%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationDelivery::test_delivery_at_least_once[jsonrpc] SKIPPED [ 35%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationDelivery::test_delivery_at_least_once[http_json] SKIPPED [ 35%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationDelivery::test_delivery_payload_format[grpc] SKIPPED [ 36%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationDelivery::test_delivery_payload_format[jsonrpc] SKIPPED [ 36%]
+tests/compatibility/core_operations/test_push_notifications.py::TestPushNotificationDelivery::test_delivery_payload_format[http_json] SKIPPED [ 36%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-SEND-001-grpc] SKIPPED [ 37%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-SEND-001-jsonrpc] PASSED [ 37%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-SEND-001-http_json] SKIPPED [ 38%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-SEND-003-grpc] SKIPPED [ 38%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-SEND-003-jsonrpc] PASSED [ 38%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-SEND-003-http_json] SKIPPED [ 39%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-STREAM-001-grpc] SKIPPED [ 39%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-STREAM-001-jsonrpc] SKIPPED [ 39%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-STREAM-001-http_json] SKIPPED [ 40%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-STREAM-002-grpc] SKIPPED [ 40%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-STREAM-002-jsonrpc] SKIPPED [ 41%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-STREAM-002-http_json] SKIPPED [ 41%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-STREAM-003-grpc] SKIPPED [ 41%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-STREAM-003-jsonrpc] SKIPPED [ 42%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-STREAM-003-http_json] SKIPPED [ 42%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-GET-002-grpc] SKIPPED [ 42%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-GET-002-jsonrpc] PASSED [ 43%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-GET-002-http_json] SKIPPED [ 43%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-001-grpc] SKIPPED [ 44%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-001-jsonrpc] PASSED [ 44%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-001-http_json] SKIPPED [ 44%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-002-grpc] SKIPPED [ 45%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-002-jsonrpc] PASSED [ 45%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-002-http_json] SKIPPED [ 46%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-003-grpc] SKIPPED [ 46%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-003-jsonrpc] PASSED [ 46%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-003-http_json] SKIPPED [ 47%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-004-grpc] SKIPPED [ 47%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-004-jsonrpc] PASSED [ 47%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-004-http_json] SKIPPED [ 48%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-005-grpc] SKIPPED [ 48%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-005-jsonrpc] PASSED [ 49%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-LIST-005-http_json] SKIPPED [ 49%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-CANCEL-003-grpc] SKIPPED [ 49%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-CANCEL-003-jsonrpc] PASSED [ 50%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-CANCEL-003-http_json] SKIPPED [ 50%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-EXECUTION-MODE-001-grpc] SKIPPED [ 50%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-EXECUTION-MODE-001-jsonrpc] PASSED [ 51%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-EXECUTION-MODE-001-http_json] SKIPPED [ 51%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-EXECUTION-MODE-002-grpc] SKIPPED [ 52%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-EXECUTION-MODE-002-jsonrpc] PASSED [ 52%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-EXECUTION-MODE-002-http_json] SKIPPED [ 52%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-MULTI-001a-grpc] SKIPPED [ 53%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-MULTI-001a-jsonrpc] PASSED [ 53%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-MULTI-001a-http_json] SKIPPED [ 53%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-MULTI-002a-grpc] SKIPPED [ 54%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-MULTI-002a-jsonrpc] PASSED [ 54%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-MULTI-002a-http_json] SKIPPED [ 55%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-MULTI-003-grpc] SKIPPED [ 55%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-MULTI-003-jsonrpc] PASSED [ 55%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-MULTI-003-http_json] SKIPPED [ 56%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-MULTI-004-grpc] SKIPPED [ 56%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-MULTI-004-jsonrpc] PASSED [ 57%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[CORE-MULTI-004-http_json] SKIPPED [ 57%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[STREAM-SUB-004-grpc] SKIPPED [ 57%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[STREAM-SUB-004-jsonrpc] SKIPPED [ 58%]
+tests/compatibility/core_operations/test_requirements.py::test_must_requirement[STREAM-SUB-004-http_json] SKIPPED [ 58%]
+tests/compatibility/core_operations/test_requirements.py::test_should_requirement[no-requirements-grpc] SKIPPED [ 58%]
+tests/compatibility/core_operations/test_requirements.py::test_should_requirement[no-requirements-jsonrpc] SKIPPED [ 59%]
+tests/compatibility/core_operations/test_requirements.py::test_should_requirement[no-requirements-http_json] SKIPPED [ 59%]
+tests/compatibility/core_operations/test_requirements.py::test_may_requirement[CORE-MULTI-001-grpc] SKIPPED [ 60%]
+tests/compatibility/core_operations/test_requirements.py::test_may_requirement[CORE-MULTI-001-jsonrpc] PASSED [ 60%]
+tests/compatibility/core_operations/test_requirements.py::test_may_requirement[CORE-MULTI-001-http_json] SKIPPED [ 60%]
+tests/compatibility/core_operations/test_requirements.py::test_may_requirement[CORE-MULTI-002-grpc] SKIPPED [ 61%]
+tests/compatibility/core_operations/test_requirements.py::test_may_requirement[CORE-MULTI-002-jsonrpc] PASSED [ 61%]
+tests/compatibility/core_operations/test_requirements.py::test_may_requirement[CORE-MULTI-002-http_json] SKIPPED [ 61%]
+tests/compatibility/core_operations/test_stream_ordering.py::TestStreamEventOrdering::test_streaming_event_ordering[grpc] SKIPPED [ 62%]
+tests/compatibility/core_operations/test_stream_ordering.py::TestStreamEventOrdering::test_streaming_event_ordering[jsonrpc] SKIPPED [ 62%]
+tests/compatibility/core_operations/test_stream_ordering.py::TestStreamEventOrdering::test_streaming_event_ordering[http_json] SKIPPED [ 63%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryLengthZeroGetTask::test_get_task_history_length_zero[grpc] SKIPPED [ 63%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryLengthZeroGetTask::test_get_task_history_length_zero[jsonrpc] SKIPPED [ 63%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryLengthZeroGetTask::test_get_task_history_length_zero[http_json] SKIPPED [ 64%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryLengthLimit::test_get_task_history_does_not_exceed_limit[grpc] SKIPPED [ 64%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryLengthLimit::test_get_task_history_does_not_exceed_limit[jsonrpc] SKIPPED [ 65%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryLengthLimit::test_get_task_history_does_not_exceed_limit[http_json] SKIPPED [ 65%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryLengthZeroSendMessage::test_send_message_history_length_zero[grpc] SKIPPED [ 65%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryLengthZeroSendMessage::test_send_message_history_length_zero[jsonrpc] SKIPPED [ 66%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryLengthZeroSendMessage::test_send_message_history_length_zero[http_json] SKIPPED [ 66%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryPersistence::test_get_task_returns_history[grpc] SKIPPED [ 66%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryPersistence::test_get_task_returns_history[jsonrpc] SKIPPED [ 67%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryPersistence::test_get_task_returns_history[http_json] SKIPPED [ 67%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryOrdering::test_history_messages_in_chronological_order[grpc] SKIPPED [ 68%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryOrdering::test_history_messages_in_chronological_order[jsonrpc] SKIPPED [ 68%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryOrdering::test_history_messages_in_chronological_order[http_json] SKIPPED [ 68%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryContent::test_history_content_matches_sent_messages[grpc] SKIPPED [ 69%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryContent::test_history_content_matches_sent_messages[jsonrpc] SKIPPED [ 69%]
+tests/compatibility/core_operations/test_task_history.py::TestHistoryContent::test_history_content_matches_sent_messages[http_json] SKIPPED [ 69%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestGetTask::test_get_task_returns_current_state[grpc] SKIPPED [ 70%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestGetTask::test_get_task_returns_current_state[jsonrpc] SKIPPED [ 70%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestGetTask::test_get_task_returns_current_state[http_json] SKIPPED [ 71%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestCancelTask::test_cancel_task_returns_updated_state[grpc] SKIPPED [ 71%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestCancelTask::test_cancel_task_returns_updated_state[jsonrpc] SKIPPED [ 71%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestCancelTask::test_cancel_task_returns_updated_state[http_json] SKIPPED [ 72%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestCancelTask::test_cancel_terminal_task_returns_error[grpc] SKIPPED [ 72%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestCancelTask::test_cancel_terminal_task_returns_error[jsonrpc] SKIPPED [ 73%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestCancelTask::test_cancel_terminal_task_returns_error[http_json] SKIPPED [ 73%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestMultiTurn::test_send_message_to_terminal_task[grpc] SKIPPED [ 73%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestMultiTurn::test_send_message_to_terminal_task[jsonrpc] SKIPPED [ 74%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestMultiTurn::test_send_message_to_terminal_task[http_json] SKIPPED [ 74%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestMultiTurn::test_infer_context_from_task[grpc] SKIPPED [ 74%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestMultiTurn::test_infer_context_from_task[jsonrpc] SKIPPED [ 75%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestMultiTurn::test_infer_context_from_task[http_json] SKIPPED [ 75%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestMultiTurn::test_reject_mismatching_context[grpc] SKIPPED [ 76%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestMultiTurn::test_reject_mismatching_context[jsonrpc] SKIPPED [ 76%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestMultiTurn::test_reject_mismatching_context[http_json] SKIPPED [ 76%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestSubscribeLifecycle::test_subscribe_terminates_at_terminal_state[grpc] SKIPPED [ 77%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestSubscribeLifecycle::test_subscribe_terminates_at_terminal_state[jsonrpc] SKIPPED [ 77%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestSubscribeLifecycle::test_subscribe_terminates_at_terminal_state[http_json] SKIPPED [ 77%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestSubscribeLifecycle::test_subscribe_rejects_terminal_task[grpc] SKIPPED [ 78%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestSubscribeLifecycle::test_subscribe_rejects_terminal_task[jsonrpc] SKIPPED [ 78%]
+tests/compatibility/core_operations/test_task_lifecycle.py::TestSubscribeLifecycle::test_subscribe_rejects_terminal_task[http_json] SKIPPED [ 79%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestJsonRpcFormat::test_response_validates_jsonrpc_envelope PASSED [ 79%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestJsonRpcFormat::test_content_type_is_application_json PASSED [ 79%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestJsonRpcMethodNames::test_bindings_use_spec_method_names PASSED [ 80%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestJsonRpcServiceParams::test_extensions_header_accepted PASSED [ 80%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestJsonRpcStreaming::test_streaming_content_type SKIPPED [ 80%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestRestFormat::test_response_content_type SKIPPED [ 81%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestRestFormat::test_response_validates_against_schema SKIPPED [ 81%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestRestServiceParams::test_extensions_header_accepted SKIPPED [ 82%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestRestUrlPatterns::test_url_patterns_defined PASSED [ 82%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestRestUrlPatterns::test_http_methods_correct PASSED [ 82%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestRestQueryParams::test_query_params_are_camel_case PASSED [ 83%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestRestStreaming::test_streaming_content_type SKIPPED [ 83%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestGrpcService::test_grpc_response_validates_against_proto SKIPPED [ 84%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestGrpcProto3::test_response_uses_proto3 SKIPPED [ 84%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestGrpcServiceParams::test_extensions_metadata_accepted SKIPPED [ 84%]
+tests/compatibility/core_operations/test_transport_behavior.py::TestGrpcStreaming::test_grpc_streaming_works SKIPPED [ 85%]
+tests/compatibility/grpc/test_status_codes.py::TestGrpcStatusCodes::test_task_not_found_returns_not_found SKIPPED [ 85%]
+tests/compatibility/grpc/test_status_codes.py::TestGrpcStatusCodes::test_cancel_missing_task_returns_not_found SKIPPED [ 85%]
+tests/compatibility/grpc/test_status_codes.py::TestGrpcStatusCodes::test_unsupported_operation_returns_failed_precondition SKIPPED [ 86%]
+tests/compatibility/grpc/test_status_codes.py::TestGrpcStatusCodes::test_push_not_supported_returns_failed_precondition SKIPPED [ 86%]
+tests/compatibility/grpc/test_status_codes.py::TestGrpcStatusCodes::test_version_not_supported_returns_failed_precondition SKIPPED [ 87%]
+tests/compatibility/grpc/test_status_codes.py::TestGrpcErrorInfo::test_error_info_in_status_details SKIPPED [ 87%]
+tests/compatibility/grpc/test_streaming.py::TestGrpcStreaming::test_streaming_response_type SKIPPED [ 87%]
+tests/compatibility/grpc/test_streaming.py::TestGrpcStreaming::test_streaming_message_structure SKIPPED [ 88%]
+tests/compatibility/grpc/test_streaming.py::TestGrpcStreaming::test_streaming_cancellation SKIPPED [ 88%]
+tests/compatibility/grpc/test_streaming.py::TestGrpcStreaming::test_streaming_error_propagation SKIPPED [ 88%]
+tests/compatibility/grpc/test_streaming.py::TestGrpcStreaming::test_subscribe_first_event_is_task SKIPPED [ 89%]
+tests/compatibility/http_json/test_http_status.py::TestHttpJsonStatusCodes::test_task_not_found_returns_404 SKIPPED [ 89%]
+tests/compatibility/http_json/test_http_status.py::TestHttpJsonStatusCodes::test_cancel_missing_task_returns_404 SKIPPED [ 90%]
+tests/compatibility/http_json/test_http_status.py::TestHttpJsonStatusCodes::test_unsupported_operation_returns_400 SKIPPED [ 90%]
+tests/compatibility/http_json/test_http_status.py::TestHttpJsonStatusCodes::test_content_type_not_supported_returns_400 SKIPPED [ 90%]
+tests/compatibility/http_json/test_http_status.py::TestHttpJsonStatusCodes::test_push_not_supported_returns_400 SKIPPED [ 91%]
+tests/compatibility/http_json/test_http_status.py::TestHttpJsonStatusCodes::test_version_not_supported_returns_400 SKIPPED [ 91%]
+tests/compatibility/http_json/test_http_status.py::TestHttpJsonStatusCodes::test_success_returns_2xx SKIPPED [ 92%]
+tests/compatibility/http_json/test_problem_details.py::TestHttpJsonErrorMediaType::test_error_content_type SKIPPED [ 92%]
+tests/compatibility/http_json/test_problem_details.py::TestAIP193ErrorFormat::test_error_object_present SKIPPED [ 92%]
+tests/compatibility/http_json/test_problem_details.py::TestAIP193ErrorFormat::test_code_field_matches_http_status SKIPPED [ 93%]
+tests/compatibility/http_json/test_problem_details.py::TestAIP193ErrorInfo::test_details_contains_error_info SKIPPED [ 93%]
+tests/compatibility/http_json/test_problem_details.py::TestAIP193ErrorInfo::test_error_info_valid SKIPPED [ 93%]
+tests/compatibility/http_json/test_problem_details.py::TestAIP193ErrorInfo::test_error_info_reason_matches_condition SKIPPED [ 94%]
+tests/compatibility/jsonrpc/test_error_codes.py::TestJsonRpcErrorCodeMappings::test_task_not_found_error PASSED [ 94%]
+tests/compatibility/jsonrpc/test_error_codes.py::TestJsonRpcErrorCodeMappings::test_task_not_cancelable_error PASSED [ 95%]
+tests/compatibility/jsonrpc/test_error_codes.py::TestJsonRpcErrorCodeMappings::test_push_notification_not_supported_error SKIPPED [ 95%]
+tests/compatibility/jsonrpc/test_error_codes.py::TestJsonRpcErrorCodeMappings::test_unsupported_operation_error PASSED [ 95%]
+tests/compatibility/jsonrpc/test_error_codes.py::TestJsonRpcErrorCodeMappings::test_content_type_not_supported_error SKIPPED [ 96%]
+tests/compatibility/jsonrpc/test_error_codes.py::TestJsonRpcErrorCodeMappings::test_version_not_supported_error PASSED [ 96%]
+tests/compatibility/jsonrpc/test_error_codes.py::TestJsonRpcErrorCodeRange::test_error_code_in_valid_range[GetTask-nonexistent] PASSED [ 96%]
+tests/compatibility/jsonrpc/test_error_codes.py::TestJsonRpcErrorCodeRange::test_error_code_in_valid_range[CancelTask-nonexistent] PASSED [ 97%]
+tests/compatibility/jsonrpc/test_error_codes.py::TestJsonRpcErrorCodeRange::test_error_code_in_valid_range[SendMessage-bad-version] PASSED [ 97%]
+tests/compatibility/jsonrpc/test_error_info.py::TestJsonRpcErrorDetails::test_present_error_data_is_any_array PASSED [ 98%]
+tests/compatibility/jsonrpc/test_error_info.py::TestJsonRpcWellKnownErrorDetails::test_error_data_uses_well_known_type PASSED [ 98%]
+tests/compatibility/jsonrpc/test_sse_streaming.py::TestSseStreamingFormat::test_streaming_events_have_jsonrpc_envelope SKIPPED [ 98%]
+tests/compatibility/jsonrpc/test_sse_streaming.py::TestSseStreamingFormat::test_streaming_events_contain_stream_response SKIPPED [ 99%]
+tests/compatibility/jsonrpc/test_sse_streaming.py::TestSseSubscribeToTask::test_subscribe_nonexistent_task_returns_error SKIPPED [ 99%]
+tests/compatibility/jsonrpc/test_sse_streaming.py::TestSseSubscribeToTask::test_subscribe_first_event_is_task SKIPPED [100%]
+
+═══════════════════════════════════════════════════════
+             A2A TCK Compatibility Report              
+═══════════════════════════════════════════════════════
+SUT: http://127.0.0.1:54435
+Timestamp: 2026-11-13T01:01:52.442158+00:00
+
+OVERALL COMPATIBILITY: 70.8% (automated checks)
+
+┌────────┬────────┬────────┬─────────┬────────┬────────────┬───────┐
+│ Level  │ Passed │ Failed │ Skipped │ Manual │ Not tested │ Total │
+├────────┼────────┼────────┼─────────┼────────┼────────────┼───────┤
+│ MUST   │ 45     │ 2      │ 44      │ 7      │ 17         │ 115   │
+│ SHOULD │ 4      │ 0      │ 6       │ 2      │ 2          │ 14    │
+│ MAY    │ 2      │ 0      │ 2       │ 0      │ 0          │ 4     │
+└────────┴────────┴────────┴─────────┴────────┴────────────┴───────┘
+
+BY TRANSPORT:
+  agent_card:    9/11 (2 skipped) ✓
+  grpc:          0/72 (72 skipped) ✓
+  jsonrpc:       52/76 (19 skipped) ⚠
+  http_json:     3/82 (79 skipped) ✓
+
+FAILED REQUIREMENTS:
+  ✗ DM-ART-001 (jsonrpc): Response contains no artifacts
+  ✗ DM-MSG-001 (jsonrpc): Expected a Message response, but got a Task or no payload
+
+PENDING MANUAL VERIFICATION (excluded from automated scores):
+  CARD-CLIENT-001 [MUST]: Clients MUST set the tenant field in every request to exactly the selected AgentInterface tenant, omitting it when unset. This client behavior requires observing the client's outbound requests; it cannot be established by this server-only conformance probe.
+  CARD-SIGN-001 [MUST]: Before signing, the Agent Card content MUST be canonicalized using the JSON Canonicalization Scheme (JCS) as defined in RFC 8785.
+  CARD-SIGN-002 [MUST]: The signatures field itself MUST be excluded from the content being signed to avoid circular dependencies.
+  CARD-SIGN-003 [MUST]: The JWS protected header MUST include alg (algorithm) and kid (key ID) parameters.
+  CARD-SIGN-004 [MUST]: Expired or revoked keys MUST NOT be used for signature verification.
+  AUTH-TLS-001 [MUST]: Production deployments MUST use encrypted communication (HTTPS for HTTP-based bindings, TLS for gRPC).
+  AUTH-TLS-002 [SHOULD]: Implementations SHOULD use modern TLS configurations (TLS 1.3+ recommended) with strong cipher suites.
+  AUTH-SERVER-001 [SHOULD]: A2A Clients SHOULD verify the A2A Server's identity by validating its TLS certificate against trusted CAs.
+  BIND-CUSTOM-002 [MUST]: A breaking change to a custom binding MUST use a new URI. Verifying this requires comparing binding versions and their semantics, which cannot be observed from a single server snapshot.
+═══════════════════════════════════════════════════════
+
+
+================================== FAILURES ===================================
+____________ TestTextArtifact.test_task_has_text_artifact[jsonrpc] ____________
+tests\compatibility\core_operations\test_artifacts.py:107: in test_task_has_text_artifact
+    assert_and_record(compatibility_collector, req, transport, errors)
+tests\compatibility\_test_helpers.py:71: in assert_and_record
+    assert passed, fail_msg(req, transport, "; ".join(errors))
+           ^^^^^^
+E   AssertionError: DM-ART-001 [Artifact contains required fields] failed on jsonrpc: Response contains no artifacts (see specification/specification.md#417-artifact)
+____________ TestFileArtifact.test_task_has_file_artifact[jsonrpc] ____________
+tests\compatibility\core_operations\test_artifacts.py:162: in test_task_has_file_artifact
+    assert_and_record(compatibility_collector, req, transport, errors)
+tests\compatibility\_test_helpers.py:71: in assert_and_record
+    assert passed, fail_msg(req, transport, "; ".join(errors))
+           ^^^^^^
+E   AssertionError: DM-ART-001 [Artifact contains required fields] failed on jsonrpc: Response contains no artifacts (see specification/specification.md#417-artifact)
+________ TestFileUrlArtifact.test_task_has_file_url_artifact[jsonrpc] _________
+tests\compatibility\core_operations\test_artifacts.py:216: in test_task_has_file_url_artifact
+    assert_and_record(compatibility_collector, req, transport, errors)
+tests\compatibility\_test_helpers.py:71: in assert_and_record
+    assert passed, fail_msg(req, transport, "; ".join(errors))
+           ^^^^^^
+E   AssertionError: DM-ART-001 [Artifact contains required fields] failed on jsonrpc: Response contains no artifacts (see specification/specification.md#417-artifact)
+____________ TestDataArtifact.test_task_has_data_artifact[jsonrpc] ____________
+tests\compatibility\core_operations\test_artifacts.py:248: in test_task_has_data_artifact
+    assert_and_record(compatibility_collector, req, transport, errors)
+tests\compatibility\_test_helpers.py:71: in assert_and_record
+    assert passed, fail_msg(req, transport, "; ".join(errors))
+           ^^^^^^
+E   AssertionError: DM-ART-001 [Artifact contains required fields] failed on jsonrpc: Response contains no artifacts (see specification/specification.md#417-artifact)
+______ TestMessageResponse.test_returns_message_with_text_part[jsonrpc] _______
+tests\compatibility\core_operations\test_artifacts.py:295: in test_returns_message_with_text_part
+    assert_and_record(compatibility_collector, req, transport, errors)
+tests\compatibility\_test_helpers.py:71: in assert_and_record
+    assert passed, fail_msg(req, transport, "; ".join(errors))
+           ^^^^^^
+E   AssertionError: DM-MSG-001 [Message contains required fields] failed on jsonrpc: Expected a Message response, but got a Task or no payload (see specification/specification.md#414-message)
+- generated xml file: <a2a-tck>\reports\junitreport.xml -
+- Generated html report: file:///<a2a-tck>/reports/tck_report.html -
+=========================== short test summary info ===========================
+SKIPPED [1] tests\compatibility\agent_card\test_agent_card.py:233: Agent Card declares no custom binding
+SKIPPED [1] tests\compatibility\agent_card\test_agent_card_caching.py:183: Optional Last-Modified header is not provided
+SKIPPED [41] tests\compatibility\_test_helpers.py:86: Transport 'grpc' not configured
+SKIPPED [46] tests\compatibility\_test_helpers.py:86: Transport 'http_json' not configured
+SKIPPED [1] tests\compatibility\core_operations\test_data_model.py:354: Transport 'http_json' not configured
+SKIPPED [1] tests\compatibility\core_operations\test_error_handling.py:236: Agent supports push notifications
+SKIPPED [1] tests\compatibility\core_operations\test_error_handling.py:257: Agent supports push notifications
+SKIPPED [1] tests\compatibility\core_operations\test_error_handling.py:329: Agent card does not declare urn:a2a:tck:required-extension as required
+SKIPPED [1] tests\compatibility\core_operations\test_error_handling.py:353: Agent card does not declare urn:a2a:tck:required-extension as required
+SKIPPED [3] tests\compatibility\core_operations\test_error_handling.py:420: Agent does not declare extendedAgentCard capability
+SKIPPED [3] tests\compatibility\core_operations\test_error_handling.py:493: Agent does not declare extendedAgentCard capability
+SKIPPED [3] tests\compatibility\core_operations\test_multi_stream.py:153: Agent does not support streaming
+SKIPPED [3] tests\compatibility\core_operations\test_multi_stream.py:181: Agent does not support streaming
+SKIPPED [3] tests\compatibility\core_operations\test_multi_stream.py:221: Agent does not support streaming
+SKIPPED [11] tests\compatibility\_task_helpers.py:98: Expected task state 'TASK_STATE_COMPLETED' but got 'TASK_STATE_REJECTED'
+SKIPPED [1] tests\compatibility\core_operations\test_push_notifications.py:406: Follow-up send_message failed: Task 9f6f4349-729b-47f5-ba49-7d3c27878f70 is in terminal state: TASK_STATE_REJECTED
+SKIPPED [1] tests\compatibility\core_operations\test_push_notifications.py:406: Follow-up send_message failed: Task 3cdb0ed4-96b7-468f-a7b4-b02a30a79835 is in terminal state: TASK_STATE_REJECTED
+SKIPPED [1] tests\compatibility\core_operations\test_push_notifications.py:406: Follow-up send_message failed: Task 599f3050-2879-4978-befd-1e4f3c1aa24c is in terminal state: TASK_STATE_REJECTED
+SKIPPED [15] tests\compatibility\core_operations\test_requirements.py:177: Transport 'grpc' not configured (filtered by --transport)
+SKIPPED [15] tests\compatibility\core_operations\test_requirements.py:177: Transport 'http_json' not configured (filtered by --transport)
+SKIPPED [12] tests\compatibility\core_operations\test_requirements.py:58: Agent card does not declare capabilities for: ['streaming']
+SKIPPED [3] tests\compatibility\core_operations\test_requirements.py:197: No requirements at this level
+SKIPPED [2] tests\compatibility\core_operations\test_requirements.py:274: Transport 'grpc' not configured (filtered by --transport)
+SKIPPED [2] tests\compatibility\core_operations\test_requirements.py:274: Transport 'http_json' not configured (filtered by --transport)
+SKIPPED [1] tests\compatibility\core_operations\test_stream_ordering.py:195: Agent does not support streaming
+SKIPPED [8] tests\compatibility\_task_helpers.py:98: Expected task state 'TASK_STATE_INPUT_REQUIRED' but got 'TASK_STATE_REJECTED'
+SKIPPED [3] tests\compatibility\core_operations\test_task_lifecycle.py:372: Agent does not support streaming
+SKIPPED [3] tests\compatibility\core_operations\test_task_lifecycle.py:431: Agent does not support streaming
+SKIPPED [1] tests\compatibility\core_operations\test_transport_behavior.py:223: Streaming not supported: Streaming is not supported by the agent
+SKIPPED [1] tests\compatibility\core_operations\test_transport_behavior.py:250: HTTP+JSON transport not configured
+SKIPPED [1] tests\compatibility\core_operations\test_transport_behavior.py:265: HTTP+JSON transport not configured
+SKIPPED [1] tests\compatibility\core_operations\test_transport_behavior.py:419: HTTP+JSON transport not configured
+SKIPPED [1] tests\compatibility\core_operations\test_transport_behavior.py:452: gRPC transport not configured
+SKIPPED [1] tests\compatibility\core_operations\test_transport_behavior.py:581: gRPC transport not configured
+SKIPPED [1] tests\compatibility\grpc\test_status_codes.py:143: Agent supports push notifications; cannot trigger error
+SKIPPED [1] tests\compatibility\http_json\test_http_status.py:152: Agent supports push notifications; cannot trigger error
+SKIPPED [1] tests\compatibility\jsonrpc\test_error_codes.py:149: Agent supports push notifications; cannot trigger -32003
+SKIPPED [1] tests\compatibility\jsonrpc\test_error_codes.py:246: Server did not return an error for wrong Content-Type
+SKIPPED [2] tests\compatibility\jsonrpc\test_sse_streaming.py:72: Agent does not support streaming
+SKIPPED [1] tests\compatibility\jsonrpc\test_sse_streaming.py:191: Agent does not support streaming
+SKIPPED [1] tests\compatibility\jsonrpc\test_sse_streaming.py:226: Agent does not support streaming
+================= 5 failed, 57 passed, 201 skipped in 12.59s ==================
+Command: <a2a-tck>\.venv\Scripts\python.exe -m pytest tests/compatibility/ --sut-host=http://127.0.0.1:54435 --tb=short --transport=jsonrpc -v --compatibility-report=reports\compatibility --html=reports\tck_report.html --self-contained-html --junitxml=reports\junitreport.xml -rs
+

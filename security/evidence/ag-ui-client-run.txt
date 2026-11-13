@@ -1,0 +1,11 @@
+AG-UI live view against @ag-ui/client (an independent client; spec G.5, Appendix C M11)
+Date: 2026-11-12
+Command: $env:RUN_INTEROP='1'; $env:AG_UI_CLIENT_DIR='<scratch>\agui'; uv run pytest tests/interop/test_ag_ui_client.py -s
+Client: @ag-ui/client@1.0.4 (HttpAgent, Node v24.22.1); its own SSE parser, schemas, order checks
+Server: protocols/ag_ui/ on ag-ui-protocol 1.0.0, AG-UI 1.0, HTTP POST + SSE, 127.0.0.1; synthetic cases
+Session: a console sign-in (agent.ana) made for this run; cookie and CSRF passed through the environment
+
+1. Watch a finished run: events = ['RUN_STARTED', 'STATE_SNAPSHOT', 'STEP_STARTED', 'STEP_FINISHED', 'TOOL_CALL_START', 'TOOL_CALL_END', 'TOOL_CALL_START', 'TOOL_CALL_END', 'STEP_STARTED', 'STEP_FINISHED', 'TOOL_CALL_START', 'TOOL_CALL_END', 'STEP_STARTED', 'STEP_FINISHED', 'STEP_STARTED', 'STEP_FINISHED', 'TEXT_MESSAGE_START', 'TEXT_MESSAGE_CONTENT', 'TEXT_MESSAGE_END', 'STATE_SNAPSHOT', 'RUN_FINISHED']; RUN_ERROR = None; failure = None
+2. Start a run (CSRF, case worker, worker running): events = ['RUN_STARTED', 'STATE_SNAPSHOT', 'STEP_STARTED', 'STEP_FINISHED', 'TOOL_CALL_START', 'TOOL_CALL_END', 'TOOL_CALL_START', 'TOOL_CALL_END', 'STEP_STARTED', 'STEP_FINISHED', 'TOOL_CALL_START', 'TOOL_CALL_END', 'STEP_STARTED', 'STEP_FINISHED', 'STEP_STARTED', 'STEP_FINISHED', 'TEXT_MESSAGE_START', 'TEXT_MESSAGE_CONTENT', 'TEXT_MESSAGE_END', 'STATE_SNAPSHOT', 'RUN_FINISHED']; RUN_ERROR = None; failure = None; jobs for the case = 1; case status after = Investigating
+3. Start with no worker, 6 s window: events = ['RUN_STARTED', 'STATE_SNAPSHOT', 'RUN_ERROR']; RUN_ERROR = {'code': 'watch_window_ended', 'message': 'Still running. Start a new run (watch only) to keep following it.'}; failure = None
+4. No session: events = []; failure = HTTP 401: {"title":"Sign in to the console first.","status":401}

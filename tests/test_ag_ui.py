@@ -244,7 +244,10 @@ def test_the_protocol_lab_page_is_for_administrators_and_only_with_a_protocol_on
     page = on.get("/admin/protocols")
     assert page.status_code == 200 and page.text.count('data-testid="protocol"') == 3
     assert "FEATURE_MCP: on" in page.text and "FEATURE_A2A: off" in page.text
-    assert page.text.count("NOT RUN") == 3  # no independent run is claimed before it happens
+    # Each independent run is shown with its evidence file, and nothing is claimed without one.
+    assert page.text.count("security/evidence/") == 3 and "NOT RUN" not in page.text
+    for evidence in ("mcp-inspector-run.txt", "a2a-tck-run.txt", "ag-ui-client-run.txt"):
+        assert (Path(__file__).resolve().parent.parent / "security" / "evidence" / evidence).is_file()
     on.login("agent.ana", arm.password)
     assert on.get("/admin/protocols").status_code == 403
     off = Browser(TestClient(create_app(AppSettings(database_url=arm.app_url), arm.factory())))

@@ -1,0 +1,13 @@
+MCP server against the MCP Inspector CLI (an independent client; spec G.3, Appendix C M11)
+Date: 2026-11-11
+Command: $env:RUN_INTEROP='1'; uv run pytest tests/interop/test_mcp_inspector.py -s
+Client: @modelcontextprotocol/inspector@2.14.0 (npx, Node v24.22.1)
+Server: protocols/mcp/server.py on mcp 2.3.0, Streamable HTTP, stateless, JSON responses, 127.0.0.1
+Protocol versions the Inspector sent (MCP-Protocol-Version header): 2025-11-25
+Methods the Inspector sent: none
+Tokens: signed by a key made for this run (scope loyalty.read); not Keycloak
+
+tools/list, scope loyalty.read: exit 0; tools = ['get_member', 'get_stay', 'get_points_ledger', 'search_policy', 'evaluate_eligibility']
+tools/call get_member, own customer: exit 0; isError = False; confirmed = True
+tools/call get_member, another customer's token: exit 5; says not_found = True
+tools/list, expired token: exit 3 (non-zero expected: the server answered 401)
