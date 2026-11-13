@@ -3,11 +3,11 @@
 Kept current at every milestone. Each line says what is limited, why, and what would change it.
 
 ## Added in Milestone 12 (2026-11-13 onward)
-- **If the repository becomes public, the held-out labels are public too** (`docs/public-readiness.md`). The
-  Milestone 10 results were run and frozen before, so they stand; any later held-out claim needs a new split written
-  after publication.
-- **CI runs only on pull requests into `main` and pushes to `main`** (ADR-0076). A branch gets no remote check until
-  its pull request opens; `scripts\ci_local.ps1` runs the same steps locally first.
+- **The held-out labels are public** since the repository was made public on 2026-11-13 (`main` at `f76c1d6`;
+  `docs/public-readiness.md`). The Milestone 10 results were run and frozen before, so they stand. **Any future
+  held-out claim needs a new split written after 2026-11-13.**
+- ~~CI runs only on pull requests into `main` and pushes to `main` (ADR-0076).~~ Lifted the same day: the repository
+  is public, so CI is back to its normal triggers.
 - **Keycloak is defined twice** (`docker-compose.yml` profiles and `docker-compose.oidc.yml` for
   `scripts\oidc_check.ps1`), so a change to one must be copied to the other (ADR-0074).
 

@@ -1,15 +1,14 @@
 # CI (ADR-0053; Milestone 12, ADR-0076). Offline only: no API key, no paid service. Every value here is a throwaway
 # for this workflow's own database. The same steps run locally, without Actions minutes:
 #   powershell -ExecutionPolicy Bypass -File scripts\ci_local.ps1
-# Minutes (owner, 2026-11-13): the repository is private with a limited free allowance, so CI runs once per change:
-# on pull requests into main and on pushes to main, never on every branch push.
+# Triggers: the repository is public since 2026-11-13 (standard runners cost no minutes), so the once-per-change
+# limit from ADR-0076 is lifted: every pull request, and pushes to main and ci/**.
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "ci/**"]
   pull_request:
-    branches: [main]
 
 permissions:
   contents: read

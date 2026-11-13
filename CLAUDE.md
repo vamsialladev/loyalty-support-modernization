@@ -51,9 +51,10 @@ decision. Note what moves into the starter kit and what is customer-specific.
   is labelled "mock AI, synthetic data" everywhere it shows.
 - **No live model calls in Milestone 12:** ENT-17 (prompt caching) and LIVE-05 (caps against the live deploy) stay
   NOT RUN.
-- **GitHub Actions minutes** (private repo, limited free minutes): heavy jobs (Trivy, Terraform, SBOM, container
-  build, Playwright) run only on pull requests to `main` and pushes to `main`, never on every branch push. Report
-  minutes per run. **Stop and tell the owner if monthly usage passes 70% of the free allowance.**
+- **Repository public (owner, 2026-11-13, 22:07 UTC, `main` at `f76c1d6`):** secret scanning and push protection
+  are on. Actions minutes are free, so the earlier minutes limit and 70% stop line are **removed**: normal CI
+  triggers and normal pull-request sizes (ADR-0076, superseded). `scripts\ci_local.ps1` stays available.
+  **Held-out labels are public from this date:** any future held-out claim needs a new split written after it.
 - **Merges:** standing permission applies. If auto mode refuses a merge, don't work around it: list the green pull
   requests for the owner to merge, or to switch to Manual mode.
 
