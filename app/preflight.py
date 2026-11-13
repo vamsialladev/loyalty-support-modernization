@@ -157,6 +157,12 @@ VARS: dict[str, Var] = {
         Var("PROTOCOL_TOKEN_ISSUER", _url("http", "https"), "an http(s) URL"),
         Var("MCP_PORT", _regex(r"\d{2,5}"), "a port number"),
         Var("MCP_RESOURCE_URL", _url("http", "https"), "an http(s) URL"),
+        Var("A2A_SPECIALIST_PORT", _regex(r"\d{2,5}"), "a port number"),
+        Var("A2A_SPECIALIST_URL", _url("http", "https"), "an http(s) URL"),
+        Var("A2A_CALLBACK_BASES", _regex(r"https?://[^,\s]+(,https?://[^,\s]+)*"), "comma-separated http(s) URLs"),
+        Var("A2A_CALLBACK_URL", _url("http", "https"), "an http(s) URL"),
+        Var("A2A_COORDINATOR_CLIENT_ID", _nonempty, "non-empty"),
+        Var("A2A_COORDINATOR_CLIENT_SECRET", _min_len(16), "at least 16 characters", secret=True),
     ]
 }
 
@@ -435,6 +441,7 @@ FEATURES: dict[str, tuple[str, ...]] = {
     "Local open model": ("LOCAL_MODEL_BASE_URL",),
     "Enterprise identity demo (Keycloak)": (*_OIDC, "KEYCLOAK_ADMIN_PASSWORD"),
     "Protocol services (MCP, A2A, AG-UI; tokens from Keycloak)": ("PROTOCOL_TOKEN_ISSUER", "KEYCLOAK_ADMIN_PASSWORD"),
+    "A2A coordinator (its own Keycloak client)": ("A2A_COORDINATOR_CLIENT_ID", "A2A_COORDINATOR_CLIENT_SECRET"),
     "Supabase profile": ("SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SECRET_KEY", "SUPABASE_DB_URL"),
     "GitHub API scripts": ("GH_TOKEN",),
     "Vercel deploy (only when authorized)": ("VERCEL_TOKEN", "VERCEL_PROJECT_ID", "VERCEL_ORG_ID"),
