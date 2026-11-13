@@ -23,7 +23,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from customer_shapes import CustomerShape, ShapeError
-from mock_customer_api import CONTRACT_VERSION, db, service
+from mock_customer_api import CONTRACT_VERSION, db, service, telemetry
 from mock_customer_api.faults import FaultBook
 from mock_customer_api.seed import seed as run_seed
 from mock_customer_api.service import Problem
@@ -338,7 +338,14 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
             s.commit()
             return JSONResponse({"counts": service.counts(s)}, headers={"X-Correlation-ID": c.correlation_id})
 
+    telemetry.instrument(app)
     return app
+
+
+def serve() -> FastAPI:
+    """The process entry point (`uvicorn --factory mock_customer_api.api:serve`): scrubbed JSON logs, then the app."""
+    telemetry.configure_logging()
+    return create_app()
 
 
 def _future_shape(body: dict[str, Any]) -> dict[str, Any]:

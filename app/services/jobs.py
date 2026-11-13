@@ -28,6 +28,7 @@ from sqlalchemy.orm import Session
 from app import correlation
 from app.domain.business_time import format_utc, parse_utc
 from app.domain.roles import Identity, Role
+from app.observability import tracing
 from app.persistence.models import Job
 from app.services.instrumentation import record_system
 
@@ -75,6 +76,7 @@ class ClaimedJob:
     correlation_id: str | None
     attempt: int
     recovered: bool  # the previous worker lost its lease: it may or may not have done the work
+    trace_parent: str | None = None  # the trace it was queued under (ADR-0077)
 
 
 def db_now(s: Session) -> str:
@@ -137,6 +139,7 @@ def enqueue(
         max_attempts=max_attempts,
         run_after_utc=later(now, delay_seconds),
         correlation_id=correlation.current() or correlation.new_id(),
+        trace_parent=tracing.current_traceparent(),
         created_at_utc=now,
     )
     try:
@@ -189,6 +192,7 @@ def claim(s: Session, worker_id: str, lease_seconds: float, clock: Clock = db_no
             job.correlation_id,
             job.attempts,
             recovered,
+            job.trace_parent,
         )
         s.commit()
         return claimed

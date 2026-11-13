@@ -989,3 +989,36 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   (the offline suite took 64 minutes under load on 2026-11-13, against about 3 on CI).
 - **Result:** the trigger change and `scripts\ci_local.ps1`; minutes per run in the verification log.
 - **What would change this decision:** a public repository (minutes are free), or a paid plan.
+
+## ADR-0077: Traces and logs: OpenTelemetry, one scrubbing exporter, GenAI names in one module
+- **Context:** spec F.1 asks for structured logs with correlation IDs, OpenTelemetry traces with context propagation,
+  and sensitive-data filtering; L2 asks to use the GenAI conventions if usable, without prompt or response content.
+  Two facts shaped it. (1) The customer-API adapter looks members up by email and family name **in the query
+  string**, and the HTTP instrumentations record full URLs; the mock API's uvicorn access log already printed them.
+  (2) The GenAI conventions moved from the core semantic-conventions repository (v1.42.0) to
+  `open-telemetry/semantic-conventions-genai`, whose pages read on 2026-11-13 say **Status: Development**, and which
+  has no release yet.
+- **Options considered:** a vendor agent or LLM-observability SDK (L3 decides those in PR 7); OpenTelemetry with the
+  instrumentations' own hooks to drop attributes (they can add attributes, not remove them); OpenTelemetry with one
+  exporter wrapper that scrubs every span before it leaves the process.
+- **Decision:** OpenTelemetry SDK 1.45.2 with the FastAPI and httpx instrumentations 0.66b2, OTLP/HTTP export only
+  when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Every span leaves through `ScrubbingExporter`
+  (`app/observability/tracing.py`): URL query strings removed, GenAI content attributes dropped, and every string
+  attribute, event and status scrubbed by one filter (`app/observability/scrub.py`, reusing `app/ai/redaction.py`).
+  Logs are JSON with correlation and trace IDs, scrubbed by the same filter, configured only at process entry points.
+  Model calls get a CLIENT span named `chat {model}` with operation, provider, request and response model, token
+  counts, finish reason and this project's cost attribute; all `gen_ai.*` names live in `app/observability/genai.py`
+  (a test fails if one appears anywhere else). Jobs store the W3C `traceparent` (migration 0012), so the worker's
+  span continues the request's trace. Health and readiness probes aren't traced.
+- **Found while building:** `opentelemetry-instrumentation-sqlalchemy` 0.66b2 supports SQLAlchemy < 2.1 and
+  instrumented nothing on 2.1.6 (an error at startup). Database spans come from two engine events instead, with the
+  statement text and never its parameters (TD-54). The mock API repeats the two scrub rules because it shares no
+  code with the app (ADR-0040; TD-55, with a test that runs both over the same planted values).
+- **Tradeoff:** scrubbing costs a copy of each span at export, and removing query strings loses the filter values
+  that would help debugging a lookup; the route and status stay. The GenAI names may change before they're stable.
+- **Result:** `tests/test_observability.py`: a planted email, phone, model key, bearer token, database password and
+  query string never reach an exported span or a log line (and the unscrubbed spans do hold the query, so the
+  filter is what removes it); one trace spans the app, a real local mock-API server and the worker.
+- **What would change this decision:** the GenAI conventions reaching Stable (rename in one file); a SQLAlchemy 2.1
+  release of the instrumentation (TD-54); a collector-side redaction processor the customer already runs, which
+  could replace the in-process one only after the same tests pass against it.

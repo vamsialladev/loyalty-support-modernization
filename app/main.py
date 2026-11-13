@@ -1,6 +1,6 @@
 """The app: health and readiness, the server-rendered console for arms A and B, and the JSON API.
 
-Run: `uvicorn --factory app.main:create_app --port 8010`.
+Run: `uvicorn --factory app.main:serve --port 8010` (JSON logs; `create_app` alone leaves logging as it is).
 - `/healthz`: the process is up.
 - `/readyz`: the app database answers and is at this code's schema revision, and the customer systems answer.
 - `/login`, `/queue`, `/cases/...`, `/approvals`, `/metrics`, `/day-one`: the console (`app/web/console.py`).
@@ -23,6 +23,8 @@ from sqlalchemy import text
 
 from app import __version__
 from app.api.router import install_api
+from app.observability import tracing
+from app.observability.logs import configure_logging
 from app.persistence.database import make_engine, make_sessions
 from app.services.systems import SystemsFactory, mock_systems_factory
 from app.settings import AppSettings
@@ -44,7 +46,9 @@ def create_app(
     oidc_http: httpx.Client | None = None,
 ) -> FastAPI:
     settings = settings or AppSettings.from_env()
+    provider = tracing.configure_process(tracing.APP)
     engine = make_engine(settings.database_url)
+    tracing.instrument_engine(engine)  # one span per statement, never its parameters (ADR-0077)
     schema_head = ScriptDirectory.from_config(Config(str(ROOT / "alembic.ini"))).get_current_head()
     # The default docs pages load scripts the CSP refuses, and list every console route. The API's own contract is
     # published.
@@ -87,4 +91,11 @@ def create_app(
         from protocols.ag_ui.routes import install_ag_ui
 
         install_ag_ui(app, settings)
+    tracing.instrument_fastapi(app, provider)
     return app
+
+
+def serve() -> FastAPI:
+    """The process entry point (`uvicorn --factory app.main:serve`): JSON logs, scrubbed, then the app."""
+    configure_logging(tracing.APP)
+    return create_app()

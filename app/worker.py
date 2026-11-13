@@ -25,6 +25,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app import correlation
 from app.domain.roles import Identity, Role
+from app.observability import tracing
+from app.observability.logs import configure_logging
 from app.services import jobs
 from app.services.jobs import ClaimedJob, Clock, Defer, GiveUp, Retry
 
@@ -77,7 +79,12 @@ class Worker:
             job = jobs.claim(s, self.worker_id, self.lease_seconds, self.clock)
         if job is None:
             return False
-        with correlation.correlated(job.correlation_id):
+        with (
+            correlation.correlated(job.correlation_id),
+            tracing.continued(
+                job.trace_parent, f"job {job.kind}", **{"loyalty.job.id": job.id, "loyalty.job.attempt": job.attempt}
+            ),
+        ):
             log.info("job start id=%s kind=%s attempt=%s recovered=%s", job.id, job.kind, job.attempt, job.recovered)
             stop_beat = threading.Event()
             beat = threading.Thread(target=self._heartbeat_loop, args=(job, stop_beat), daemon=True)
@@ -207,9 +214,11 @@ def main(argv: list[str] | None = None) -> int:
     from app.persistence.database import make_engine, make_sessions
     from app.settings import AppSettings
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    tracing.configure_process(tracing.WORKER)
     settings = AppSettings.from_env()
-    sessions = make_sessions(make_engine(settings.database_url))
+    engine = make_engine(settings.database_url)
+    tracing.instrument_engine(engine)
+    sessions = make_sessions(engine)
     if args.list_dead:
         with sessions() as s:
             for job in jobs.dead_jobs(s):
@@ -232,4 +241,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    configure_logging(tracing.WORKER)  # here, not in main(): tests call main() and keep pytest's log capture
     sys.exit(main())

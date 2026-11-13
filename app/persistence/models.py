@@ -424,6 +424,7 @@ class Job(Base):
     heartbeat_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
     last_error: Mapped[str | None] = mapped_column(String(64), default=None)
     correlation_id: Mapped[str | None] = mapped_column(String(32), default=None)
+    trace_parent: Mapped[str | None] = mapped_column(String(55), default=None)  # W3C traceparent (ADR-0077)
     created_at_utc: Mapped[str] = mapped_column(String(20))
     finished_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
 
