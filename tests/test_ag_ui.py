@@ -246,6 +246,9 @@ def test_the_protocol_lab_page_is_for_administrators_and_only_with_a_protocol_on
     assert "FEATURE_MCP: on" in page.text and "FEATURE_A2A: off" in page.text
     # Each independent run is shown with its evidence file, and nothing is claimed without one.
     assert page.text.count("security/evidence/") == 3 and "NOT RUN" not in page.text
+    # PROTO-04's limits travel with its status (ADR-0072).
+    for limit in ("Verified with limitations", "45 of the 47 required", "rejects by design", "test authentication"):
+        assert limit in page.text
     for evidence in ("mcp-inspector-run.txt", "a2a-tck-run.txt", "ag-ui-client-run.txt"):
         assert (Path(__file__).resolve().parent.parent / "security" / "evidence" / evidence).is_file()
     on.login("agent.ana", arm.password)

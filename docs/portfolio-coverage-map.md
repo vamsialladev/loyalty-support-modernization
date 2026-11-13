@@ -19,7 +19,7 @@ but not the stage's focus · **planned (stage N)** · blank = not covered.
 | Document AI (extraction, vision, review routing) | | | | | | | | | | planned (Appendix H) | |
 | Classical ML / small-model baseline | | | | | | | | | | planned (Appendix I) | |
 | Text-to-SQL and analytics | | | | | | | | | proven | planned (optional, legacy history) | |
-| MCP and protocols | | | | | | | partial (AG-UI, AP2 sandbox docs) | proven | partial (policy over MCP) | planned (MCP, A2A, AG-UI on loyalty data) | |
+| MCP and protocols | | | | | | | partial (AG-UI, AP2 sandbox docs) | proven | partial (policy over MCP) | proven: MCP and AG-UI with independent clients (MCP Inspector, `@ag-ui/client`); A2A verified with limitations (A2A TCK: 45 of the 47 required checks that ran pass; the 2 failures are scenarios rejected by design; auth not tested by the TCK, covered by our tests and a real-Keycloak run) | |
 | Security and governance | partial | proven (questionnaire) | partial | partial | | proven (redaction, kill switch) | partial (red team) | proven (roles, audit) | proven (SQL guard, red team) | planned (threat model, red team on business effects) | |
 | Enterprise identity (OIDC, SSO) | | | | | | partial (SSO documented) | | partial (API-key roles) | | planned (local Keycloak OIDC) | |
 | Cloud IaC and deployment | | | partial (Streamlit Cloud) | partial (Streamlit Cloud) | partial | proven (Docker, Neon, budgets) | partial | partial (Vercel) | partial | planned (Terraform AWS, validate only) | |

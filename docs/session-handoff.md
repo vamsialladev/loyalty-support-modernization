@@ -11,21 +11,26 @@
   tests, with no failures, because apt took 13 minutes. Re-run, then green. Verification log, Milestone 11, row 22.
 - **Independent peers, run with the owner's OK** (`docs/protocol-test-results.md`; all opt-in, `tests/interop/`):
   - MCP Inspector CLI 2.14.0: **pass**. It negotiated MCP 2025-11-25, so the 2026-07-28 handshake has same-SDK tests only.
-  - A2A TCK at `70f6f73`: **partial**, 57 passed, 5 failed, 201 skipped. The 5 are TCK scenarios the specialist doesn't
-    act out, by design. It found one real gap, no `Cache-Control` on the Agent Card, now fixed and tested. The TCK can't send
-    tokens at that commit, so the harness adds a test-signed one. A wrong `Content-Type` isn't refused: TD-53.
+  - A2A TCK at `70f6f73`: **verified with limitations** (owner's decision, 2026-11-12; ADR-0072). Limitations: 45 of the 47
+    required (MUST) checks that ran pass; the 2 failures are TCK scenarios the specialist rejects by design; the TCK didn't
+    test authentication (it can't send tokens at that commit), which our own tests and the real-Keycloak run cover instead.
+    Run: 57 passed, 5 failed, 201 skipped. It found one real gap, no `Cache-Control` on the Agent Card, now fixed and
+    tested. A wrong `Content-Type` isn't refused: TD-53. **Keep the three limits with the A2A result in any portfolio
+    text** (`docs/known-limitations.md`).
   - `@ag-ui/client` 1.0.4: **pass**, 4 runs (watch, start, closed window, 401).
   - Found too: the Inspector test had never run (a fixture import bug); fixed. Row 24.
-- PROTO-03 to PROTO-05 are now "Implemented and verified". Protocol labs score: 6 of 16.
+- PROTO-03 and PROTO-05 are "Implemented and verified"; PROTO-04 is "Implemented and verified: with limitations" (above).
+  Protocol labs score: 6 of 16, PROTO-04 counted as done with its limits named under the table.
+- The old untracked copy `evaluations/label-review/review-sheet1.csv` was deleted at the owner's request (2026-11-12);
+  the committed `review-sheet.csv` is unchanged.
 - **Work on a branch and open a pull request.** Merge with a merge commit, not squash or rebase, so cited hashes stay valid. Push with:
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (two accounts are signed in to `gh`).
 - This repo's `user.email` is the noreply address. Run gitleaks before pushing; the command is in `docs/fde-tool-map.md`.
 - Commit messages from PowerShell: use `git commit -F <file>`. Anything with backslashes goes through the editor tools, never a shell heredoc.
 
 ## Waiting on the owner
-A. **Check one judgement call:** PROTO-04 is marked "Implemented and verified" although the A2A TCK is partial. The 2 failing
-   MUST requirements (DM-ART-001, DM-MSG-001) only test TCK scenarios, and 45 MUST requirements pass. If you'd rather keep it
-   "unverified" until a TCK version can send tokens, change the row in `docs/requirements-matrix.md`.
+A. **Decided (2026-11-12):** PROTO-04 is "Implemented and verified: with limitations" (ADR-0072). The score table names it,
+   and a test checks that any such row lists its limits.
 B. Optional: connect your Claude Code to the local MCP server (`docs/mcp.md`, "Connect a client"). It changes your Claude Code
    config, so it's yours to do. It would also test the 2026-07-28 handshake, which the Inspector didn't use.
 0. **Eval-harness registers Stage 9** (merged as `ccbdcd4` after the review you asked for; verification log, Milestone 10, rows 23–28). Next, when you want it: tag a harness release, then add `hoteleval gate` to this repo's CI. The live dashboard still shows only Projects 1 and 2: adding Stage 9 to its pages is a separate change.

@@ -59,9 +59,10 @@ def entries(settings: AppSettings) -> list[LabEntry]:
             "FEATURE_A2A",
             settings.feature_a2a,
             "A2A TCK, commit 70f6f73",
-            "Partial, 2026-11-12, JSON-RPC: 57 passed, 5 failed, 201 skipped. Agent card 9 of 9 after a fix. The 5 "
-            "failures are TCK scenarios the specialist doesn't act out, by design. The TCK can't send tokens, so the "
-            "harness added one (security/evidence/a2a-tck-run.txt)",
+            "Verified with limitations, 2026-11-12, JSON-RPC: 45 of the 47 required (MUST) checks that ran pass. The 2 "
+            "failures are TCK scenarios the specialist rejects by design. The TCK didn't test authentication (it can't "
+            "send tokens); our own tests and the real-Keycloak run cover it. Agent card 9 of 9 after a fix "
+            "(security/evidence/a2a-tck-run.txt)",
             "tests/test_a2a.py, tests/test_a2a_postgres.py",
             "No streaming or gRPC; a lab: REST is enough for this workflow (docs/a2a-vs-rest.md)",
         ),

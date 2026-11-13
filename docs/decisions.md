@@ -895,5 +895,24 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **Options considered:** code inside `app/`, a `protocols/` package, or a separate repo. For caller identity: the M9 opaque machine tokens, a JWT issuer of our own, or Keycloak access tokens checked as a resource server. For A2A task state: the SDK's memory store, its SQL store, or our own table. For AG-UI: push events from the loop, or build them from stored rows.
 - **Decision:** a `protocols/` package with a flag and a start command per protocol, calling the existing services. **Keycloak access tokens**, checked for issuer, audience, expiry and scope, mapped to the existing `Identity`, because MCP's authorization spec requires audience checks and protected-resource metadata, which opaque tokens can't give. An `a2a_tasks` table (migration `0011`). AG-UI events built from `ai_runs`, `ai_steps` and `case_events`. Pins: MCP 2026-07-28 (`mcp` 2.3), A2A 1.0 (`a2a-sdk` 1.3), AG-UI 1.0 (`ag-ui-protocol` 1.0), in an optional dependency group.
 - **Trade-off:** two token types (opaque for REST, JWT for protocols) until REST moves to JWTs too. Keycloak must be running for the protocol services outside tests. AG-UI polls the database while a run is active rather than pushing.
-- **Result:** to be filled in from the tests and the independent-peer runs (`docs/protocol-test-results.md`).
+- **Result (2026-11-12):** same-SDK tests pass for all three; tokens checked against a real Keycloak (9 of 9). Independent peers: the MCP Inspector CLI 2.14.0 passed (it negotiated 2025-11-25, so 2026-07-28 has same-SDK tests only); `@ag-ui/client` 1.0.4 passed 4 runs; the A2A TCK is verified with limitations (ADR-0072). Details: `docs/protocol-test-results.md`.
 - **What would change this decision:** a client that already runs an API gateway issuing tokens (then the gateway is the issuer, and our verifier only changes configuration); AG-UI 1.1 adding stream resumption (then a reconnect could resume instead of re-watching); real volume where per-run polling costs too much (then a notify channel, Postgres `LISTEN`/`NOTIFY` first).
+
+## ADR-0072: "Verified with limitations" for PROTO-04, the A2A TCK result
+- **Context:** the A2A TCK (commit `70f6f73`) ran against the specialist on 2026-11-12: 45 of the 47 required (MUST)
+  checks that ran pass. The 2 failures (DM-ART-001, DM-MSG-001) are TCK scenarios keyed on `messageId` prefixes, which
+  the specialist rejects by design because it accepts only an evidence request. The TCK can't send tokens at that
+  commit, so it didn't test authentication. The status labels had no way to say "verified, but with these limits".
+- **Options considered:** "Implemented and verified" with the limits only in the text (a reader of the score sees a
+  clean pass); "Implemented but unverified" until a TCK version sends tokens (understates 45 passing checks and our own
+  auth tests); a qualified status that still counts as done but must carry its limits.
+- **Decision (owner, 2026-11-12):** PROTO-04 is "Implemented and verified: with limitations". A row with that status
+  must list its limitations (`**Limitations:**` in the Implementation cell, checked by `tests/test_matrix_scores.py`),
+  and the score table names every such row. Wherever PROTO-04's status appears (the matrix, the test results, the
+  Protocol Lab page, the status and handoff documents, the portfolio coverage map, and any later portfolio text), the
+  three limits appear with it. Authentication is covered by `tests/test_a2a.py` and the real-Keycloak run instead.
+- **Tradeoff:** one more status form to keep honest, against a score that would otherwise hide a partial result.
+- **Result:** PROTO-04's row and every place its status appears; `scripts/matrix_scores.py` prints "Verified with
+  limitations: PROTO-04" under the score table; `docs/known-limitations.md` carries the rule for portfolio text.
+- **What would change this decision:** a TCK release that sends bearer tokens, or a way to run its scenario tests
+  against a separate test agent. If both pass, PROTO-04 becomes plain "Implemented and verified".
