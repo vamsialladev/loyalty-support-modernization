@@ -579,6 +579,7 @@ def install_console(
             other_member_text=OTHER_MEMBER_TEXT,
             attachments=conventional.attachments_of(s, case),
             ai_run=latest_run(s, case) if case.arm == svc.ARM_C else None,
+            live_run=getattr(request.app.state, "ag_ui", False),  # set only when FEATURE_AG_UI mounts the endpoint
         )
 
     def _polling(s: Session, case: Case) -> bool:
