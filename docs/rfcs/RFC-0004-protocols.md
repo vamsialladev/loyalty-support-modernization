@@ -111,7 +111,7 @@ run only watches. Approving, executing and closing stay on the console's own for
   Events: `RUN_STARTED`, `STEP_STARTED`/`STEP_FINISHED`, `TOOL_CALL_START`/`TOOL_CALL_END` (name and argument hash
   only), `STATE_SNAPSHOT` (allowlisted), `TEXT_MESSAGE_*` (the stored summary a person already sees), `RUN_FINISHED`
   or `RUN_ERROR` with a safe message.
-- Shared: flags `MCP_ENABLED`, `A2A_ENABLED`, `AG_UI_ENABLED` (off by default); a `protocols` Compose profile; a
+- Shared: flags `FEATURE_MCP`, `FEATURE_A2A`, `FEATURE_AG_UI` (off by default, named like the existing `FEATURE_*` flags); a `protocols` Compose profile; a
   `protocols` dependency group, so the core install doesn't change; every handler inside `correlated()`, audited with
   `record` / `record_system`, rate-limited with `rate_limit.hit`.
 - A developer-only **Protocol Lab** page (admin role, flag): version, transport, capabilities, peer, scenarios,

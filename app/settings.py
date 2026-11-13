@@ -46,6 +46,10 @@ class AppSettings:
     oidc_client_secret: str = ""
     app_base_url: str = "http://127.0.0.1:8010"
     rate_limit_per_minute: int = 600
+    feature_mcp: bool = False  # spec G.2: each protocol has its own flag, off by default (RFC-0004)
+    feature_a2a: bool = False
+    feature_ag_ui: bool = False
+    protocol_token_issuer: str = ""  # who issues protocol access tokens; empty means OIDC_ISSUER_URL
 
     @property
     def cookie_secure(self) -> bool:
@@ -76,4 +80,10 @@ class AppSettings:
             oidc_client_secret=os.environ.get("OIDC_CLIENT_SECRET", ""),
             app_base_url=os.environ.get("APP_BASE_URL", "http://127.0.0.1:8010").strip().rstrip("/"),
             rate_limit_per_minute=int(_number("RATE_LIMIT_PER_MINUTE", 600)),
+            feature_mcp=_flag("FEATURE_MCP"),
+            feature_a2a=_flag("FEATURE_A2A"),
+            feature_ag_ui=_flag("FEATURE_AG_UI"),
+            protocol_token_issuer=(
+                os.environ.get("PROTOCOL_TOKEN_ISSUER", "").strip() or os.environ.get("OIDC_ISSUER_URL", "").strip()
+            ),
         )

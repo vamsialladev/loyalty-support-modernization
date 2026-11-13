@@ -24,12 +24,15 @@ from app.persistence.models import Case, CaseEvent, SystemEvent
 
 SCRIPTED_PREFIX = "scripted-"
 SYSTEM_PREFIX = "system-"
+SERVICE_PREFIX = "svc-"
 
 
 def actor_kind(who: Identity) -> str:
     """Scripted benchmark actors are ordinary accounts with the same roles; their usernames mark them (ADR-0048)."""
     if who.username.startswith(SYSTEM_PREFIX):
         return "system"
+    if who.username.startswith(SERVICE_PREFIX):  # machine tokens and protocol clients: not a person (M11 fix)
+        return "service"
     return "scripted" if who.username.startswith(SCRIPTED_PREFIX) else "human"
 
 

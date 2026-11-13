@@ -28,6 +28,12 @@ api = [
     "sqlalchemy~=2.1.6",
     "uvicorn[standard]~=0.54.0",
 ]
+protocols = [
+    # Spec Part G, RFC-0004: MCP 2026-07-28, A2A 1.0, AG-UI 1.0. Not in the core image (Dockerfile.app).
+    "a2a-sdk[http-server]~=1.3.0",
+    "ag-ui-protocol~=1.0.0",
+    "mcp~=2.3.0",
+]
 data = [
     "matplotlib~=3.11.2",
     "pillow~=13.0.0",
@@ -47,7 +53,7 @@ dev = [
 
 [tool.uv]
 package = false
-default-groups = ["dev", "api", "data"]
+default-groups = ["dev", "api", "data", "protocols"]
 
 [tool.ruff]
 line-length = 120
@@ -75,7 +81,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["app", "benchmarks", "seed_data", "evaluations", "mock_customer_api", "customer_shapes"]
+source = ["app", "protocols", "benchmarks", "seed_data", "evaluations", "mock_customer_api", "customer_shapes"]
 
 [tool.coverage.report]
 fail_under = 70
@@ -84,7 +90,7 @@ show_missing = true
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["app", "benchmarks", "scripts", "seed_data", "evaluations", "mock_customer_api", "customer_shapes"]
+files = ["app", "protocols", "benchmarks", "scripts", "seed_data", "evaluations", "mock_customer_api", "customer_shapes"]
 
 [[tool.mypy.overrides]]
 module = ["reportlab.*", "sklearn.*"]

@@ -70,6 +70,10 @@ FAKE = {
     "FEATURE_LIVE_AI": "false",
     "FEATURE_ADJUSTMENT_EXECUTION": "true",
     "FEATURE_PROTOCOL_LABS": "false",
+    "FEATURE_MCP": "false",
+    "FEATURE_A2A": "false",
+    "FEATURE_AG_UI": "false",
+    "PROTOCOL_TOKEN_ISSUER": "https://fake-issuer.test/realms/loyalty",
 }
 
 PORTFOLIO_KEYS = [
@@ -110,8 +114,10 @@ def portfolio(**overrides: str) -> dict[str, str]:
     return values
 
 
-def test_all_six_profiles_defined():
-    assert set(PROFILES) == {"portfolio", "live-model", "discovery", "staging", "approved", "enterprise-identity"}
+def test_all_seven_profiles_defined():
+    # "protocols" was added in Milestone 11 (RFC-0004), as "enterprise-identity" was in Milestone 9.
+    expected = {"portfolio", "live-model", "discovery", "staging", "approved", "enterprise-identity", "protocols"}
+    assert set(PROFILES) == expected
     assert set(preflight.PROFILES_ALLOWED) == set(PROFILES)
 
 
@@ -310,6 +316,16 @@ def test_app_profile_mismatch_is_reported():
     assert not any(
         "different profile" in p for p in build_report("enterprise-identity", settings_from(portfolio())).problems
     )
+
+
+def test_protocols_profile_needs_a_protocol_on_and_an_issuer():
+    values = portfolio(KEYCLOAK_ADMIN_PASSWORD=FAKE["KEYCLOAK_ADMIN_PASSWORD"])
+    report = build_report("protocols", settings_from(values))
+    assert any("at least one of FEATURE_MCP" in p for p in report.problems)
+    assert any("PROTOCOL_TOKEN_ISSUER or OIDC_ISSUER_URL" in p for p in report.problems)
+    values.update(FEATURE_MCP="true", PROTOCOL_TOKEN_ISSUER=FAKE["PROTOCOL_TOKEN_ISSUER"])
+    ready = build_report("protocols", settings_from(values))
+    assert not [p for p in ready.problems if "protocols needs" in p]
 
 
 def test_features_unlocked_and_blocked():
