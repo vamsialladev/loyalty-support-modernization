@@ -1,8 +1,8 @@
 # Implementation status
 
-**Last updated:** 2026-11-11 · **Current milestone:** 11 of 20 built, not yet merged · **Next:** Milestone 12 (performance,
-observability, CI/CD, hardening). **Waiting on the owner:** merging PRs #32 to #36 in order (auto mode refused to merge);
-an OK to run three independent protocol clients; the Milestone 7 to 11 exercises; the Codex exercise, when convenient.
+**Last updated:** 2026-11-12 · **Current milestone:** 11 of 20, merged (PRs #32 to #36, in order) · **Next:** Milestone 12
+(performance, observability, CI/CD, hardening). **Waiting on the owner:** a look at PROTO-04's status (the A2A TCK is
+partial); the Milestone 7 to 9 exercises; the Codex exercise, when convenient.
 
 ## Completion scores (spec Part 0.5)
 Counted from `docs/requirements-matrix.md` by `uv run python scripts/matrix_scores.py`. Only "Implemented and
@@ -13,14 +13,14 @@ verified" (or "Not applicable") counts as done.
 | Core product functionality | 76 | 108 | 70% | 5 |
 | Benchmarks and evaluation | 46 | 64 | 72% | 3 |
 | Actual-tool exercises | 0 | 16 | 0% | 3 |
-| Protocol labs | 3 | 16 | 19% | 5 |
+| Protocol labs | 6 | 16 | 38% | 2 |
 | Security controls | 30 | 55 | 55% | 6 |
 | Owner's demonstrated understanding | 0 | 3 | 0% | 1 |
 | Other tracked work (not a Part 0.5 score) | 40 | 107 | 37% | 13 |
 
 369 requirements: Tier 1: 190, Tier 2: 102, Tier 3: 27, Tier 4: 50
 
-New in M11: MCP, A2A and AG-UI over the same services (PROTO-01 to PROTO-05, PROTO-14's M11 part), the protocol specs and the OWASP agentic list (SEC-01), callbacks and card fetching (SEC-16), RFC-0004 (PURP-05), reuse cited (REUSE-06, REUSE-09). **Verified on the same SDK on both sides, and tokens against a real Keycloak; the independent clients are NOT RUN** (the owner's OK is needed to download them), so PROTO-03 to PROTO-05 stay unverified.
+New in M11: MCP, A2A and AG-UI over the same services (PROTO-01 to PROTO-05, PROTO-14's M11 part), the protocol specs and the OWASP agentic list (SEC-01), callbacks and card fetching (SEC-16), RFC-0004 (PURP-05), reuse cited (REUSE-06, REUSE-09). Verified on the same SDK on both sides, and tokens against a real Keycloak. **Independent peers run 2026-11-12 with the owner's OK:** the MCP Inspector and `@ag-ui/client` passed; the A2A TCK passed partially (scenario tests the specialist doesn't act out; one SHOULD gap found and fixed). So PROTO-03 to PROTO-05 are verified (`docs/protocol-test-results.md`).
 
 New in M10: the benchmark, with held-out verdicts, on live arm C. Open: REUSE-03 needs the owner's OK; BIZ-02 and ENT-07/08 need real participants; ENT-17's caching and BENCH-13's release gate are Milestone 12.
 
@@ -52,7 +52,7 @@ authorization, M9), API-01 and API-02 (moved to M7, as the owner approved). Code
 | 8 | **Implemented and verified** (Appendix C, M8: every loop stop condition and injection test passes on the mock provider; the Claude provider is implemented; its live smoke test **passed on 2026-11-07**, one call with a made-up message, no quality claim) | `tests/test_ai_loop.py`, `tests/test_ai_tools.py`, `tests/test_ai_provider.py`, `tests/test_arm_c.py`, `tests/test_extraction.py`, `tests/test_routing_baseline.py`; verification log, Milestone 8 |
 | 9 | **Implemented and verified** (Appendix C, M9: authorization, CSRF, rate-limit, redaction and red-team tests pass on mock and scripted models; OIDC login works locally against a real Keycloak). SEC-19's repeated tests on a real model: **NOT RUN** | `tests/test_security_authz.py`, `tests/test_security_postgres.py`, `tests/test_oidc.py`, `tests/test_red_team.py`, `tests/test_red_team_shared_corpus.py`, `tests/test_security_docs.py`; `security/evidence/oidc-check-2026-11-06.txt`; verification log, Milestone 9 |
 | 10 | **Implemented and verified** (Appendix C, M10: thresholds committed before runs; A/B/C reports generated from actual runs; error analysis written). H7 **not tested**: no participants | `benchmarks/benchmark-thresholds.yaml`, `benchmarks/results/`, `benchmarks/reports/heldout/`, `docs/error-analysis.md`, `tests/test_scoring.py`, `tests/test_runner.py`, `tests/test_compare.py`, `tests/test_benchmark_docs.py`, `tests/test_benchmark_postgres.py`; verification log, Milestone 10 |
-| 11 | **Built, tests pass; independent peers NOT RUN** (Appendix C, M11: "tests pass against an independent client or peer where available". Available, but each needs the owner's OK to download) | `tests/test_protocol_auth.py`, `tests/test_mcp_server.py`, `tests/test_a2a.py`, `tests/test_a2a_postgres.py`, `tests/test_ag_ui.py`, `tests/browser/test_ag_ui_panel.py`, `tests/test_protocols_off.py`, `tests/test_protocol_docs.py`; `security/evidence/protocol-token-check-2026-11-11.txt`; verification log, Milestone 11 |
+| 11 | **Built, tests pass; independent peers run 2026-11-12** (Appendix C, M11): MCP Inspector pass, `@ag-ui/client` pass, A2A TCK partial (5 scenario tests fail by design; card 9 of 9 after a fix) | `tests/interop/` (opt-in), `security/evidence/mcp-inspector-run.txt`, `a2a-tck-run.txt`, `ag-ui-client-run.txt`, `tests/test_protocol_auth.py`, `tests/test_mcp_server.py`, `tests/test_a2a.py`, `tests/test_a2a_postgres.py`, `tests/test_ag_ui.py`, `tests/browser/test_ag_ui_panel.py`, `tests/test_protocols_off.py`, `tests/test_protocol_docs.py`; `security/evidence/protocol-token-check-2026-11-11.txt`; verification log, Milestone 11 |
 | 12–20 | Planned | `docs/implementation-plan.md` |
 
 ## Milestone 11 deliverables
