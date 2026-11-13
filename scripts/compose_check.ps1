@@ -37,9 +37,10 @@ Step "app /readyz is ready" {
 }
 Step "live adapter checks against the running mock API" { uv run python scripts/live_smoke.py --env-file $envFile --mock-url "http://127.0.0.1:$mockPort" }
 foreach ($image in @("$project-mock-api", "$project-app")) {
-    Step "no labels, generator or data inside $image" {
+    Step "no labels, generator, data or build tools inside $image" {
         # No double quotes inside: PowerShell 5.1 strips them when passing arguments to native programs.
-        & docker run --rm --entrypoint sh $image -c 'for d in benchmarks evaluations seed_data docs tests; do test ! -e /srv/$d || exit 1; done; test -z $(find / -xdev -name *.jsonl 2>/dev/null) && test $(id -u) != 0'
+        # Milestone 12 (ADR-0074): uv stays in the build stages, and the core app image has no protocol code.
+        & docker run --rm --entrypoint sh $image -c 'for d in benchmarks evaluations seed_data docs tests protocols; do test ! -e /srv/$d || exit 1; done; test ! -e /bin/uv && test -z $(find / -xdev -name *.jsonl 2>/dev/null) && test $(id -u) != 0'
     }
 }
 Step "real-Postgres integration tests (incl. stored role passwords, blank password refused)" {

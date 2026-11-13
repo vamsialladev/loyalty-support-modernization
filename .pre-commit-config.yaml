@@ -1,0 +1,23 @@
+# Checks before each commit (ACC-06, Appendix K2.6; Milestone 12). Install once in this clone:
+#   uv run pre-commit install
+# Run on demand:  uv run pre-commit run --all-files
+# gitleaks runs from the same pinned image as CI (.github/workflows/ci.yml), through Docker: nothing to install. The
+# upstream `gitleaks-docker` hook uses an unpinned image, so this is a local hook with the version written here.
+repos:
+  - repo: local
+    hooks:
+      - id: gitleaks
+        name: gitleaks (staged changes, values redacted)
+        language: docker_image
+        entry: ghcr.io/gitleaks/gitleaks:v8.30.1 git --pre-commit --redact --staged --verbose --no-banner
+        pass_filenames: false
+      - id: ruff-check
+        name: ruff check
+        language: system
+        entry: uv run ruff check
+        types: [python]
+      - id: ruff-format
+        name: ruff format --check
+        language: system
+        entry: uv run ruff format --check
+        types: [python]

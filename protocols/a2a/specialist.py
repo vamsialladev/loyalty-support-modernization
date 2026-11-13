@@ -146,6 +146,30 @@ class RequireToken:
         await self.app(scope, receive, send)
 
 
+class RequireJsonBody:
+    """JSON-RPC requests must say they are JSON. Found by the A2A TCK: a wrong `Content-Type` wasn't refused (TD-53,
+    paid in Milestone 12). Runs after the token check, so an anonymous caller still gets 401 first. Accepts
+    `application/json` and any `application/*+json`, with or without parameters such as `charset`."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or scope["method"] != "POST":
+            await self.app(scope, receive, send)
+            return
+        headers = {k.decode().lower(): v.decode() for k, v in scope["headers"]}
+        media = headers.get("content-type", "").split(";", 1)[0].strip().lower()
+        if media == "application/json" or (media.startswith("application/") and media.endswith("+json")):
+            await self.app(scope, receive, send)
+            return
+        response = JSONResponse(
+            {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Content-Type must be JSON"}},
+            status_code=415,
+        )
+        await response(scope, receive, send)
+
+
 CARD_CACHE_CONTROL = "public, max-age=300"
 
 
@@ -278,6 +302,7 @@ def build_app(
     )
     routes = [*create_agent_card_routes(card), *create_jsonrpc_routes(handler, "/", CallerContextBuilder())]
     app = Starlette(routes=routes)
+    app.add_middleware(RequireJsonBody)  # added first, so it runs after the token check
     app.add_middleware(RequireToken, verifier=verifier)
     app.add_middleware(CardCacheControl)
     return app
@@ -303,8 +328,10 @@ def main() -> int:  # pragma: no cover - the start command; tests build the app 
     config = SpecialistConfig(url, settings.protocol_token_issuer, settings.customer_id, callbacks)
     server = ResourceServer("a2a-specialist", config.issuer, url, frozenset({SCOPE}))
     factory = mock_systems_factory(settings)
-    app = build_app(config, TokenVerifier(server, IssuerKeys(config.issuer)), lambda: factory(None))
-    uvicorn.run(app, host="127.0.0.1", port=port)
+    keys = IssuerKeys(config.issuer, fetch_url=settings.protocol_token_fetch_url)
+    app = build_app(config, TokenVerifier(server, keys), lambda: factory(None))
+    host = os.environ.get("A2A_SPECIALIST_HOST", "").strip() or "127.0.0.1"  # 0.0.0.0 only inside a container
+    uvicorn.run(app, host=host, port=port)
     return 0
 
 

@@ -151,6 +151,7 @@ def install_console(
                 f"{settings.app_base_url}/auth/oidc/callback",
                 customer.oidc_group_roles,
                 settings.customer_id,
+                fetch_url=settings.oidc_fetch_url,
             ),
             app.state.oidc_http,
         )

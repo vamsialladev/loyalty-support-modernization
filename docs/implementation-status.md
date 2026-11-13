@@ -1,7 +1,7 @@
 # Implementation status
 
-**Last updated:** 2026-11-12 · **Current milestone:** 11 of 20, merged (PRs #32 to #36, in order) · **Next:** Milestone 12
-(performance, observability, CI/CD, hardening). **Waiting on the owner:** the Milestone 7 to 9 exercises; the Codex
+**Last updated:** 2026-11-13 · **Current milestone:** 12 of 20, in progress (Milestones 1–11 merged) · **Next:** the rest of Milestone 12
+(observability, reliability, load test, CI/CD, Terraform). **Waiting on the owner:** the Milestone 7 to 9 exercises; the Codex
 exercise, when convenient.
 
 ## Completion scores (spec Part 0.5)
@@ -11,17 +11,20 @@ row is named under the table with its limits in the matrix (ADR-0072).
 
 | Score | Done (verified) | Total | % | In progress (unverified / configured / docs) |
 |---|---|---|---|---|
-| Core product functionality | 76 | 108 | 70% | 5 |
+| Core product functionality | 77 | 108 | 71% | 5 |
 | Benchmarks and evaluation | 46 | 64 | 72% | 3 |
 | Actual-tool exercises | 0 | 16 | 0% | 3 |
 | Protocol labs | 6 | 16 | 38% | 2 |
-| Security controls | 30 | 55 | 55% | 6 |
+| Security controls | 32 | 55 | 58% | 6 |
 | Owner's demonstrated understanding | 0 | 3 | 0% | 1 |
 | Other tracked work (not a Part 0.5 score) | 40 | 107 | 37% | 13 |
 
 Verified with limitations (counted as done; the limits are in each row): PROTO-04
 
 369 requirements: Tier 1: 190, Tier 2: 102, Tier 3: 27, Tier 4: 50
+
+New in M12 so far: hardened multi-stage images and Compose profiles (DEL-01), environments and hosted-profile secret
+checks (DEL-05), gitleaks as a pre-commit hook (ACC-06).
 
 New in M11: MCP, A2A and AG-UI over the same services (PROTO-01 to PROTO-05, PROTO-14's M11 part), the protocol specs and the OWASP agentic list (SEC-01), callbacks and card fetching (SEC-16), RFC-0004 (PURP-05), reuse cited (REUSE-06, REUSE-09). Verified on the same SDK on both sides, and tokens against a real Keycloak. **Independent peers run 2026-11-12 with the owner's OK:** the MCP Inspector and `@ag-ui/client` passed, so PROTO-03 and PROTO-05 are verified. **PROTO-04 (A2A) is verified with limitations** (ADR-0072): 45 of the 47 required (MUST) TCK checks that ran pass; the 2 failures are TCK scenarios the specialist rejects by design; the TCK didn't test authentication, which our own tests and the real-Keycloak run cover instead. One SHOULD gap was found and fixed (`docs/protocol-test-results.md`).
 
@@ -56,6 +59,7 @@ authorization, M9), API-01 and API-02 (moved to M7, as the owner approved). Code
 | 9 | **Implemented and verified** (Appendix C, M9: authorization, CSRF, rate-limit, redaction and red-team tests pass on mock and scripted models; OIDC login works locally against a real Keycloak). SEC-19's repeated tests on a real model: **NOT RUN** | `tests/test_security_authz.py`, `tests/test_security_postgres.py`, `tests/test_oidc.py`, `tests/test_red_team.py`, `tests/test_red_team_shared_corpus.py`, `tests/test_security_docs.py`; `security/evidence/oidc-check-2026-11-06.txt`; verification log, Milestone 9 |
 | 10 | **Implemented and verified** (Appendix C, M10: thresholds committed before runs; A/B/C reports generated from actual runs; error analysis written). H7 **not tested**: no participants | `benchmarks/benchmark-thresholds.yaml`, `benchmarks/results/`, `benchmarks/reports/heldout/`, `docs/error-analysis.md`, `tests/test_scoring.py`, `tests/test_runner.py`, `tests/test_compare.py`, `tests/test_benchmark_docs.py`, `tests/test_benchmark_postgres.py`; verification log, Milestone 10 |
 | 11 | **Built, tests pass; independent peers run 2026-11-12** (Appendix C, M11): MCP Inspector pass, `@ag-ui/client` pass, A2A TCK verified with limitations (45 of 47 required checks that ran pass; the 2 failures are scenarios rejected by design; auth not tested by the TCK, covered by our tests and the real-Keycloak run; card 9 of 9 after a fix) | `tests/interop/` (opt-in), `security/evidence/mcp-inspector-run.txt`, `a2a-tck-run.txt`, `ag-ui-client-run.txt`, `tests/test_protocol_auth.py`, `tests/test_mcp_server.py`, `tests/test_a2a.py`, `tests/test_a2a_postgres.py`, `tests/test_ag_ui.py`, `tests/browser/test_ag_ui_panel.py`, `tests/test_protocols_off.py`, `tests/test_protocol_docs.py`; `security/evidence/protocol-token-check-2026-11-11.txt`; verification log, Milestone 11 |
+| 12 | **In progress** (started 2026-11-13). Part 1 done locally: hardened multi-stage images, Compose profiles, protocol services in Compose with one issuer (TD-52; labs check 10 of 10), TD-51 and TD-53 paid, environment files and default-credential checks, gitleaks pre-commit, the local CI equivalent (`scripts\ci_local.ps1`), CI once per change (ADR-0076). Still to come: observability, reliability, load test, the CI/CD additions, Terraform, rollback and backup docs, demo hosting prep |
 | 12–20 | Planned | `docs/implementation-plan.md` |
 
 ## Milestone 11 deliverables

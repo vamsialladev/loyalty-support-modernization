@@ -8,19 +8,25 @@ points ledger right, with a supervisor approving every adjustment.**
 > Guest Rewards program. All data is synthetic. Independent portfolio project; no real customer, users or results.
 > Discovery and scoping (stage 0): [hotel-ai-discovery](https://github.com/vamsialladev/hotel-ai-discovery).
 
-**Status: Milestone 5 of 20 (the legacy workflow, arm A, runs end to end in the browser).** An agent signs in,
-finds the evidence on four legacy screens, gets a rules checklist, and asks for a points adjustment; a different
-supervisor approves and executes it against the synthetic loyalty platform. Arms B and C, and any measured results,
-come later and will appear here only when they exist and are measured.
-Progress: [docs/implementation-status.md](docs/implementation-status.md).
+> **Status: work in progress. Milestones 1–11 of 20 are complete; Milestone 12 (performance, observability, CI/CD,
+> hardening) is under way.** Nothing here is deployed or published yet. Progress and every requirement's status:
+> [docs/implementation-status.md](docs/implementation-status.md).
 
-## What exists today
-- The build specification: [docs/MASTER-SPEC.md](docs/MASTER-SPEC.md)
-- How this stage fits the published engagement: [docs/continuity.md](docs/continuity.md)
-- Every requirement with its tier, milestone and status: [docs/requirements-matrix.md](docs/requirements-matrix.md)
-- A configuration check that never prints secrets: `python -m app.preflight`
-- The legacy console (arm A) and where each of its pre-registered limits lives: [docs/legacy-discovery.md](docs/legacy-discovery.md);
-  how to run it: [docs/onboarding.md](docs/onboarding.md) §4c
+## What exists today (Milestones 1–11)
+- **Discovery and plans:** business case, pre-registered legacy defects and hypotheses, architecture, threat model
+  ([documentation](#documentation) below).
+- **Synthetic data and labels:** a reproducible generator, independent labels, fixed dataset splits
+  ([composition](benchmarks/datasets/v1/composition.md), [label review](evaluations/label-review/README.md)).
+- **Three ways to do the work:** the legacy tool (arm A), an improved non-AI tool (arm B) and an AI-assisted tool
+  (arm C), each with a supervisor approving every adjustment, durable jobs, idempotent execution and reconciliation.
+- **Security:** local and OpenID Connect sign-in, per-customer authorization, CSRF, rate limits, redaction and a
+  red-team suite ([threat model](security/threat-model.md)).
+- **A benchmark of the three arms** on synthetic cases, with its thresholds committed before the runs. Results and
+  their limits (including the ones that must travel with them) are in the reports under `benchmarks/reports/` and in
+  [known limitations](docs/known-limitations.md); none are claimed here.
+- **Optional protocol doors** (MCP, A2A, AG-UI), off by default and read-only; the A2A result is verified with
+  limitations ([protocol test results](docs/protocol-test-results.md)).
+- A configuration check that never prints secrets: `python -m app.preflight`.
 
 ## Run the checks (Windows PowerShell)
 
@@ -30,6 +36,12 @@ uv sync
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\test.ps1
+```
+
+The whole CI pipeline, on your machine (needs Docker Desktop; uses no GitHub Actions minutes):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\ci_local.ps1
 ```
 
 ```powershell

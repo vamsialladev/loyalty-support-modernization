@@ -19,10 +19,10 @@ from urllib.parse import urlencode
 
 import httpx
 import jwt
-from jwt import PyJWKSet
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.adapters.oidc_discovery import DiscoveryFailed, ProviderMetadata
 from app.clock import utc_now
 from app.domain.roles import Identity, Role
 from app.outbound import check_url
@@ -33,7 +33,6 @@ ALLOWED_ALGORITHMS = ("RS256", "ES256", "PS256")
 # argon2 can't verify this, so no password can ever sign in to such an account.
 NO_PASSWORD = "!oidc-no-password"  # noqa: S105
 TIMEOUT_SECONDS = 10.0
-MAX_RESPONSE_BYTES = 1_000_000
 
 
 class OidcError(Exception):
@@ -49,6 +48,7 @@ class OidcSettings:
     group_roles: dict[str, str]
     customer_id: str = "hg-demo"
     groups_claim: str = "groups"
+    fetch_url: str = ""  # where this process reaches the provider, if not at the issuer URL (TD-52)
 
 
 @dataclass(frozen=True)
@@ -59,28 +59,32 @@ class LoginStart:
     verifier: str
 
 
+_REASONS = {
+    "unreachable": "provider_unreachable",
+    "issuer_mismatch": "issuer_mismatch_in_discovery",
+    "unknown_key": "unknown_signing_key",
+}
+
+
+def _oidc_error(failed: DiscoveryFailed) -> OidcError:
+    if failed.kind == "bad_response":
+        return OidcError(f"unexpected_response:{failed.status_code}")
+    return OidcError(_REASONS[failed.kind])
+
+
 class OidcClient:
+    """Discovery and keys come from `app.adapters.oidc_discovery`, shared with the protocol services (TD-51)."""
+
     def __init__(self, settings: OidcSettings, http: httpx.Client | None = None) -> None:
         self.settings = settings
         self.http = http or httpx.Client(timeout=TIMEOUT_SECONDS, follow_redirects=False)
-        self._discovery: dict[str, Any] | None = None
-        self._keys: PyJWKSet | None = None
-
-    def _get_json(self, url: str) -> dict[str, Any]:
-        check_url(url, (self.settings.issuer,))
-        response = self.http.get(url)
-        if response.status_code != 200 or len(response.content) > MAX_RESPONSE_BYTES:
-            raise OidcError(f"unexpected_response:{response.status_code}")
-        data: dict[str, Any] = response.json()
-        return data
+        self._provider = ProviderMetadata(settings.issuer, self.http, settings.fetch_url)
 
     def discovery(self) -> dict[str, Any]:
-        if self._discovery is None:
-            found = self._get_json(self.settings.issuer.rstrip("/") + "/.well-known/openid-configuration")
-            if found.get("issuer") != self.settings.issuer:
-                raise OidcError("issuer_mismatch_in_discovery")
-            self._discovery = found
-        return self._discovery
+        try:
+            return self._provider.document()
+        except DiscoveryFailed as failed:
+            raise _oidc_error(failed) from failed
 
     def start(self) -> LoginStart:
         state, nonce, verifier = (secrets.token_urlsafe(32) for _ in range(3))
@@ -99,18 +103,21 @@ class OidcClient:
 
     def exchange(self, code: str, verifier: str) -> str:
         endpoint = self.discovery()["token_endpoint"]
-        check_url(endpoint, (self.settings.issuer,))
-        response = self.http.post(
-            endpoint,
-            data={
-                "grant_type": "authorization_code",
-                "code": code,
-                "redirect_uri": self.settings.redirect_uri,
-                "client_id": self.settings.client_id,
-                "client_secret": self.settings.client_secret,
-                "code_verifier": verifier,
-            },
-        )
+        check_url(endpoint, (self._provider.base,))
+        try:
+            response = self.http.post(
+                endpoint,
+                data={
+                    "grant_type": "authorization_code",
+                    "code": code,
+                    "redirect_uri": self.settings.redirect_uri,
+                    "client_id": self.settings.client_id,
+                    "client_secret": self.settings.client_secret,
+                    "code_verifier": verifier,
+                },
+            )
+        except httpx.HTTPError as exc:
+            raise OidcError("provider_unreachable") from exc
         if response.status_code != 200:
             raise OidcError(f"token_endpoint:{response.status_code}")
         token = response.json().get("id_token")
@@ -125,14 +132,10 @@ class OidcClient:
             raise OidcError("malformed_token") from exc
         if header.get("alg") not in ALLOWED_ALGORITHMS:
             raise OidcError("algorithm_not_allowed")
-        kid = header.get("kid")
-        for refreshed in (False, True):
-            if self._keys is None or refreshed:  # an unknown key means the provider rotated: fetch once more
-                self._keys = PyJWKSet.from_dict(self._get_json(self.discovery()["jwks_uri"]))
-            for key in self._keys.keys:
-                if key.key_id == kid:
-                    return key
-        raise OidcError("unknown_signing_key")
+        try:  # an unknown key means the provider rotated: the helper fetches once more
+            return self._provider.key_for(header.get("kid"))
+        except DiscoveryFailed as failed:
+            raise _oidc_error(failed) from failed
 
     def verify(self, token: str, nonce: str) -> dict[str, Any]:
         key = self._key_for(token)

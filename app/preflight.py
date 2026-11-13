@@ -128,6 +128,7 @@ VARS: dict[str, Var] = {
         Var("DASHSCOPE_API_KEY", _min_len(16), "at least 16 characters", secret=True),
         Var("LOCAL_MODEL_BASE_URL", _url("http", "https"), "an http(s) URL"),
         Var("OIDC_ISSUER_URL", _url("http", "https"), "an http(s) URL"),
+        Var("OIDC_FETCH_URL", _url("http", "https"), "an http(s) URL"),
         Var("OIDC_CLIENT_ID", _nonempty, "non-empty"),
         Var("OIDC_CLIENT_SECRET", _min_len(16), "at least 16 characters", secret=True),
         Var("KEYCLOAK_ADMIN_PASSWORD", _min_len(12), "at least 12 characters", secret=True),
@@ -155,8 +156,11 @@ VARS: dict[str, Var] = {
         Var("FEATURE_A2A", _bool, "true or false"),
         Var("FEATURE_AG_UI", _bool, "true or false"),
         Var("PROTOCOL_TOKEN_ISSUER", _url("http", "https"), "an http(s) URL"),
+        Var("PROTOCOL_TOKEN_FETCH_URL", _url("http", "https"), "an http(s) URL"),
+        Var("MCP_HOST", _enum("127.0.0.1", "0.0.0.0"), "127.0.0.1, or 0.0.0.0 inside a container"),  # noqa: S104
         Var("MCP_PORT", _regex(r"\d{2,5}"), "a port number"),
         Var("MCP_RESOURCE_URL", _url("http", "https"), "an http(s) URL"),
+        Var("A2A_SPECIALIST_HOST", _enum("127.0.0.1", "0.0.0.0"), "127.0.0.1, or 0.0.0.0 inside a container"),  # noqa: S104
         Var("A2A_SPECIALIST_PORT", _regex(r"\d{2,5}"), "a port number"),
         Var("A2A_SPECIALIST_URL", _url("http", "https"), "an http(s) URL"),
         Var("A2A_CALLBACK_BASES", _regex(r"https?://[^,\s]+(,https?://[^,\s]+)*"), "comma-separated http(s) URLs"),
@@ -336,6 +340,34 @@ def _check_hosted(settings: Settings) -> list[str]:
     return problems
 
 
+# Values that are someone's default, a template's or a test's: never acceptable outside a laptop (DEL-05, ADR-0075).
+KNOWN_DEFAULTS = frozenset({"admin", "password", "changeme", "secret", "loyalty", "postgres", "test", "demo"})
+DEFAULT_MARKERS = ("throwaway", "change-me", "changeme", "example", "check-only", "for-tests", "placeholder")
+HOSTED_MIN_SECRET = 16
+
+
+def _looks_default(value: str) -> bool:
+    lowered = value.strip().lower()
+    return lowered in KNOWN_DEFAULTS or any(marker in lowered for marker in DEFAULT_MARKERS)
+
+
+def _check_no_default_credentials(settings: Settings) -> list[str]:
+    """Hosted profiles: no secret may be a known default, a template or test value, or short. Names only, never
+    values. Database passwords are also checked inside the URLs that carry them."""
+    problems = []
+    for name in sorted(SECRET_NAMES):
+        value = settings.values.get(name, "")
+        if not value.strip():
+            continue
+        in_url = name.endswith(("DATABASE_URL", "_DB_URL"))
+        secret = (urlsplit(value).password or "") if in_url else value
+        if _looks_default(secret):
+            problems.append(f"{name} looks like a default or test value; set a real secret in the platform's store")
+        elif len(secret.strip()) < HOSTED_MIN_SECRET:
+            problems.append(f"{name} is shorter than {HOSTED_MIN_SECRET} characters; hosted profiles need longer")
+    return problems
+
+
 def _check_protocols(settings: Settings) -> list[str]:
     """The protocol services need an issuer for their access tokens, and at least one of them switched on."""
     problems = []
@@ -348,6 +380,8 @@ def _check_protocols(settings: Settings) -> list[str]:
 
 def _check_approved(settings: Settings) -> list[str]:
     problems = _check_hosted(settings)
+    if settings.values.get("DEMO_USER_PASSWORD", "").strip():
+        problems.append("DEMO_USER_PASSWORD must be empty in the approved profile: no shared demo accounts")
     issuer = settings.values.get("OIDC_ISSUER_URL", "")
     if issuer and urlsplit(issuer).scheme != "https":
         problems.append("OIDC_ISSUER_URL must use https in the approved profile")
@@ -405,13 +439,13 @@ PROFILES: dict[str, Profile] = {
                 "SUPABASE_SECRET_KEY",
                 "NEXT_PUBLIC_API_BASE_URL",
             ),
-            (*_COMMON_CHECKS, _check_hosted),
+            (*_COMMON_CHECKS, _check_hosted, _check_no_default_credentials),
         ),
         Profile(
             "approved",
             "Approved deployment: enterprise identity, managed database, explicit model and telemetry destinations.",
             (*_CORE, "DATABASE_URL", "MOCK_API_DATABASE_URL", "MOCK_API_TOKEN", "OTEL_EXPORTER_OTLP_ENDPOINT", *_OIDC),
-            (*_COMMON_CHECKS, _check_approved),
+            (*_COMMON_CHECKS, _check_approved, _check_no_default_credentials),
         ),
         Profile(
             "enterprise-identity",

@@ -2,6 +2,15 @@
 
 Kept current at every milestone. Each line says what is limited, why, and what would change it.
 
+## Added in Milestone 12 (2026-11-13 onward)
+- **If the repository becomes public, the held-out labels are public too** (`docs/public-readiness.md`). The
+  Milestone 10 results were run and frozen before, so they stand; any later held-out claim needs a new split written
+  after publication.
+- **CI runs only on pull requests into `main` and pushes to `main`** (ADR-0076). A branch gets no remote check until
+  its pull request opens; `scripts\ci_local.ps1` runs the same steps locally first.
+- **Keycloak is defined twice** (`docker-compose.yml` profiles and `docker-compose.oidc.yml` for
+  `scripts\oidc_check.ps1`), so a change to one must be copied to the other (ADR-0074).
+
 ## Added in Milestone 11 (2026-11-12)
 - **A2A (PROTO-04) is verified with limitations** (ADR-0072). (1) 45 of the 47 required (MUST) A2A TCK checks that ran
   pass. (2) The 2 failures (DM-ART-001, DM-MSG-001) are TCK scenarios the specialist rejects by design: it accepts only
@@ -31,7 +40,7 @@ Kept current at every milestone. Each line says what is limited, why, and what w
   still rewrite it. It isn't tamper-proof (ADR-0058).
 - **The owner's "unhealthy" run has no proven cause** (ADR-0052). The reproduction didn't fail, and Docker no longer holds
   that run's health events. Any repeat now prints its cause.
-- **CI is a first version** (ADR-0053): no image builds or compose check; those run locally until Milestone 12.
+- **CI is a first version** (ADR-0053): no image builds or compose check yet; Milestone 12 adds them (ADR-0076), and `scripts\ci_local.ps1` runs the whole pipeline locally.
 
 ## Added in Milestone 5 (2026-10-29)
 - **Approvals are not yet bound to an evidence snapshot**, and concurrent executes are not locked (TD-12, TD-13). The

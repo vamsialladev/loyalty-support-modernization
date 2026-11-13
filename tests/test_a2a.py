@@ -239,6 +239,31 @@ def test_the_agent_card_can_be_cached_for_five_minutes_and_nothing_else_is(arm: 
     assert "cache-control" not in call_specialist(app, {}, SEND).headers
 
 
+def _post_raw(app: Any, headers: dict[str, str]) -> httpx.Response:
+    async def go() -> httpx.Response:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=SPECIALIST) as http:
+            return await http.post("/", content=json.dumps(SEND).encode(), headers=headers)
+
+    return asyncio.run(go())
+
+
+@pytest.mark.parametrize("content_type", ["text/plain", "application/x-www-form-urlencoded", ""])
+def test_a_request_that_isnt_json_is_refused_after_the_token_check(
+    arm: ArmA, idp: TestIssuer, content_type: str
+) -> None:
+    """TD-53, found by the A2A TCK: a wrong Content-Type used to reach the JSON-RPC handler."""
+    app = specialist(arm, idp)
+    headers = {"Content-Type": content_type} if content_type else {}
+    assert _post_raw(app, headers).status_code == 401  # no token: still 401 first
+    refused = _post_raw(app, {**headers, "Authorization": f"Bearer {token(idp)}", "A2A-Version": "1.0"})
+    assert refused.status_code == 415 and refused.json()["error"]["code"] == -32600
+
+
+def test_json_with_a_charset_still_reaches_the_handler(arm: ArmA, idp: TestIssuer) -> None:
+    headers = {"Content-Type": "application/json; charset=utf-8", "Authorization": f"Bearer {token(idp)}"}
+    assert _post_raw(specialist(arm, idp), headers | {"A2A-Version": "1.0"}).status_code == 200
+
+
 def test_a_malformed_request_is_rejected_not_guessed(arm: ArmA, idp: TestIssuer) -> None:
     from protocols.a2a.specialist import EvidenceExecutor  # noqa: F401  (the executor validates with EvidenceRequest)
 

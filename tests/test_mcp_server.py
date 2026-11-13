@@ -335,6 +335,34 @@ def test_a_foreign_origin_or_host_is_refused(reader: McpReader, idp: TestIssuer)
     assert host.status_code in (400, 421)
 
 
+def test_in_a_container_the_public_host_is_allowed_and_the_bind_address_is_not(
+    reader: McpReader, idp: TestIssuer
+) -> None:
+    """Found by the Milestone 12 labs check: bound to 0.0.0.0:8030 in Compose and reached at 127.0.0.1:28030, every
+    call got 421 because the allowed host came from the bind address. It now comes from the resource URL."""
+    public = "http://127.0.0.1:28030/mcp"
+    config = McpConfig(public, ISSUER, host="0.0.0.0", port=8030)  # noqa: S104 - the container's bind address
+    verifier = TokenVerifier(
+        ResourceServer("mcp", ISSUER, public, BOTH), StaticKeys(idp.jwks()), require_any_scope=False
+    )
+    server = build_server(reader, verifier, config)
+    app = build_app(server, config)
+    token = idp.token(audience=public)
+
+    async def go() -> list[int]:
+        codes = []
+        async with server.session_manager.run():  # one run per server: the SDK refuses a second
+            for host in ("127.0.0.1:28030", "0.0.0.0:8030"):
+                http = httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app), base_url=f"http://{host}")
+                response = await http.post("/mcp", json=LIST, headers={"Authorization": f"Bearer {token}"})
+                codes.append(int(response.status_code))
+        return codes
+
+    public_host, bind_address = asyncio.run(go())
+    assert public_host == 200
+    assert bind_address in (400, 421)
+
+
 def test_the_token_is_never_kept_for_reuse(reader: McpReader, idp: TestIssuer) -> None:
     """No passthrough: what reaches the tools has no copy of the caller's token."""
     from protocols.mcp.server import LoyaltyTokenVerifier
