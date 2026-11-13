@@ -72,8 +72,32 @@ def test_cited_tests_exist():
 
 def test_verified_rows_cite_evidence():
     for row in ROWS:
-        if row["Status"] == "Implemented and verified":
+        if matrix_scores.status_kind(row["Status"]) == "Implemented and verified":
             assert row["Evidence"] not in ("", "—"), f"{row['ID']} is verified without evidence"
+
+
+def test_a_row_verified_with_limitations_says_what_they_are():
+    for row in ROWS:
+        if row["Status"].startswith("Implemented and verified:"):
+            assert row["Status"] == matrix_scores.WITH_LIMITATIONS, f"{row['ID']}: use the one qualified form"
+        if row["Status"] == matrix_scores.WITH_LIMITATIONS:
+            assert matrix_scores.LIMITATIONS_MARK in row["Implementation"], f"{row['ID']} hides its limitations"
+
+
+def test_the_score_table_names_every_row_verified_with_limitations():
+    table = "\n".join(
+        [
+            "| ID | Requirement | Tier | Score | Implementation | Evidence | Status |",
+            "|---|---|---|---|---|---|---|",
+            "| X-1 | a | 1 | proto | x. **Limitations:** y | t | Implemented and verified: with limitations |",
+            "| X-2 | b | 1 | proto | x | t | Implemented and verified |",
+        ]
+    )
+    rows = matrix_scores.parse(table)
+    assert matrix_scores.scores(rows)["proto"]["done"] == 2
+    assert "Verified with limitations (counted as done; the limits are in each row): X-1" in matrix_scores.render(
+        matrix_scores.scores(rows), rows
+    )
 
 
 def test_scores_count_only_verified():

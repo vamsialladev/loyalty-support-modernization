@@ -2,6 +2,18 @@
 
 Kept current at every milestone. Each line says what is limited, why, and what would change it.
 
+## Added in Milestone 11 (2026-11-12)
+- **A2A (PROTO-04) is verified with limitations** (ADR-0072). (1) 45 of the 47 required (MUST) A2A TCK checks that ran
+  pass. (2) The 2 failures (DM-ART-001, DM-MSG-001) are TCK scenarios the specialist rejects by design: it accepts only
+  an evidence request. (3) The TCK didn't test authentication, because it can't send tokens at commit `70f6f73`; that is
+  covered by `tests/test_a2a.py` and the real-Keycloak run instead. **Keep all three limits with the A2A result in every
+  text that states it, including the Milestone 19 case study and any website or LinkedIn text.** Would change with a TCK
+  release that sends tokens and a test agent for its scenarios.
+- **MCP's 2026-07-28 handshake has same-SDK tests only.** The MCP Inspector CLI 2.14.0 passed but negotiated
+  2025-11-25. Would change when an independent client that speaks 2026-07-28 (Claude Code, for one) is connected.
+- **Nothing alerts on unusual protocol read volume yet.** Calls are rate-limited and audited, but no alert reads the
+  audit (the owner's Milestone 11 exercise). Milestone 12's monitoring work.
+
 ## Added after Milestone 5 (2026-11-03 to 2026-11-04)
 - **A note's length is not its quality** (ADR-0054). `deny_other` with 20 characters can still close a case wrongly, and
   a rule-based code against complete evidence is still an override with any non-empty note. Both are logged as overrides

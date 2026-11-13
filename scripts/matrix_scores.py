@@ -4,6 +4,8 @@
     python scripts/matrix_scores.py --json
 
 A row counts as done only when its status is "Implemented and verified" or "Not applicable" (ADR-0017).
+"Implemented and verified: with limitations" counts as done too, but its row must say what the limits are, and the
+table names every such row so the score never hides them (ADR-0072).
 """
 
 from __future__ import annotations
@@ -38,6 +40,14 @@ LABELS = (
     "Not applicable",
 )
 DONE = ("Implemented and verified", "Not applicable")
+WITH_LIMITATIONS = "Implemented and verified: with limitations"
+LIMITATIONS_MARK = "**Limitations:**"  # what the row's Implementation cell must contain
+
+
+def with_limitations(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    return [r for r in rows if r["Status"] == WITH_LIMITATIONS]
+
+
 PLANNED = re.compile(r"Planned \(M\d+\)")
 
 
@@ -95,6 +105,13 @@ def render(result: dict[str, dict[str, int]], rows: list[dict[str, str]]) -> str
             r.get(k, 0) for k in ("Implemented but unverified", "Configured but untested", "Documentation-only")
         )
         lines.append(f"| {label} | {r['done']} | {r['total']} | {pct} | {partial} |")
+    limited = with_limitations(rows)
+    if limited:
+        lines.append("")
+        lines.append(
+            "Verified with limitations (counted as done; the limits are in each row): "
+            + ", ".join(r["ID"] for r in limited)
+        )
     tiers = Counter(r["Tier"] for r in rows)
     lines.append("")
     lines.append(f"{len(rows)} requirements: " + ", ".join(f"Tier {t}: {n}" for t, n in sorted(tiers.items())))
