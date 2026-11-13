@@ -74,6 +74,8 @@ FAKE = {
     "FEATURE_A2A": "false",
     "FEATURE_AG_UI": "false",
     "PROTOCOL_TOKEN_ISSUER": "https://fake-issuer.test/realms/loyalty",
+    "MCP_PORT": "8030",
+    "MCP_RESOURCE_URL": "http://127.0.0.1:8030/mcp",
 }
 
 PORTFOLIO_KEYS = [

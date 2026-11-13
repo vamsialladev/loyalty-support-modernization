@@ -78,6 +78,7 @@ addopts = "-q"
 markers = [
     "postgres: needs a real PostgreSQL through the TEST_*_DATABASE_URL settings (skipped, with the reason, if absent)",
     "browser: drives Chromium with Playwright (skipped, with the reason, if Chromium is not installed)",
+    "interop: runs an independent protocol client or peer (opt in with RUN_INTEROP=1; needs Node)",
 ]
 
 [tool.coverage.run]

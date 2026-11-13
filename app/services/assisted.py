@@ -93,6 +93,15 @@ def _tool_context(s: Session, who: Identity, case: Case, systems: CustomerSystem
     )
 
 
+def tool_context_for(s: Session, who: Identity, case: Case, systems: CustomerSystems) -> ToolContext:
+    """The same reach arm C's model gets for this case, for another reader of the same tools (the MCP server, M11).
+    Without an investigation yet, there is no confirmed member, and the tools say so."""
+    rec = conventional.latest_recommendation(s, case)
+    if rec is None:
+        rec = Recommendation(member_number=None)
+    return _tool_context(s, who, case, systems, rec)
+
+
 def _ai_text(proposal: Proposal) -> dict[str, Any]:
     return {
         "summary": proposal.summary,
