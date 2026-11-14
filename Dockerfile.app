@@ -46,4 +46,4 @@ USER 10001
 EXPOSE 8010
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
   CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8010/healthz', timeout=5)"]
-CMD ["uvicorn", "--factory", "app.main:create_app", "--host", "0.0.0.0", "--port", "8010"]
+CMD ["uvicorn", "--factory", "app.main:serve", "--host", "0.0.0.0", "--port", "8010"]

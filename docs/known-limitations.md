@@ -10,6 +10,16 @@ Kept current at every milestone. Each line says what is limited, why, and what w
   is public, so CI is back to its normal triggers.
 - **Keycloak is defined twice** (`docker-compose.yml` profiles and `docker-compose.oidc.yml` for
   `scripts\oidc_check.ps1`), so a change to one must be copied to the other (ADR-0074).
+- **Telemetry scrubbing is pattern matching** (ADR-0077): the same limits as `app/ai/redaction.py` (a phone number
+  written in words, or a street address, passes). Query strings are removed whole, so a lookup's filter values never
+  appear in a trace, even when debugging would want them.
+- **The GenAI attribute names may change:** the conventions are in Development, with no release (ADR-0077). Model
+  spans have run only against the mock provider in Milestone 12 (no live calls).
+- **The mock API's database queries aren't traced**, only its requests: it stands for the customer's system and
+  shares no code with the app (TD-55). Database spans in the app come from engine events, not the official
+  instrumentation (TD-54).
+- **Traces leave the process only with `OTEL_EXPORTER_OTLP_ENDPOINT` set.** The default stack exports nothing; the
+  local collector and dashboards come with the `observability` profile.
 
 ## Added in Milestone 11 (2026-11-12)
 - **A2A (PROTO-04) is verified with limitations** (ADR-0072). (1) 45 of the 47 required (MUST) A2A TCK checks that ran

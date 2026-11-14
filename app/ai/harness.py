@@ -21,6 +21,7 @@ from app.ai.loop import Budget, Loop, LoopResult, StepEvent, Stop
 from app.ai.tools import ToolContext
 from app.clock import utc_now
 from app.domain.roles import Identity
+from app.observability.model_calls import TracedProvider
 from app.persistence.models import AiRun, AiSpend, AiStep, Case
 from app.ports.model_provider import ModelProvider, ModelTurn, UserMessage
 from app.services import jobs
@@ -193,9 +194,8 @@ def run_loop(
         return asked
 
     started = time.monotonic()
-    loop = Loop(
-        provider, prompt.text, config.limits, ctx, budget, cancelled=cancelled, on_step=on_step, on_turn=on_turn
-    )
+    traced = TracedProvider(provider, case_id=case.id, cost=priced)  # GenAI spans, no content (ADR-0077)
+    loop = Loop(traced, prompt.text, config.limits, ctx, budget, cancelled=cancelled, on_step=on_step, on_turn=on_turn)
     result = loop.run(opening)
     return run, _finish(s, case, run, result, result.stop.value, int((time.monotonic() - started) * 1000))
 
