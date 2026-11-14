@@ -23,6 +23,10 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **Drift thresholds, the 10% QA rate and the QA rubric are assumptions**, not measurements; the rubric is proposed
   until user acceptance testing (Milestone 18). The category mix uses the queue, the only request category the app
   has. Provider spend is one total per deployment, like the spending caps.
+- **The load test is one laptop, mock dependencies, one app and one worker process** (ADR-0083): not production
+  capacity. Protocol traffic, AG-UI streams and the model provider weren't loaded; CPU wasn't sampled during the run,
+  so "the app process is the first limit" is an inference. Virtual users share four demo accounts, so the per-user
+  rate limit was lifted for the run.
 - **Shadow and the release gate run on the mock only** (ADR-0082): the mock decides by rules, so a candidate prompt
   can't show a quality difference there. Live shadow, canary routing and prompt caching (ENT-17) need an approved
   budget. Retirement dates are entered by hand from the provider's pages; none is published for the current model.
