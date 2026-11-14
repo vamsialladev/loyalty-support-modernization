@@ -1307,3 +1307,26 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   rollback table complete; and the SLOs labelled proposed.
 - **What would change this decision:** an AWS account and a budget approved by the owner (plan, apply to a sandbox,
   run the deploy once, then the restore drill); a customer's own module library or landing zone (map onto it).
+
+## ADR-0086: Enterprise integration is documented, not built; Bedrock is configured only
+- **Context:** spec E4 and E7 ask for shared responsibility, a data residency and transfer map with a configurable
+  provider region, a Claude-via-Bedrock adapter (configure only; blocked without access), a provider contract
+  checklist, the AI gateway pattern, a systems-of-record map, embedding options and event-trigger options (a signed
+  webhook on the mock API "if time allows"). No customer, vendor sandbox or AWS access exists.
+- **Options considered:** building adapters to named products without sandboxes (untestable, and a claim of
+  integration the spec forbids); writing a Bedrock adapter that can't be run (untested code that looks finished);
+  documenting each option with its tradeoffs and leaving the code paths as ports.
+- **Decision:** `docs/shared-responsibility.md`, `docs/data-residency.md` and `docs/enterprise-integration.md`
+  (systems of record, embedding, event triggers, the AI gateway, the provider checklist, Bedrock). `AI_PROVIDER=bedrock`
+  is recognized; preflight already checks its three settings. The runtime now says plainly "configured only; there is
+  no AWS access", and investigations fall back to arm B's result. The optional webhook isn't built.
+- **Found while writing:** my first draft said a repeated webhook event would be harmless because intake makes one
+  case per request reference. It doesn't: `case_requests.request_ref` isn't unique. The document now says a
+  webhook needs that idempotency first.
+- **Tradeoff:** documentation can drift from the code; each claim names the file it describes, so a reviewer can
+  check it. ENT-13 stays blocked, not "done".
+- **Result:** the eight rows are documented. ENT-13 is marked blocked, and ENT-30 is "with limitations" (no
+  webhook). `tests/test_ai_provider.py` checks the Bedrock fallback.
+- **What would change this decision:** a customer's sandbox for a named system (build that adapter behind the
+  existing port, with contract tests); AWS access with the owner's approval (build and test the Bedrock adapter); a
+  CRM that sends events (add intake idempotency, then the signed webhook).
