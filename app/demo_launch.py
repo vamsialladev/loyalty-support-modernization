@@ -252,7 +252,8 @@ def main() -> int:
 
     if reset_due(urls["owner"]):
         reset()
-    return supervise(start, stop_children, lambda: reset_due(urls["owner"]), reset)
+    check = float(os.environ.get("DEMO_RESET_CHECK_SECONDS", RESET_CHECK_SECONDS))  # shorter only to test the path
+    return supervise(start, stop_children, lambda: reset_due(urls["owner"]), reset, check_seconds=check)
 
 
 if __name__ == "__main__":

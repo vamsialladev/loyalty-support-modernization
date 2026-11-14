@@ -1428,6 +1428,8 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **Result:**
   - Before deploying: the free tier covers about 200 visit sessions a month at $0 (projection; the assumptions are in
     `docs/hosting-cloud-run.md` §3).
+  - The in-place reset works in the container: a reset made due while it ran emptied the cases, and the demo served
+    again about 13 s later; the smoke test passed before and after (verification log row 36).
   - **Not deployed:** it waits for the owner's "go".
   - After the deploy: the hosted smoke test, the measured cold start, two days of billing and billable instance time
     against the projection, and the optional $1 spend-cap test (§5.8).
