@@ -1,24 +1,72 @@
 # Session handoff
 
-**Updated:** 2026-11-13, during Milestone 12 (part 1 of a few larger pull requests).
+**Updated:** 2026-11-14, at the end of Milestone 12: operations, delivery and the public demo, merged as fourteen
+pull requests.
 
-## Milestone 12, so far (2026-11-13)
-- **Owner's decisions** are in `CLAUDE.md` (hosting option A at $0; no live model calls; repository public; merges).
-- **The repository is public** (2026-11-13, 22:07 UTC, `main` at `f76c1d6`); secret scanning and push protection are
-  on. The minutes limit (ADR-0076) is lifted: normal CI triggers and PR sizes. Held-out labels are public from this
-  date, so any later held-out claim needs a new split.
-- **Part 1, PR #38, merged (`f76c1d6`):** multi-stage images, Compose profiles (demo, test, enterprise-identity,
-  labs), protocol services in Compose with one issuer (TD-52, labs check 10 of 10), TD-51 and TD-53 paid, environment
-  files and default-credential checks, gitleaks pre-commit, `scripts\ci_local.ps1`, `opentelemetry-api` 1.45.2 (a CVE).
-- **Public-readiness check:** `docs/public-readiness.md` (no blocker; the flip is recorded there).
-- **Still to do in Milestone 12:** observability (OTel, logs, metrics, alerts, security events), reliability
-  (breakers, backpressure, execution flag), the load test, CI/CD additions, Terraform
-  (validate only), rollback and backup docs, demo hosting prep and the Render + Neon setup steps for the owner.
+## Where things stand
+- Milestones 1–12 are on `main` in the **public** repository (public since 2026-11-13, 22:07 UTC, `main` at
+  `f76c1d6`; secret scanning and push protection on). Held-out labels are public from that date: any later held-out
+  claim needs a new split written after it.
+- **Milestone 12's pull requests, merged in order with merge commits, each with CI green:** #38 containers
+  (`f76c1d6`), #39 public (`7914743`), #40 tracing (`6e769b2`), #41 monitoring (`d39bdd9`), #42 security events
+  (`ca049e7`), #43 dashboards (`ed8642f`), #44 reliability (`628f7c7`), #45 model lifecycle (`2713e75`), #46 load
+  test (`8764fbe`), #47 supply chain (`6e2f170`), #48 Terraform (`2f8289f`), #49 enterprise documents (`0ad50be`),
+  #59 public demo (`d7a69ba`), then this close-out.
+- **Appendix C, M12 is met:** the local CI equivalent passes (verification log, Milestone 12, row 33), the load
+  test report is saved (`performance/reports/2026-11-14-local.md`), and `terraform validate` passes locally and in CI.
+- **Build provenance works on `main`:** attestation 67563437 for the app image, in Sigstore's public log (row 31).
+- **The public demo is built, not deployed.** Option A (Render free + Neon free, $0) is ready: `Dockerfile.demo`,
+  `render.yaml`, `app/demo_launch.py`. It passed the smoke test 10 of 10 locally under Render-free-like limits.
+- **Deferred by the owner's decision (no live model calls in M12):** ENT-17 (prompt caching), LIVE-05 (caps against a
+  live deploy; the demo forces mock AI, so it has no model spend).
+- **Ways of working are unchanged:** branch, pull request, merge commit; push with
+  `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push`; run every test that reads `docs/`
+  before pushing (three of Milestone 12's CI failures were guard tests I hadn't run locally).
+
+## Waiting on the owner (Milestone 12)
+1. **Create the demo's accounts** (`docs/hosting-options.md`, "Your steps"): a new Neon project, then Render with
+   GitHub sign-in, access to this one repository, New → Blueprint, paste `DEMO_DATABASE_URL` in Render only, Apply.
+   Then send me the service URL (not the connection string), and I'll run `scripts/demo_smoke.py` against it.
+   Neon's owner role isn't a full superuser, so the first start is the real test of the setup; the logs say which
+   step failed if it does.
+2. **Dependabot pull requests #50–#58** are open and not merged. #50, #51 (Python 3.15) and #58 (anthropic 2.x) are
+   the kind the narrowed config now ignores: close them, or leave them and Dependabot should close them. The others
+   (uv 0.13.8, Playwright 1.65.0, pypdf 7.0.1, python-multipart, types-pyyaml) each need their CI and a look;
+   pypdf 7 is a major version. Ask me to review any of them.
+3. **The Milestone 12 exercise** (below), and the Milestone 7 to 9 exercises still open.
+4. Earlier items still open: connect your Claude Code to the local MCP server (optional); the Codex exercise; tick
+   "Block command line pushes that expose my email" if not done.
+
+## Milestone 12, in K.1 form
+**What changed.** The system can now be operated: traces, scrubbed JSON logs and metrics; Grafana dashboards and seven
+alerts, each naming a runbook; circuit breakers and backpressure; a release gate on the frozen mock regression; a
+measured load test; a full CI pipeline with image scans, an SBOM and provenance; validate-only AWS Terraform; rollback,
+backup, SLO and enterprise documents; and a one-container public demo ready for free hosting.
+
+**Why.** A pilot fails on operations more often than on the model. A customer's platform team asks first how they will
+see it, roll it back and patch it. Building this before any hosted deployment means the first deployment starts
+observable, and the load test says what to scale first (the single app process) before anyone pays for size.
+
+**How to verify.** `scripts\ci_local.ps1` (every CI job, about 30 minutes); `scripts\observability_check.ps1` (21
+checks); `scripts\load_test.ps1` (about 10 minutes); `scripts\terraform_check.ps1`; `uv run python
+scripts/release_gate.py --force`; after the deploy, `uv run python scripts/demo_smoke.py <url>`.
+
+**Common failure modes.** An alert rule that loads and never fires (Grafana's plugins failed under `cap_drop: ALL`). A
+metric unit that renames the metric (`"1"` became `_ratio`). Postgres healthy before it accepts TCP. Secure cookies
+not sent back over local HTTP. A guard test you didn't run still runs on CI. All in `docs/onboarding.md` §4l.
+
+## The Milestone 12 exercise (K.1), waiting for your answer
+The load test found throughput fell between 8 and 20 virtual agents (16.5 requests a second at 8, 12.8 at 20) while the queue
+stays short, and the app is one process with 1 CPU. **What would you change first to double the capacity, how would
+you prove it worked with the same test, and which number in `docs/slos.md` would tell you a real deployment needs
+it?** Your answer goes in `docs/owner-exercises.md`. Then try one small change: lower one `drift_thresholds` value in
+`config/customers/hg-demo.yaml`, run the drift check from `docs/runbooks/ai-quality-drift.md`, and say which signal
+it now reports and why (then put the value back).
 
 ## Before Milestone 12
 **Updated:** 2026-11-12, at the end of Milestone 11: independent peers run, five pull requests merged in order.
 
-## Where things stand
+### Where things stood at the end of Milestone 11
 - Milestones 1-11 are on `main` in the **private** GitHub repository. Milestone 11 merged as five pull requests, in order,
   with merge commits: #32 foundation (`db6cbc6`), #33 MCP (`b81f60c`), #34 A2A (`c22b349`), #35 AG-UI, #36 close-out
   (this file's PR, so it's the last one in). Each was merged only with its CI green.

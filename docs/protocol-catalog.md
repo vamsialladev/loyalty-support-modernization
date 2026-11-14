@@ -62,7 +62,7 @@ and status, and their full record when they're built. **"ACP" is always spelled 
 
 | Standard | Where it's used here |
 |---|---|
-| HTTPS/TLS | Required by MCP's and A2A's remote guidance. Local demo runs on loopback HTTP; TLS is Milestone 12 |
+| HTTPS/TLS | Required by MCP's and A2A's remote guidance. Local demo runs on loopback HTTP; hosted TLS is in `docs/encryption.md` (the protocol services are not part of the public demo) |
 | HTTP, JSON-RPC 2.0 | MCP's and A2A's message framing |
 | OpenAPI, JSON Schema | REST contract (`openapi-v1.json`); MCP tool input schemas; A2A artifact schema |
 | SSE | AG-UI's transport; MCP and A2A streaming responses |

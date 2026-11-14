@@ -39,6 +39,15 @@ flag. **Reading this as a standard:** `docs/rfcs/RFC-0001-write-path-integrity.m
 - **Build the protocol when the caller exists.** MCP for several AI clients, A2A for another team's agent, AG-UI for a
   live frontend. For one internal client, REST wins (`docs/protocol-selection.md`).
 
+## Added in Milestone 12
+- **Operate it before scaling it.** Traces, logs, metrics, alerts with runbooks, a load test and a release gate came
+  before any hosted deployment, so the first deployment starts observable. The load test says the first limit is the
+  single app process, not the database or the worker: more app processes come before anything bigger.
+- **One telemetry path, scrubbed at the edge of the process.** OpenTelemetry, with one exporter that removes query
+  strings and personal data, keeps a customer's monitoring choice open and the privacy guarantee in our code.
+- **Validate-only infrastructure.** The AWS Terraform is reviewed and checked in CI but never applied without an
+  account and a budget; the public demo runs on free tiers.
+
 ## What not to build
 A general agent framework; a vector database before a measured need; multitenancy inside one database; a workflow
 automation platform; anything that lets a model move points.
