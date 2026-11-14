@@ -1064,3 +1064,29 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **What would change this decision:** volumes where computing on request is too slow (then materialized daily
   aggregates, as the analytics export already shapes them); a customer's own QA form (map it onto the rubric codes);
   a calibrated rubric from UAT (Milestone 18).
+
+## ADR-0079: Security events: one classification over the audit tables, ECS export, owner-only retention
+- **Context:** spec C.10 asks for security event logging (failed auth, denied authorization, privilege changes, tool
+  execution, approval and execution, suspicious repeats, budget limits, configuration changes, credential
+  revocation) with minimal content, restricted access, retention, and alerts with owners and runbooks; E7 asks for a
+  SIEM-ready export with a field map. Most of these were already written where they happen, as append-only audit
+  rows (ADR-0058). CSRF refusals were not.
+- **Options considered:** a separate `security_events` table written beside the audit rows (two records of one
+  fact, which can disagree); a log-only stream (lost on restart, and the app's logs are scrubbed of the detail an
+  investigation needs); classifying the existing audit rows.
+- **Decision:** `app/services/security_events.py` classifies existing audit rows by action (category, ECS outcome,
+  a proposed severity) from one table, `KINDS`. A test fails if a classified action isn't written anywhere in the
+  code, so the list can't claim coverage that doesn't exist. CSRF refusals are now recorded in the console and the API.
+  Reading is for administrators and auditors only (`GET /api/v1/security/events`, the CLI export). The export is JSON
+  lines with Elastic Common Schema names (`docs/siem-field-map.md`), and detail fields leave only from an allow-list.
+  Retention: the audit record is kept. Only high-volume refusals expire (default 400 days, at least 30), and only
+  the owner role can delete them, through the migrate service.
+- **Tradeoff:** classifying on read means the rules can change without rewriting history, but an old export and a new
+  one can classify the same row differently (the export carries the action, so a SIEM can re-map). "Suspicious
+  repeats" are an alert over these events (the dashboards), not an event of their own. Severity levels are proposed.
+- **Result:** `tests/test_security_events.py`: real flows (a failed sign-in with a password typed as the username, a
+  denied page, an API write without CSRF, a kill switch change, a budget stop) produce classified events. The typed
+  password, the kill switch's reason and the demo password never reach the export. Retention deletes only old
+  refusals and refuses fewer than 30 days.
+- **What would change this decision:** a customer SIEM with its own schema (map the ECS fields once); a requirement
+  to stream events as they happen (add a log sink for the same documents; the classification stays one table).

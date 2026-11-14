@@ -2255,6 +2255,65 @@
     },
     "summary": "Qa Summary"
    }
+  },
+  "/api/v1/security/events": {
+   "get": {
+    "description": "The same documents as the SIEM export (Elastic Common Schema names; docs/siem-field-map.md).",
+    "operationId": "security_event_list_api_v1_security_events_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "since",
+      "required": false,
+      "schema": {
+       "default": "",
+       "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$",
+       "title": "Since",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 200,
+       "maximum": 1000,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "additionalProperties": true,
+          "type": "object"
+         },
+         "title": "Response Security Event List Api V1 Security Events Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Security Event List"
+   }
   }
  }
 }

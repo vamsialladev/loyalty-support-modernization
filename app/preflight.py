@@ -120,6 +120,7 @@ VARS: dict[str, Var] = {
         Var("APP_BASE_URL", _url("http", "https"), "an http(s) URL"),
         Var("RATE_LIMIT_PER_MINUTE", _positive_number, "a positive number"),
         Var("RETENTION_DAYS", _positive_number, "a positive number"),
+        Var("SECURITY_EVENT_RETENTION_DAYS", _positive_number, "a positive number (30 or more)"),
         Var("AWS_PROFILE", _nonempty, "an AWS SSO profile name"),
         Var("AWS_REGION", _regex(r"[a-z]{2}(-gov)?-[a-z]+-\d"), "an AWS region such as us-east-1"),
         Var("BEDROCK_MODEL_ID", _regex(r"[A-Za-z0-9][A-Za-z0-9.:\-]+"), "a Bedrock model or inference-profile ID"),

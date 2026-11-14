@@ -27,9 +27,19 @@ from app.domain.case_states import InvalidTransition
 from app.domain.roles import NotPermitted, require_case_reader
 from app.persistence.models import AdjustmentRequestRow, Case, Recommendation
 from app.ports.customer_systems import CustomerSystemError
-from app.services import accounts, conventional, jobs, metrics, policies, qa_sampling, rate_limit, sessions
+from app.services import (
+    accounts,
+    conventional,
+    jobs,
+    metrics,
+    policies,
+    qa_sampling,
+    rate_limit,
+    security_events,
+    sessions,
+)
 from app.services import cases as svc
-from app.services.instrumentation import events
+from app.services.instrumentation import events, record_system
 from app.services.systems import SystemsFactory
 from app.services.write_path import SharedWritePath, approval_of, attempts_of, load_request
 from app.settings import AppSettings
@@ -196,8 +206,13 @@ def signed_in(request: Request, s: DB) -> sessions.ActiveSession:
 Reader = Annotated[sessions.ActiveSession, Depends(signed_in)]
 
 
-def changing(active: Reader, x_csrf_token: Annotated[str, Header()] = "") -> sessions.ActiveSession:
+def changing(
+    request: Request, s: DB, active: Reader, x_csrf_token: Annotated[str, Header()] = ""
+) -> sessions.ActiveSession:
     if not sessions.csrf_ok(active, x_csrf_token):
+        # A security event (SEC-20): where, and by whom; never the request's content.
+        record_system(s, active.identity, "csrf_failed", path=request.url.path[:120], method=request.method)
+        s.commit()
         raise Problem(403, "csrf_failed", "The X-CSRF-Token header is missing or wrong")
     return active
 
@@ -426,6 +441,18 @@ def build_router(settings: AppSettings, systems_for: SystemsFactory) -> APIRoute
     @router.get("/qa/summary")
     def qa_summary(s: DB, active: Reader) -> dict[str, Any]:
         return qa_sampling.summary(s, active.identity)
+
+    # ---------- security events (SEC-20, ENT-31): administrators and auditors ----------
+
+    @router.get("/security/events")
+    def security_event_list(
+        s: DB,
+        active: Reader,
+        since: Annotated[str, Query(pattern=r"^(\d{4}-\d{2}-\d{2})?$")] = "",
+        limit: Annotated[int, Query(ge=1, le=1000)] = 200,
+    ) -> list[dict[str, Any]]:
+        """The same documents as the SIEM export (Elastic Common Schema names; docs/siem-field-map.md)."""
+        return [security_events.to_ecs(e) for e in security_events.events(s, active.identity, since, limit)]
 
     return router
 
