@@ -1268,3 +1268,42 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **What would change this decision:** a registry for the images (attest and push there, and verify before deploy);
   a customer's own scanner or base-image policy; an AWS account with the owner's approval (configure the role and
   the environment's reviewers, then run the deploy once).
+
+## ADR-0085: Terraform for one AWS path (validate only), rollback by image, operations documents
+- **Context:** spec F.2 asks for Terraform for one AWS path (ECS Fargate, private RDS, ALB with ACM, Secrets
+  Manager, least-privilege roles, CloudWatch, backups, tags, teardown) checked by `fmt` and `validate`, plus
+  rollback, backup and restore, proposed SLOs, release gates per environment and a maintenance schedule. There is no
+  AWS account, and `terraform apply` needs the owner's approval and a budget.
+- **Options considered:** community modules (fewer lines, but versions and defaults to vet one by one); a single
+  monolithic file; plain resources split by concern. For rollback: schema downgrades, or image rollbacks with
+  expand/contract migrations.
+- **Decision:**
+  - **Terraform:** `infrastructure/terraform/aws/`, plain resources, Terraform 1.17.1 and AWS provider 6.71.0
+    pinned, with the lock file committed. Two zones; the tasks and the database sit in private subnets. One NAT
+    gateway (a stated cost choice). Only the ALB takes traffic from the internet, on 443 with TLS 1.3. RDS is
+    encrypted with a project KMS key, keeps automated backups for 7 or 14 days, forces SSL, and has deletion
+    protection in production. RDS manages the owner's password, so it's never in code or state. Secrets Manager
+    entries are created empty, and a person fills them. The task role has no AWS permissions; the execution role
+    reads only the named secrets. ECS's deployment circuit breaker rolls back a release that never becomes healthy.
+    CloudWatch alarms name their runbooks, and a budget alarm covers spend. **Checked, never applied:**
+    `scripts\terraform_check.ps1` and a CI job run `fmt -check`, `init -backend=false`, `validate` and Trivy.
+  - **Rollback** (`docs/rollback.md`) rolls back the image, never the schema, because migrations are
+    expand/contract. All 13 migrations have a downgrade; CI runs every one down to base and back up on a fresh
+    Postgres. But 11 of them drop live data on the way down, so production fixes forward. The table lists each one,
+    and a test fails if a new migration isn't added to it.
+  - **Operations documents:** `docs/backup-restore.md` (instructions; the timed drill is Milestone 13),
+    `docs/slos.md` (proposed only; "a local test proves no production availability"), `docs/environment-gates.md`,
+    `docs/maintenance.md`, `docs/teardown.md` and `docs/aws-deploy-setup.md`.
+- **Found while building:** Trivy reads its inline ignore only on the line before the resource, under the rule's
+  new ID (`AWS-0132`, not `AVD-AWS-0132`). The one exception is the ALB log bucket's encryption: ALB access logs
+  accept only SSE-S3. My first comments promised an HTTP-to-HTTPS redirect that didn't exist; the comment was
+  corrected, and port 80 stays closed.
+- **Tradeoff:** plain resources are longer than modules but every setting is visible and reviewed. One NAT gateway
+  is a single point of failure for outbound calls, so the production SLO assumes two. The Terraform has never met
+  real AWS; `validate` checks types and references, not behaviour.
+- **Result:** the Terraform check passed: fmt, init, validate, and Trivy with 0 HIGH or CRITICAL findings
+  (verification log, Milestone 12, row 27). `tests/test_infrastructure_docs.py` keeps the database private,
+  encrypted and backed up; only the ALB open to the internet, on 443; no secret or access key in the code; the
+  rollback table complete; and the SLOs labelled proposed.
+- **What would change this decision:** an AWS account and a budget approved by the owner (plan, apply to a sandbox,
+  run the deploy once, then the restore drill); a customer's own module library or landing zone (map onto it).
