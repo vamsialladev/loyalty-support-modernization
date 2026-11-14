@@ -119,6 +119,7 @@ VARS: dict[str, Var] = {
         Var("AUTH_MODE", _enum("local", "oidc"), "local or oidc"),
         Var("APP_BASE_URL", _url("http", "https"), "an http(s) URL"),
         Var("RATE_LIMIT_PER_MINUTE", _positive_number, "a positive number"),
+        Var("MAX_QUEUED_INVESTIGATIONS", _regex(r"[1-9]\d*"), "a whole number above 0"),
         Var("RETENTION_DAYS", _positive_number, "a positive number"),
         Var("SECURITY_EVENT_RETENTION_DAYS", _positive_number, "a positive number (30 or more)"),
         Var("AWS_PROFILE", _nonempty, "an AWS SSO profile name"),

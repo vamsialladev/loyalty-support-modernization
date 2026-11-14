@@ -57,8 +57,10 @@ def runtime_from_settings(settings: AppSettings) -> AiRuntime:
     if not settings.anthropic_model or not os.environ.get("ANTHROPIC_API_KEY"):
         return AiRuntime(None, caps, "the model or the key isn't set")
     from app.adapters.anthropic_model import AnthropicModel
+    from app.adapters.circuit import GuardedModel, breaker_for
 
-    return AiRuntime(AnthropicModel(settings.anthropic_model), caps)
+    model = GuardedModel(AnthropicModel(settings.anthropic_model), breaker_for("model:anthropic"))  # ADR-0081
+    return AiRuntime(model, caps)  # GuardedModel has the provider's interface
 
 
 def mode_label(settings: AppSettings) -> str:

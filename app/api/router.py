@@ -81,6 +81,10 @@ def _to_problem(exc: Exception) -> JSONResponse:
         response = problem_response(429, "rate_limited", "Too many requests")
         response.headers["Retry-After"] = str(exc.retry_after_seconds)
         return response
+    if isinstance(exc, jobs.Busy):  # backpressure (ADR-0081)
+        response = problem_response(503, "busy", "Too much work is waiting", str(exc))
+        response.headers["Retry-After"] = str(exc.retry_after_seconds)
+        return response
     raise exc
 
 
@@ -102,6 +106,7 @@ class ProblemRoute(APIRoute):
                 RequestValidationError,
                 CustomerSystemError,
                 rate_limit.RateLimited,
+                jobs.Busy,
             ) as exc:
                 return _to_problem(exc)
 
@@ -222,7 +227,11 @@ Writer = Annotated[sessions.ActiveSession, Depends(changing)]
 
 def build_router(settings: AppSettings, systems_for: SystemsFactory) -> APIRouter:
     router = APIRouter(prefix="/api/v1", route_class=ProblemRoute)
-    write_path = SharedWritePath(settings.customer_id, secret_key=settings.secret_key or None)
+    write_path = SharedWritePath(
+        settings.customer_id,
+        secret_key=settings.secret_key or None,
+        execution_enabled=settings.feature_adjustment_execution,
+    )
 
     @router.get("/me", response_model=api.WhoAmI)
     def me(active: Reader) -> api.WhoAmI:

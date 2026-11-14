@@ -11,7 +11,7 @@ row is named under the table with its limits in the matrix (ADR-0072).
 
 | Score | Done (verified) | Total | % | In progress (unverified / configured / docs) |
 |---|---|---|---|---|
-| Core product functionality | 84 | 108 | 78% | 5 |
+| Core product functionality | 85 | 108 | 79% | 5 |
 | Benchmarks and evaluation | 46 | 64 | 72% | 3 |
 | Actual-tool exercises | 0 | 16 | 0% | 3 |
 | Protocol labs | 6 | 16 | 38% | 2 |
@@ -27,7 +27,7 @@ New in M12 so far: hardened multi-stage images and Compose profiles (DEL-01), en
 checks (DEL-05), gitleaks as a pre-commit hook (ACC-06), OpenTelemetry traces and scrubbed JSON logs (OPS-02),
 GenAI span attributes (LIVE-03), operational metrics (OPS-03), online QA sampling (ENT-18), drift signals (ENT-19), the
 daily analytics export (ENT-32), classified security events with an ECS export (SEC-20, ENT-31), local dashboards and
-alerts with runbooks (OPS-04).
+alerts with runbooks (OPS-04), circuit breakers, backpressure and the execution flag (OPS-05).
 
 New in M11: MCP, A2A and AG-UI over the same services (PROTO-01 to PROTO-05, PROTO-14's M11 part), the protocol specs and the OWASP agentic list (SEC-01), callbacks and card fetching (SEC-16), RFC-0004 (PURP-05), reuse cited (REUSE-06, REUSE-09). Verified on the same SDK on both sides, and tokens against a real Keycloak. **Independent peers run 2026-11-12 with the owner's OK:** the MCP Inspector and `@ag-ui/client` passed, so PROTO-03 and PROTO-05 are verified. **PROTO-04 (A2A) is verified with limitations** (ADR-0072): 45 of the 47 required (MUST) TCK checks that ran pass; the 2 failures are TCK scenarios the specialist rejects by design; the TCK didn't test authentication, which our own tests and the real-Keycloak run cover instead. One SHOULD gap was found and fixed (`docs/protocol-test-results.md`).
 

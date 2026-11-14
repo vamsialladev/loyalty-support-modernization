@@ -15,13 +15,14 @@ Payloads hold IDs only: no personal data, and nothing that can go stale.
 from __future__ import annotations
 
 import hashlib
+import os
 import uuid
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import and_, or_, select, text, update
+from sqlalchemy import and_, func, or_, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -64,6 +65,33 @@ class GiveUp(Exception):
     def __init__(self, code: str) -> None:
         super().__init__(code)
         self.code = code
+
+
+class Busy(Exception):
+    """Backpressure (spec F.1; OPS-05, ADR-0081): too much optional work is waiting, so new work is refused for now.
+    Only new investigations are refused; executions, reconciliation and work already started never are."""
+
+    def __init__(self, waiting: int, retry_after_seconds: int) -> None:
+        super().__init__(f"{waiting} investigations are waiting; try again in {retry_after_seconds} seconds")
+        self.waiting, self.retry_after_seconds = waiting, retry_after_seconds
+
+
+DEFAULT_MAX_WAITING = 200  # an assumption; the load test (PR 4) measures what one worker clears per minute
+BUSY_RETRY_AFTER_SECONDS = 30
+
+
+def max_waiting() -> int:
+    raw = os.environ.get("MAX_QUEUED_INVESTIGATIONS", "").strip()
+    return int(raw) if raw.isdigit() and int(raw) > 0 else DEFAULT_MAX_WAITING
+
+
+def check_capacity(s: Session, kind: str, limit: int | None = None) -> None:
+    """Raise Busy when `limit` or more jobs of this kind are queued and due. Running jobs don't count: they're being
+    worked."""
+    limit = limit if limit is not None else max_waiting()
+    waiting = s.scalar(select(func.count(Job.id)).where(Job.kind == kind, Job.status == QUEUED)) or 0
+    if waiting >= limit:
+        raise Busy(int(waiting), BUSY_RETRY_AFTER_SECONDS)
 
 
 @dataclass(frozen=True)

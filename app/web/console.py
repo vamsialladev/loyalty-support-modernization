@@ -174,7 +174,11 @@ def install_console(
     app.state.rate_limit_per_minute = settings.rate_limit_per_minute
     rules = LegacyRules.load(settings.customer_id)
     index = KeywordIndex.load()
-    write_path = SharedWritePath(settings.customer_id, secret_key=settings.secret_key or None)
+    write_path = SharedWritePath(
+        settings.customer_id,
+        secret_key=settings.secret_key or None,
+        execution_enabled=settings.feature_adjustment_execution,
+    )
 
     # ---------- plumbing ----------
 
@@ -260,6 +264,16 @@ def install_console(
         _audit_denial(request, "rate_limited")
         message = "Too many requests. Wait a little and try again."
         response = render(request, "error.html", None, 429, title="Slow down", message=message)
+        response.headers["Retry-After"] = str(exc.retry_after_seconds)
+        return response
+
+    @app.exception_handler(jobs.Busy)
+    def _busy(request: Request, exc: jobs.Busy) -> Response:
+        """Backpressure (ADR-0081): the case is unchanged, and the page says when to try again."""
+        message = (
+            f"Too many investigations are waiting. The case is unchanged; try again in {exc.retry_after_seconds} s."
+        )
+        response = render(request, "error.html", None, 503, title="Busy right now", message=message)
         response.headers["Retry-After"] = str(exc.retry_after_seconds)
         return response
 

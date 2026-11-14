@@ -252,6 +252,11 @@ def start_investigation(s: Session, who: Identity, case: Case) -> Job:
     if already is not None:
         s.commit()
         return already
+    try:
+        jobs.check_capacity(s, INVESTIGATE_JOB)  # backpressure: a new investigation waits rather than piles up
+    except jobs.Busy:
+        s.rollback()  # the case stays as it was; the person tries again later
+        raise
     job = jobs.enqueue(s, INVESTIGATE_JOB, {"case_id": case.id, "user_id": who.user_id}, case_id=case.id)
     record(s, case, who, "investigation_requested", job=job.id)
     s.commit()

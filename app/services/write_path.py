@@ -64,6 +64,10 @@ IN_FLIGHT_OR_DONE = ("executing", "executed", "execution_unknown", "execution_co
 MAY_HAVE_APPLIED = (UncertainOutcome, MalformedResponse, SchemaMismatch)
 ABSENT_LOOKUPS_NEEDED = 2
 DEFAULT_SETTLE_SECONDS = 60.0  # an assumption: how long a platform's lookup might lag a write (swap guide)
+EXECUTION_OFF_MESSAGE = (
+    "Adjustment execution is switched off in this deployment (FEATURE_ADJUSTMENT_EXECUTION). The approval stands; "
+    "nothing was sent to the loyalty platform."
+)
 SUBMIT_OUTCOMES = ("submitted", "unknown", "rejected_upstream", "busy", "held", "conflict")
 
 
@@ -164,11 +168,15 @@ class SharedWritePath:
         secret_key: str | None = None,
         clock: Callable[[], str] = utc_now,
         settle_seconds: float = DEFAULT_SETTLE_SECONDS,
+        execution_enabled: bool = True,
     ) -> None:
         self.customer_id = customer_id
         self._secret_key = secret_key
         self._clock = clock
         self._settle_seconds = settle_seconds
+        # FEATURE_ADJUSTMENT_EXECUTION (spec F.1; OPS-05, ADR-0081). Off: nothing is sent to the loyalty platform;
+        # approved requests wait, exactly as under the kill switch, and reconciliation still runs.
+        self.execution_enabled = execution_enabled
 
     @property
     def _secret(self) -> str:
@@ -293,6 +301,9 @@ class SharedWritePath:
         approval = approval_of(s, row)
         if state is not CaseState.APPROVED or row.status != "approved" or approval is None:
             raise WorkflowError("only an approved adjustment can be executed")
+        if not self.execution_enabled:
+            s.rollback()
+            raise WorkflowError(EXECUTION_OFF_MESSAGE)
         if kill_switch.is_engaged_for_claim(s):
             s.rollback()
             raise WorkflowError(kill_switch.MESSAGE)
@@ -362,6 +373,8 @@ class SharedWritePath:
             raise WorkflowError("only an approved adjustment can be executed")
         if approval.decision != "approved":
             raise WorkflowError("only an approved adjustment can be executed")
+        if not self.execution_enabled:
+            return ExecutionResult("held", EXECUTION_OFF_MESSAGE)
         if kill_switch.is_engaged(s):
             return ExecutionResult("held", kill_switch.MESSAGE)
         unusable = self._why_unusable(row, approval)

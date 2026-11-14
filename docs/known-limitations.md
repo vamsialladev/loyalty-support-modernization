@@ -23,6 +23,9 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **Drift thresholds, the 10% QA rate and the QA rubric are assumptions**, not measurements; the rubric is proposed
   until user acceptance testing (Milestone 18). The category mix uses the queue, the only request category the app
   has. Provider spend is one total per deployment, like the spending caps.
+- **Circuit breakers are per process** (ADR-0081): with several workers, each learns of an outage on its own. The
+  thresholds (5 failures in 30 s, 30 s cooldown) and the backpressure limit (200 waiting investigations) are
+  assumptions until the load test measures the clearing rate.
 - **Traces leave the process only with `OTEL_EXPORTER_OTLP_ENDPOINT` set.** The default stack exports nothing; the
   local collector and dashboards come with the `observability` profile (ADR-0080).
 - **The observability profile is for one machine:** Grafana keeps the image's built-in admin/admin (localhost only,

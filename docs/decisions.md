@@ -1137,3 +1137,38 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **What would change this decision:** a customer's own monitoring (send the same OTLP to their collector, and load
   the dashboard and rules there; the names are in one module and one file); a hosted deployment that needs alerts
   delivered (add a contact point there, not here).
+
+## ADR-0081: Circuit breakers, backpressure on new investigations, and the execution flag
+- **Context:** spec F.1 asks for circuit breakers where justified, queue backpressure, a provider-outage manual
+  fallback and feature flags for live AI and for adjustment execution. Milestone 8 already has bounded retries for
+  transient errors, budgets, and the manual fallback. Missing: when a dependency is down, every case still spends its
+  retries and timeouts; nothing stops the queue growing without limit; and `FEATURE_ADJUSTMENT_EXECUTION` was
+  checked by preflight but read by no code.
+- **Options considered:** a breaker library (one more dependency for about 60 lines); a breaker for every outbound
+  call (the identity provider and protocol peers have their own short timeouts and few calls); backpressure on case
+  intake (would refuse a member's request, the one thing that must always be recorded); backpressure on every job
+  kind (would refuse executions and reconciliation, which must never be dropped).
+- **Decision:**
+  - A small breaker (`app/adapters/circuit.py`) for the customer systems and the live model provider only: 5
+    failures within 30 seconds open it, and after 30 seconds one trial call decides. It counts only answers that
+    mean the system is failing (503, timeouts, uncertain writes). "Not found", conflicts, rate limits and a provider's
+    refusal of a bad request mean the system is up. While it's open, nothing is sent (safe even for a write), and the
+    caller's existing rules apply: an investigation retries later, and the AI loop takes its manual fallback. One
+    breaker per dependency per process, injected only by the production wiring, so tests that inject faults don't
+    share one.
+  - **Backpressure on new investigations only:** at `MAX_QUEUED_INVESTIGATIONS` (default 200, an assumption)
+    waiting, starting one answers 503 with `Retry-After` (API problem `busy`, console page "Busy right now"), and
+    the case is unchanged. Case intake, follow-up investigations, executions and reconciliation are never refused.
+  - **`FEATURE_ADJUSTMENT_EXECUTION`** is now a setting read by the write path. When it's off, requesting execution
+    is refused and a queued execution is held, exactly as under the kill switch: the approval stands and nothing is
+    sent. It's on unless set otherwise, and `config/environments/production.env` sets it to `false`.
+- **Tradeoff:** a per-process breaker means each worker learns of an outage on its own (a few extra failed calls
+  with several workers). The default limit of 200 isn't measured yet; the load test (PR 4) gives the clearing rate.
+- **Result:** `tests/test_reliability.py`. The breaker opens and recovers through one trial. A failing customer
+  system stops calls going out, and a "not found" never opens it. A model outage fails the third call without
+  reaching the provider, while a rejected request counts as the provider being up. A second investigation past the
+  limit gets 503 with the case unchanged, while work already queued isn't refused. With execution off, an approved
+  adjustment stays Approved, with no execution attempt.
+- **What would change this decision:** several app instances behind a load balancer (share breaker state, for
+  example in Redis, or accept per-instance learning); a measured clearing rate (set the limit from it); a customer
+  who wants intake itself throttled (put it at the gateway, never by dropping a request).

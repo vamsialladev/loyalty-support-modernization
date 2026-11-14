@@ -193,7 +193,11 @@ def build_handlers(settings: Any) -> tuple[dict[str, Handler], Sweep | None]:
     from app.services.systems import mock_systems_factory
     from app.services.write_path import SharedWritePath
 
-    write_path = SharedWritePath(settings.customer_id, secret_key=settings.secret_key or None)
+    write_path = SharedWritePath(
+        settings.customer_id,
+        secret_key=settings.secret_key or None,
+        execution_enabled=getattr(settings, "feature_adjustment_execution", True),
+    )
     handlers = write_path_handlers(write_path, mock_systems_factory(settings), runtime_from_settings(settings))
 
     def sweep(s: Any) -> Any:

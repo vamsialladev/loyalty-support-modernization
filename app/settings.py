@@ -12,6 +12,11 @@ def _flag(name: str) -> bool:
     return os.environ.get(name, "false").strip().lower() == "true"
 
 
+def _flag_on(name: str) -> bool:
+    """A flag that is on unless set to something other than true. Preflight requires it set in every profile."""
+    return os.environ.get(name, "true").strip().lower() == "true"
+
+
 def _number(name: str, default: float) -> float:
     """A cap that doesn't parse counts as zero, so nothing live runs on a typo."""
     raw = os.environ.get(name, "").strip()
@@ -36,6 +41,7 @@ class AppSettings:
     worker_health_file: str = ""
     ai_provider: str = "mock"
     feature_live_ai: bool = False
+    feature_adjustment_execution: bool = True  # spec F.1, ADR-0081; production.env sets it false
     anthropic_model: str = ""
     ai_budget_per_run_usd: float = 1.0
     ai_budget_daily_usd: float = 5.0
@@ -74,6 +80,7 @@ class AppSettings:
             worker_health_file=os.environ.get("WORKER_HEALTH_FILE", ""),
             ai_provider=os.environ.get("AI_PROVIDER", "mock").strip() or "mock",
             feature_live_ai=_flag("FEATURE_LIVE_AI"),
+            feature_adjustment_execution=_flag_on("FEATURE_ADJUSTMENT_EXECUTION"),
             anthropic_model=os.environ.get("ANTHROPIC_MODEL", "").strip(),
             ai_budget_per_run_usd=_number("LLM_BUDGET_USD_PER_RUN", 1.0),
             ai_budget_daily_usd=_number("LLM_BUDGET_USD_DAILY", _number("LLM_BUDGET_USD_TOTAL", 5.0)),
