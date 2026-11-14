@@ -69,3 +69,6 @@ Thumbs.db
 
 # Git Bash crash dumps (one was committed by mistake in PR #41 and removed: addresses only, no data)
 *.stackdump
+
+# Database dumps (docs/backup-restore.md): personal data in a real deployment, never committed
+backups/

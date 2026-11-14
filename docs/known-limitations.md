@@ -23,6 +23,9 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **Drift thresholds, the 10% QA rate and the QA rubric are assumptions**, not measurements; the rubric is proposed
   until user acceptance testing (Milestone 18). The category mix uses the queue, the only request category the app
   has. Provider spend is one total per deployment, like the spending caps.
+- **The AWS Terraform has never met AWS** (ADR-0085): `validate` checks types and references, not behaviour. One NAT
+  gateway (a cost choice) is a single point of failure for outbound calls. The restore steps are untimed until the
+  Milestone 13 drill. The SLOs are proposals: no availability has been measured anywhere.
 - **Supply chain** (ADR-0084): Trivy's image scan checks vulnerabilities, not secrets (its secret rules flag
   docstrings in a dependency); provenance is attested only for builds on main, and on a saved image file, because
   there's no registry; images take Debian's updates at build time, so two builds of one commit can differ (the SBOM

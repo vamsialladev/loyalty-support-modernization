@@ -163,6 +163,24 @@ jobs:
         with:
           subject-path: loyalty-app.tar
 
+  terraform:
+    # DEL-06 (ADR-0085): the AWS reference path is checked, never planned or applied; no AWS credentials exist here.
+    name: Terraform (fmt, validate; never applied)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: fmt, init without a backend, validate
+        run: |
+          tf="docker run --rm -v $PWD/infrastructure/terraform/aws:/tf -w /tf hashicorp/terraform:1.17.1"
+          $tf fmt -check -recursive -diff
+          $tf init -backend=false -input=false -no-color
+          $tf validate -no-color
+      - name: Trivy, the Terraform (fixable HIGH and CRITICAL fail)
+        run: |
+          docker run --rm -v "$PWD/infrastructure/terraform/aws:/tf:ro" aquasec/trivy:0.76.1 config --quiet \
+            --severity HIGH,CRITICAL --exit-code 1 --skip-dirs /tf/.terraform /tf
+
   compose:
     # The default stack from an empty volume, as a newcomer would start it (DEL-02, ADR-0084).
     name: Compose smoke test
