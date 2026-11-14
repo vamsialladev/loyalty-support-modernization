@@ -54,12 +54,21 @@ class LocalDemoIdentity:
         return _identity(user) if user is not None and user.active else None
 
 
-def ensure_demo_users(s: Session, password: str) -> list[str]:
-    """Create the demo accounts, or reset their password and role. Returns the usernames (never the password)."""
+PUBLIC_DEMO_ROLES = (Role.AGENT, Role.SUPERVISOR)  # spec C.8: no shared admin account in the public demo
+
+
+def ensure_demo_users(s: Session, password: str, *, public_demo: bool = False) -> list[str]:
+    """Create the demo accounts, or reset their password and role. Returns the usernames (never the password).
+    In the public demo only agents and supervisors exist, and any other demo account is switched off (ADR-0087)."""
     if len(password) < 12:
         raise ValueError("DEMO_USER_PASSWORD must be at least 12 characters")
     names = []
     for username, display, role in DEMO_USERS:
+        if public_demo and role not in PUBLIC_DEMO_ROLES:
+            existing = s.scalars(select(User).where(User.username == username)).first()
+            if existing is not None:
+                existing.active = False
+            continue
         user = s.scalars(select(User).where(User.username == username)).first()
         if user is None:
             user = User(username=username, created_at_utc=utc_now())

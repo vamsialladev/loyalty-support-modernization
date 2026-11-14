@@ -1,0 +1,32 @@
+# Render Blueprint for the public demo (option A: Render free + Neon free, $0 a month; ADR-0087). Nothing is created
+# until the owner connects this repository in Render and applies the Blueprint (docs/hosting-options.md, steps).
+# One free web service: the app, the worker and the mock customer API run in one container (app/demo_launch.py).
+services:
+  - type: web
+    name: loyalty-support-demo
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.demo
+    dockerContext: .
+    branch: main          # deploys only from main (PA-10)
+    autoDeploy: false     # a person deploys: Manual Deploy → Deploy latest commit
+    healthCheckPath: /healthz
+    envVars:
+      - key: DEMO_DATABASE_URL
+        sync: false       # the owner pastes Neon's connection string in Render's dashboard; never in this file
+      - key: APP_SECRET_KEY
+        generateValue: true
+      - key: PUBLIC_DEMO_MODE
+        value: "true"
+      - key: AI_PROVIDER
+        value: mock
+      - key: FEATURE_LIVE_AI
+        value: "false"
+      - key: DEMO_MAX_CASES_PER_DAY
+        value: "300"
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "120"
+      - key: APP_PROFILE
+        value: portfolio
+      - key: LOG_LEVEL
+        value: INFO
