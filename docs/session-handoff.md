@@ -11,7 +11,7 @@ pull requests.
   (`f76c1d6`), #39 public (`7914743`), #40 tracing (`6e769b2`), #41 monitoring (`d39bdd9`), #42 security events
   (`ca049e7`), #43 dashboards (`ed8642f`), #44 reliability (`628f7c7`), #45 model lifecycle (`2713e75`), #46 load
   test (`8764fbe`), #47 supply chain (`6e2f170`), #48 Terraform (`2f8289f`), #49 enterprise documents (`0ad50be`),
-  #59 public demo, then this close-out.
+  #59 public demo (`d7a69ba`), then this close-out.
 - **Appendix C, M12 is met:** the local CI equivalent passes (verification log, Milestone 12, row 33), the load
   test report is saved (`performance/reports/2026-11-14-local.md`), and `terraform validate` passes locally and in CI.
 - **Build provenance works on `main`:** attestation 67563437 for the app image, in Sigstore's public log (row 31).
