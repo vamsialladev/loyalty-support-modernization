@@ -1423,8 +1423,10 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
     measured yet.
   - **A card** is on Google's billing account. The Free Trial bills nothing for 90 days; after that, the account must
     be upgraded or the project stops.
-  - **The user asked for request-based billing if possible.** It is possible, but only by changing how and when jobs
-    run, so the recommendation is instance-based and the choice stays with the owner.
+  - **Request-based billing was asked for if possible.** It is possible, but only by changing how and when jobs run.
+    The owner chose instance-based (2026-11-14), on condition that the demo is deployed only after the $10 stop is
+    set up and tested on a throwaway service, and that a stop Google can't enforce is reported before anything else
+    is created.
 - **Result:**
   - Before deploying: the free tier covers about 200 visit sessions a month at $0 (projection; the assumptions are in
     `docs/hosting-cloud-run.md` §3).
@@ -1432,10 +1434,10 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
     again about 13 s later; the smoke test passed before and after (verification log row 36).
   - **Not deployed:** it waits for the owner's "go".
   - After the deploy: the hosted smoke test, the measured cold start, two days of billing and billable instance time
-    against the projection, and the optional $1 spend-cap test (§5.8).
+    against the projection. The $1 spend-cap test (§5.3) comes before the demo exists.
 - **What would change this decision:**
   - a measured cold start too slow for visitors (then consider min instances 1, which is billed, or Oracle);
   - two days' billable time well above the projection;
-  - the spend cap not firing in the §5.8 test (then the disable-billing function, tested with
+  - the spend cap not firing in the §5.3 test (then stop: the owner chooses again; the disable-billing function, tested with
     `SIMULATE_DEACTIVATION` first);
   - the owner choosing request-based billing (then build and test jobs-in-requests first).

@@ -1,7 +1,7 @@
 # The public demo on Google Cloud Run + Neon (the owner's choice, 2026-11-14)
 
 Spec L1, PA-10; LIVE-01, LIVE-02; ADR-0088. Replaces Render (option A), which the owner dropped after hitting its
-free-tier capacity limits before. **Nothing is created until the owner says "go".** The owner does every click;
+free-tier capacity limits before. **Instance-based billing, max 1, min 0, and no demo until the $10 stop is tested** (the owner, 2026-11-14). **Nothing is created until the owner says "go".** The owner does every click;
 secrets go only into Google's and Neon's consoles, never into chat, a file or a commit.
 
 Facts below come from the official pages, read 2026-11-14:
@@ -67,9 +67,13 @@ built. Nothing changes in the code, and the worker behaves as it does everywhere
 - **Cold start:** the next visitor starts a fresh one. The start runs the migrations and the daily reset when due, and
   the first page waits for it. The wait isn't measured yet; I'll measure it after the deploy and put it in the labels.
 
-**Recommendation: instance-based billing**, max 1 instance, min 0. It stays inside the free tier at the expected
-traffic (section 3) and keeps the demo honest: the system you see is the system that was built. Request-based billing
-is possible, but only with the changes above. Say so if you want it, and I'll build and test those first.
+**Decision (owner, 2026-11-14): instance-based billing**, max 1 instance, min 0.
+- **Why:** it stays inside the free tier at the expected traffic (section 3), and it keeps the demo honest: the system
+  you see is the system that was built.
+- **The gate:** the demo is deployed **only after the $10 stop is set up and tested** (5.2, 5.3).
+- **If Google can't enforce a hard stop** (no "Spend cap enforcement" option, or the test cap never fires), stop
+  before creating anything else, and the owner chooses request-based billing instead. That choice wouldn't change the
+  stop itself: request-based billing relies on the same spend cap.
 
 ## 3. Cost projection (assumptions stated; not measured)
 **Prices** (Cloud Run, us-central1 basis; the free tier is applied "using Tier 1 pricing", and `us-east5` is Tier 1):
@@ -137,15 +141,51 @@ PowerShell.
 ### 5.2 Budgets, before anything runs
 1. **Billing → Budgets & alerts → Create budget.**
    - Name: `loyalty-demo-cloud-run-cap`.
-   - In **Define**, choose **Spend cap enforcement** (not "Alerts only").
-   - Choose project `PROJECT_ID` and service **Cloud Run**, then a Target amount of **$10**.
+   - In **Define**, choose **Spend cap enforcement** (not "Alerts only"). An alerts-only budget can't be converted
+     later, so pick spend cap here.
+   - Choose project `PROJECT_ID` and service **Cloud Run**, then a Target amount of **$1** for the test in 5.3. It goes
+     up to $10 after the test.
    - Add a 50% alert if offered, then **Finish**.
-   - An alerts-only budget can't be converted later, so pick spend cap here.
+   - **If "Spend cap enforcement" isn't offered** (Google's pages don't say whether Free Trial accounts get it), stop
+     here and tell me. Nothing else is created.
 2. **Create budget** again.
    - Name: `loyalty-demo-alert-5`, **Alerts only**, scope the whole project, amount **$5**.
    - Thresholds: 50%, 90% and 100% of actual cost. Email billing admins (you).
 
-### 5.3 Neon: a new project
+### 5.3 Test the stop before the demo exists ($0 at list price under about $1)
+The test uses Google's own sample container, so nothing of the demo exists yet. The image is
+`us-docker.pkg.dev/cloudrun/container/hello`, from the Cloud Run quickstart. It runs at 4 vCPU and 2 GiB, so the $1 is
+reached in hours, not days: 4 × $0.000018 + 2 × $0.000002 per second is about **$0.27 an hour** at list price. Three
+and three-quarter hours is about 53,000 vCPU-seconds, inside the 240,000 free, so the real bill is $0.
+1. Deploy the test service:
+   ```powershell
+   gcloud run deploy cap-test --image us-docker.pkg.dev/cloudrun/container/hello --region us-east5 --no-cpu-throttling --min-instances 0 --max-instances 1 --cpu 4 --memory 2Gi --allow-unauthenticated
+   ```
+2. Keep it alive with a request every 5 minutes, leaving the window open. Instance-based billing charges the
+   instance's whole life, and an idle instance stops after 15 minutes:
+   ```powershell
+   $url = gcloud run services describe cap-test --region us-east5 --format "value(status.url)"
+   while ($true) { $t = Get-Date -Format s; try { $c = (Invoke-WebRequest -UseBasicParsing $url).StatusCode } catch { $c = $_.Exception.Message }; "$t $c"; Start-Sleep 300 }
+   ```
+3. **Watch the cap:** Billing → Budgets & alerts. The spend cap budget's progress bar shows the list-price spend. Write
+   down three times:
+   - when it passes $1;
+   - when its status turns **Enforced**;
+   - when the loop's requests start failing. The response or error is **not documented**, so copy what the loop
+     prints.
+4. **If it isn't Enforced within 8 hours of passing $1, the stop doesn't work for us.** Press Ctrl+C, delete
+   `cap-test` (step 6), and tell me before creating anything else. The choice then goes back to you.
+5. **If it fired:** press Ctrl+C. Send me the three times and the loop's last lines.
+6. Delete the test service: `gcloud run services delete cap-test --region us-east5`.
+7. Raise the cap to $10 and lift it:
+   - Edit the spend cap budget's target to **$10**, then press **Lift spend cap**. Google says services "might take up
+     to one hour" to return to normal.
+   - If the target can't be edited (not stated), delete the $1 budget and create a new spend cap budget at $10, as in
+     5.2.1.
+   - The test's roughly $1 of list-price spend counts this month, so this month leaves about $9 for the demo.
+8. **Only now** go on to 5.4.
+
+### 5.4 Neon: a new project
 1. In console.neon.tech, click **New Project**.
    - Name: `loyalty-support-demo`. Postgres **16**. Region: **AWS US East 2 (Ohio)**.
    - Keep it **separate** from your hotel-ai and resort-concierge projects: the demo makes its own roles and
@@ -153,9 +193,9 @@ PowerShell.
 2. In the branch's **compute settings** (the exact menu name isn't verified), set the size to **0.25 CU**, minimum
    and maximum. Free autoscales up to 2 CU, and a fixed small size keeps the 100 CU-hours lasting.
 3. **Connect:** role `neondb_owner`, database `neondb`, **connection pooling off** (the direct string). It starts
-   `postgresql://neondb_owner:` and ends `?sslmode=require`. Keep it for 5.4.1 only.
+   `postgresql://neondb_owner:` and ends `?sslmode=require`. Keep it for 5.5.1 only.
 
-### 5.4 Secrets (values never shown)
+### 5.5 Secrets (values never shown)
 1. In Google's console, go to **Security → Secret Manager → Create secret**.
    - Name `demo-database-url`.
    - Paste the Neon string as the value, then **Create**.
@@ -170,7 +210,7 @@ PowerShell.
    gcloud secrets add-iam-policy-binding app-secret-key --member="serviceAccount:loyalty-demo-run@PROJECT_ID.iam.gserviceaccount.com" --role="roles/secretmanager.secretAccessor"
    ```
 
-### 5.5 Build the image from `main` and push it (no Cloud Build)
+### 5.6 Build the image from `main` and push it (no Cloud Build)
 ```powershell
 gcloud artifacts repositories create demo --repository-format=docker --location=us-east5
 gcloud auth configure-docker us-east5-docker.pkg.dev
@@ -182,7 +222,7 @@ docker push "us-east5-docker.pkg.dev/PROJECT_ID/demo/loyalty-demo:$sha"
 ```
 The image is built from a fresh clone of `main` (PA-10: deploy only from `main`), and it's tagged with the commit.
 
-### 5.6 Deploy
+### 5.7 Deploy (only after 5.3 passed)
 ```powershell
 gcloud run deploy loyalty-demo `
   --image "us-east5-docker.pkg.dev/PROJECT_ID/demo/loyalty-demo:$sha" `
@@ -196,14 +236,14 @@ gcloud run deploy loyalty-demo `
   --set-env-vars "PUBLIC_DEMO_MODE=true,AI_PROVIDER=mock,FEATURE_LIVE_AI=false,DEMO_MAX_CASES_PER_DAY=300,RATE_LIMIT_PER_MINUTE=120,APP_PROFILE=portfolio,LOG_LEVEL=INFO" `
   --startup-probe "httpGet.path=/healthz,httpGet.port=8080,periodSeconds=10,failureThreshold=30,timeoutSeconds=5"
 ```
-- **`--no-cpu-throttling` is instance-based billing.** Use `--cpu-throttling` only if you choose request-based billing
-  and its code exists (section 2).
+- **`--no-cpu-throttling` is instance-based billing**, the owner's choice. `--min-instances 0 --max-instances 1` keep
+  it to at most one instance, which stops after 15 idle minutes.
 - **Money:** `AI_PROVIDER=mock` and `FEATURE_LIVE_AI=false` are set, and the code forces mock whenever
   `PUBLIC_DEMO_MODE` is on. No model API key exists anywhere in this project. **Never add one.**
 - **The startup probe** allows 300 seconds (30 × 10 s, within the 600-second limit). That covers the first start's
   migrations and the world's load.
 
-### 5.7 Verify, then tell me
+### 5.8 Verify, then tell me
 1. Cloud Run → `loyalty-demo` → **Logs:** wait for `demo reset: removed 0 cases; mock world …`, then `Uvicorn running`.
 2. Open the service URL. The banner says "Public demo: mock AI, synthetic data. Resets every day.", and the sign-in
    page shows two buttons and no password form. Click **Try it as an agent** and open a case.
@@ -216,26 +256,13 @@ gcloud run deploy loyalty-demo `
 5. After two days, read **Billing → Reports** and Cloud Run's billable instance time with me. That checks section 3's
    projection against reality.
 
-### 5.8 Test the hard stop ($0, optional, after 5.7)
-1. Edit the spend cap budget's target to **$1**. Editing the target of a spend cap budget isn't stated; if it's
-   refused, create a second spend cap budget at $1 and delete it after the test.
-2. Keep the instance alive about 14 hours with a request every 5 minutes. That's about $1 at list price, all inside
-   the free tier:
-   ```powershell
-   while ($true) { try { Invoke-WebRequest -UseBasicParsing "https://SERVICE_URL/healthz" | Out-Null } catch {}; Start-Sleep 300 }
-   ```
-3. **Check:** the budget shows **Enforced**, and new requests fail. Write down when it fired and the list-price
-   amount, and tell me.
-4. Set the target back to **$10** and press **Lift spend cap**. Google says it "might take up to one hour" to return
-   to normal.
-
 ### 5.9 Labels
 - **The app's banner:** "Public demo: mock AI, synthetic data. Resets every day."
 - **The README and any link:** "Live demo: mock AI, synthetic data. Free hosting: the first visit after a quiet spell
   takes about N seconds (N measured after deploy). Paused if the month's cap is reached."
 
 ### 5.10 Teardown
-1. `gcloud run services delete loyalty-demo --region us-east5`
+1. `gcloud run services delete loyalty-demo --region us-east5` (and `cap-test`, if it's still there)
 2. `gcloud artifacts repositories delete demo --location us-east5`
 3. `gcloud secrets delete demo-database-url` and `gcloud secrets delete app-secret-key`
 4. Shut down the project (IAM & Admin → Settings → Shut down), then delete the Neon project.

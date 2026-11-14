@@ -26,8 +26,9 @@ pull requests.
   before pushing (three of Milestone 12's CI failures were guard tests I hadn't run locally).
 
 ## Waiting on the owner (Milestone 12)
-1. **Say "go" for the demo, then follow `docs/hosting-cloud-run.md` §5**: Google project, billing, the $10 spend cap
-   and $5 alert budgets first, a new Neon project, two secrets, build from `main`, deploy. Then send me the `run.app`
+1. **Say "go" for the demo, then follow `docs/hosting-cloud-run.md` §5** (instance-based, max 1, min 0): Google
+   project, billing, the spend cap and $5 alert budgets, **then the $1 test of the stop on a throwaway service (5.3)**,
+   and only if it fired, a new Neon project, two secrets, build from `main`, deploy. Then send me the `run.app`
    URL (not the connection string), and I'll run `scripts/demo_smoke.py` and measure the cold start. Neon's owner
    role isn't a full superuser, so the first start is the real test of provisioning; the logs say which step failed.
 2. **Dependabot pull requests #50–#58** are open and not merged. #50, #51 (Python 3.15) and #58 (anthropic 2.x) are
