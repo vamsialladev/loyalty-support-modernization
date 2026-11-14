@@ -7,6 +7,7 @@ effects, and credits stay on the write path.
 
 from __future__ import annotations
 
+import os
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -28,6 +29,7 @@ from app.services import jobs
 from app.services.instrumentation import record
 
 MICRO = 1_000_000
+DEFAULT_PROMPT = "arm_c_v1"
 RUNNING, FINISHED, STOPPED = "running", "finished", "stopped"
 UNKNOWN_MODEL = "unknown_model"
 NO_PROVIDER = "no_provider"
@@ -96,9 +98,14 @@ def remaining_microusd(s: Session, caps: SpendCaps, now: datetime | None = None)
 
 
 def _price(config: AiConfig, provider: ModelProvider) -> ModelPrice | None:
-    """A model that isn't listed, or is listed as deprecated, doesn't run (ENT-15)."""
+    """A model that isn't listed, is listed as deprecated, or is past its published retirement date doesn't run
+    (ENT-15, app/ai/lifecycle.py)."""
     price = config.models.get(provider.model_id)
-    return None if price is None or price.deprecated else price
+    if price is None or price.deprecated:
+        return None
+    if price.retires_on and datetime.now(UTC).date().isoformat() >= price.retires_on:
+        return None
+    return price
 
 
 def _start(
@@ -154,7 +161,9 @@ def run_loop(
     if provider is None:
         return None, LoopResult(Stop.PROVIDER_REJECTED, problems=[NO_PROVIDER])
     config = ai_config(case.customer_id)
-    prompt = load_prompt()
+    # A candidate prompt runs only where AI_PROMPT names it: a shadow run into its own results folder, compared by
+    # the release gate before promotion (ENT-22, ADR-0082). The deployed default is the committed arm_c_v1.
+    prompt = load_prompt(os.environ.get("AI_PROMPT", "").strip() or DEFAULT_PROMPT)
     run = _start(s, who, case, provider, prompt.version, policy_versions)
     price = None if provider.is_mock else _price(config, provider)
     if not provider.is_mock and price is None:

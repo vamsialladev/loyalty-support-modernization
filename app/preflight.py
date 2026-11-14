@@ -112,6 +112,7 @@ VARS: dict[str, Var] = {
         Var("MOCK_API_SIM_CLOCK", _bool, "true or false"),
         Var("AI_PROVIDER", _enum(*PROVIDERS), "one of " + ", ".join(PROVIDERS)),
         Var("ANTHROPIC_API_KEY", _prefix("sk-ant-", 24), "starts with sk-ant-", secret=True),
+        Var("AI_PROMPT", _regex(r"[a-z0-9_]+"), "a prompt file name in config/prompts (empty = arm_c_v1)"),
         Var("ANTHROPIC_MODEL", _regex(r"claude-[a-z0-9][a-z0-9.\-]*"), "an exact Claude model ID (claude-...)"),
         Var("LLM_BUDGET_USD_PER_RUN", _positive_number, "a positive number of US dollars"),
         Var("LLM_BUDGET_USD_TOTAL", _positive_number, "a positive number of US dollars"),
