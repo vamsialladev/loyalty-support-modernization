@@ -12,6 +12,11 @@ From it, on every start, it:
    and the demo accounts (agent and supervisor only);
 4. starts the mock API, the worker and the app, and stops them all if any one of them stops.
 
+While it runs, it checks every hour whether a reset is due. A free service usually sleeps after 15 idle minutes and
+resets on its next start, but one kept awake for a day would otherwise never reset. When one is due, it stops the
+three processes, resets, and starts them again in this process: Render's documents don't say it restarts a process
+that exits, so the reset never depends on that. The demo is unavailable for those seconds.
+
 This is a demo-only shape, recorded as debt (TD-56): in every other deployment the app, the worker and the mock API
 are separate services, as in Compose and the AWS Terraform.
 """
@@ -25,6 +30,7 @@ import subprocess
 import sys
 import time
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from urllib.parse import quote, urlsplit, urlunsplit
@@ -32,7 +38,9 @@ from urllib.parse import quote, urlsplit, urlunsplit
 from sqlalchemy import create_engine, text
 
 RESET_EVERY = timedelta(hours=24)
+RESET_CHECK_SECONDS = 3600.0  # how often a running demo asks whether a reset is due
 MOCK_PORT = 8020
+UVICORN = (sys.executable, "-m", "uvicorn", "--factory")
 
 
 @dataclass(frozen=True)
@@ -152,6 +160,47 @@ def daily_reset(urls: dict[str, str], seed_dir: str) -> None:
     )
 
 
+def supervise(
+    start: Callable[[], list[subprocess.Popen[bytes]]],
+    stop: Callable[[list[subprocess.Popen[bytes]]], None],
+    is_due: Callable[[], bool],
+    reset: Callable[[], None],
+    *,
+    check_seconds: float = RESET_CHECK_SECONDS,
+    poll_seconds: float = 2.0,
+    clock: Callable[[], float] = time.monotonic,
+    sleep: Callable[[float], None] = time.sleep,
+) -> int:
+    """Run the processes; reset in place when a reset falls due; return 1 when one of them stops by itself."""
+    while True:
+        children = start()
+        next_check = clock() + check_seconds
+        try:
+            while all(child.poll() is None for child in children):
+                sleep(poll_seconds)
+                if clock() >= next_check:
+                    next_check = clock() + check_seconds
+                    if is_due():
+                        break
+            else:
+                return 1  # one of them stopped: stop the rest, and let the host restart the container
+        finally:
+            stop(children)
+        print("demo reset due while running: processes stopped for the reset")
+        reset()
+
+
+def stop_children(children: list[subprocess.Popen[bytes]]) -> None:
+    for child in children:
+        if child.poll() is None:
+            child.terminate()
+    for child in children:
+        try:
+            child.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            child.kill()
+
+
 def main() -> int:
     admin_url = os.environ["DEMO_DATABASE_URL"]
     secret = os.environ["APP_SECRET_KEY"]
@@ -175,47 +224,36 @@ def main() -> int:
     run([py, "-m", "alembic", "upgrade", "head"], {**env, "DATABASE_URL": urls["owner"]})
     grant_app_role(urls["owner"])
     app_env = {**env, "DATABASE_URL": urls["app"]}
-    if reset_due(urls["owner"]):
+
+    def reset() -> None:
         daily_reset(urls, env["MOCK_API_SEED_DIR"])
         run([py, "-m", "app.seed", "--dataset", "demo", "--skip-mock"], app_env)  # accounts (no admin), policies
-    mock = subprocess.Popen(  # noqa: S603
-        [
-            py,
-            "-m",
-            "uvicorn",
-            "--factory",
-            "mock_customer_api.api:serve",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            str(MOCK_PORT),
-        ],
-        env=env,
-    )
-    children = [mock]
-    try:
-        wait_for(f"http://127.0.0.1:{MOCK_PORT}/healthz")
 
-        worker = subprocess.Popen([py, "-m", "app.worker"], env=app_env)  # noqa: S603
-        children.append(worker)
-        port = os.environ.get("PORT", "8010")
-        app = subprocess.Popen(  # noqa: S603
-            [py, "-m", "uvicorn", "--factory", "app.main:serve", "--host", "0.0.0.0", "--port", port],  # noqa: S104
-            env=app_env,
+    def start() -> list[subprocess.Popen[bytes]]:
+        mock = subprocess.Popen(  # noqa: S603
+            [*UVICORN, "mock_customer_api.api:serve", "--host", "127.0.0.1", "--port", str(MOCK_PORT)],
+            env=env,
         )
-        children.append(app)
-        while all(child.poll() is None for child in children):
-            time.sleep(2)
-        return 1  # one of them stopped: stop the rest, and let the host restart the container
-    finally:
-        for child in children:
-            if child.poll() is None:
-                child.terminate()
-        for child in children:
-            try:
-                child.wait(timeout=30)
-            except subprocess.TimeoutExpired:
-                child.kill()
+        children = [mock]
+        try:
+            wait_for(f"http://127.0.0.1:{MOCK_PORT}/healthz")
+            children.append(subprocess.Popen([py, "-m", "app.worker"], env=app_env))  # noqa: S603
+            port = os.environ.get("PORT", "8010")
+            children.append(
+                subprocess.Popen(  # noqa: S603
+                    [*UVICORN, "app.main:serve", "--host", "0.0.0.0", "--port", port],  # noqa: S104
+                    env=app_env,
+                )
+            )
+        except BaseException:
+            stop_children(children)
+            raise
+        return children
+
+    if reset_due(urls["owner"]):
+        reset()
+    check = float(os.environ.get("DEMO_RESET_CHECK_SECONDS", RESET_CHECK_SECONDS))  # shorter only to test the path
+    return supervise(start, stop_children, lambda: reset_due(urls["owner"]), reset, check_seconds=check)
 
 
 if __name__ == "__main__":

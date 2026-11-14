@@ -45,10 +45,16 @@ decision. Note what moves into the starter kit and what is customer-specific.
 - `.env` is back on mock. Further live runs need a new approval.
 
 ## The owner's decisions for Milestone 12 (2026-11-13)
-- **Hosting:** option A, Render free web service + Neon free Postgres, **$0 a month, no credit card**. When the code is
-  ready, give the owner exact sign-up and setup steps; the owner creates the Render account and a new Neon project,
-  and pastes secrets only into those dashboards or `.env`. Render gets access to this one repository only. The demo
-  is labelled "mock AI, synthetic data" everywhere it shows.
+- **Hosting (changed 2026-11-14):** **Google Cloud Run + a new Neon free project**, not Render (the owner hit Render's
+  free-tier capacity limits before). Conditions: a real hard stop (a Cloud Run **spend cap budget at $10**, plus a $5
+  alerts-only budget); max 1 instance, min 0; inside the free tier; the owner's exact steps with placeholders only
+  (`docs/hosting-cloud-run.md`). **Nothing is created until the owner says "go"**; the owner does every click and
+  pastes secrets only into Google's and Neon's consoles. Google's billing account needs a card; the owner accepted
+  that by choosing Cloud Run. The demo is labelled "mock AI, synthetic data" everywhere it shows. The reset-while-awake fix stays.
+  **Billing (owner, 2026-11-14): instance-based, max instances 1, min instances 0.** Deploy the demo **only after**
+  the $10 automatic stop is set up and tested (`docs/hosting-cloud-run.md` 5.2-5.3, on a throwaway sample service).
+  If Google can't enforce a hard stop, **tell the owner before creating anything**; the owner then chooses
+  request-based billing instead.
 - **No live model calls in Milestone 12:** ENT-17 (prompt caching) and LIVE-05 (caps against the live deploy) stay
   NOT RUN.
 - **Repository public (owner, 2026-11-13, 22:07 UTC, `main` at `f76c1d6`):** secret scanning and push protection

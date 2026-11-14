@@ -1,8 +1,8 @@
 # Implementation status
 
 **Last updated:** 2026-11-14 · **Current milestone:** 12 of 20, done (Milestones 1–12 merged) · **Next:** Milestone 13
-(operational drills, recovery, incident exercises). **Waiting on the owner:** the Render and Neon accounts for the public
-demo (`docs/hosting-options.md`); the Milestone 7 to 9 and 12 exercises; the Codex exercise, when convenient.
+(operational drills, recovery, incident exercises). **Waiting on the owner:** "go" for the public demo on Cloud Run + Neon
+(`docs/hosting-cloud-run.md`); the Milestone 7 to 9 and 12 exercises; the Codex exercise, when convenient.
 
 ## Completion scores (spec Part 0.5)
 Counted from `docs/requirements-matrix.md` by `uv run python scripts/matrix_scores.py`. Only "Implemented and
@@ -86,8 +86,8 @@ authorization, M9), API-01 and API-02 (moved to M7, as the owner approved). Code
   (never run).
 - **Terraform and operations documents:** validate-only AWS Terraform; rollback, backup, SLOs, maintenance, shared
   responsibility, data residency, encryption, enterprise integration.
-- **Public demo, ready for Render free + Neon free ($0):** demo mode, one container, `render.yaml`, the owner's steps.
-  Not deployed.
+- **Public demo, ready for Cloud Run + Neon** (the owner's choice on 2026-11-14, replacing Render): demo mode, one
+  container, the owner's steps with a $10 spend cap (`docs/hosting-cloud-run.md`). Not deployed.
 
 ## Milestone 11 deliverables
 - **Research first:** six protocol documents from primary sources (2026-11-11), RFC-0004, ADR-0071. MCP 2026-07-28, A2A 1.0, AG-UI 1.0 (the 1.1 draft isn't used).

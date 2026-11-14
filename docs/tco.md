@@ -9,12 +9,12 @@
 | Component | Year 1 | Year 2 | Year 3 | Source of the number |
 |---|---|---|---|---|
 | Model / API usage | about $6.60 (estimate) | — | — | $0.00171 per case measured at list price, × an assumed 320 a month × 12 |
-| Hosting: the public demo (option A, chosen) | $0 | $0 | $0 | Render free web service + Neon free Postgres; prices read from their pages 2026-11-13 (`docs/hosting-options.md`). Limits: sleeps when idle, 512 MB, 1 GB of data |
+| Hosting: the public demo (Cloud Run + Neon, chosen 2026-11-14) | $0 up to about 200 visit sessions a month (projection) | — | — | Instance-based billing, max 1 instance; prices read 2026-11-14 (`docs/hosting-cloud-run.md`). A $10 spend cap pauses Cloud Run at about 416 sessions, when the real bill is about $4.78. Assumptions there; not measured until deployed |
 | Hosting: an AWS deployment (reference path, not built) | about $1,200 a year or more (estimate) | — | — | About $100 a month at the smallest sizes (Fargate, RDS, ALB, NAT gateway); third-party figures, re-price on AWS's pages first (`docs/teardown.md`) |
 | Engineering build | assumption, set in M10 | — | — | Hours × rate, both assumptions |
 | Support and maintenance | assumption, set in M18 | — | — | Runbooks and maintenance schedule |
 | Evaluation re-runs (regression before releases) | about $0.14 a run (measured) | — | — | One live run of 80 held-out cases; the whole Milestone 10 spend was $1.83 |
-| Worker process (added in Milestone 6) | in the hosting rows | — | — | One more container beside the app; inside the demo's one container on Render (TD-56); one Fargate task on AWS |
+| Worker process (added in Milestone 6) | in the hosting rows | — | — | One more container beside the app; inside the demo's one container on Cloud Run (TD-56); one Fargate task on AWS |
 | Upstream calls for re-checks (added in Milestone 6) | not measured yet | — | — | About 4 more reads at approve and at execute. Free on the mock; a real vendor's API terms may charge or limit them |
 | Data generation | $0 | $0 | $0 | Local, deterministic, no external service |
 | Observability, CI and scans (added in Milestone 12) | $0 | $0 | $0 | Grafana's image locally; GitHub Actions free on a public repository; Trivy, Syft and gitleaks are free tools. A hosted monitoring service would add its own price |
