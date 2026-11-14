@@ -241,6 +241,7 @@ def install_console(
 
     @app.exception_handler(CsrfFailed)
     def _csrf(request: Request, exc: CsrfFailed) -> Response:
+        _audit_denial(request, "csrf_failed")  # a security event (SEC-20): a forged or stale form
         return render(request, "error.html", None, 403, title="Request refused", message="The form expired. Reload.")
 
     def _audit_denial(request: Request, action: str) -> None:
