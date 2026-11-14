@@ -13,7 +13,7 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import ProgrammingError
 
-from app.demo_launch import Names, grant_app_role, provision, role_password, url_for
+from app.demo_launch import Names, grant_app_role, provision, role_password, supervise, url_for
 
 ROOT = Path(__file__).resolve().parent.parent
 NEON = "postgresql://neondb_owner:owner-pw@ep-example-123.us-east-2.aws.neon.tech/neondb?sslmode=require"
@@ -31,6 +31,73 @@ def test_connection_strings_keep_the_host_and_tls_and_change_user_and_database()
         "postgresql+psycopg://loyalty_app:p%40ss%2Fword@ep-example-123.us-east-2.aws.neon.tech/loyalty?sslmode=require"
     )
     assert "owner-pw" not in url
+
+
+class _Proc:
+    """A stand-in child process: alive until `die_after` polls (never, by default)."""
+
+    def __init__(self, die_after: int | None = None) -> None:
+        self.polls, self.die_after, self.stopped = 0, die_after, False
+
+    def poll(self) -> int | None:
+        self.polls += 1
+        return 1 if self.die_after is not None and self.polls > self.die_after else None
+
+
+class _Clock:
+    def __init__(self) -> None:
+        self.now = 0.0
+
+    def __call__(self) -> float:
+        return self.now
+
+    def sleep(self, seconds: float) -> None:
+        self.now += seconds
+
+
+def _run_supervise(due: list[bool], die_on_start: int) -> tuple[int, list[str]]:
+    """Each start makes three children; on start number `die_on_start` one of them dies after a few polls."""
+    events: list[str] = []
+    starts = 0
+    clock = _Clock()
+
+    def start() -> list[_Proc]:
+        nonlocal starts
+        starts += 1
+        events.append(f"start {starts}")
+        # dies on its 3rd poll (4 s), before the first reset check at 10 s
+        return [_Proc(die_after=2 if starts == die_on_start else None), _Proc(), _Proc()]
+
+    def stop(children: list[_Proc]) -> None:
+        events.append("stop")
+
+    def is_due() -> bool:
+        events.append("check")
+        return due.pop(0) if due else False
+
+    code = supervise(
+        start,  # type: ignore[arg-type]
+        stop,  # type: ignore[arg-type]
+        is_due,
+        lambda: events.append("reset"),
+        check_seconds=10,
+        poll_seconds=2,
+        clock=clock,
+        sleep=clock.sleep,
+    )
+    return code, events
+
+
+def test_a_running_demo_resets_in_place_when_a_reset_falls_due() -> None:
+    """A free service kept awake for a day would never reach the start-up reset; this one stops, resets, restarts."""
+    code, events = _run_supervise(due=[False, True], die_on_start=2)
+    assert events == ["start 1", "check", "check", "stop", "reset", "start 2", "stop"]
+    assert code == 1  # the second run ended because a child stopped: the stop path still runs
+
+
+def test_a_child_that_stops_ends_the_demo_without_a_reset() -> None:
+    code, events = _run_supervise(due=[], die_on_start=1)
+    assert events == ["start 1", "stop"] and code == 1
 
 
 def test_the_render_blueprint_is_free_main_only_manual_mock_and_holds_no_secret() -> None:

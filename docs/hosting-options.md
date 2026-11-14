@@ -1,5 +1,10 @@
 # Hosting options for the public demo
 
+> **Superseded on 2026-11-14.** The owner dropped Render (option A) after hitting its free-tier capacity limits
+> before, and chose **Google Cloud Run + Neon** after a re-evaluation of Hugging Face Spaces, Oracle Always Free,
+> Cloud Run, Koyeb and Streamlit Community Cloud (verification log, Milestone 12, row 35). The plan, costs and steps:
+> `docs/hosting-cloud-run.md` (ADR-0088). This page is kept as the record of the first choice.
+
 Spec L1; LIVE-01, LIVE-02; ADR-0087. **Prices were read from the providers' own pages on 2026-11-13** (the
 Milestone 12 plan); some pages didn't render and are marked. Re-check them before creating anything. **Nothing has
 been created.** The owner chose **option A** on 2026-11-13: $0 a month, no credit card.

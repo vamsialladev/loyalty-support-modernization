@@ -55,8 +55,9 @@ are in `docs/verification-log.md` (2026-10-28). This file grows into the full Pa
 | Amazon Bedrock | B. runtime model | enterprise endpoint adapter | Blocked: needs AWS SSO profile and model access (configure only) |
 | Kimi / GLM / Qwen | B. runtime model | open-model exercise | Blocked: needs one key or a local server (Milestone 15) |
 | GitHub (this repo) | A/D. dev and CI | remote, CI, PRs | Available: public since 2026-11-13, with secret scanning and push protection on |
-| Render | deployment | the public demo (option A) | Manual step required: the owner creates the account and connects this one repository (`docs/hosting-options.md`) |
-| Neon | C. hosted DB | the public demo's Postgres | Manual step required: the owner makes a new project and pastes its owner connection string into Render only |
+| Google Cloud (Cloud Run, Artifact Registry, Secret Manager, budgets) | deployment | the public demo | Manual step required: the owner creates the project, billing, budgets and secrets, and deploys (`docs/hosting-cloud-run.md`); nothing until the owner says "go" |
+| Neon | C. hosted DB | the public demo's Postgres | Manual step required: the owner makes a new project and pastes its owner connection string into Google's Secret Manager only |
+| Render | deployment | — | Not used: the owner dropped it on 2026-11-14 (free-tier capacity limits) |
 | CodeRabbit | A. dev review | PR review exercise | Blocked: owner installs the GitHub app on this repo only |
 | Supabase | C/D. hosted DB + Auth | Supabase profile | Blocked: owner account and keys |
 | Vercel | deployment | React frontend | Blocked: owner account, and only after bolt.new |

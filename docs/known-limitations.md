@@ -23,9 +23,11 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **Drift thresholds, the 10% QA rate and the QA rubric are assumptions**, not measurements; the rubric is proposed
   until user acceptance testing (Milestone 18). The category mix uses the queue, the only request category the app
   has. Provider spend is one total per deployment, like the spending caps.
-- **The public demo isn't deployed yet** (ADR-0087): the image ran locally against a Postgres stand-in, not on Render or
-  Neon. Neon's owner role isn't a full superuser, so the first start there is the real test of provisioning. The demo
-  runs three processes in one 512 MB container (TD-56); "daily" reset means the first start after 24 hours.
+- **The public demo isn't deployed yet** (ADR-0087): the image ran locally against a Postgres stand-in, not on Cloud Run or
+  Neon (the owner moved hosting from Render to Cloud Run on 2026-11-14; ADR-0088). Neon's owner role isn't a full superuser, so the first start there is the real test of provisioning. The demo
+  runs three processes in one container (TD-56). The daily reset runs at the first start after 24 hours, or in place
+  if the instance has been awake that long. On Cloud Run the costs are projections until measured, and the $10 spend
+  cap pauses the demo until the next month if it's reached.
 - **The AWS Terraform has never met AWS** (ADR-0085): `validate` checks types and references, not behaviour. One NAT
   gateway (a cost choice) is a single point of failure for outbound calls. The restore steps are untimed until the
   Milestone 13 drill. The SLOs are proposals: no availability has been measured anywhere.

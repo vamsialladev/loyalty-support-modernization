@@ -1,3 +1,5 @@
+# NOT USED: the owner moved hosting to Google Cloud Run + Neon on 2026-11-14 (ADR-0088, docs/hosting-cloud-run.md).
+# Kept until the owner OKs deleting it.
 # Render Blueprint for the public demo (option A: Render free + Neon free, $0 a month; ADR-0087). Nothing is created
 # until the owner connects this repository in Render and applies the Blueprint (docs/hosting-options.md, steps).
 # One free web service: the app, the worker and the mock customer API run in one container (app/demo_launch.py).
