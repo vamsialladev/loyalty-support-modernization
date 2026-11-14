@@ -1,0 +1,104 @@
+{
+ "baseline": {
+  "connections": 7,
+  "commits": 8394,
+  "rollbacks": 2070,
+  "cache_hit": 0.9977,
+  "deadlocks": 0,
+  "tables": {
+   "case_events": {
+    "seq_scan": 57,
+    "idx_scan": 465,
+    "rows": 471
+   },
+   "case_requests": {
+    "seq_scan": 140,
+    "idx_scan": 530,
+    "rows": 157
+   },
+   "cases": {
+    "seq_scan": 1844,
+    "idx_scan": 1093,
+    "rows": 157
+   },
+   "jobs": {
+    "seq_scan": 1032,
+    "idx_scan": 920,
+    "rows": 155
+   },
+   "recommendations": {
+    "seq_scan": 181,
+    "idx_scan": 389,
+    "rows": 157
+   }
+  }
+ },
+ "x4": {
+  "connections": 8,
+  "commits": 22634,
+  "rollbacks": 5799,
+  "cache_hit": 0.9992,
+  "deadlocks": 0,
+  "tables": {
+   "case_events": {
+    "seq_scan": 138,
+    "idx_scan": 1140,
+    "rows": 1144
+   },
+   "case_requests": {
+    "seq_scan": 140,
+    "idx_scan": 1894,
+    "rows": 381
+   },
+   "cases": {
+    "seq_scan": 2737,
+    "idx_scan": 4823,
+    "rows": 380
+   },
+   "jobs": {
+    "seq_scan": 1435,
+    "idx_scan": 3796,
+    "rows": 380
+   },
+   "recommendations": {
+    "seq_scan": 242,
+    "idx_scan": 1548,
+    "rows": 382
+   }
+  }
+ },
+ "x10": {
+  "connections": 8,
+  "commits": 34226,
+  "rollbacks": 8779,
+  "cache_hit": 0.9995,
+  "deadlocks": 0,
+  "tables": {
+   "case_events": {
+    "seq_scan": 213,
+    "idx_scan": 1701,
+    "rows": 1703
+   },
+   "case_requests": {
+    "seq_scan": 140,
+    "idx_scan": 2908,
+    "rows": 568
+   },
+   "cases": {
+    "seq_scan": 3024,
+    "idx_scan": 8282,
+    "rows": 568
+   },
+   "jobs": {
+    "seq_scan": 1622,
+    "idx_scan": 6251,
+    "rows": 567
+   },
+   "recommendations": {
+    "seq_scan": 267,
+    "idx_scan": 2425,
+    "rows": 568
+   }
+  }
+ }
+}

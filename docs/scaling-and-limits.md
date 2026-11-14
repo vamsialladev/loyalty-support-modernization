@@ -10,7 +10,7 @@ About 320 missing-points requests a month for two properties (assumption A1), 6 
 |---|---|---|---|---|---|
 | Requests | ~320/month | ~3,200/month | ~32,000/month | Supervisor approval capacity, before any software limit | Approval limits by amount and risk; batch review for low-value adjustments (policy decision for the sponsor) |
 | Model cost | not measured yet | — | — | — | Measured in M10; routing to a cheaper model only if the benchmark shows no quality loss |
-| Queue and database | — | — | — | — | Measured in M12 |
+| Queue and database | 155 investigations in 2 min at the load test's baseline stage (measured, M12) | throughput fell past 8 virtual agents (measured) | — | The single app process, likely its 1-CPU limit (inferred) | More app processes first, then more workers (Milestone 12 section below) |
 | Team size | 1 engineer | — | — | — | Onboarding doc and starter kit so new engineers can contribute in a day |
 
 ## Data volume (Milestone 3)
@@ -105,3 +105,26 @@ through `arm_review.review_for`.
   in memory (a lab): two replicas wouldn't share tasks. A real partner agent would run its own durable store.
 - **Token checks are local** (no call to the issuer per request), so the issuer isn't a bottleneck; the price is
   TD-49 (a disabled client's last token works until it expires).
+
+## Load test (Milestone 12)
+
+**Measured** on the owner's laptop, 2026-11-14, with `scripts\load_test.ps1`: the default Compose stack, mock customer
+API, mock AI, synthetic data. **Not production capacity.** Report: `performance/reports/2026-11-14-local.md`;
+profile: `docs/load-profile.md`.
+
+| Stage (virtual agents + supervisors) | Requests/s | API p95 | Investigation p50 | Max queue depth / oldest | Failures |
+|---|---|---|---|---|---|
+| baseline (2 + 1) | 9.1 | 78–160 ms | 1.7 s | 2 / 3 s | 0 |
+| x4 (8 + 2) | 16.5 | 340–918 ms | 3.5 s | 8 / 4 s | 0 |
+| x10 (20 + 4) | 12.8 | 1.4–2.6 s | 8.9 s | 16 / 9 s | 0 |
+
+- **Measured:** no failures; throughput peaks at x4 and falls at x10 while latency climbs, with the queue short
+  throughout. Postgres stays at 7–8 connections with a cache hit over 99.7% and no deadlocks.
+- **Inferred, not measured:** the limit is the single app process (one uvicorn process, 1 CPU in Compose). CPU
+  wasn't sampled during the run.
+- **Estimates, unchanged:** 100× the declared volume (32,000 requests a month) is about 1,500 a business day,
+  what the baseline stage's rate (about 77 a minute) clears in about 20 minutes. So volume alone isn't the first limit; supervisor approvals
+  are (top of this file). A hosted deployment's limits (network, the customer API's own rate limit, the model
+  provider's limits) aren't measured here.
+- **Next measurements (Milestone 13 or a pilot):** CPU per container during the run, the same stages with
+  `--workers 2` and two worker containers, and `pg_stat_statements` turned on.

@@ -1204,3 +1204,28 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **What would change this decision:** an approved live budget (shadow on the live model, and prompt caching,
   ENT-17); a calibrated judge (add explanation quality to the gate); a provider deprecation API (read `retires_on`
   from it instead of by hand).
+
+## ADR-0083: A bounded load test with a small async driver, against a throwaway stack
+- **Context:** spec F.1 asks for a declared, realistic load profile and a bounded load test that reports API against
+  investigation latency, throughput, queue age and delay, failure rate and database behaviour, naming the simulated
+  dependencies. The declared volume is small (about 320 requests a month, assumption A1), so the question is
+  headroom and what breaks first.
+- **Options considered:** Locust (a new dependency tree, gevent, and a web UI not needed for a bounded run); k6 (a
+  second language and an install); a small asyncio driver on `httpx`, which the project already pins.
+- **Decision:** `scripts/load_test.py`, run by `scripts\load_test.ps1` against its own Compose project with the demo
+  accounts. The profile is declared in `docs/load-profile.md`: three 2-minute stages, `baseline` (2 virtual agents
+  and 1 supervisor), `x4` and `x10`. Agents create a case from a synthetic dataset request, start its investigation,
+  open the queue and read the case until the worker finishes. Supervisors read approvals and metrics. The run lifts
+  the per-user rate limit, because virtual users share four demo accounts, and changes nothing else. The report
+  and raw samples go to `performance/reports/`, labelled "not production capacity".
+- **Tradeoff:** virtual users act far faster than people, so stages are stress steps, not a model of people's
+  timing. Without `pg_stat_statements`, the database section uses counters, not per-query times. CPU was sampled
+  only before and after, so the reading of what limits throughput is an inference.
+- **Result (2026-11-14):** 4,602 API requests, **0 failures**. At `baseline`, 155 investigations finished in 120 s
+  (p50 1.7 s, p95 1.9 s). Throughput peaked at `x4` (16.5 requests/s), then fell at `x10` (12.8) while API p95 rose
+  to about 2 s. The queue stayed short (at most 16 waiting, the oldest 9 s), so the single worker kept up. Postgres
+  stayed at 7–8 connections, cache hit over 99.7%, no deadlocks. The likely first limit is the single app process (1
+  CPU), not the worker; that's inferred. `/metrics` is the slowest page, as ADR-0078 expected.
+- **What would change this decision:** a pilot with real traffic (replay it instead of a synthetic mix); a hosted
+  deployment (run the same driver against it, with the owner's approval and its own limits); a need for per-query
+  numbers (load `pg_stat_statements` in the test's stack).
