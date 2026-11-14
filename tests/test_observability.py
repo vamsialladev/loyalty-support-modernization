@@ -221,6 +221,17 @@ def test_database_statements_get_spans_without_their_parameters(spans: InMemoryS
         _assert_clean(_everything(span))
 
 
+def test_a_statement_outside_any_trace_gets_no_span(spans: InMemorySpanExporter) -> None:
+    """The worker's once-a-second job poll would otherwise be a one-span trace each time (found on the
+    observability profile, ADR-0080)."""
+    engine = make_engine("sqlite://")
+    tracing.instrument_engine(engine)
+    before = len(spans.get_finished_spans())
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+    assert len(spans.get_finished_spans()) == before
+
+
 # ---------- GenAI attributes ----------
 
 

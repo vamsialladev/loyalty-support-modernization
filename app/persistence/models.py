@@ -489,7 +489,7 @@ class A2aTask(Base):
 class QaSample(Base):
     """A closed case queued for human QA review against the rubric (spec E5; ENT-18; `app/services/qa_sampling.py`).
 
-    Kept apart from the offline benchmark: nothing in `benchmarks/` reads this table. Answers are rubric codes only.
+    Kept apart from the offline benchmark, whose runner never reads this table. Answers are rubric codes only.
     """
 
     __tablename__ = "qa_samples"

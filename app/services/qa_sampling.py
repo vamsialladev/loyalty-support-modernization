@@ -3,7 +3,7 @@
 A configurable share of closed cases is queued for a person to review against the QA rubric (`docs/qa-rubric.md`,
 proposed until it's calibrated in user acceptance testing, Milestone 18). Results live in their own table and are
 **never** mixed with the offline evaluation: the benchmark runner doesn't read them, and they don't become labels
-without the label-review step (ENT-21).
+without the labeling review step (ENT-21).
 
 Which cases: those in the configured arms (default: C, the AI-assisted arm), chosen by a keyed hash of the case
 reference, so the choice is repeatable, can't be steered by whoever closes the case, and needs no scheduler. Scripted

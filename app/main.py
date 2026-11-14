@@ -10,6 +10,7 @@ Run: `uvicorn --factory app.main:serve --port 8010` (JSON logs; `create_app` alo
 from __future__ import annotations
 
 import logging
+import os
 import re
 from pathlib import Path
 
@@ -23,7 +24,7 @@ from sqlalchemy import text
 
 from app import __version__
 from app.api.router import install_api
-from app.observability import tracing
+from app.observability import ops_metrics, tracing
 from app.observability.logs import configure_logging
 from app.persistence.database import make_engine, make_sessions
 from app.services.systems import SystemsFactory, mock_systems_factory
@@ -98,4 +99,5 @@ def create_app(
 def serve() -> FastAPI:
     """The process entry point (`uvicorn --factory app.main:serve`): JSON logs, scrubbed, then the app."""
     configure_logging(tracing.APP)
+    ops_metrics.install(tracing.APP, None, {}, os.environ)  # HTTP server metrics, if an OTLP endpoint is set
     return create_app()

@@ -288,9 +288,21 @@ def test_the_default_stack_is_unchanged_and_every_extra_service_sits_in_a_profil
     services = _services()
     assert {name for name, svc in services.items() if "profiles" not in svc} == DEFAULT_STACK
     profiles = {p for svc in services.values() for p in svc.get("profiles", [])}
-    assert profiles == {"demo", "test", "enterprise-identity", "labs"}
+    # `observability` added in PR 2d (ADR-0080), deliberately, like `labs` in PR 1.
+    assert profiles == {"demo", "test", "enterprise-identity", "labs", "observability"}
     assert services["keycloak"]["profiles"] == ["enterprise-identity", "labs"]
     assert set(services["mcp"]["profiles"]) == set(services["a2a-specialist"]["profiles"]) == {"labs"}
+
+
+def test_the_observability_profile_is_pinned_local_only_and_read_only_mounted() -> None:
+    lgtm = _services()["otel-lgtm"]
+    assert lgtm["profiles"] == ["observability"]
+    assert re.fullmatch(r"grafana/otel-lgtm:\d+\.\d+\.\d+", lgtm["image"])  # an exact version, never latest
+    assert all(str(port).startswith("127.0.0.1:") for port in lgtm["ports"])
+    assert all(str(volume).endswith(":ro") for volume in lgtm["volumes"])
+    assert lgtm["environment"]["GF_AUTH_ANONYMOUS_ORG_ROLE"] == "Viewer"  # anonymous viewers can't edit anything
+    for name in ("app", "worker"):
+        assert "OTEL_EXPORTER_OTLP_ENDPOINT" in _services()[name]["environment"], name
 
 
 def test_every_service_drops_capabilities_and_privilege_escalation() -> None:
@@ -298,7 +310,10 @@ def test_every_service_drops_capabilities_and_privilege_escalation() -> None:
         assert "no-new-privileges:true" in svc["security_opt"], name
         assert svc["cap_drop"] == ["ALL"], name
         assert set(svc.get("cap_add", [])) <= {"CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"}, name
-        if svc.get("cap_add"):
+        if svc.get("cap_add") and svc.get("image", "").startswith("grafana/otel-lgtm:"):
+            # Its Grafana replaces bundled plugins at start; without these no datasource works (ADR-0080).
+            assert set(svc["cap_add"]) == {"DAC_OVERRIDE", "FOWNER"}, name
+        elif svc.get("cap_add"):
             assert svc.get("image", "").startswith("postgres:"), f"{name}: only Postgres' entrypoint needs these"
 
 

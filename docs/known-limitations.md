@@ -24,7 +24,11 @@ Kept current at every milestone. Each line says what is limited, why, and what w
   until user acceptance testing (Milestone 18). The category mix uses the queue, the only request category the app
   has. Provider spend is one total per deployment, like the spending caps.
 - **Traces leave the process only with `OTEL_EXPORTER_OTLP_ENDPOINT` set.** The default stack exports nothing; the
-  local collector and dashboards come with the `observability` profile.
+  local collector and dashboards come with the `observability` profile (ADR-0080).
+- **The observability profile is for one machine:** Grafana keeps the image's built-in admin/admin (localhost only,
+  anonymous viewers read-only); alerts show in Grafana with no contact point; logs stay in `docker compose logs`, not
+  Loki; Prometheus keeps 7 days. Its Grafana needs two Linux capabilities back (`DAC_OVERRIDE`, `FOWNER`) to install
+  its bundled datasource plugins at start. Alert thresholds are assumptions, and owners are proposed roles.
 
 ## Added in Milestone 11 (2026-11-12)
 - **A2A (PROTO-04) is verified with limitations** (ADR-0072). (1) 45 of the 47 required (MUST) A2A TCK checks that ran
