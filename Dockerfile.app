@@ -4,10 +4,12 @@
 # A2A specialist (the core image still has no protocol SDKs); the default target is the core app, last below.
 FROM ghcr.io/astral-sh/uv:0.13.5 AS uv
 
-FROM python:3.12.10-slim-bookworm AS base
+FROM python:3.12.15-slim-bookworm AS base
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PATH=/opt/venv/bin:$PATH
 WORKDIR /srv
-RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin svc
+# Debian's security updates at build time: the base tag lags them, and Trivy blocks fixable HIGH/CRITICAL (ADR-0084).
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/* \
+    && useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin svc
 
 # Dependencies only. uv lives in these stages and never reaches a runtime image.
 FROM base AS deps

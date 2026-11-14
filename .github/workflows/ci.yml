@@ -33,9 +33,8 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy
-      - run: uv run playwright install --with-deps chromium
-      - name: Tests with the coverage gate (browser tests included)
-        run: uv run pytest --cov --cov-report=term-missing -rs
+      - name: Tests with the coverage gate (the browser tests run in their own job)
+        run: uv run pytest -m "not browser" --cov --cov-report=term-missing -rs
       - name: Known vulnerabilities in the locked dependencies
         run: |
           uv export --frozen --no-hashes --no-emit-project --all-groups -o requirements-audit.txt -q
@@ -94,7 +93,105 @@ jobs:
       - run: uv sync --frozen
       - name: Databases and roles, incl. a Milestone 5 database whose role split must keep its login (ADR-0058)
         run: sh scripts/ci_postgres_setup.sh
+      - name: Migrations on an empty database, down to base and up again (DEL-02)
+        env:
+          PGPASSWORD: ci-only-throwaway
+          DATABASE_URL: postgresql+psycopg://loyalty_owner:ci-only-throwaway@127.0.0.1:5432/loyalty_migrate
+        run: |
+          psql -h 127.0.0.1 -U mock_api -d mock_customer_api_test -c "CREATE DATABASE loyalty_migrate OWNER loyalty_owner"
+          uv run alembic upgrade head
+          uv run alembic downgrade base
+          uv run alembic upgrade head
       - run: uv run pytest -m postgres -rs
+
+  browser:
+    # Playwright's own image, with Chromium and its system libraries already in it: no apt step, so a slow apt
+    # mirror can't eat the time limit (the Milestone 11 runner failure, verification log M11 row 22; ADR-0084).
+    name: Browser tests (Playwright image)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.64.1-noble
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.5"
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run pytest -m browser -rs
+
+  images:
+    # DEL-02, DEL-04, SEC-11 (ADR-0084): build every image, scan it, and record what's in it.
+    name: Images, scans, SBOM
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      id-token: write      # provenance attestations, on pushes to main only
+      attestations: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Build the app, protocols and mock API images
+        run: |
+          docker build --target app -t loyalty-app:ci -f Dockerfile.app .
+          docker build --target protocols -t loyalty-protocols:ci -f Dockerfile.app .
+          docker build -t loyalty-mock-api:ci -f mock_customer_api/Dockerfile .
+      - name: Trivy, images (fixable HIGH and CRITICAL fail the build)
+        run: |
+          for image in loyalty-app:ci loyalty-protocols:ci loyalty-mock-api:ci; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.76.1 image \
+              --quiet --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "$image"
+          done
+      - name: Trivy, Dockerfiles and infrastructure as code
+        run: |
+          docker run --rm -v "$PWD:/repo:ro" aquasec/trivy:0.76.1 config --quiet --severity HIGH,CRITICAL \
+            --exit-code 1 --skip-dirs /repo/.venv --skip-dirs /repo/seed_data --skip-dirs /repo/benchmarks /repo
+      - name: SBOM of the app image (SPDX JSON)
+        uses: anchore/sbom-action@v0.24.3
+        with:
+          image: loyalty-app:ci
+          format: spdx-json
+          artifact-name: sbom-loyalty-app.spdx.json
+      - name: Save the app image for provenance
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: docker save loyalty-app:ci -o loyalty-app.tar
+      - name: Provenance attestation (public repository; pushes to main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/attest-build-provenance@v4.2.2
+        with:
+          subject-path: loyalty-app.tar
+
+  compose:
+    # The default stack from an empty volume, as a newcomer would start it (DEL-02, ADR-0084).
+    name: Compose smoke test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.5"
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Synthetic seed data and a throwaway env file
+        shell: pwsh
+        run: |
+          uv run python -m seed_data.generator generate
+          ./scripts/update-local-env.ps1 -Path .env.ci
+      - name: Start the stack and wait for every health check
+        run: docker compose -p ci --env-file .env.ci up --build -d --wait
+      - name: Seed the demo, then the app is ready
+        run: |
+          docker compose -p ci --env-file .env.ci exec -T app python -m app.seed --dataset demo
+          curl --fail --silent --show-error http://127.0.0.1:8010/readyz
+      - name: Logs if it failed (scrubbed JSON)
+        if: failure()
+        run: docker compose -p ci --env-file .env.ci logs --tail 100
+      - if: always()
+        run: docker compose -p ci --env-file .env.ci down -v
 
   secrets:
     name: Secret scan of the full history
