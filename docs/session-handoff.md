@@ -15,8 +15,10 @@ pull requests.
 - **Appendix C, M12 is met:** the local CI equivalent passes (verification log, Milestone 12, row 33), the load
   test report is saved (`performance/reports/2026-11-14-local.md`), and `terraform validate` passes locally and in CI.
 - **Build provenance works on `main`:** attestation 67563437 for the app image, in Sigstore's public log (row 31).
-- **The public demo is built, not deployed.** Option A (Render free + Neon free, $0) is ready: `Dockerfile.demo`,
-  `render.yaml`, `app/demo_launch.py`. It passed the smoke test 10 of 10 locally under Render-free-like limits.
+- **The public demo is built, not deployed.** The owner moved hosting to **Cloud Run + Neon** on 2026-11-14 (Render's
+  free tier had hit capacity limits for them before). `Dockerfile.demo` and `app/demo_launch.py` run unchanged on
+  Cloud Run with instance-based billing; steps, costs and the $10 spend cap are in `docs/hosting-cloud-run.md`. The
+  image passed the smoke test 10 of 10 locally under 512 MB limits.
 - **Deferred by the owner's decision (no live model calls in M12):** ENT-17 (prompt caching), LIVE-05 (caps against a
   live deploy; the demo forces mock AI, so it has no model spend).
 - **Ways of working are unchanged:** branch, pull request, merge commit; push with
@@ -24,11 +26,10 @@ pull requests.
   before pushing (three of Milestone 12's CI failures were guard tests I hadn't run locally).
 
 ## Waiting on the owner (Milestone 12)
-1. **Create the demo's accounts** (`docs/hosting-options.md`, "Your steps"): a new Neon project, then Render with
-   GitHub sign-in, access to this one repository, New → Blueprint, paste `DEMO_DATABASE_URL` in Render only, Apply.
-   Then send me the service URL (not the connection string), and I'll run `scripts/demo_smoke.py` against it.
-   Neon's owner role isn't a full superuser, so the first start is the real test of the setup; the logs say which
-   step failed if it does.
+1. **Say "go" for the demo, then follow `docs/hosting-cloud-run.md` §5**: Google project, billing, the $10 spend cap
+   and $5 alert budgets first, a new Neon project, two secrets, build from `main`, deploy. Then send me the `run.app`
+   URL (not the connection string), and I'll run `scripts/demo_smoke.py` and measure the cold start. Neon's owner
+   role isn't a full superuser, so the first start is the real test of provisioning; the logs say which step failed.
 2. **Dependabot pull requests #50–#58** are open and not merged. #50, #51 (Python 3.15) and #58 (anthropic 2.x) are
    the kind the narrowed config now ignores: close them, or leave them and Dependabot should close them. The others
    (uv 0.13.8, Playwright 1.65.0, pypdf 7.0.1, python-multipart, types-pyyaml) each need their CI and a look;

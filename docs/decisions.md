@@ -1374,3 +1374,66 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   and the cases stayed. **Not deployed:** the owner creates the accounts (`docs/hosting-options.md`).
 - **What would change this decision:** a paid plan or a host with background workers (split back into three
   services); a request to try live AI in the demo (a new approval and a hard cap, then lift the forced mock).
+
+## ADR-0088: The public demo moves to Google Cloud Run + Neon, instance-based, behind a $10 spend cap
+- **Context:** on 2026-11-14 the owner dropped Render (ADR-0087's option A) after hitting its free-tier capacity
+  limits before. The owner asked for a re-evaluation of $0 hosts from current official pages, then chose Cloud Run +
+  a new Neon project, on four conditions:
+  1. a real automatic stop, or a plain statement that none exists;
+  2. max 1 instance, min 0, inside the free tier, with request-based billing if possible;
+  3. a $5 alert and a $10 hard stop;
+  4. exact steps with placeholders, and nothing created until "go".
+- **Options considered (official pages, 2026-11-14; verification log row 35):**
+  - **Hugging Face Spaces:** Docker Spaces need PRO for a personal account ($9 a month), and outbound traffic is
+    limited to ports 80, 443 and 8080, so Neon's 5432 is blocked.
+  - **Oracle Always Free:** 2 OCPUs and 12 GB, no sleep, the full Compose stack. But it's an OS to patch, idle VMs
+    may be reclaimed (CPU, network and memory under 20% over 7 days), and capacity errors are possible.
+  - **Koyeb:** 0.1 vCPU and 512 MB, a card hold, and it can't run a worker service.
+  - **Streamlit Community Cloud:** it runs `streamlit run` only, so it could host a results viewer, never the system.
+  - **Cloud Run:** chosen.
+  - For the stop, three options:
+    - an alerts-only budget, which doesn't cap spending;
+    - Google's budget → Pub/Sub → disable-billing function, which "might irretrievably delete" resources and ends even
+      free-tier services;
+    - a **spend cap budget**, which pauses new Cloud Run usage and deletes nothing.
+  - For billing:
+    - **request-based billing** gives no CPU between requests, so the worker would freeze and lose its 60-second
+      leases. It would need jobs run inside requests plus a Scheduler tick;
+    - **instance-based billing** gives CPU for the instance's life, which ends at most 15 minutes after the last
+      request.
+- **Decision:**
+  - **The stop:** a **$10 spend cap budget** on Cloud Run for the project, plus a **$5 alerts-only budget** on the
+    whole project.
+  - **Billing and size:** **instance-based** billing, max 1 instance, min 0, 1 vCPU, 1 GiB, region `us-east5`, next
+    to Neon's AWS `us-east-2`.
+  - **The image:** built on the owner's machine from a fresh clone of `main`, tagged with the commit, pushed to
+    Artifact Registry. No Cloud Build is used.
+  - **Secrets:** two, in Secret Manager, read by a service account that can read nothing else.
+  - **Probe:** an HTTP startup probe on `/healthz` with 300 s to start.
+  - **Code:** unchanged, apart from the reset-while-awake fix (`supervise()`). The demo runs as built.
+  - **Steps:** `docs/hosting-cloud-run.md`.
+- **Tradeoff:**
+  - **The cap isn't instant,** and costs billed before enforcement are kept. With one instance of 1 vCPU and 1 GiB,
+    the most it can add is about $0.07 an hour at list price.
+  - **The cap counts gross, list-price costs.** It pauses at about 416 visit sessions in a month (projection), when
+    the real bill is about $4.78. The demo then stays paused until the 1st.
+  - **Other services aren't capped:** Artifact Registry, Secret Manager, Logging. They're kept inside their free
+    allowances by design.
+  - **Every cold start** runs the migrations, and the first visitor after a quiet spell waits. The wait isn't
+    measured yet.
+  - **A card** is on Google's billing account. The Free Trial bills nothing for 90 days; after that, the account must
+    be upgraded or the project stops.
+  - **The user asked for request-based billing if possible.** It is possible, but only by changing how and when jobs
+    run, so the recommendation is instance-based and the choice stays with the owner.
+- **Result:**
+  - Before deploying: the free tier covers about 200 visit sessions a month at $0 (projection; the assumptions are in
+    `docs/hosting-cloud-run.md` §3).
+  - **Not deployed:** it waits for the owner's "go".
+  - After the deploy: the hosted smoke test, the measured cold start, two days of billing and billable instance time
+    against the projection, and the optional $1 spend-cap test (§5.8).
+- **What would change this decision:**
+  - a measured cold start too slow for visitors (then consider min instances 1, which is billed, or Oracle);
+  - two days' billable time well above the projection;
+  - the spend cap not firing in the §5.8 test (then the disable-billing function, tested with
+    `SIMULATE_DEACTIVATION` first);
+  - the owner choosing request-based billing (then build and test jobs-in-requests first).
