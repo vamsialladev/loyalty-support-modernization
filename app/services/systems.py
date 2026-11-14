@@ -6,6 +6,7 @@ from collections.abc import Callable
 
 import httpx
 
+from app.adapters.circuit import breaker_for
 from app.adapters.mock_customer_api import MockCustomerApiAdapter
 from app.ports.customer_systems import CustomerSystems
 from app.settings import AppSettings
@@ -18,6 +19,7 @@ def mock_systems_factory(settings: AppSettings) -> SystemsFactory:
     """One shared HTTP client; each case's reads use its own read time when the simulated clock is on (ADR-0037)."""
     shape = CustomerShape.load(settings.customer_id)
     client = httpx.Client(base_url=settings.mock_api_url, timeout=2.0)
+    breaker = breaker_for(f"customer_api:{settings.mock_api_url}")  # shared by every case in this process (ADR-0081)
 
     def make(sim_time: str | None) -> CustomerSystems:
         return MockCustomerApiAdapter(
@@ -26,6 +28,7 @@ def mock_systems_factory(settings: AppSettings) -> SystemsFactory:
             shape,
             client=client,
             sim_time=sim_time if settings.sim_clock else None,
+            breaker=breaker,
         )
 
     return make

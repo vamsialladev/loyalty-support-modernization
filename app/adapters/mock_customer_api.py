@@ -20,6 +20,7 @@ from typing import Any, TypeVar
 import httpx
 
 from app import correlation
+from app.adapters.circuit import CircuitBreaker
 from app.domain.customer_records import (
     AdjustmentRequest,
     AdjustmentResult,
@@ -48,6 +49,9 @@ from customer_shapes import CustomerShape, ShapeError
 
 T = TypeVar("T")
 MAX_RETRY_WAIT_SECONDS = 5.0
+# The answers that mean the system itself is failing, which is what the breaker counts (ADR-0081). RateLimited isn't:
+# the system is up and asking us to slow down, and the retry waits as asked.
+UNHEALTHY = (TemporarilyUnavailable, UpstreamTimeout, UncertainOutcome)
 
 
 class MockCustomerApiAdapter:
@@ -64,7 +68,9 @@ class MockCustomerApiAdapter:
         sim_time: str | None = None,
         fault: str | None = None,
         page_size: int = 100,
+        breaker: CircuitBreaker | None = None,
     ) -> None:
+        self.breaker = breaker  # the production wiring passes one (app/services/systems.py); tests mostly don't
         self.shape = shape
         self.max_retries = max_retries
         self.sleep = sleep
@@ -168,7 +174,15 @@ class MockCustomerApiAdapter:
     ) -> Any:
         attempt = 0
         while True:
+            if self.breaker is not None and not self.breaker.allow():
+                # Nothing is sent, so this is safe even for a write, and the caller's own retry rules apply.
+                raise TemporarilyUnavailable("the customer system is failing; calls are paused", code="circuit_open")
             err = self._attempt(method, path, params, json_body, headers, write)
+            if self.breaker is not None:
+                if isinstance(err, UNHEALTHY):
+                    self.breaker.record_failure()
+                else:
+                    self.breaker.record_success()  # an answer, even "not found", means the system is up
             if not isinstance(err, CustomerSystemError):
                 return err
             if err.retryable and attempt < self.max_retries:

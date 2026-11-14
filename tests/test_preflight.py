@@ -68,6 +68,7 @@ FAKE = {
     "OTEL_EXPORTER_OTLP_ENDPOINT": "http://fake-otel-collector.test:4318",
     "LOG_LEVEL": "INFO",
     "LOG_FORMAT": "json",
+    "MAX_QUEUED_INVESTIGATIONS": "200",
     "SECURITY_EVENT_RETENTION_DAYS": "400",
     "FEATURE_LIVE_AI": "false",
     "FEATURE_ADJUSTMENT_EXECUTION": "true",
