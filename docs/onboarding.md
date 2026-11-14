@@ -485,6 +485,23 @@ version as CI).
 **Starter kit:** the profile layout, the hardening anchors, the one-issuer pattern, the environment files and the
 default-credentials check. **Customer-specific:** which profiles a customer runs, ports, the realm.
 
+## 4l. Operating it: telemetry, reliability, CI, the demo (Milestone 12)
+- **See it working:** `scripts\observability_check.ps1` starts the stack with Grafana, makes traffic, and checks the
+  traces, metrics, dashboard and alerts (21 checks). To look yourself, start the profile (`docker-compose.yml`, above `otel-lgtm`), open <http://127.0.0.1:3000> (or `GRAFANA_HOST_PORT`) → Dashboards →
+  Loyalty support. Each alert names a runbook in `docs/runbooks/`.
+- **Logs are JSON** with `correlation_id` and `trace_id`; take a reference from an error page, find the line, open the
+  trace in Grafana's Explore. Query strings and personal data never appear (ADR-0077).
+- **When the customer system or the model is failing,** a circuit breaker stops calls for 30 seconds and the fallbacks
+  take over; when too many investigations wait, new ones get 503 and `Retry-After` (ADR-0081).
+- **Before an AI change merges,** the release gate re-runs arm C on the mock: `uv run python scripts/release_gate.py
+  --force` (`docs/release-gate.md`).
+- **Load:** `scripts\load_test.ps1` (about 10 minutes); the report goes to `performance/reports/`.
+- **CI, locally:** `scripts\ci_local.ps1` runs the same jobs, including Trivy on the images; `scripts\terraform_check.ps1`
+  checks the AWS Terraform without an account.
+- **The public demo:** `PUBLIC_DEMO_MODE=true` gives sign-in buttons (no passwords, no administrator), a daily case cap
+  and mock AI. `Dockerfile.demo` runs everything in one container; `scripts/demo_smoke.py <url>` checks it.
+- **Rollback:** roll the image back, never the schema (`docs/rollback.md`).
+
 ## 5. Common failure modes so far
 - **`ModuleNotFoundError: app`** when running pytest outside `uv run`: use `uv run pytest`.
 - **Preflight says NOT READY:** expected with an empty `.env`; it lists exactly which settings are missing.
@@ -543,6 +560,12 @@ default-credentials check. **Customer-specific:** which profiles a customer runs
 - **A browser test shows SKIPPED:** Chromium isn't installed; run `uv run playwright install chromium`.
 - **"Customer system error" in the console:** the mock API is down or the token differs; check
   `http://127.0.0.1:8020/readyz` and `scripts\stack.ps1 -Action logs`.
+
+- **Milestone 12's traps:** an alert rule can load and never work (Grafana's datasource plugins failed under
+  `cap_drop: ALL`, so the check runs a query through Grafana and makes an alert fire); a metric's unit can rename it
+  (`"1"` became `_ratio`, so the check matches names exactly); Postgres can report healthy before it accepts TCP (the
+  healthcheck now uses `-h 127.0.0.1`); a guard test you didn't run still runs on CI (run every test that reads
+  `docs/` before pushing).
 
 ## 6. First tasks to try
 1. Run the checks and read the preflight output for each profile.

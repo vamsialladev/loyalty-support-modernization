@@ -1,8 +1,8 @@
 # Implementation status
 
-**Last updated:** 2026-11-13 · **Current milestone:** 12 of 20, in progress (Milestones 1–11 merged) · **Next:** the rest of Milestone 12
-(observability, reliability, load test, CI/CD, Terraform). **Waiting on the owner:** the Milestone 7 to 9 exercises; the Codex
-exercise, when convenient.
+**Last updated:** 2026-11-14 · **Current milestone:** 12 of 20, done (Milestones 1–12 merged) · **Next:** Milestone 13
+(operational drills, recovery, incident exercises). **Waiting on the owner:** the Render and Neon accounts for the public
+demo (`docs/hosting-options.md`); the Milestone 7 to 9 and 12 exercises; the Codex exercise, when convenient.
 
 ## Completion scores (spec Part 0.5)
 Counted from `docs/requirements-matrix.md` by `uv run python scripts/matrix_scores.py`. Only "Implemented and
@@ -15,11 +15,11 @@ row is named under the table with its limits in the matrix (ADR-0072).
 | Benchmarks and evaluation | 48 | 64 | 75% | 4 |
 | Actual-tool exercises | 0 | 16 | 0% | 3 |
 | Protocol labs | 6 | 16 | 38% | 2 |
-| Security controls | 41 | 55 | 75% | 6 |
+| Security controls | 42 | 55 | 76% | 6 |
 | Owner's demonstrated understanding | 0 | 3 | 0% | 1 |
 | Other tracked work (not a Part 0.5 score) | 47 | 107 | 44% | 13 |
 
-Verified with limitations (counted as done; the limits are in each row): SEC-11, PROTO-04, ENT-30
+Verified with limitations (counted as done; the limits are in each row): SEC-11, SEC-15, PROTO-04, ENT-30
 
 369 requirements: Tier 1: 190, Tier 2: 102, Tier 3: 27, Tier 4: 50
 
@@ -68,8 +68,26 @@ authorization, M9), API-01 and API-02 (moved to M7, as the owner approved). Code
 | 9 | **Implemented and verified** (Appendix C, M9: authorization, CSRF, rate-limit, redaction and red-team tests pass on mock and scripted models; OIDC login works locally against a real Keycloak). SEC-19's repeated tests on a real model: **NOT RUN** | `tests/test_security_authz.py`, `tests/test_security_postgres.py`, `tests/test_oidc.py`, `tests/test_red_team.py`, `tests/test_red_team_shared_corpus.py`, `tests/test_security_docs.py`; `security/evidence/oidc-check-2026-11-06.txt`; verification log, Milestone 9 |
 | 10 | **Implemented and verified** (Appendix C, M10: thresholds committed before runs; A/B/C reports generated from actual runs; error analysis written). H7 **not tested**: no participants | `benchmarks/benchmark-thresholds.yaml`, `benchmarks/results/`, `benchmarks/reports/heldout/`, `docs/error-analysis.md`, `tests/test_scoring.py`, `tests/test_runner.py`, `tests/test_compare.py`, `tests/test_benchmark_docs.py`, `tests/test_benchmark_postgres.py`; verification log, Milestone 10 |
 | 11 | **Built, tests pass; independent peers run 2026-11-12** (Appendix C, M11): MCP Inspector pass, `@ag-ui/client` pass, A2A TCK verified with limitations (45 of 47 required checks that ran pass; the 2 failures are scenarios rejected by design; auth not tested by the TCK, covered by our tests and the real-Keycloak run; card 9 of 9 after a fix) | `tests/interop/` (opt-in), `security/evidence/mcp-inspector-run.txt`, `a2a-tck-run.txt`, `ag-ui-client-run.txt`, `tests/test_protocol_auth.py`, `tests/test_mcp_server.py`, `tests/test_a2a.py`, `tests/test_a2a_postgres.py`, `tests/test_ag_ui.py`, `tests/browser/test_ag_ui_panel.py`, `tests/test_protocols_off.py`, `tests/test_protocol_docs.py`; `security/evidence/protocol-token-check-2026-11-11.txt`; verification log, Milestone 11 |
-| 12 | **In progress** (started 2026-11-13). Part 1 done locally: hardened multi-stage images, Compose profiles, protocol services in Compose with one issuer (TD-52; labs check 10 of 10), TD-51 and TD-53 paid, environment files and default-credential checks, gitleaks pre-commit, the local CI equivalent (`scripts\ci_local.ps1`), CI once per change (ADR-0076). Still to come: observability, reliability, load test, the CI/CD additions, Terraform, rollback and backup docs, demo hosting prep |
-| 12–20 | Planned | `docs/implementation-plan.md` |
+| 12 | **Implemented and verified** (Appendix C, M12: the local CI equivalent passes, see the verification log row 33; a load test report is saved, `performance/reports/2026-11-14-local.md`; `terraform validate` passes, locally and in CI). The public demo is built and checked locally, **not deployed**: it waits for the owner's Render and Neon accounts. ENT-17 and LIVE-05 deferred by the owner's decision (no live model calls) | `scripts\ci_local.ps1`, `scripts\observability_check.ps1`, `scripts\load_test.ps1`, `scripts\terraform_check.ps1`, `scripts\release_gate.py`, `scripts/demo_smoke.py`; `.github/workflows/ci.yml`; `tests/test_observability.py`, `test_ops_monitoring.py`, `test_security_events.py`, `test_ops_metrics.py`, `test_reliability.py`, `test_demo_mode.py`, `test_demo_launch.py`, `test_ci_workflow.py`, `test_infrastructure_docs.py`; ADR-0076 to ADR-0087; verification log, Milestone 12 |
+| 13–20 | Planned | `docs/implementation-plan.md` |
+
+## Milestone 12 deliverables
+- **Containers and environments:** multi-stage, non-root images with health checks and no capabilities; Compose
+  profiles (demo, test, enterprise-identity, labs, observability); environment files with default-credential checks.
+- **Observability:** OpenTelemetry traces across app, mock API and worker; scrubbed JSON logs; GenAI attributes with
+  no prompt or response text; metrics, drift signals, QA sampling; security events with an ECS export; Grafana
+  dashboards and seven alerts, each with a runbook (observability check 21 of 21).
+- **Reliability and AI operations:** circuit breakers, backpressure (503 + `Retry-After`), the execution flag; model
+  retirement tracking, shadow runs, and a release gate on the frozen mock regression.
+- **Load test:** 4,602 API requests, 0 failures; the first limit is likely the single app process
+  (`performance/reports/2026-11-14-local.md`; local laptop, mock provider).
+- **CI/CD and supply chain:** migrations round trip, Playwright in its own image, Trivy (54 fixable findings to 0),
+  SBOM, build provenance on `main` (row 31), Compose smoke, the release gate, Dependabot, a keyless deploy workflow
+  (never run).
+- **Terraform and operations documents:** validate-only AWS Terraform; rollback, backup, SLOs, maintenance, shared
+  responsibility, data residency, encryption, enterprise integration.
+- **Public demo, ready for Render free + Neon free ($0):** demo mode, one container, `render.yaml`, the owner's steps.
+  Not deployed.
 
 ## Milestone 11 deliverables
 - **Research first:** six protocol documents from primary sources (2026-11-11), RFC-0004, ADR-0071. MCP 2026-07-28, A2A 1.0, AG-UI 1.0 (the 1.1 draft isn't used).
