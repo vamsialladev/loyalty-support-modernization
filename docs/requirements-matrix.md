@@ -269,7 +269,7 @@ rest are Tier 2.
 |---|---|---|---|---|---|---|---|---|
 | OPS-01 | Declared load profile and bounded load test report | F.1 | 2 | 12 | core | — | — | Planned (M12) |
 | OPS-02 | `/healthz`, `/readyz`, structured logs with correlation IDs, OpenTelemetry with context propagation, sensitive-data filtering | F.1 | 2 | 6, 12 | core | M4: `/healthz`, `/readyz` on both services, correlation IDs on mock API responses. M12: OpenTelemetry traces (FastAPI, httpx, database statements, model calls, jobs) with W3C context from the app to the mock API and the worker; JSON logs with correlation and trace IDs; one scrubbing filter for spans and logs (ADR-0077) | `tests/test_app_shell.py::test_readyz_needs_migrations_and_customer_systems`, `tests/test_mock_api.py::test_readyz_reports_seeded_and_empty`, `tests/test_observability.py` (verification log, M12 rows 16–17) | Implemented and verified |
-| OPS-03 | Metrics incl. per-case model usage and cost, provider spend tracking | F.1 | 2 | 12 | core | — | — | Planned (M12) |
+| OPS-03 | Metrics incl. per-case model usage and cost, provider spend tracking | F.1 | 2 | 12 | core | `/metrics`: oldest job's age, approvals, AI runs, tokens and cost per arm and per case, tool calls by status, provider spend today and this month (ADR-0078) | `tests/test_ops_monitoring.py` (verification log, M12 row 19) | Implemented and verified |
 | OPS-04 | Dashboards and actionable alerts linked to runbooks | F.1 | 2 | 12 | core | — | — | Planned (M12) |
 | OPS-05 | Reliability: budgets, bounded concurrency, circuit breakers where justified, transient-only backoff, backpressure, provider-outage manual fallback, feature flags | F.1 | 2 | 8, 12 | core | M8: budgets, bounded concurrency, transient-only retries, the provider-outage fallback, `FEATURE_LIVE_AI`. Circuit breakers and backpressure in M12 | — | Planned (M12) |
 | OPS-06 | Proposed SLOs kept apart from measured results; no availability claims from local tests | F.1 | 2 | 12 | core | — | — | Planned (M12) |
@@ -375,8 +375,8 @@ rest are Tier 2.
 | ENT-15 | Model lifecycle: pinned IDs, deprecation tracking, upgrade procedure; unknown model fails safe to manual | E4 | 2 | 8, 12 | core | M8: pinned ID, allowed list, an unknown model fails safe, upgrade steps in `docs/ai-system-card.md`. Deprecation tracking in M12 | `tests/test_ai_provider.py::test_an_unlisted_or_deprecated_model_fails_safe` | Planned (M12) |
 | ENT-16 | AI gateway pattern documented | E4 | 2 | 12 | other | — | — | Planned (M12) |
 | ENT-17 | Cost controls: prompt caching measured, cheaper model only with no quality loss, cost attribution | E4 | 2 | 10, 12 | bench | Cost attribution per case and run is stored. Prompt caching isn't used or measured. Cheaper configurations tested in the ablations | — | Planned (M12) |
-| ENT-18 | Online quality sampling for human QA | E5 | 2 | 12 | core | — | — | Planned (M12) |
-| ENT-19 | Drift signals with configurable alert thresholds | E5 | 2 | 12 | core | — | — | Planned (M12) |
+| ENT-18 | Online quality sampling for human QA | E5 | 2 | 12 | core | A keyed hash picks the configured share (10%, arm C) of resolved cases on all three resolve paths; supervisors or auditors review against `docs/qa-rubric.md` (proposed) over the API; results in `qa_samples`, apart from the benchmark (ADR-0078) | `tests/test_ops_monitoring.py` (verification log, M12 row 19) | Implemented and verified |
+| ENT-19 | Drift signals with configurable alert thresholds | E5 | 2 | 12 | core | Seven signals (escalation, override, validation failure, citation failure, tool error, tokens per case, category mix) for two windows, thresholds in the customer's `monitoring` section, `python -m app.services.drift`; alerting through the dashboards comes with the observability profile (ADR-0078) | `tests/test_ops_monitoring.py` (verification log, M12 row 19) | Implemented and verified |
 | ENT-20 | AI incident register | E5 | 2 | 13 | other | — | — | Planned (M13) |
 | ENT-21 | Feedback-to-dataset pipeline after labeling review only | E5 | 2 | 12 | bench | — | — | Planned (M12) |
 | ENT-22 | Canary/shadow for prompt and model versions | E5 | 2 | 12 | bench | — | — | Planned (M12) |
@@ -389,7 +389,7 @@ rest are Tier 2.
 | ENT-29 | Embedding in the agent's existing tool: options and tradeoffs | E7 | 2 | 12 | other | — | — | Planned (M12) |
 | ENT-30 | Event-driven trigger options; signed webhook intake on the mock API if time allows | E7 | 2 | 12 | core | — | — | Planned (M12) |
 | ENT-31 | SIEM-ready security and audit export with field mapping | E7 | 2 | 12 | sec | — | — | Planned (M12) |
-| ENT-32 | Privacy-filtered daily analytics export | E7 | 2 | 12 | core | — | — | Planned (M12) |
+| ENT-32 | Privacy-filtered daily analytics export | E7 | 2 | 12 | core | `python -m app.services.analytics_export --day`: one CSV row per day, arm and kind of worker, allow-listed count, sum and median columns only (ADR-0078) | `tests/test_ops_monitoring.py` (verification log, M12 row 19) | Implemented and verified |
 | ENT-33 | Change approval template linking eval evidence, reviewer, rollback | E8 | 2 | 18 | other | — | — | Planned (M18) |
 | ENT-34 | RACI for AI operations | E8 | 2 | 18 | other | — | — | Planned (M18) |
 | ENT-35 | Support tiers L1–L3 with proposed targets | E8 | 2 | 18 | other | — | — | Planned (M18) |

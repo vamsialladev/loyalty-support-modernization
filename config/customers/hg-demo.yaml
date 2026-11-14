@@ -12,6 +12,21 @@ synthetic: true
 approval_ttl_hours: 24
 max_evidence_age_minutes: 60
 
+# Production AI quality monitoring (spec E5; ENT-18, ENT-19; ADR-0078). Assumptions, not measurements: the AI
+# operations owner sets them in a pilot from the first weeks' real variation.
+monitoring:
+  qa_sample_percent: 10        # share of closed cases queued for human QA review
+  qa_sample_arms: [C]          # the AI-assisted arm
+  drift_min_cases: 30          # fewer cases than this in either window: no drift alert at all
+  drift_thresholds:            # rates: absolute change; tokens per case: change as a fraction of the baseline
+    escalation_rate: 0.05
+    override_rate: 0.05
+    validation_failure_rate: 0.03
+    citation_failure_rate: 0.02
+    tool_error_rate: 0.05
+    tokens_per_case: 0.25
+    category_mix_distance: 0.15  # total variation distance between the two windows' queue mix
+
 properties:
   beach-resort:
     name: Beach Resort

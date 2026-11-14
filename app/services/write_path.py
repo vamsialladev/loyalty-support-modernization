@@ -52,7 +52,7 @@ from app.ports.customer_systems import (
     SchemaMismatch,
     UncertainOutcome,
 )
-from app.services import approvals, jobs, kill_switch, policies
+from app.services import approvals, jobs, kill_switch, policies, qa_sampling
 from app.services.arm_review import FreshReview, review_for
 from app.services.cases import WorkflowError, move
 from app.services.customer_config import customer_config
@@ -528,6 +528,7 @@ class SharedWritePath:
             move(case, CaseState.RESOLVED)
             case.resolution_code, case.resolution_note = "adjusted", f"{row.points} points, adjustment {adjustment_id}"
             record(s, case, who, "adjustment_executed", points=row.points, adjustment=adjustment_id)
+            qa_sampling.consider(s, case, row.requested_by)  # the requester's work is what QA reviews (ENT-18)
         s.commit()
 
     # ---------- recovery and reconciliation ----------

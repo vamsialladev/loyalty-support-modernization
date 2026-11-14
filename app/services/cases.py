@@ -28,7 +28,7 @@ from app.domain.customer_records import LedgerEntry, Member, StayRecord
 from app.domain.roles import Identity, NotPermitted, Role, require_case_reader, require_case_worker
 from app.persistence.models import AdjustmentRequestRow, Case, CaseEvidence, CaseNote, CaseRequest
 from app.ports.customer_systems import CustomerSystemError, CustomerSystems
-from app.services import policies
+from app.services import policies, qa_sampling
 from app.services.customer_config import customer_config
 from app.services.instrumentation import events, record
 
@@ -424,6 +424,7 @@ def close_case(s: Session, who: Identity, case: Case, code: str, note: str, rule
     move(case, CaseState.RESOLVED)
     case.resolution_code, case.resolution_note = code, note.strip() or None
     record(s, case, who, "case_closed", resolution=code, checklist_outcome=outcome.value, override=override)
+    qa_sampling.consider(s, case, who.username)  # online QA sampling, in the same transaction (ENT-18)
     s.commit()
 
 
