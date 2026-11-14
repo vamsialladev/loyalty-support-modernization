@@ -1,6 +1,6 @@
 # Mock customer API image: service code only. No generator, labels or data inside (ADR-0040); the seed folder is
 # mounted read-only at run time. Non-root user. Separate dependency and runtime stages since Milestone 12 (ADR-0074).
-FROM ghcr.io/astral-sh/uv:0.13.5 AS uv
+FROM ghcr.io/astral-sh/uv:0.13.8 AS uv
 
 FROM python:3.12.15-slim-bookworm AS base
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PATH=/opt/venv/bin:$PATH
