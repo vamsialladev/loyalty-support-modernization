@@ -23,6 +23,9 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **Drift thresholds, the 10% QA rate and the QA rubric are assumptions**, not measurements; the rubric is proposed
   until user acceptance testing (Milestone 18). The category mix uses the queue, the only request category the app
   has. Provider spend is one total per deployment, like the spending caps.
+- **Shadow and the release gate run on the mock only** (ADR-0082): the mock decides by rules, so a candidate prompt
+  can't show a quality difference there. Live shadow, canary routing and prompt caching (ENT-17) need an approved
+  budget. Retirement dates are entered by hand from the provider's pages; none is published for the current model.
 - **Circuit breakers are per process** (ADR-0081): with several workers, each learns of an outage on its own. The
   thresholds (5 failures in 30 s, 30 s cooldown) and the backpressure limit (200 waiting investigations) are
   assumptions until the load test measures the clearing rate.

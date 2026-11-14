@@ -19,3 +19,4 @@ models:
     output_per_mtok: 0.50
     checked_on: "2026-11-06"
     deprecated: false
+    retires_on: null       # none published as of checked_on; python -m app.ai.lifecycle reviews it (ENT-15)

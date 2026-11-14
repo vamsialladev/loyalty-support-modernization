@@ -33,6 +33,7 @@ class ModelPrice:
     output_per_mtok: float
     checked_on: str
     deprecated: bool = False
+    retires_on: str | None = None  # the provider's published retirement date, if any (ENT-15, app/ai/lifecycle.py)
 
     def cost_microusd(self, input_tokens: int, output_tokens: int) -> int:
         """Rounded up, so a cap can't be passed by rounding."""

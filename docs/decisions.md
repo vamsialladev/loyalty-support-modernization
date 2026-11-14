@@ -1172,3 +1172,35 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **What would change this decision:** several app instances behind a load balancer (share breaker state, for
   example in Redis, or accept per-instance learning); a measured clearing rate (set the limit from it); a customer
   who wants intake itself throttled (put it at the gateway, never by dropping a request).
+
+## ADR-0082: Model lifecycle: a release gate on the frozen mock regression, retirement tracking, shadow, feedback
+- **Context:** spec E.6 and E5 ask for a regression evaluation before release on any change, a known-good
+  configuration for rollback, deprecation tracking, canary or shadow for prompt and model versions, and a
+  feedback-to-dataset pipeline only through labeling review. The pieces exist: the committed mock run
+  `benchmarks/results/mock/c-mock-dev` (Milestone 10), the allowed-model list, and the label review.
+- **Options considered:** gating on the whole benchmark (minutes of scripted arms that a prompt can't change); gating
+  only on a prompt-file change (misses the AI code, the mock, policies and eligibility); an LLM-judged comparison
+  (the judge isn't calibrated, TD-48); routing a share of real investigations to a candidate (needs live calls).
+- **Decision:**
+  - **Release gate** (`scripts/release_gate.py`, CI job "Release gate" on every pull request). When a pull request
+    touches a path that can change arm C, it re-runs arm C on the dev split with the mock provider and compares 12
+    decision fields case by case with `c-mock-dev`. Any difference fails the gate, and a person reviews the list.
+    The baseline's manifest names its commit: that's the known-good configuration to roll back to.
+  - **Retirement tracking** (`app/ai/lifecycle.py`). Each allowed model carries `deprecated` and the provider's
+    published `retires_on` (none for the current one, so none is written). The review blocks a deprecated, retired
+    or soon-retiring model and warns when the check is stale. The harness refuses a model past its date.
+  - **Shadow:** `AI_PROMPT` selects a candidate prompt for a run into its own folder, and the gate compares it
+    (`--candidate`). Nothing of it reaches a case.
+  - **Feedback to dataset** (`evaluations/feedback_candidates.py`). Disagreements become a review sheet with codes
+    only, and only reviewed `add` rows are promoted, into the input for the next dataset version.
+- **Tradeoff:** the gate takes about 2.5 minutes on this machine, on the pull requests where it runs. Comparing
+  every decision field means an intended change always fails first and is re-baselined deliberately. On the mock,
+  shadow checks plumbing, not prompt quality.
+- **Result:** the gate passed on the code as committed: 100 of 100 case runs identical to the Milestone 10 baseline.
+  So nothing since then (protocols, observability, reliability) changed arm C. With `max_turns` set to 1 it failed
+  with 240 differences, so it isn't passing for want of looking. `tests/test_model_lifecycle.py`: the review's
+  rules, no invented date, the harness refusal, `AI_PROMPT`, the gate's comparison and trigger paths, and feedback
+  candidates holding none of 5 planted identifiers.
+- **What would change this decision:** an approved live budget (shadow on the live model, and prompt caching,
+  ENT-17); a calibrated judge (add explanation quality to the gate); a provider deprecation API (read `retires_on`
+  from it instead of by hand).
