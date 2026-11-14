@@ -1,17 +1,32 @@
 # Weekly update pull requests (SEC-11, ADR-0084). Each one runs the full CI, including the image scans and, when it
-# touches AI-relevant code, the release gate. Nothing merges without a person.
+# touches AI-relevant code, the release gate. Nothing merges without a person (docs/maintenance.md).
+# Major versions, and Python past 3.12, aren't proposed: the project is pinned to Python 3.12 (pyproject.toml), and a
+# major version is a reviewed change of its own, not a weekly bump (found when the first run proposed python 3.15 and
+# anthropic 2.x).
 version: 2
 updates:
   - package-ecosystem: uv
     directory: /
     schedule: {interval: weekly}
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule: {interval: weekly}
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker
     directory: /
     schedule: {interval: weekly}
+    ignore:
+      - dependency-name: python
+        versions: [">= 3.13"]
   - package-ecosystem: docker
     directory: /mock_customer_api
     schedule: {interval: weekly}
+    ignore:
+      - dependency-name: python
+        versions: [">= 3.13"]
