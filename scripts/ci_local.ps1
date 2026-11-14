@@ -52,7 +52,7 @@ if ($Skip -notcontains "postgres") {
     Step "postgres" "start a CI-shaped Postgres 16 on 127.0.0.1:$port" {
         & docker run -d --name $pgName -e POSTGRES_USER=mock_api -e "POSTGRES_PASSWORD=$pw" -e POSTGRES_DB=mock_customer_api_test `
             -p "127.0.0.1:${port}:5432" -v "${PWD}\scripts:/ci/scripts:ro" -v "${PWD}\infrastructure:/ci/infrastructure:ro" `
-            --health-cmd "pg_isready -U mock_api -d mock_customer_api_test" --health-interval 3s --health-retries 40 postgres:16.15-alpine | Out-Null
+            --health-cmd "pg_isready -h 127.0.0.1 -U mock_api -d mock_customer_api_test" --health-interval 3s --health-retries 40 postgres:16.15-alpine | Out-Null
         $ready = $false
         for ($i = 0; $i -lt 60 -and -not $ready; $i++) {
             Start-Sleep -Seconds 2

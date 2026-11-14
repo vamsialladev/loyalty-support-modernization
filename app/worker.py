@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import signal
 import sys
 import threading
@@ -25,7 +26,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app import correlation
 from app.domain.roles import Identity, Role
-from app.observability import tracing
+from app.observability import ops_metrics, tracing
 from app.observability.logs import configure_logging
 from app.services import jobs
 from app.services.jobs import ClaimedJob, Clock, Defer, GiveUp, Retry
@@ -230,6 +231,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"requeued {job.id} {job.kind}")
         return 0
 
+    ops_metrics.install(tracing.WORKER, sessions, ops_metrics.caps_from(settings), os.environ)  # gauges, if OTLP set
     handlers, sweep = build_handlers(settings)
     health = settings.worker_health_file
     worker = Worker(sessions, handlers, sweep=sweep, health_file=Path(health) if health else None)

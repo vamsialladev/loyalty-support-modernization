@@ -55,7 +55,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U mock_api -d mock_customer_api_test"
+          --health-cmd "pg_isready -h 127.0.0.1 -U mock_api -d mock_customer_api_test"
           --health-interval 3s --health-timeout 3s --health-retries 20
     env:
       TEST_MOCK_API_DATABASE_URL: postgresql+psycopg://mock_api:ci-only-throwaway@127.0.0.1:5432/mock_customer_api_test

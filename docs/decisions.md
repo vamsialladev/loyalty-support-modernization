@@ -1090,3 +1090,50 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   refusals and refuses fewer than 30 days.
 - **What would change this decision:** a customer SIEM with its own schema (map the ECS fields once); a requirement
   to stream events as they happen (add a log sink for the same documents; the classification stays one table).
+
+## ADR-0080: Local dashboards and alerts: Grafana's all-in-one image, provisioned from the repository
+- **Context:** spec F.1 asks for operational dashboards and actionable alerts linked to runbooks; C.10 asks for alerts
+  with owners. Everything must run locally at no cost; the hosting choice (Render free, option A) has no metrics
+  backend.
+- **Options considered:** separate Prometheus, Tempo, Loki and Grafana containers (four images to pin and wire); a hosted
+  observability vendor's free tier (an account, and synthetic telemetry leaving the machine); Grafana's
+  `otel-lgtm` image, which bundles a collector, Prometheus, Tempo, Loki and Grafana behind one OTLP endpoint.
+- **Decision:** `grafana/otel-lgtm:0.38.1` in a new `observability` profile, bound to 127.0.0.1, hardened like the
+  other services, with the dashboards (`observability/grafana/dashboards/`) and alert rules
+  (`observability/grafana/alerting/rules.yaml`) mounted read-only. Edits in the UI aren't saved, so every change is a
+  reviewed commit. The worker exports seven gauges taken from one database snapshot per collection
+  (`app/observability/ops_metrics.py`): queue, oldest job, dead jobs, AI spend and caps, security refusals and
+  protocol calls in the last 15 minutes. The app exports its HTTP server metrics. Seven alert rules each carry a
+  proposed owner, a severity and a runbook in `docs/runbooks/` (Stage 5's format, REUSE-05). No contact point is
+  configured: wiring alerts to email or chat is the customer's choice at handover.
+- **Found while building (six):** (1) the metric names Prometheus actually stores differ from what I first wrote
+  (`loyalty_ai_spend_USD`, and the FastAPI instrumentation's `http_server_duration_milliseconds` with
+  `http_status_code`, not the newer `http_server_request_duration_seconds`), so the rules and the dashboard use the
+  names the first run read back. (2) The worker's once-a-second job poll made a one-statement trace named `SELECT`
+  every second and buried the real ones. Database spans are now recorded only inside a request, job or model call (a
+  test). (3) Every alert rule failed with "plugin not registered", and the Tempo proxy path answered 404. The cause:
+  this image's Grafana runs as root and, at start, replaces its bundled Prometheus, Tempo and Loki plugins. With
+  `cap_drop: ALL` it can't remove files it doesn't own, so no datasource worked. Three probe containers (none, all
+  dropped, all dropped plus two) showed `DAC_OVERRIDE` and `FOWNER` are the smallest set that works; the hardening
+  test allows exactly those two for this image. The check now also runs a query through Grafana, which would have
+  caught it. (4) Postgres reported healthy before it accepted TCP: on first start the image runs its init scripts on a
+  socket-only server, and the socket check passed, so the mock API got "connection refused". The healthcheck now
+  uses `-h 127.0.0.1` (Compose, CI's service container, `scripts\ci_local.ps1`). It hadn't shown before, because the
+  window is short; the large Grafana image starting alongside widened it. (5) Rules evaluated before the plugins
+  were installed keep that error until their next clean evaluation, so the check waits for one. (6) "App not
+  reporting" first keyed on the HTTP metrics, which exist only after a request, so an idle app went "pending" (a
+  false alarm in five minutes). The app now reports `loyalty_app_up`, and the check requires that rule to stay quiet.
+  Its first unit, `"1"`, became `loyalty_app_up_ratio` in Prometheus, which the rule didn't match while the check's
+  prefix match let it pass; the unit is now `{process}` and the check matches names exactly.
+- **Tradeoff:** one large image (about 900 MB) for a local profile; Grafana's built-in admin/admin stays, bound to
+  localhost with anonymous viewers read-only (never for a shared host). Logs stay in `docker compose logs`, not Loki:
+  the app writes scrubbed JSON to stdout, and shipping them is a collector setting a customer would choose. Gauges
+  are counted from the database on each collection, so they read the same as `/metrics`, at the cost of one query
+  set every 15 seconds.
+- **Result:** `scripts\observability_check.ps1` (verification log, Milestone 12, row 21): gauges and HTTP metrics in
+  Prometheus, app traces in Tempo with nothing planted in them, the dashboard and seven rules loaded, every rule
+  evaluating cleanly, and a planted dead job making "Jobs giving up" fire. `tests/test_ops_metrics.py`: the gauges,
+  and that every rule links an existing runbook listed in the index.
+- **What would change this decision:** a customer's own monitoring (send the same OTLP to their collector, and load
+  the dashboard and rules there; the names are in one module and one file); a hosted deployment that needs alerts
+  delivered (add a contact point there, not here).

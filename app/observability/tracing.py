@@ -139,6 +139,10 @@ def _before(conn: Any, _cursor: Any, statement: str, _params: Any, context: Any,
     operation = statement.lstrip().split(None, 1)[0].upper() if statement.strip() else "QUERY"
     if operation in TRANSACTION_CONTROL:  # SQLite's explicit BEGIN (database.py) would double every trace's length
         return
+    if not trace.get_current_span().get_span_context().is_valid:
+        # Only inside a request, a job or a model call. The worker polls for jobs every second; on the observability
+        # profile each poll became a one-span trace named SELECT and buried the real ones (ADR-0080).
+        return
     span = tracer("app.db").start_span(
         operation,
         kind=SpanKind.CLIENT,

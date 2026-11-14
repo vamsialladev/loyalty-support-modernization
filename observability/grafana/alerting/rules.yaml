@@ -1,0 +1,192 @@
+# Alert rules for the observability profile (spec F.1, C.10; OPS-04, SEC-20; ADR-0080). Provisioned from this file:
+# a change is a reviewed commit, not a UI edit. Every rule names a proposed owner and a runbook in docs/runbooks/
+# (a test checks the file exists). Thresholds are assumptions for a pilot to tune, not measurements.
+# No contact point is configured: alerts show in Grafana → Alerting. Wiring them to email or chat is the customer's
+# choice at handover (docs/runbooks/README.md).
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: loyalty-operations
+    folder: Loyalty support
+    interval: 1m
+    rules:
+      - uid: loyalty-queue-backlog
+        title: Queue backing up
+        condition: C
+        for: 5m
+        data:
+          - refId: A
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: prometheus
+            model: {refId: A, expr: "max(loyalty_jobs_oldest_age_seconds)", instant: true}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{evaluator: {type: gt, params: [300]}}]
+        noDataState: OK
+        execErrState: Error
+        labels: {severity: warning, owner: application-team}
+        annotations:
+          summary: The oldest job has waited more than 5 minutes.
+          runbook_url: docs/runbooks/queue-backlog.md
+
+      - uid: loyalty-dead-jobs
+        title: Jobs giving up
+        condition: C
+        for: 0s
+        data:
+          - refId: A
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: prometheus
+            model: {refId: A, expr: "max(loyalty_jobs_dead)", instant: true}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{evaluator: {type: gt, params: [0]}}]
+        noDataState: OK
+        execErrState: Error
+        labels: {severity: warning, owner: application-team}
+        annotations:
+          summary: One or more jobs went dead; a person decides what happens next.
+          runbook_url: docs/runbooks/dead-jobs.md
+
+      - uid: loyalty-error-rate
+        title: Error rate high
+        condition: C
+        for: 5m
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                (sum(increase(http_server_duration_milliseconds_count{http_status_code=~"5.."}[10m]))
+                / clamp_min(sum(increase(http_server_duration_milliseconds_count[10m])), 1))
+                and sum(increase(http_server_duration_milliseconds_count[10m])) > 20
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{evaluator: {type: gt, params: [0.05]}}]
+        noDataState: OK
+        execErrState: Error
+        labels: {severity: critical, owner: application-team}
+        annotations:
+          summary: More than 5% of the app's requests failed with a 5xx over 10 minutes.
+          runbook_url: docs/runbooks/error-rate.md
+
+      - uid: loyalty-app-silent
+        title: App not reporting
+        condition: C
+        for: 5m
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                (absent_over_time(loyalty_app_up[5m]) or vector(0))
+                and on() (count(loyalty_jobs_queued) > 0)
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{evaluator: {type: gt, params: [0]}}]
+        noDataState: OK
+        execErrState: Error
+        labels: {severity: critical, owner: application-team}
+        annotations:
+          summary: The worker reports but the app has sent nothing for 5 minutes.
+          runbook_url: docs/runbooks/app-not-ready.md
+
+      - uid: loyalty-ai-spend
+        title: AI spend near its daily cap
+        condition: C
+        for: 0s
+        data:
+          - refId: A
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                max(loyalty_ai_spend_USD{period="day"}) / clamp_min(max(loyalty_ai_cap_USD{period="day"}), 0.000001)
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{evaluator: {type: gt, params: [0.8]}}]
+        noDataState: OK
+        execErrState: Error
+        labels: {severity: warning, owner: ai-operations}
+        annotations:
+          summary: Today's model spend passed 80% of the daily cap.
+          runbook_url: docs/runbooks/ai-spend.md
+
+  - orgId: 1
+    name: loyalty-security
+    folder: Loyalty support
+    interval: 1m
+    rules:
+      - uid: loyalty-auth-failures
+        title: Repeated sign-in failures
+        condition: C
+        for: 0s
+        data:
+          - refId: A
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: prometheus
+            model: {refId: A, instant: true, expr: "max(loyalty_security_refusals{action=\"sign_in_failed\"})"}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{evaluator: {type: gt, params: [20]}}]
+        noDataState: OK
+        execErrState: Error
+        labels: {severity: warning, owner: security}
+        annotations:
+          summary: More than 20 failed sign-ins in 15 minutes.
+          runbook_url: docs/runbooks/auth-failures.md
+
+      - uid: loyalty-protocol-reads
+        title: Unusual protocol read volume
+        condition: C
+        for: 0s
+        data:
+          - refId: A
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: prometheus
+            model: {refId: A, instant: true, expr: "max(loyalty_protocol_calls)"}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{evaluator: {type: gt, params: [200]}}]
+        noDataState: OK
+        execErrState: Error
+        labels: {severity: warning, owner: security}
+        annotations:
+          summary: More than 200 MCP or A2A calls in 15 minutes.
+          runbook_url: docs/runbooks/protocol-read-volume.md
