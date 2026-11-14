@@ -18,6 +18,11 @@ Kept current at every milestone. Each line says what is limited, why, and what w
 - **The mock API's database queries aren't traced**, only its requests: it stands for the customer's system and
   shares no code with the app (TD-55). Database spans in the app come from engine events, not the official
   instrumentation (TD-54).
+- **Monitoring numbers are computed on request** from the stored tables (ADR-0078): every `/metrics` view and drift
+  report reads all cases. Fine at synthetic volumes; the load test (PR 4) measures it.
+- **Drift thresholds, the 10% QA rate and the QA rubric are assumptions**, not measurements; the rubric is proposed
+  until user acceptance testing (Milestone 18). The category mix uses the queue, the only request category the app
+  has. Provider spend is one total per deployment, like the spending caps.
 - **Traces leave the process only with `OTEL_EXPORTER_OTLP_ENDPOINT` set.** The default stack exports nothing; the
   local collector and dashboards come with the `observability` profile.
 

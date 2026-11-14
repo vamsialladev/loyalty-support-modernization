@@ -16,7 +16,17 @@ from sqlalchemy.orm import Session
 from app.domain.business_time import parse_utc
 from app.domain.case_states import CaseState
 from app.domain.roles import Identity, NotPermitted, Role
-from app.persistence.models import AdjustmentRequestRow, Case, CaseEvent, Feedback, Job, Recommendation
+from app.persistence.models import (
+    AdjustmentRequestRow,
+    AiRun,
+    AiStep,
+    Approval,
+    Case,
+    CaseEvent,
+    Feedback,
+    Job,
+    Recommendation,
+)
 from app.services import jobs
 
 HUMAN, SCRIPTED = "human", "scripted"
@@ -42,6 +52,12 @@ class ArmMetrics:
     feedback_helpful: int = 0
     feedback_not_helpful: int = 0
     engine_results: dict[str, int] = field(default_factory=dict)
+    approvals_approved: int = 0
+    approvals_rejected: int = 0
+    ai_runs: int = 0
+    ai_tokens: int = 0
+    ai_cost_microusd: int = 0
+    ai_cost_per_case_microusd: int | None = None  # over the cases that had an AI run
 
 
 @dataclass
@@ -50,6 +66,9 @@ class Metrics:
     jobs_queued: int
     jobs_dead: int
     note: str = WITHOUT_A_LABEL_NOTE
+    oldest_queued_seconds: int | None = None  # the oldest job still waiting or running
+    tool_calls: dict[str, dict[str, int]] = field(default_factory=dict)  # tool -> status -> count
+    spend_microusd: dict[str, int] = field(default_factory=dict)  # provider spend: today and this month
 
 
 def require_metrics_reader(who: Identity) -> None:
@@ -80,6 +99,13 @@ def collect(s: Session, who: Identity) -> Metrics:
     latest: dict[int, Recommendation] = {}
     for rec in s.scalars(select(Recommendation).order_by(Recommendation.id)):
         latest[rec.case_id] = rec
+    decisions: dict[int, list[str]] = {}  # adjustment request -> decisions
+    for approval in s.scalars(select(Approval)):
+        decisions.setdefault(approval.adjustment_request_id, []).append(approval.decision)
+    runs_by_case: dict[int, list[AiRun]] = {}
+    for run in s.scalars(select(AiRun)):
+        runs_by_case.setdefault(run.case_id, []).append(run)
+    ai_cases: dict[tuple[str, str], int] = {}
 
     table: dict[tuple[str, str], ArmMetrics] = {}
     steps: dict[tuple[str, str], list[int]] = {}
@@ -112,6 +138,16 @@ def collect(s: Session, who: Identity) -> Metrics:
                 stats.points_executed += request.points
             if request.status == "invalidated":
                 stats.approvals_invalidated += 1
+            for decision in decisions.get(request.id, []):
+                stats.approvals_approved += decision == "approved"
+                stats.approvals_rejected += decision == "rejected"
+        own_runs = runs_by_case.get(case.id, [])
+        if own_runs:
+            ai_cases[key] = ai_cases.get(key, 0) + 1
+        for run in own_runs:
+            stats.ai_runs += 1
+            stats.ai_tokens += run.input_tokens + run.output_tokens
+            stats.ai_cost_microusd += run.cost_microusd
         for item in feedback_by_case.get(case.id, []):
             stats.feedback_helpful += item.rating == "helpful"
             stats.feedback_not_helpful += item.rating == "not_helpful"
@@ -123,6 +159,41 @@ def collect(s: Session, who: Identity) -> Metrics:
         stats.engine_results = dict(sorted(results[key].items()))
         stats.median_steps = median(steps[key]) if steps[key] else None
         stats.median_minutes_to_close = median(closes[key]) if closes.get(key) else None
-    queued = s.scalars(select(Job.id).where(Job.status.in_((jobs.QUEUED, jobs.RUNNING)))).all()
+        if ai_cases.get(key):
+            stats.ai_cost_per_case_microusd = round(stats.ai_cost_microusd / ai_cases[key])
+    waiting = s.scalars(select(Job.created_at_utc).where(Job.status.in_((jobs.QUEUED, jobs.RUNNING)))).all()
     dead = s.scalars(select(Job.id).where(Job.status == jobs.DEAD)).all()
-    return Metrics(sorted(table.values(), key=lambda r: (r.arm, r.kind)), len(queued), len(dead))
+    oldest = None
+    if waiting:
+        oldest = max(0, int((parse_utc(jobs.db_now(s)) - parse_utc(min(waiting))).total_seconds()))
+    return Metrics(
+        sorted(table.values(), key=lambda r: (r.arm, r.kind)),
+        len(waiting),
+        len(dead),
+        oldest_queued_seconds=oldest,
+        tool_calls=_tool_calls(s, who.customer_id),
+        spend_microusd=_spend(s),
+    )
+
+
+def _tool_calls(s: Session, customer_id: str) -> dict[str, dict[str, int]]:
+    """Tool use across this customer's AI runs: how often each tool was called, and how each call ended."""
+    counts: dict[str, Counter[str]] = {}
+    query = (
+        select(AiStep.name, AiStep.status)
+        .join(AiRun, AiRun.id == AiStep.run_id)
+        .join(Case, Case.id == AiRun.case_id)
+        .where(AiStep.kind == "tool", Case.customer_id == customer_id)
+    )
+    for name, status in s.execute(query):
+        counts.setdefault(name, Counter())[status] += 1
+    return {name: dict(sorted(c.items())) for name, c in sorted(counts.items())}
+
+
+def _spend(s: Session) -> dict[str, int]:
+    """Provider spend as the spending caps count it (`app/ai/harness.py`): today and this month, in micro-dollars.
+    One total per deployment, like the caps: a deployment serves one customer (ADR-0055)."""
+    from app.ai.harness import periods, spent_microusd
+
+    day, month = periods()
+    return {"day": spent_microusd(s, day), "month": spent_microusd(s, month)}

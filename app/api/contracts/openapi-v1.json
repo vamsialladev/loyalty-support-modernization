@@ -982,6 +982,80 @@
     "title": "MetricsOut",
     "type": "object"
    },
+   "QaReview": {
+    "additionalProperties": false,
+    "description": "One answer per rubric item, as codes (docs/qa-rubric.md). The service checks the allowed values.",
+    "properties": {
+     "evidence": {
+      "maxLength": 16,
+      "title": "Evidence",
+      "type": "string"
+     },
+     "explanation": {
+      "maxLength": 16,
+      "title": "Explanation",
+      "type": "string"
+     },
+     "member_message": {
+      "maxLength": 16,
+      "title": "Member Message",
+      "type": "string"
+     },
+     "outcome": {
+      "maxLength": 16,
+      "title": "Outcome",
+      "type": "string"
+     },
+     "policy_cited": {
+      "maxLength": 16,
+      "title": "Policy Cited",
+      "type": "string"
+     }
+    },
+    "required": [
+     "outcome",
+     "evidence",
+     "policy_cited",
+     "explanation",
+     "member_message"
+    ],
+    "title": "QaReview",
+    "type": "object"
+   },
+   "QaSampleOut": {
+    "description": "A closed case queued for QA review (ENT-18). Its reference only: the reviewer opens the case to read it.",
+    "properties": {
+     "arm": {
+      "title": "Arm",
+      "type": "string"
+     },
+     "case_reference": {
+      "title": "Case Reference",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "sampled_at_utc": {
+      "title": "Sampled At Utc",
+      "type": "string"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "case_reference",
+     "arm",
+     "status",
+     "sampled_at_utc"
+    ],
+    "title": "QaSampleOut",
+    "type": "object"
+   },
    "RecommendationOut": {
     "properties": {
      "action": {
@@ -2079,6 +2153,107 @@
      }
     },
     "summary": "Excerpt"
+   }
+  },
+  "/api/v1/qa/samples": {
+   "get": {
+    "operationId": "qa_samples_api_v1_qa_samples_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/QaSampleOut"
+         },
+         "title": "Response Qa Samples Api V1 Qa Samples Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Qa Samples"
+   }
+  },
+  "/api/v1/qa/samples/{sample_id}/review": {
+   "post": {
+    "operationId": "qa_review_api_v1_qa_samples__sample_id__review_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "sample_id",
+      "required": true,
+      "schema": {
+       "title": "Sample Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "header",
+      "name": "x-csrf-token",
+      "required": false,
+      "schema": {
+       "default": "",
+       "title": "X-Csrf-Token",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/QaReview"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/QaSampleOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Qa Review"
+   }
+  },
+  "/api/v1/qa/summary": {
+   "get": {
+    "operationId": "qa_summary_api_v1_qa_summary_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Qa Summary Api V1 Qa Summary Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Qa Summary"
    }
   }
  }

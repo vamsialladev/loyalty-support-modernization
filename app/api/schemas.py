@@ -213,3 +213,23 @@ class MetricsOut(BaseModel):
     jobs_queued: int
     jobs_dead: int
     note: str
+
+
+class QaSampleOut(BaseModel):
+    """A closed case queued for QA review (ENT-18). Its reference only: the reviewer opens the case to read it."""
+
+    id: int
+    case_reference: str
+    arm: str
+    status: str
+    sampled_at_utc: str
+
+
+class QaReview(Strict):
+    """One answer per rubric item, as codes (docs/qa-rubric.md). The service checks the allowed values."""
+
+    outcome: str = Field(max_length=16)
+    evidence: str = Field(max_length=16)
+    policy_cited: str = Field(max_length=16)
+    explanation: str = Field(max_length=16)
+    member_message: str = Field(max_length=16)

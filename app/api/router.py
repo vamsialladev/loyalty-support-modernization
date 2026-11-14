@@ -27,7 +27,7 @@ from app.domain.case_states import InvalidTransition
 from app.domain.roles import NotPermitted, require_case_reader
 from app.persistence.models import AdjustmentRequestRow, Case, Recommendation
 from app.ports.customer_systems import CustomerSystemError
-from app.services import accounts, conventional, jobs, metrics, policies, rate_limit, sessions
+from app.services import accounts, conventional, jobs, metrics, policies, qa_sampling, rate_limit, sessions
 from app.services import cases as svc
 from app.services.instrumentation import events
 from app.services.systems import SystemsFactory
@@ -393,6 +393,39 @@ def build_router(settings: AppSettings, systems_for: SystemsFactory) -> APIRoute
             status=cited.status,
             source_checksum=cited.source_checksum,
         )
+
+    # ---------- online QA sampling (ENT-18): supervisors and auditors ----------
+
+    @router.get("/qa/samples", response_model=list[api.QaSampleOut])
+    def qa_samples(s: DB, active: Reader) -> list[api.QaSampleOut]:
+        found = qa_sampling.pending(s, active.identity)
+        rows = s.execute(select(Case.id, Case.reference).where(Case.id.in_([q.case_id for q in found])))
+        references = {case_id: reference for case_id, reference in rows}
+        return [
+            api.QaSampleOut(
+                id=q.id,
+                case_reference=references[q.case_id],
+                arm=q.arm,
+                status=q.status,
+                sampled_at_utc=q.sampled_at_utc,
+            )
+            for q in found
+        ]
+
+    @router.post("/qa/samples/{sample_id}/review", response_model=api.QaSampleOut)
+    def qa_review(s: DB, active: Writer, sample_id: int, body: api.QaReview) -> api.QaSampleOut:
+        try:
+            done = qa_sampling.review(s, active.identity, sample_id, body.model_dump())
+        except qa_sampling.InvalidReview as exc:
+            raise Problem(422, "invalid_review", "The review isn't valid", str(exc)) from exc
+        reference = s.scalar(select(Case.reference).where(Case.id == done.case_id)) or ""
+        return api.QaSampleOut(
+            id=done.id, case_reference=reference, arm=done.arm, status=done.status, sampled_at_utc=done.sampled_at_utc
+        )
+
+    @router.get("/qa/summary")
+    def qa_summary(s: DB, active: Reader) -> dict[str, Any]:
+        return qa_sampling.summary(s, active.identity)
 
     return router
 

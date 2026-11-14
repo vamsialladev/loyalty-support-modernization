@@ -12,6 +12,7 @@ from typing import Any
 from sqlalchemy import (
     JSON,
     BigInteger,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -483,3 +484,24 @@ class A2aTask(Base):
             sqlite_where=text("state = 'submitted'"),
         ),
     )
+
+
+class QaSample(Base):
+    """A closed case queued for human QA review against the rubric (spec E5; ENT-18; `app/services/qa_sampling.py`).
+
+    Kept apart from the offline benchmark, whose runner never reads this table. Answers are rubric codes only.
+    """
+
+    __tablename__ = "qa_samples"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"))
+    arm: Mapped[str] = mapped_column(String(8))
+    rate_percent: Mapped[float] = mapped_column(Float)
+    status: Mapped[str] = mapped_column(String(16), index=True)  # pending | reviewed
+    closed_by: Mapped[str] = mapped_column(String(64))
+    sampled_at_utc: Mapped[str] = mapped_column(String(20))
+    reviewer: Mapped[str | None] = mapped_column(String(64), default=None)
+    answers: Mapped[dict[str, str] | None] = mapped_column(JSON, default=None)
+    reviewed_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
+
+    __table_args__ = (UniqueConstraint("case_id", name="uq_qa_samples_case"),)

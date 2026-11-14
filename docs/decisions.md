@@ -1026,3 +1026,41 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **What would change this decision:** the GenAI conventions reaching Stable (rename in one file); a SQLAlchemy 2.1
   release of the instrumentation (TD-54); a collector-side redaction processor the customer already runs, which
   could replace the in-process one only after the same tests pass against it.
+
+## ADR-0078: Production quality monitoring: metrics, drift, QA sampling, analytics export
+- **Context:** spec F.1 lists the metrics (queue, escalations, approvals, tool use, per-case model cost, provider
+  spend); E5 asks for online QA sampling kept apart from offline evaluation, and drift signals with configurable
+  thresholds; E7 asks for a privacy-filtered daily analytics export. Everything it needs is already stored: case
+  events, AI runs and steps, approvals, jobs, the spend table.
+- **Options considered:** a metrics pipeline with its own tables (a second copy of the truth); computing everything
+  from the stored tables when asked (no new writes, slower as data grows); sampling by a random draw (not
+  repeatable) or by a scheduled sweep (needs a scheduler and can miss cases).
+- **Decision:**
+  - **Metrics** stay computed from the stored tables (`app/services/metrics.py`), now with the oldest job's age,
+    approvals, AI runs, tokens and cost per arm and per case, tool calls by status, and today's and this month's
+    provider spend as the caps count it.
+  - **Drift** (`app/services/drift.py`): seven observed signals for two windows of people's cases (scripted
+    benchmark cases are left out), compared against thresholds in the customer's `monitoring` section. A signal
+    drifts past its threshold: rates in absolute points, tokens per case as a fraction of the baseline, the category
+    mix as a total variation distance. No alert below 30 cases in a window, rather than a noisy one.
+  - **QA sampling** (`app/services/qa_sampling.py`, migration 0013): a keyed hash of the case reference picks the
+    configured share of resolved cases in the configured arms (10%, arm C), in the same transaction that resolves
+    them, on all three paths: arm A's close, arm B and C's close, and an executed adjustment. Repeatable, can't be
+    steered by whoever closes the case, and needs no scheduler. Reviewers are supervisors or auditors, never the
+    person whose work it was; answers are rubric codes only (`docs/qa-rubric.md`, proposed). Results live in their
+    own table, which nothing in `benchmarks/` reads.
+  - **Analytics export** (`app/services/analytics_export.py`): one CSV row per day, arm and kind of worker, from an
+    allow-list of count, sum and median columns.
+- **Found while building:** an executed adjustment resolves its case inside the write path, not through either close
+  function, so the first version never sampled an adjusted case (a test watching the hook saw no call on DV-001).
+  The write path now samples too, with the requester as the person whose work it was.
+- **Tradeoff:** computing on request reads every case each time (fine at the synthetic volumes, measured in the load
+  test, PR 4). The thresholds and the 10% rate are assumptions, not measurements. Category mix uses the queue, the
+  only category the app has; a real customer's request types would replace it.
+- **Result:** `tests/test_ops_monitoring.py` (14 tests): queue age, tool use, spend and cost per case; drift only
+  past its threshold and with enough cases; sampling repeatable, keyed and within 8–12% at 10% over 5,000
+  references; a person's executed adjustment sampled, a scripted one not; the reviewer rules, CSRF and the rubric over
+  the API; the export holds none of the planted name, email, member number, confirmation, case reference or username.
+- **What would change this decision:** volumes where computing on request is too slow (then materialized daily
+  aggregates, as the analytics export already shapes them); a customer's own QA form (map it onto the rubric codes);
+  a calibrated rubric from UAT (Milestone 18).

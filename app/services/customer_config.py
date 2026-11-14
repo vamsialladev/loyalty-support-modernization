@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -20,6 +21,11 @@ class CustomerConfig:
     rules: CustomerRules
     approval_ttl_hours: int
     oidc_group_roles: dict[str, str] = field(default_factory=dict)
+    # Production AI quality monitoring (ADR-0078). With no `monitoring` section: no sampling, no drift alerts.
+    qa_sample_percent: float = 0.0
+    qa_sample_arms: tuple[str, ...] = ()
+    drift_min_cases: int = 30
+    drift_thresholds: dict[str, float] = field(default_factory=dict)
 
     @classmethod
     def load(cls, customer_id: str, config_dir: Path = CONFIG_DIR) -> CustomerConfig:
@@ -30,7 +36,18 @@ class CustomerConfig:
             int(data["max_evidence_age_minutes"]),
         )
         groups = dict((data.get("oidc") or {}).get("group_roles") or {})
-        return cls(data["customer_id"], data["policy_set"], rules, int(data["approval_ttl_hours"]), groups)
+        monitoring: dict[str, Any] = data.get("monitoring") or {}
+        return cls(
+            data["customer_id"],
+            data["policy_set"],
+            rules,
+            int(data["approval_ttl_hours"]),
+            groups,
+            float(monitoring.get("qa_sample_percent", 0.0)),
+            tuple(str(a) for a in monitoring.get("qa_sample_arms") or ()),
+            int(monitoring.get("drift_min_cases", 30)),
+            {str(k): float(v) for k, v in (monitoring.get("drift_thresholds") or {}).items()},
+        )
 
 
 @lru_cache(maxsize=8)

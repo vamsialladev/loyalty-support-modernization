@@ -40,7 +40,7 @@ from app.persistence.models import (
     Recommendation,
 )
 from app.ports.customer_systems import CustomerSystems
-from app.services import approvals, jobs, policies
+from app.services import approvals, jobs, policies, qa_sampling
 from app.services.cases import (
     ARM_B,
     ARM_C,
@@ -573,6 +573,7 @@ def close_case(s: Session, who: Identity, case: Case, code: str, reason: str = "
     move(case, CaseState.RESOLVED)
     case.resolution_code, case.resolution_note = code, reason.strip() or None
     record(s, case, who, "case_closed", resolution=code, checklist_outcome=rec.action, override=override)
+    qa_sampling.consider(s, case, who.username)  # online QA sampling, in the same transaction (ENT-18)
     s.commit()
     return override
 
