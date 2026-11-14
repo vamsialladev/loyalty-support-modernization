@@ -195,6 +195,17 @@ the override log, the JSON API's problem documents, the arm fence test.
 **What changes:** configuration only (issuer, audiences, URLs, scopes). **What doesn't:** the verifier, the tool and
 artifact checks, and the rule that no protocol writes.
 
+## Operations and delivery (Milestone 12)
+| Piece here | For a real customer | What to change |
+|---|---|---|
+| Local Grafana (`--profile observability`) | The customer's own collector and monitoring | Point `OTEL_EXPORTER_OTLP_ENDPOINT` at their collector; load `observability/grafana/` there or translate the seven rules to their tool; keep the in-process scrubbing until their collector's redaction passes the same tests (ADR-0077) |
+| Security events export (ECS JSON lines) | Their SIEM | Map the ECS fields once (`docs/siem-field-map.md`); stream instead of exporting if they need it live |
+| Circuit breakers and backpressure limits | Their system's real failure and rate patterns | Set the thresholds from the pilot's first weeks; share breaker state if several app instances run (ADR-0081) |
+| The release gate on the mock | A live release gate | With an approved budget, run the gate on the live model too; keep the mock gate for every pull request (ADR-0082) |
+| AWS Terraform (validate only) | Their landing zone | Map onto their modules and accounts; their state backend; apply in a sandbox first (`docs/aws-deploy-setup.md`) |
+| The demo's one container (TD-56) | Separate services | Use `Dockerfile.app` and `mock_customer_api/Dockerfile` (the mock replaced by their system's adapter) |
+| Systems of record | Their CRM, loyalty platform, PMS, warehouse | `docs/enterprise-integration.md`: the port operations and what each adapter needs |
+
 ## The benchmark (Milestone 10)
 
 | Part | Here | For a real engagement |

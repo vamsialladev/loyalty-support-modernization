@@ -4,7 +4,7 @@
 
 | From | To | Carries | Protection | Not carried |
 |---|---|---|---|---|
-| Browser | App | Forms, session cookie | HttpOnly, SameSite=Strict, CSRF, CSP. TLS at hosting (M12) | |
+| Browser | App | Forms, session cookie | HttpOnly, SameSite=Strict, CSRF, CSP. TLS at the hosting edge; plain HTTP on 127.0.0.1 locally (`docs/encryption.md`) | |
 | App or worker | Customer systems | Member, stay and ledger reads; adjustments | Bearer token, typed adapter, timeouts | Message text |
 | Worker | Model provider | Redacted message and document text; stay and ledger summaries; excerpts; first and last name | Redaction, tools scoped to the member, live off by default | Email, phone, birth date, secrets, hidden reasoning stored back |
 | App | Identity provider | Code, client secret, PKCE verifier | Configured destination only, no redirects | Passwords: the provider handles those |

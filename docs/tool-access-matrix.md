@@ -54,7 +54,9 @@ are in `docs/verification-log.md` (2026-10-28). This file grows into the full Pa
 | Anthropic Claude API | B. runtime model | live arm C, live smoke test | Available: settings in `.env` (owner, 2026-11-07). Smoke test passed. Live evaluation approved with a $5 total cap |
 | Amazon Bedrock | B. runtime model | enterprise endpoint adapter | Blocked: needs AWS SSO profile and model access (configure only) |
 | Kimi / GLM / Qwen | B. runtime model | open-model exercise | Blocked: needs one key or a local server (Milestone 15) |
-| GitHub (this repo) | A/D. dev and CI | remote, CI, PRs | Manual step required: owner approves creating the repo |
+| GitHub (this repo) | A/D. dev and CI | remote, CI, PRs | Available: public since 2026-11-13, with secret scanning and push protection on |
+| Render | deployment | the public demo (option A) | Manual step required: the owner creates the account and connects this one repository (`docs/hosting-options.md`) |
+| Neon | C. hosted DB | the public demo's Postgres | Manual step required: the owner makes a new project and pastes its owner connection string into Render only |
 | CodeRabbit | A. dev review | PR review exercise | Blocked: owner installs the GitHub app on this repo only |
 | Supabase | C/D. hosted DB + Auth | Supabase profile | Blocked: owner account and keys |
 | Vercel | deployment | React frontend | Blocked: owner account, and only after bolt.new |
