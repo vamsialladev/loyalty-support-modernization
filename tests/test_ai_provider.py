@@ -151,6 +151,8 @@ def test_settings_decide_live_and_half_set_means_no_model(monkeypatch: pytest.Mo
     )
     assert no_key.provider is None and "key" in no_key.unavailable_reason
     assert runtime_from_settings(settings(ai_provider="zai")).provider is None
+    bedrock = runtime_from_settings(settings(ai_provider="bedrock", feature_live_ai=True))
+    assert bedrock.provider is None and "configured only" in bedrock.unavailable_reason  # ENT-13: blocked, fails safe
     label = mode_label(settings(ai_provider="anthropic", feature_live_ai=True, anthropic_model="claude-haiku-5-5"))
     assert label == "LIVE claude-haiku-5-5"
 

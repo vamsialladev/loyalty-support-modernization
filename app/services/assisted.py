@@ -50,6 +50,10 @@ def runtime_from_settings(settings: AppSettings) -> AiRuntime:
     caps = SpendCaps(settings.ai_budget_per_run_usd, settings.ai_budget_daily_usd, settings.ai_budget_total_usd)
     if settings.ai_provider == "mock":
         return AiRuntime(mock_runtime().provider, caps)
+    if settings.ai_provider == "bedrock":
+        # ENT-13: configured (preflight checks AWS_PROFILE, AWS_REGION, BEDROCK_MODEL_ID) but not built or run, because
+        # this project has no AWS access. It fails safe to arm B's result, like any provider that isn't ready.
+        return AiRuntime(None, caps, "Claude via Amazon Bedrock is configured only; there is no AWS access (blocked)")
     if settings.ai_provider != "anthropic":
         return AiRuntime(None, caps, f"provider {settings.ai_provider} isn't implemented")
     if not settings.feature_live_ai:
