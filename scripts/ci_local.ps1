@@ -4,7 +4,8 @@
 #   powershell -ExecutionPolicy Bypass -File scripts\ci_local.ps1            # the jobs in .github/workflows/ci.yml
 #   powershell -ExecutionPolicy Bypass -File scripts\ci_local.ps1 -Full      # + compose check (with browser) + labs check
 #   powershell -ExecutionPolicy Bypass -File scripts\ci_local.ps1 -Skip checks   # re-run only the other jobs
-# Jobs: checks (lint, format, types, tests with the coverage gate incl. browser tests, dependency audit),
+# Jobs: checks (lint, format, types, tests with the coverage gate incl. browser tests, dependency audit), images
+# (build and Trivy, Milestone 12 PR 5),
 # postgres (a CI-shaped Postgres in Docker, the shared setup script, `pytest -m postgres`), secrets (gitleaks over
 # the full history). Needs Docker Desktop running and Chromium installed once (`uv run playwright install chromium`).
 param([switch]$Full, [string[]]$Skip = @())
@@ -63,6 +64,15 @@ if ($Skip -notcontains "postgres") {
     Step "postgres" "databases and roles (scripts/ci_postgres_setup.sh, shared with CI)" {
         & docker exec -e "CI_DB_PASSWORD=$pw" -e PGHOST_PORT=127.0.0.1:5432 -e SQL_DIR=/ci/infrastructure/postgres/sql $pgName sh /ci/scripts/ci_postgres_setup.sh
     }
+    Step "postgres" "migrations on an empty database, down to base and up again" {
+        & docker exec -e "PGPASSWORD=$pw" $pgName psql -h 127.0.0.1 -U mock_api -d mock_customer_api_test -c "CREATE DATABASE loyalty_migrate OWNER loyalty_owner" | Out-Null
+        $env:DATABASE_URL = "postgresql+psycopg://loyalty_owner:${pw}@127.0.0.1:${port}/loyalty_migrate"
+        uv run alembic upgrade head; $a = $LASTEXITCODE
+        uv run alembic downgrade base; $b = $LASTEXITCODE
+        uv run alembic upgrade head; $c = $LASTEXITCODE
+        Remove-Item Env:DATABASE_URL
+        $global:LASTEXITCODE = if ($a -eq 0 -and $b -eq 0 -and $c -eq 0) { 0 } else { 1 }
+    }
     Step "postgres" "pytest -m postgres" {
         $env:TEST_MOCK_API_DATABASE_URL = "postgresql+psycopg://mock_api:${pw}@127.0.0.1:${port}/mock_customer_api_test"
         $env:TEST_APP_DATABASE_URL = "postgresql+psycopg://loyalty_app:${pw}@127.0.0.1:${port}/loyalty_test"
@@ -73,6 +83,23 @@ if ($Skip -notcontains "postgres") {
         $global:LASTEXITCODE = $code
     }
     & docker rm -f $pgName 2>$null | Out-Null
+}
+
+if ($Skip -notcontains "images") {
+    Step "images" "build the app, protocols and mock API images" {
+        & docker build -q --target app -t loyalty-app:ci -f Dockerfile.app . | Out-Null; $a = $LASTEXITCODE
+        & docker build -q --target protocols -t loyalty-protocols:ci -f Dockerfile.app . | Out-Null; $b = $LASTEXITCODE
+        & docker build -q -t loyalty-mock-api:ci -f mock_customer_api/Dockerfile . | Out-Null; $c = $LASTEXITCODE
+        $global:LASTEXITCODE = if ($a -eq 0 -and $b -eq 0 -and $c -eq 0) { 0 } else { 1 }
+    }
+    Step "images" "Trivy: fixable HIGH and CRITICAL in the images" {
+        $failed = 0
+        foreach ($image in "loyalty-app:ci", "loyalty-protocols:ci", "loyalty-mock-api:ci") {
+            & docker run --rm -v //var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.76.1 image --quiet --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 $image
+            if ($LASTEXITCODE -ne 0) { $failed++ }
+        }
+        $global:LASTEXITCODE = $failed
+    }
 }
 
 if ($Skip -notcontains "secrets") {

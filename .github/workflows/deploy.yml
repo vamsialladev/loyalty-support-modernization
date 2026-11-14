@@ -1,0 +1,55 @@
+# Deploy to the AWS reference environment (DEL-03, ADR-0084). **Never run in this project:** no AWS account exists
+# and the owner chose Render free for the demo. Kept so the path is real and reviewed:
+# - Manual only (workflow_dispatch), from main, and only after the `production` environment's approval.
+# - Short-lived credentials from GitHub's OIDC token: no AWS keys are stored anywhere. The role ARN is a repository
+#   variable, not a secret, and the job stops if it isn't set.
+# - It deploys the image CI built and attested for that commit; it builds nothing itself.
+# Setting it up (owner, when there's an AWS account): docs/aws-deploy-setup.md (Milestone 12, PR 6, with the Terraform).
+name: Deploy (AWS reference, manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to deploy the commit at the head of main'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production
+    if: github.ref == 'refs/heads/main' && inputs.confirm == 'deploy'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: production   # the approval gate (Settings → Environments → production → required reviewers)
+    permissions:
+      contents: read
+      id-token: write          # the OIDC token AWS exchanges for short-lived credentials
+    steps:
+      - name: Stop unless the AWS role is configured
+        env:
+          ROLE: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+        run: |
+          if [ -z "$ROLE" ]; then
+            echo "AWS_DEPLOY_ROLE_ARN isn't set: there is no AWS environment for this project. Nothing was deployed."
+            exit 1
+          fi
+      - uses: actions/checkout@v7.0.1
+      - uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Verify the image's provenance before deploying it
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Would pull the image CI built for ${GITHUB_SHA}, run 'gh attestation verify' on it,"
+          echo "push it to ECR, run the migrate task, then update the ECS services (docs/rollback.md)."
+          echo "Not implemented to run: no AWS environment exists (ADR-0084)."
+          exit 1

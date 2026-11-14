@@ -1229,3 +1229,42 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **What would change this decision:** a pilot with real traffic (replay it instead of a synthetic mix); a hosted
   deployment (run the same driver against it, with the owner's approval and its own limits); a need for per-query
   numbers (load `pg_stat_statements` in the test's stack).
+
+## ADR-0084: The full CI pipeline and the supply chain
+- **Context:** spec F.2 asks for migration on an empty database, static analysis, dependency, secret, container and
+  IaC scans, builds, an SBOM, Playwright and provenance "where supported", under rules: no paid key, least-privilege
+  tokens, no secrets to untrusted pull requests, scanners failing the build. It also asks for a protected manual
+  deploy with environment approval and OIDC. The repository went public on 2026-11-13, so minutes are free and
+  artifact attestations are available (the attest action's README says they're in public repositories on every
+  plan). Milestone 11's runner failure came from an `apt` step during the Playwright install.
+- **Options considered:** Trivy through `trivy-action` (its default Trivy version disagreed between its release
+  notes and README); the pinned `aquasec/trivy` image run directly, like gitleaks; signing with cosign and a key
+  (a key to keep); GitHub's keyless build-provenance attestations.
+- **Decision:**
+  - **New jobs.** `browser` runs in Playwright's image (`mcr.microsoft.com/playwright/python:v1.64.1-noble`), so
+    there's no apt step. `images` builds the app, protocols and mock API images, runs Trivy on each (fixable HIGH and
+    CRITICAL fail) and on the Dockerfiles, and writes an SPDX SBOM of the app image. On pushes to main it also
+    attests the saved app image's build provenance. `compose` starts the default stack from an empty volume, as a
+    newcomer would, seeds the demo and checks `/readyz`. The `postgres` job also takes migrations on an empty
+    database up to head, down to base and up again. `scripts\ci_local.ps1` gains the same migration and image steps.
+  - **Rules:** CI reads no secret at all, so a fork's pull request has nothing to take. Permissions are
+    `contents: read` everywhere; only the images job may write, and only an OIDC token and attestations. Every
+    action and image is pinned to an exact version. Dependabot proposes updates weekly. A test keeps these rules.
+  - **Images:** the base moves from `python:3.12.10-slim-bookworm` (Debian 12.11, 54 fixable HIGH/CRITICAL in the
+    app image) to `python:3.12.15-slim-bookworm`, plus Debian's security updates at build time. Both images then
+    scan clean (0 fixable HIGH or CRITICAL). The image scan checks vulnerabilities only: Trivy's secret scanner read
+    two docstrings in the `anthropic` package as Google service-account keys. The repository's own secrets stay with
+    gitleaks.
+  - **Deploy** (`.github/workflows/deploy.yml`): manual, main only, a typed confirmation, the `production`
+    environment's approval, and an AWS role assumed through OIDC from a repository variable; no AWS key exists
+    anywhere. It stops when no role is set. **Never run:** there is no AWS account.
+- **Tradeoff:** `apt-get upgrade` in the image makes a rebuild pick up newer Debian packages, so two builds of one
+  commit can differ; the SBOM records what each build contains. Provenance is attested only on main, because a
+  fork's pull request gets no OIDC token. The browser tests' coverage no longer counts toward the coverage gate,
+  which is still met without them.
+- **Result:** both images scan clean on the new base, and the Dockerfiles have no HIGH or CRITICAL
+  misconfiguration. Local CI's migration round trip and image scans pass (verification log, Milestone 12, row 26),
+  as does `tests/test_ci_workflow.py`. CI's first run of the new jobs is recorded with the pull request.
+- **What would change this decision:** a registry for the images (attest and push there, and verify before deploy);
+  a customer's own scanner or base-image policy; an AWS account with the owner's approval (configure the role and
+  the environment's reviewers, then run the deploy once).
