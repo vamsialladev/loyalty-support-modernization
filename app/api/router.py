@@ -30,6 +30,7 @@ from app.ports.customer_systems import CustomerSystemError
 from app.services import (
     accounts,
     conventional,
+    demo,
     jobs,
     metrics,
     policies,
@@ -81,6 +82,10 @@ def _to_problem(exc: Exception) -> JSONResponse:
         response = problem_response(429, "rate_limited", "Too many requests")
         response.headers["Retry-After"] = str(exc.retry_after_seconds)
         return response
+    if isinstance(exc, demo.DemoLimitReached):  # the public demo's daily cap (ADR-0087)
+        response = problem_response(503, "demo_limit", "Today's demo cases are used", str(exc))
+        response.headers["Retry-After"] = str(exc.retry_after_seconds)
+        return response
     if isinstance(exc, jobs.Busy):  # backpressure (ADR-0081)
         response = problem_response(503, "busy", "Too much work is waiting", str(exc))
         response.headers["Retry-After"] = str(exc.retry_after_seconds)
@@ -107,6 +112,7 @@ class ProblemRoute(APIRoute):
                 CustomerSystemError,
                 rate_limit.RateLimited,
                 jobs.Busy,
+                demo.DemoLimitReached,
             ) as exc:
                 return _to_problem(exc)
 
@@ -278,6 +284,8 @@ def build_router(settings: AppSettings, systems_for: SystemsFactory) -> APIRoute
             form_confirmation=body.form_confirmation,
             form_name=body.form_name,
         )
+        if settings.public_demo_mode:
+            demo.check_daily_case_limit(s, settings.customer_id)  # SEC-18: the demo's daily cap
         return _case(svc.create_case(s, active.identity, request, customer_id=settings.customer_id, arm=body.arm))
 
     def _investigation_state(s: Session, case: Case) -> str:

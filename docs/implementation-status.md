@@ -15,9 +15,9 @@ row is named under the table with its limits in the matrix (ADR-0072).
 | Benchmarks and evaluation | 48 | 64 | 75% | 4 |
 | Actual-tool exercises | 0 | 16 | 0% | 3 |
 | Protocol labs | 6 | 16 | 38% | 2 |
-| Security controls | 40 | 55 | 73% | 6 |
+| Security controls | 41 | 55 | 75% | 6 |
 | Owner's demonstrated understanding | 0 | 3 | 0% | 1 |
-| Other tracked work (not a Part 0.5 score) | 45 | 107 | 42% | 13 |
+| Other tracked work (not a Part 0.5 score) | 47 | 107 | 44% | 13 |
 
 Verified with limitations (counted as done; the limits are in each row): SEC-11, PROTO-04, ENT-30
 
@@ -32,7 +32,8 @@ alerts with runbooks (OPS-04), circuit breakers, backpressure and the execution 
 provenance (DEL-02, DEL-03), the manual deploy workflow (DEL-04, never run), workload identity (SEC-11), validate-only AWS Terraform (DEL-06),
 rollback (DEL-08), backup instructions (DEL-09, unverified), proposed SLOs (OPS-06), release gates per environment
 (SEC-22), the maintenance schedule (SEC-23), shared responsibility (DEL-07), data residency (ENT-11), the enterprise
-integration documents (ENT-14, ENT-16, ENT-28, ENT-29, ENT-30), Bedrock configured only (ENT-13, blocked).
+integration documents (ENT-14, ENT-16, ENT-28, ENT-29, ENT-30), Bedrock configured only (ENT-13, blocked), public demo mode (SEC-18), the hosting options (LIVE-01), the LLM observability tool decision (LIVE-04);
+the demo deploy waits for the owner (LIVE-02).
 
 New in M11: MCP, A2A and AG-UI over the same services (PROTO-01 to PROTO-05, PROTO-14's M11 part), the protocol specs and the OWASP agentic list (SEC-01), callbacks and card fetching (SEC-16), RFC-0004 (PURP-05), reuse cited (REUSE-06, REUSE-09). Verified on the same SDK on both sides, and tokens against a real Keycloak. **Independent peers run 2026-11-12 with the owner's OK:** the MCP Inspector and `@ag-ui/client` passed, so PROTO-03 and PROTO-05 are verified. **PROTO-04 (A2A) is verified with limitations** (ADR-0072): 45 of the 47 required (MUST) TCK checks that ran pass; the 2 failures are TCK scenarios the specialist rejects by design; the TCK didn't test authentication, which our own tests and the real-Keycloak run cover instead. One SHOULD gap was found and fixed (`docs/protocol-test-results.md`).
 

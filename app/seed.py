@@ -39,6 +39,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m app.seed")
     parser.add_argument("--dataset", choices=["demo", "v1"], default="demo")
     parser.add_argument("--reset", action="store_true")
+    parser.add_argument(
+        "--skip-mock", action="store_true", help="accounts and policies only (the public demo loads the mock directly)"
+    )
     args = parser.parse_args(argv)
 
     command.upgrade(Config(str(ROOT / "alembic.ini")), "head")
@@ -49,10 +52,14 @@ def main(argv: list[str] | None = None) -> int:
         from app.persistence.database import make_engine, make_sessions
 
         with make_sessions(make_engine(os.environ["DATABASE_URL"]))() as s:
-            print("demo accounts: " + ", ".join(ensure_demo_users(s, password)))
+            public = os.environ.get("PUBLIC_DEMO_MODE", "false").strip().lower() == "true"  # SEC-18: no admin
+            print("demo accounts: " + ", ".join(ensure_demo_users(s, password, public_demo=public)))
     else:
         print("demo accounts: skipped (DEMO_USER_PASSWORD is not set)")
     _load_policies()
+    if args.skip_mock:
+        print("mock data: skipped (--skip-mock)")
+        return 0
 
     url = os.environ.get("MOCK_API_URL", "http://localhost:8020")
     resp = httpx.post(

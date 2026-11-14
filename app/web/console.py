@@ -37,13 +37,22 @@ from app.arms.legacy.keyword_index import KeywordIndex
 from app.arms.legacy.rules import LegacyRules
 from app.domain.business_time import local_datetime
 from app.domain.case_states import CaseState, InvalidTransition
-from app.domain.roles import NotPermitted, Role, approval_refusal, require_administrator, require_case_worker
+from app.domain.roles import (
+    Identity,
+    NotPermitted,
+    Role,
+    approval_refusal,
+    require_administrator,
+    require_case_worker,
+)
 from app.persistence.models import Case
+from app.persistence.models import User as UserRow
 from app.ports.customer_systems import CustomerSystemError
 from app.services import (
     accounts,
     assisted,
     conventional,
+    demo,
     jobs,
     kill_switch,
     metrics,
@@ -215,6 +224,7 @@ def install_console(
             "ai_mode": ai_mode,
             "customer": settings.customer_id,
             "sim_time": sim,
+            "demo": demo.LABEL if settings.public_demo_mode else "",
         }
 
     def render(
@@ -264,6 +274,12 @@ def install_console(
         _audit_denial(request, "rate_limited")
         message = "Too many requests. Wait a little and try again."
         response = render(request, "error.html", None, 429, title="Slow down", message=message)
+        response.headers["Retry-After"] = str(exc.retry_after_seconds)
+        return response
+
+    @app.exception_handler(demo.DemoLimitReached)
+    def _demo_limit(request: Request, exc: demo.DemoLimitReached) -> Response:
+        response = render(request, "error.html", None, 503, title="Today's demo cases are used", message=str(exc))
         response.headers["Retry-After"] = str(exc.retry_after_seconds)
         return response
 
@@ -349,6 +365,8 @@ def install_console(
             raise CsrfFailed
         if oidc is not None:
             raise svc.WorkflowError("this deployment signs in through the identity provider")
+        if settings.public_demo_mode:  # SEC-18: no passwords in the public demo, so no shared account to guess
+            raise svc.WorkflowError("the public demo signs in with the buttons on the sign-in page")
         address = _address(request)
         rate_limit.check_login(s, username, address)
         who = identity.authenticate(username, password)
@@ -360,6 +378,38 @@ def install_console(
         rate_limit.clear_login_failures(s, username)
         token, _csrf = sessions.start(s, who)
         response = RedirectResponse("/admin" if who.role is Role.ADMINISTRATOR else "/queue", status_code=303)
+        response.set_cookie(
+            SESSION_COOKIE,
+            token,
+            httponly=True,
+            samesite="strict",
+            secure=settings.cookie_secure,
+            max_age=sessions.SESSION_HOURS * 3600,
+        )
+        response.delete_cookie(LOGIN_CSRF_COOKIE)
+        return response
+
+    @app.post("/demo/sign-in", response_model=None)
+    def demo_sign_in(
+        request: Request,
+        s: DB,
+        role: Annotated[str, Form()],
+        login_csrf: Annotated[str, Form()] = "",
+    ) -> Response:
+        """Public demo only (SEC-18, ADR-0087): sign in as the demo agent or supervisor, never an administrator."""
+        if not settings.public_demo_mode:
+            return render(request, "error.html", None, 404, title="Not found", message="There is no such page.")
+        cookie = request.cookies.get(LOGIN_CSRF_COOKIE, "")
+        if not cookie or not secrets.compare_digest(cookie, login_csrf):
+            raise CsrfFailed
+        username = demo.SIGN_IN_AS.get(role)
+        rate_limit.check_login(s, f"demo-{role}", _address(request))
+        user = s.scalars(select(UserRow).where(UserRow.username == username, UserRow.active.is_(True))).first()
+        if username is None or user is None or Role(user.role) not in (Role.AGENT, Role.SUPERVISOR):
+            return render(request, "error.html", None, 404, title="Not found", message="There is no such demo account.")
+        who = Identity(user.id, user.username, user.display_name, Role(user.role), user.customer_id)
+        token, _csrf = sessions.start(s, who)
+        response = RedirectResponse("/queue", status_code=303)
         response.set_cookie(
             SESSION_COOKIE,
             token,
@@ -521,6 +571,8 @@ def install_console(
             form_confirmation=form_confirmation.strip() or None,
             form_name=form_name.strip() or None,
         )
+        if settings.public_demo_mode:
+            demo.check_daily_case_limit(s, settings.customer_id)  # SEC-18: the demo's daily cap
         case = svc.create_case(s, active.identity, request_, customer_id=settings.customer_id, arm=arm)
         return back_to(case, "created")
 

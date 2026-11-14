@@ -138,9 +138,10 @@ jobs:
           docker build --target app -t loyalty-app:ci -f Dockerfile.app .
           docker build --target protocols -t loyalty-protocols:ci -f Dockerfile.app .
           docker build -t loyalty-mock-api:ci -f mock_customer_api/Dockerfile .
+          docker build -t loyalty-demo:ci -f Dockerfile.demo .   # the public demo's one image (ADR-0087)
       - name: Trivy, images (fixable HIGH and CRITICAL fail the build)
         run: |
-          for image in loyalty-app:ci loyalty-protocols:ci loyalty-mock-api:ci; do
+          for image in loyalty-app:ci loyalty-protocols:ci loyalty-mock-api:ci loyalty-demo:ci; do
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.76.1 image \
               --quiet --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "$image"
           done

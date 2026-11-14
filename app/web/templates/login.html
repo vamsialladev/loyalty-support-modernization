@@ -3,10 +3,21 @@
 {% block main %}
 <section class="card narrow">
   <h1>Sign in</h1>
+  {% if banner.demo %}
+  <p>This is a public demo with mock AI and synthetic data: a fictional hotel group, no real members. Pick a role.</p>
+  <form method="post" action="/demo/sign-in" class="inline">
+    <input type="hidden" name="login_csrf" value="{{ login_csrf }}">
+    <button type="submit" name="role" value="agent" data-testid="demo-agent">Try it as an agent</button>
+    <button type="submit" name="role" value="supervisor" data-testid="demo-supervisor">Try it as a supervisor</button>
+  </form>
+  <p class="muted">There's no administrator in the public demo, and it resets every day.</p>
+  {% else %}
   <p class="muted">Local demo accounts: <code>agent.ana</code>, <code>agent.ben</code>, <code>supervisor.sam</code>,
     <code>supervisor.sky</code>. The password is <code>DEMO_USER_PASSWORD</code> in your <code>.env</code>.</p>
+  {% endif %}
   {% if failed %}<p class="error" role="alert">That username and password don't match an active account.</p>{% endif %}
-  {% if oidc %}
+  {% if banner.demo %}
+  {% elif oidc %}
   <p><a class="button" href="/auth/oidc/start" data-testid="oidc-start">Sign in with your company account</a></p>
   {% else %}
   <form method="post" action="/login">

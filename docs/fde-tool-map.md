@@ -37,3 +37,32 @@
 | MCP client in daily use | Claude Code | `.mcp.json`, token from an environment variable (`docs/mcp.md`) | The owner's own Claude Code config | One synthetic case | Planned: owner step | — |
 | A2A independent peer | A2A TCK (`a2aproject/a2a-tck`) | Cloned at `70f6f73` into a scratch folder, its own locked venv, run against a local specialist | The owner's OK to install it (given 2026-11-11) | Synthetic stays | **Exercised (M11, 2026-11-12):** verified with limitations: 45 of 47 required checks that ran pass, the 2 failures are scenarios rejected by design, auth not tested by the TCK (ADR-0072; `security/evidence/a2a-tck-run.txt`) | Same-SDK tests only |
 | AG-UI independent client | `@ag-ui/client` | `@ag-ui/client@1.0.4` in a scratch folder (`--ignore-scripts`), driven by `tests/interop/ag_ui_client.mjs` | The owner's OK to install it (given 2026-11-11) | Synthetic cases | **Exercised (M11, 2026-11-12):** pass, 4 runs (`security/evidence/ag-ui-client-run.txt`) | Our browser panel only, which is our own client |
+| Telemetry (traces, logs, metrics) | OpenTelemetry SDK 1.45.2; FastAPI and httpx instrumentations; Grafana `otel-lgtm` 0.38.1 locally | OTLP/HTTP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set; `--profile observability` | None (local) | Scrubbed spans and JSON logs: no query strings, no personal data, no model content (ADR-0077) | Exercised (M12): `scripts\observability_check.ps1`, 21 of 21 | Nothing exported; log lines still carry trace IDs |
+| Security and supply chain | Trivy 0.76.1 (images, IaC), Syft SBOM via `anchore/sbom-action`, GitHub build-provenance attestations | Pinned images and actions in CI | None (public repository) | Images and their package lists | Exercised (M12, ADR-0084) | `pip-audit` and gitleaks still run |
+| Infrastructure as code | Terraform 1.17.1, AWS provider 6.71.0 | `scripts\terraform_check.ps1` and CI: fmt, validate, Trivy | None: never planned or applied | Configuration only | Configured: validated, never applied (ADR-0085) | — |
+| Load testing | A small async driver on `httpx` (`scripts/load_test.py`) | Against a throwaway Compose stack | None | Synthetic requests | Exercised (M12): `performance/reports/2026-11-14-local.md` (ADR-0083) | — |
+| Public demo hosting | Render free web service + Neon free Postgres (option A) | `render.yaml`, `Dockerfile.demo` | The owner's new Render account (one repository) and a new Neon project | Synthetic only | **Manual step required**: ready, not deployed (ADR-0087) | The local stack |
+
+## LLM observability tools (spec L3): adopt, not needed, or revisit at scale
+**Documentation only: no trial ran** (the optional trial was skipped; each tool would need an account or a new
+service, and this project's needs are met). Facts read from each project's own pages on 2026-11-14.
+
+| | Langfuse | Arize Phoenix | LangSmith |
+|---|---|---|---|
+| Self-hosting | Open source (MIT, except `ee` folders); "you can self-host it for free"; some add-ons need a license key | Open source, self-hosted; Elastic License 2.0 | Self-hosted and hybrid on the Enterprise plan (custom pricing) |
+| Cloud free tier | Hobby: 50k units a month, 30 days, 2 users | AX Free: 25k spans a month, 1 GB, 15 days | Developer: 5k base traces a month, 1 seat |
+| Cheapest paid | Core $29 a month (100k units, then $8 per 100k) | AX Pro $50 a month (50k spans, 30 days) | Plus $39 per seat a month (10k base traces) |
+| Takes our OTLP traces | Yes: an OTLP/HTTP endpoint (`/api/public/otel`); "aims to be compliant" with the GenAI conventions | Yes: "accepts traces over OpenTelemetry (OTLP)"; its own instrumentation is OpenInference | Not found on the pages read |
+| Cloud regions | US, EU or Japan (HIPAA region on Enterprise) | US, EU or Canada | US or EU, or your own VPC on Enterprise |
+
+**What they'd add over what's built:** a trace viewer made for prompts and tool calls, prompt version management,
+datasets and online evaluators in one place, and annotation queues. **What's already here:** GenAI spans with tokens,
+cost and finish reason (ADR-0077); a frozen benchmark and a release gate on every AI change (ADR-0082); online QA
+sampling with a rubric, drift signals and feedback-to-dataset through review (ADR-0078); Grafana dashboards and alerts
+(ADR-0080). This project deliberately keeps prompt and response content out of every trace. That content is most of
+what these tools display, so sending it would be a data-protection decision first.
+
+**Verdict: not needed now; revisit at scale.** Revisit when there are live model calls in production with enough
+volume that people review AI runs every day, or when a customer already runs one of these. Then Langfuse or Phoenix,
+self-hosted in the customer's region, would take the same OTLP export with no code change (only the endpoint, and a
+deliberate decision on whether any content may be sent).

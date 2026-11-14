@@ -1,0 +1,28 @@
+# For Dockerfile.demo only (BuildKit reads <Dockerfile>.dockerignore; ADR-0087). The same as .dockerignore, except
+# that the synthetic-world generator's source (and the evaluation code it imports to write the labels) is let in, so
+# the image can generate the world at build time. Those reach only the build stage: the final stage copies named
+# folders, and the operational files of the world (seed_data/v1). The world on this machine stays out.
+.env
+.env.*
+.git
+.venv
+benchmarks/results/
+benchmarks/reports/
+seed_data/v1/
+docs/
+tests/
+security/
+scripts/
+portfolio/
+.claude/
+.cursor/
+**/__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.log
+infrastructure/terraform/
+performance/
+observability/
