@@ -28,7 +28,22 @@ import pytest
 
 pytestmark = pytest.mark.browser
 
-playwright_api = pytest.importorskip("playwright.sync_api")
+# CI sets REQUIRE_BROWSER=1: there, a missing browser fails the job instead of skipping every test. Found 2026-11-14
+# when a Playwright bump (1.64.1 → 1.65.0) on the 1.64.1 CI image skipped all 11 browser tests and the job was green.
+REQUIRE_BROWSER = os.environ.get("REQUIRE_BROWSER") == "1"
+
+
+def browser_unavailable(reason: str) -> None:
+    """Skip on a developer's machine; fail where the browser tests must run (REQUIRE_BROWSER=1)."""
+    if os.environ.get("REQUIRE_BROWSER") == "1":
+        pytest.fail(f"{reason} (REQUIRE_BROWSER=1: the browser tests must run here, not skip)")
+    pytest.skip(reason)
+
+
+if REQUIRE_BROWSER:
+    import playwright.sync_api as playwright_api
+else:
+    playwright_api = pytest.importorskip("playwright.sync_api")
 
 
 @dataclass
@@ -69,7 +84,9 @@ def chromium() -> Iterator[Any]:
         try:
             browser = p.chromium.launch()
         except Exception as exc:  # the executable is missing or cannot start
-            pytest.skip(f"Chromium is not available ({type(exc).__name__}); run: uv run playwright install chromium")
+            browser_unavailable(
+                f"Chromium is not available ({type(exc).__name__}); run: uv run playwright install chromium"
+            )
         yield browser
         browser.close()
 
@@ -169,6 +186,13 @@ def stack(
             proc.wait(timeout=30)
         for output in logs:
             output.close()
+        keep = os.environ.get("E2E_LOG_DIR")  # CI prints these when the job fails (two unexplained failures, TD-57)
+        if keep:
+            Path(keep).mkdir(parents=True, exist_ok=True)
+            module = request.module.__name__.rsplit(".", 1)[-1]
+            for log in (mock_log, app_log, tmp / "worker.log"):
+                if log.exists():
+                    shutil.copyfile(log, Path(keep) / f"{module}-{log.name}")
 
 
 def load_dataset_case(stack: Stack, case_id: str) -> int:

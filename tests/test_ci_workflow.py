@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import re
+import tomllib
 from pathlib import Path
 from typing import Any
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -56,6 +58,32 @@ def test_the_pipeline_has_the_milestone_12_jobs() -> None:
     assert jobs["browser"]["container"]["image"].startswith("mcr.microsoft.com/playwright/python:v")
     checks = " ".join(str(step.get("run", "")) for step in jobs["checks"]["steps"])
     assert '-m "not browser"' in checks and "playwright install" not in checks
+
+
+def _locked_version(package: str) -> str:
+    lock = tomllib.loads((ROOT / "uv.lock").read_text(encoding="utf-8"))
+    (version,) = {p["version"] for p in lock["package"] if p["name"] == package}
+    return str(version)
+
+
+def test_the_browser_job_runs_the_browser_tests_and_never_skips_them() -> None:
+    """A Playwright bump on an older image skipped all 11 browser tests and the job passed (2026-11-14)."""
+    job = _load("ci.yml")["jobs"]["browser"]
+    assert job["env"]["REQUIRE_BROWSER"] == "1"
+    tag = job["container"]["image"].split(":v", 1)[1]
+    assert tag == f"{_locked_version('playwright')}-noble", "the Playwright image must carry the locked version"
+    assert "REQUIRE_BROWSER" in (ROOT / "scripts" / "ci_local.ps1").read_text(encoding="utf-8")
+
+
+def test_a_missing_browser_fails_where_it_must_run_and_skips_elsewhere(monkeypatch: pytest.MonkeyPatch) -> None:
+    from tests.browser.test_legacy_e2e import browser_unavailable
+
+    monkeypatch.setenv("REQUIRE_BROWSER", "1")
+    with pytest.raises(pytest.fail.Exception, match="must run here"):
+        browser_unavailable("Chromium is not available")
+    monkeypatch.delenv("REQUIRE_BROWSER")
+    with pytest.raises(pytest.skip.Exception):
+        browser_unavailable("Chromium is not available")
 
 
 def test_deploy_is_manual_gated_and_keyless() -> None:

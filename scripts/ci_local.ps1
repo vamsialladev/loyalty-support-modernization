@@ -33,7 +33,13 @@ if ($Skip -notcontains "checks") {
     Step "checks" "ruff format --check" { uv run ruff format --check . }
     Step "checks" "mypy" { uv run mypy }
     Step "checks" "Chromium for the browser tests" { uv run playwright install chromium }
-    Step "checks" "tests with the coverage gate (browser tests included)" { uv run pytest --cov --cov-report=term-missing -rs -p no:cacheprovider }
+    Step "checks" "tests with the coverage gate (browser tests included)" {
+        $env:REQUIRE_BROWSER = "1"  # the browser tests must run here, never skip (as in CI)
+        uv run pytest --cov --cov-report=term-missing -rs -p no:cacheprovider
+        $code = $LASTEXITCODE
+        Remove-Item Env:REQUIRE_BROWSER
+        $global:LASTEXITCODE = $code
+    }
     Step "checks" "known vulnerabilities in the locked dependencies" {
         $req = Join-Path $env:TEMP "ci-local-requirements-audit.txt"
         uv export --frozen --no-hashes --no-emit-project --all-groups -o $req -q
