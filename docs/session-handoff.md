@@ -24,6 +24,12 @@ pull requests.
 - **Ways of working are unchanged:** branch, pull request, merge commit; push with
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push`; run every test that reads `docs/`
   before pushing (three of Milestone 12's CI failures were guard tests I hadn't run locally).
+- **TD-57 is fixed in CI:**
+  - CI's browser job and `scripts\ci_local.ps1` run the browser tests on Postgres (`E2E_POSTGRES_URL`). The SQLite
+    lock race between the app and the worker can't fail unrelated PRs any more.
+  - The race itself is still there offline, kept as a strict expected failure in `tests/test_sqlite_engine.py`.
+  - Local gitleaks had scanned 0 commits in git worktrees, and now fails if it scans none (verification log, M12
+    row 39).
 
 ## Waiting on the owner (Milestone 12)
 1. **Say "go" for the demo, then follow `docs/hosting-cloud-run.md` §5** (instance-based, max 1, min 0): Google
@@ -31,10 +37,16 @@ pull requests.
    and only if it fired, a new Neon project, two secrets, build from `main`, deploy. Then send me the `run.app`
    URL (not the connection string), and I'll run `scripts/demo_smoke.py` and measure the cold start. Neon's owner
    role isn't a full superuser, so the first start is the real test of provisioning; the logs say which step failed.
-2. **Dependabot pull requests #50–#58** are open and not merged. #50, #51 (Python 3.15) and #58 (anthropic 2.x) are
-   the kind the narrowed config now ignores: close them, or leave them and Dependabot should close them. The others
-   (uv 0.13.8, Playwright 1.65.0, pypdf 7.0.1, python-multipart, types-pyyaml) each need their CI and a look;
-   pypdf 7 is a major version. Ask me to review any of them.
+2. **Dependabot is done (2026-11-14/15); nothing is waiting.** Each change had full local CI and green GitHub CI before
+   merging.
+   - **Merged:** #52 python-multipart 0.0.33 (`aa45e75`), #57 types-pyyaml (`7ae2567`), #63 SQLAlchemy 2.1.8
+     (`c033d57`) and #62 pydantic 2.14.3 (`cfd997f`).
+   - **Grouped:** the base images went together in #66 (Python 3.12.16, uv 0.13.8; `5bf8685`), replacing #54, #56,
+     #60 and #61.
+   - **Replaced:** #70 brought Playwright 1.65.1 with CI's image to match (`35a42b3`), replacing #53, which would
+     have skipped every browser test.
+   - **Closed by Dependabot:** #50 and #51 (Python 3.15), #55 (pypdf 7, a major version) and #58 (anthropic 2.x).
+     These are not adopted. Each needs its own look before it is.
 3. **The Milestone 12 exercise** (below), and the Milestone 7 to 9 exercises still open.
 4. Earlier items still open: connect your Claude Code to the local MCP server (optional); the Codex exercise; tick
    "Block command line pushes that expose my email" if not done.
