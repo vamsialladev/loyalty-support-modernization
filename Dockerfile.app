@@ -2,9 +2,9 @@
 # No labels, generator or data inside (ADR-0040). Non-root user. Milestone 12 (DEL-01, ADR-0074): separate dependency
 # and runtime stages, so uv and the build cache stay out of what runs; a `protocols` target for the MCP server and the
 # A2A specialist (the core image still has no protocol SDKs); the default target is the core app, last below.
-FROM ghcr.io/astral-sh/uv:0.13.5 AS uv
+FROM ghcr.io/astral-sh/uv:0.13.8 AS uv
 
-FROM python:3.12.15-slim-bookworm AS base
+FROM python:3.12.16-slim-bookworm AS base
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PATH=/opt/venv/bin:$PATH
 WORKDIR /srv
 # Debian's security updates at build time: the base tag lags them, and Trivy blocks fixable HIGH/CRITICAL (ADR-0084).

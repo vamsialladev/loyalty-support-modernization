@@ -113,7 +113,7 @@ jobs:
     container:
       # The tag must equal the `playwright` version in uv.lock (tests/test_ci_workflow.py): the image carries the
       # browsers for exactly that version.
-      image: mcr.microsoft.com/playwright/python:v1.64.1-noble
+      image: mcr.microsoft.com/playwright/python:v1.65.1-noble
     # The app and the worker run as two processes; on one SQLite file they can race (`database is locked`, TD-57).
     # So here the browser stack uses Postgres, as every deployment does. In a container job the service's host is
     # its name, `postgres`; no port mapping is needed.
