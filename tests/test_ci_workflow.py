@@ -75,6 +75,19 @@ def test_the_browser_job_runs_the_browser_tests_and_never_skips_them() -> None:
     assert "REQUIRE_BROWSER" in (ROOT / "scripts" / "ci_local.ps1").read_text(encoding="utf-8")
 
 
+def test_the_browser_tests_run_on_postgres_in_ci_and_locally() -> None:
+    """TD-57: on one SQLite file the app and the worker can race (`database is locked`), failing unrelated PRs."""
+    job = _load("ci.yml")["jobs"]["browser"]
+    service = job["services"]["postgres"]
+    assert service["image"] == _load("ci.yml")["jobs"]["postgres"]["services"]["postgres"]["image"]
+    url = job["env"]["E2E_POSTGRES_URL"]
+    user, password, database = (service["env"][k] for k in ("POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB"))
+    # a container job reaches a service by its name, not 127.0.0.1
+    assert url == f"postgresql://{user}:{password}@postgres:5432/{database}"
+    local = (ROOT / "scripts" / "ci_local.ps1").read_text(encoding="utf-8")
+    assert "E2E_POSTGRES_URL" in local and '-m "not browser"' in local
+
+
 def test_a_missing_browser_fails_where_it_must_run_and_skips_elsewhere(monkeypatch: pytest.MonkeyPatch) -> None:
     from tests.browser.test_legacy_e2e import browser_unavailable
 

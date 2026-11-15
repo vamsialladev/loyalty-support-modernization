@@ -4,10 +4,10 @@
 #   powershell -ExecutionPolicy Bypass -File scripts\ci_local.ps1            # the jobs in .github/workflows/ci.yml
 #   powershell -ExecutionPolicy Bypass -File scripts\ci_local.ps1 -Full      # + compose check (with browser) + labs check
 #   powershell -ExecutionPolicy Bypass -File scripts\ci_local.ps1 -Skip checks   # re-run only the other jobs
-# Jobs: checks (lint, format, types, tests with the coverage gate incl. browser tests, dependency audit), images
-# (build and Trivy, Milestone 12 PR 5),
-# postgres (a CI-shaped Postgres in Docker, the shared setup script, `pytest -m postgres`), secrets (gitleaks over
-# the full history). Needs Docker Desktop running and Chromium installed once (`uv run playwright install chromium`).
+# Jobs: checks (lint, format, types, tests with the coverage gate, dependency audit), images (build and Trivy,
+# Milestone 12 PR 5), postgres (a CI-shaped Postgres in Docker, the shared setup script, `pytest -m postgres`, then
+# the browser tests on that Postgres, as CI's browser job runs them since TD-57), secrets (gitleaks over the full
+# history). Needs Docker Desktop running; Chromium is installed by the postgres job.
 param([switch]$Full, [string[]]$Skip = @())
 # `-File` passes "-Skip a,b" as one string, so split it here (found running `-Skip postgres,secrets`).
 $Skip = @($Skip | ForEach-Object { $_ -split "," } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
@@ -32,14 +32,7 @@ if ($Skip -notcontains "checks") {
     Step "checks" "ruff check" { uv run ruff check . }
     Step "checks" "ruff format --check" { uv run ruff format --check . }
     Step "checks" "mypy" { uv run mypy }
-    Step "checks" "Chromium for the browser tests" { uv run playwright install chromium }
-    Step "checks" "tests with the coverage gate (browser tests included)" {
-        $env:REQUIRE_BROWSER = "1"  # the browser tests must run here, never skip (as in CI)
-        uv run pytest --cov --cov-report=term-missing -rs -p no:cacheprovider
-        $code = $LASTEXITCODE
-        Remove-Item Env:REQUIRE_BROWSER
-        $global:LASTEXITCODE = $code
-    }
+    Step "checks" "tests with the coverage gate" { uv run pytest -m "not browser" --cov --cov-report=term-missing -rs -p no:cacheprovider }
     Step "checks" "known vulnerabilities in the locked dependencies" {
         $req = Join-Path $env:TEMP "ci-local-requirements-audit.txt"
         uv export --frozen --no-hashes --no-emit-project --all-groups -o $req -q
@@ -88,6 +81,15 @@ if ($Skip -notcontains "postgres") {
         Remove-Item Env:TEST_MOCK_API_DATABASE_URL, Env:TEST_APP_DATABASE_URL, Env:TEST_APP_OWNER_DATABASE_URL
         $global:LASTEXITCODE = $code
     }
+    Step "postgres" "Chromium for the browser tests" { uv run playwright install chromium }
+    Step "postgres" "browser tests on Postgres (CI's browser job; TD-57)" {
+        $env:REQUIRE_BROWSER = "1"  # the browser tests must run here, never skip (as in CI)
+        $env:E2E_POSTGRES_URL = "postgresql://mock_api:${pw}@127.0.0.1:${port}/mock_customer_api_test"
+        uv run pytest -m browser -rs -p no:cacheprovider
+        $code = $LASTEXITCODE
+        Remove-Item Env:REQUIRE_BROWSER, Env:E2E_POSTGRES_URL
+        $global:LASTEXITCODE = $code
+    }
     & docker rm -f $pgName 2>$null | Out-Null
 }
 
@@ -110,7 +112,23 @@ if ($Skip -notcontains "images") {
 
 if ($Skip -notcontains "secrets") {
     Step "secrets" "gitleaks over the full history (values redacted)" {
-        & docker run --rm -v "${PWD}:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --redact --no-banner
+        # Mount the repository's git directory, not just this folder: in a git worktree `.git` is a file naming a host
+        # path the container can't see, and gitleaks then scanned 0 commits and passed (found 2026-11-14). The
+        # folder is mounted too, for `.gitleaksignore` (and `.gitleaks.toml` if one is added), which gitleaks would
+        # otherwise look for inside the git directory.
+        $gitDir = (git rev-parse --path-format=absolute --git-common-dir | Out-String).Trim()
+        $extra = @("--gitleaks-ignore-path", "/repo/.gitleaksignore")
+        if (Test-Path .gitleaks.toml) { $extra += @("--config", "/repo/.gitleaks.toml") }
+        $out = & docker run --rm -v "${gitDir}:/repo.git:ro" -v "${PWD}:/repo:ro" ghcr.io/gitleaks/gitleaks:v8.30.1 `
+            git /repo.git @extra --redact --no-banner 2>&1 | Out-String
+        $code = $LASTEXITCODE
+        Write-Host $out
+        $scanned = [regex]::Match($out, "(\d+) commits scanned")
+        if ($code -eq 0 -and (-not $scanned.Success -or [int]$scanned.Groups[1].Value -eq 0)) {
+            Write-Host "gitleaks scanned no commits: that is not a pass"
+            $code = 1
+        }
+        $global:LASTEXITCODE = $code
     }
 }
 
