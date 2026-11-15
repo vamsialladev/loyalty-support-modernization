@@ -3,6 +3,9 @@
 Two ways to run:
 - **Offline (default):** the test starts the mock customer API and the app with uvicorn on free local ports, both on
   SQLite copies, the mock seeded from a fresh generation. Part of `scripts\\test.ps1`.
+- **Offline on Postgres (CI):** set `E2E_POSTGRES_URL`, a superuser URL for a throwaway Postgres. The same servers
+  then use their own databases there, one pair per module (`tests/browser/postgres_stack.py`), because the app and the
+  worker can race on one SQLite file (TD-57). CI's browser job and `scripts\\ci_local.ps1` run it this way.
 - **Against the Compose stack:** set `E2E_BASE_URL`, `E2E_MOCK_API_URL`, `E2E_DATABASE_URL` (host URL of the app
   database), `E2E_MOCK_API_TOKEN` and `E2E_DEMO_PASSWORD`; `scripts\\compose_check.ps1 -Browser` does this.
 
@@ -116,20 +119,33 @@ def stack(
     from tests.conftest import ROOT
 
     tmp = tmp_path_factory.mktemp("e2e")
-    shutil.copyfile(mock_template["path"], tmp / "mock.db")
-    app_url = f"sqlite:///{(tmp / 'app.db').as_posix()}"
-    cfg = Config(str(ROOT / "alembic.ini"))
-    cfg.set_main_option("sqlalchemy.url", app_url)
-    command.upgrade(cfg, "head")
+    pg_admin = os.environ.get("E2E_POSTGRES_URL")  # CI: Postgres, so the app and worker can't race on SQLite (TD-57)
+    pg_names = None
+    if pg_admin:
+        from tests.browser import postgres_stack
+
+        pg_names, urls = postgres_stack.create(
+            pg_admin, request.module.__name__, "e2e-" + os.urandom(24).hex(), mock_template["seed_dir"]
+        )
+        app_url, mock_url = urls["app"], urls["mock"]  # the app runs as the app role, as deployed
+    else:
+        shutil.copyfile(mock_template["path"], tmp / "mock.db")
+        app_url = f"sqlite:///{(tmp / 'app.db').as_posix()}"
+        mock_url = f"sqlite:///{(tmp / 'mock.db').as_posix()}"
+        cfg = Config(str(ROOT / "alembic.ini"))
+        cfg.set_main_option("sqlalchemy.url", app_url)
+        command.upgrade(cfg, "head")
     password, token = "e2e-" + os.urandom(9).hex(), "e2e-token-" + os.urandom(6).hex()
-    with make_sessions(make_engine(app_url))() as s:
+    engine = make_engine(app_url)
+    with make_sessions(engine)() as s:
         ensure_demo_users(s, password)
         load_policy_set(s, "hg-demo", ROOT / "policies/hg-demo")
+    engine.dispose()
 
     mock_port, app_port = _free_port(), _free_port()
-    base_env = {k: v for k, v in os.environ.items() if not k.startswith(("MOCK_API_", "DATABASE_URL"))}
+    base_env = {k: v for k, v in os.environ.items() if not k.startswith(("MOCK_API_", "DATABASE_URL", "E2E_"))}
     mock_env = base_env | {
-        "MOCK_API_DATABASE_URL": f"sqlite:///{(tmp / 'mock.db').as_posix()}",
+        "MOCK_API_DATABASE_URL": mock_url,
         "MOCK_API_TOKEN": token,
         "MOCK_API_SIM_CLOCK": "true",
     }
@@ -186,7 +202,9 @@ def stack(
             proc.wait(timeout=30)
         for output in logs:
             output.close()
-        keep = os.environ.get("E2E_LOG_DIR")  # CI prints these when the job fails (two unexplained failures, TD-57)
+        if pg_admin and pg_names is not None:
+            postgres_stack.drop(pg_admin, pg_names)
+        keep = os.environ.get("E2E_LOG_DIR")  # CI prints these when the job fails (how TD-57's cause was found)
         if keep:
             Path(keep).mkdir(parents=True, exist_ok=True)
             module = request.module.__name__.rsplit(".", 1)[-1]

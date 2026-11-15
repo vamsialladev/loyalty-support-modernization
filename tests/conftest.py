@@ -55,4 +55,9 @@ def mock_template(generated: Path, tmp_path_factory: pytest.TempPathFactory) -> 
         for split in ("dev", "validation", "heldout", "stress")
         for row in read_jsonl(generated / "benchmarks/datasets/v1/labels" / f"{split}.jsonl")
     }
-    return {"path": path, "labels": labels, "datasets": generated / "benchmarks/datasets/v1"}
+    return {
+        "path": path,
+        "labels": labels,
+        "datasets": generated / "benchmarks/datasets/v1",
+        "seed_dir": generated / "seed_data/v1",  # the browser stack seeds a Postgres mock from it (TD-57)
+    }
