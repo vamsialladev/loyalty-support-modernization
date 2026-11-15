@@ -1,5 +1,5 @@
 # Deploy to the AWS reference environment (DEL-03, ADR-0084). **Never run in this project:** no AWS account exists
-# and the owner chose Render free for the demo. Kept so the path is real and reviewed:
+# and the owner chose Cloud Run + Neon for the demo (ADR-0088). Kept so the path is real and reviewed:
 # - Manual only (workflow_dispatch), from main, and only after the `production` environment's approval.
 # - Short-lived credentials from GitHub's OIDC token: no AWS keys are stored anywhere. The role ARN is a repository
 #   variable, not a secret, and the job stops if it isn't set.

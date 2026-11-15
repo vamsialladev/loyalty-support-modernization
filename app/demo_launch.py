@@ -1,9 +1,9 @@
 """The public demo in one container (spec L1; SEC-18, LIVE-02; ADR-0087): `python -m app.demo_launch`.
 
-Render's free plan runs one web service and no background worker, so this process starts the mock customer API and
-the worker as child processes, and the app in the foreground on `$PORT`. It needs **one** secret besides
-`APP_SECRET_KEY`: `DEMO_DATABASE_URL`, the Neon project's owner connection string, pasted into Render's dashboard.
-From it, on every start, it:
+The demo runs as one Cloud Run service (max 1 instance, min 0, instance-based billing; ADR-0088,
+`docs/hosting-cloud-run.md`), so this process starts the mock customer API and the worker as child processes, and the
+app in the foreground on `$PORT`. It needs **one** secret besides `APP_SECRET_KEY`: `DEMO_DATABASE_URL`, the Neon
+project's owner connection string, which the owner puts in Google's Secret Manager. From it, on every start, it:
 
 1. makes the three roles (`loyalty_owner`, `loyalty_app`, `mock_api`) and the two databases, if missing, with
    passwords derived from `APP_SECRET_KEY` (so nothing else needs storing, and changing the key rotates them);
@@ -12,10 +12,10 @@ From it, on every start, it:
    and the demo accounts (agent and supervisor only);
 4. starts the mock API, the worker and the app, and stops them all if any one of them stops.
 
-While it runs, it checks every hour whether a reset is due. A free service usually sleeps after 15 idle minutes and
-resets on its next start, but one kept awake for a day would otherwise never reset. When one is due, it stops the
-three processes, resets, and starts them again in this process: Render's documents don't say it restarts a process
-that exits, so the reset never depends on that. The demo is unavailable for those seconds.
+While it runs, it checks every hour whether a reset is due. An idle instance usually stops within 15 minutes and
+resets on its next start, but one kept busy for a day would otherwise never reset. When one is due, it stops the
+three processes, resets, and starts them again in this process, so the reset never depends on the host restarting a
+process that exits. The demo is unavailable for those seconds.
 
 This is a demo-only shape, recorded as debt (TD-56): in every other deployment the app, the worker and the mock API
 are separate services, as in Compose and the AWS Terraform.
