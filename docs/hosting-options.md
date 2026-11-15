@@ -4,6 +4,9 @@
 > before, and chose **Google Cloud Run + Neon** after a re-evaluation of Hugging Face Spaces, Oracle Always Free,
 > Cloud Run, Koyeb and Streamlit Community Cloud (verification log, Milestone 12, row 35). The plan, costs and steps:
 > `docs/hosting-cloud-run.md` (ADR-0088). This page is kept as the record of the first choice.
+>
+> **`render.yaml` was deleted on 2026-11-15, with the owner's OK.** The Render steps below are history only, and
+> their Blueprint no longer exists. Nothing was created on Render for this project.
 
 Spec L1; LIVE-01, LIVE-02; ADR-0087. **Prices were read from the providers' own pages on 2026-11-13** (the
 Milestone 12 plan); some pages didn't render and are marked. Re-check them before creating anything. **Nothing has
@@ -63,5 +66,4 @@ You create the accounts. Secrets go only into Neon's and Render's dashboards, ne
 | The page takes about a minute | The free service was asleep | Expected; it stays awake while used |
 | `Today's demo cases are used` | The daily cap (300 new cases) | Expected; it resets the next day |
 
-`render.yaml`'s keys follow Render's Blueprint format. They're **unverified until you apply it**, because no Render
-account exists yet. If Render rejects a key, tell me the message.
+`render.yaml` followed Render's Blueprint format and was never applied. It was deleted on 2026-11-15.

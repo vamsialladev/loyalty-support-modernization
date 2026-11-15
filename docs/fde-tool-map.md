@@ -41,7 +41,7 @@
 | Security and supply chain | Trivy 0.76.1 (images, IaC), Syft SBOM via `anchore/sbom-action`, GitHub build-provenance attestations | Pinned images and actions in CI | None (public repository) | Images and their package lists | Exercised (M12, ADR-0084) | `pip-audit` and gitleaks still run |
 | Infrastructure as code | Terraform 1.17.1, AWS provider 6.71.0 | `scripts\terraform_check.ps1` and CI: fmt, validate, Trivy | None: never planned or applied | Configuration only | Configured: validated, never applied (ADR-0085) | — |
 | Load testing | A small async driver on `httpx` (`scripts/load_test.py`) | Against a throwaway Compose stack | None | Synthetic requests | Exercised (M12): `performance/reports/2026-11-14-local.md` (ADR-0083) | — |
-| Public demo hosting | Render free web service + Neon free Postgres (option A) | `render.yaml`, `Dockerfile.demo` | The owner's new Render account (one repository) and a new Neon project | Synthetic only | **Manual step required**: ready, not deployed (ADR-0087) | The local stack |
+| Public demo hosting | Google Cloud Run (one service, max 1, min 0, instance-based) + Neon free Postgres; it replaced Render on 2026-11-14 and `render.yaml` was deleted on 2026-11-15 | `Dockerfile.demo`, `app/demo_launch.py`, `docs/hosting-cloud-run.md` | The owner's Google Cloud project with billing (a card) and a $10 spend cap budget, and a new Neon project | Synthetic only | **Manual step required**: ready, not deployed; the spend cap is tested first (ADR-0088) | The local stack |
 
 ## LLM observability tools (spec L3): adopt, not needed, or revisit at scale
 **Documentation only: no trial ran** (the optional trial was skipped; each tool would need an account or a new

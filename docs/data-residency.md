@@ -14,9 +14,9 @@ synthetic; the map is what a customer's data protection review would check befor
 | Secrets | `.env` locally; Secrets Manager or the host's dashboard | The process that needs each one | The host's region |
 
 ## Choosing the region
-- **The database and the app:** in the customer's agreed region. On AWS that's `var.region`; on Render and Neon it's
-  chosen when the service and project are created (pick the same region for both, to keep latency and transfer
-  low).
+- **The database and the app:** in the customer's agreed region. On AWS that's `var.region`. On Cloud Run and Neon it's
+  chosen when the service and project are created. Pick regions close together, to keep latency and transfer low:
+  the demo uses Cloud Run `us-east5` (Columbus) and Neon AWS `us-east-2` (Ohio) (`docs/hosting-cloud-run.md`).
 - **The model:** if the customer requires processing in a region, Claude via Amazon Bedrock in that region is the
   path (`AI_PROVIDER=bedrock`, `AWS_REGION`). It's configured but not built or tested here (ENT-13, blocked).
   Otherwise the Anthropic API's terms decide.

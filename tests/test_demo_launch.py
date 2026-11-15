@@ -100,18 +100,35 @@ def test_a_child_that_stops_ends_the_demo_without_a_reset() -> None:
     assert events == ["start 1", "stop"] and code == 1
 
 
-def test_the_render_blueprint_is_free_main_only_manual_mock_and_holds_no_secret() -> None:
-    import yaml
+def _cloud_run_deploy() -> str:
+    """The owner's deploy command in `docs/hosting-cloud-run.md` 5.7, joined onto one line."""
+    text = (ROOT / "docs" / "hosting-cloud-run.md").read_text(encoding="utf-8")
+    block = text.split("### 5.7 Deploy", 1)[1].split("```powershell", 1)[1].split("```", 1)[0]
+    return " ".join(line.strip().rstrip("`").strip() for line in block.splitlines() if line.strip())
 
-    blueprint = yaml.safe_load((ROOT / "render.yaml").read_text(encoding="utf-8"))
-    (service,) = blueprint["services"]
-    assert (service["plan"], service["branch"], service["autoDeploy"]) == ("free", "main", False)
-    env = {e["key"]: e for e in service["envVars"]}
-    assert env["DEMO_DATABASE_URL"] == {"key": "DEMO_DATABASE_URL", "sync": False}  # pasted in Render, never here
-    assert env["APP_SECRET_KEY"]["generateValue"] is True
-    assert env["PUBLIC_DEMO_MODE"]["value"] == "true" and env["AI_PROVIDER"]["value"] == "mock"
-    assert env["FEATURE_LIVE_AI"]["value"] == "false"
-    assert not any("postgres" in str(e.get("value", "")) for e in env.values())
+
+def test_the_cloud_run_deploy_is_one_instance_from_main_mock_only_and_holds_no_secret() -> None:
+    """What `render.yaml`'s test guarded (free, from main, mock AI, no secret), on the host now used (ADR-0088)."""
+    deploy = _cloud_run_deploy()
+    assert deploy.startswith("gcloud run deploy loyalty-demo ")
+    # the owner's billing choice: instance-based, never more than one instance, none when idle
+    for flag in ("--no-cpu-throttling", "--min-instances 0", "--max-instances 1"):
+        assert flag in deploy, flag
+    # the image built from a fresh clone of main, tagged with its commit (5.6; PA-10)
+    assert "loyalty-demo:$sha" in deploy
+    guide = (ROOT / "docs" / "hosting-cloud-run.md").read_text(encoding="utf-8")
+    assert "git clone --branch main " in guide
+    # mock AI only: the demo has no model spend
+    settings = dict(pair.split("=", 1) for pair in deploy.split('--set-env-vars "', 1)[1].split('"', 1)[0].split(","))
+    assert (settings["PUBLIC_DEMO_MODE"], settings["AI_PROVIDER"], settings["FEATURE_LIVE_AI"]) == (
+        "true",
+        "mock",
+        "false",
+    )
+    # both secrets come from Secret Manager by name; no value or connection string is in the command
+    assert '--set-secrets "DEMO_DATABASE_URL=demo-database-url:latest,APP_SECRET_KEY=app-secret-key:latest"' in deploy
+    assert "postgres://" not in deploy and "postgresql://" not in deploy
+    assert not (ROOT / "render.yaml").exists()  # Render was dropped; its Blueprint was deleted (owner, 2026-11-15)
 
 
 def test_the_demo_image_copies_named_folders_and_the_worlds_operational_files_only() -> None:

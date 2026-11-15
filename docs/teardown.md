@@ -23,8 +23,14 @@ terraform destroy -var environment=staging
 - The KMS key is scheduled for deletion (7 to 30 days), not deleted at once.
 - Check afterwards, in the billing console, that nothing tagged `project=loyalty-support-modernization` remains.
 
-## Render + Neon (the demo, option A, $0)
-- Render: delete the service (Settings → Delete Web Service), then remove Render's GitHub access to the repository
-  (GitHub → Settings → Applications).
+## Cloud Run + Neon (the demo; ADR-0088)
+- Cloud Run: follow `docs/hosting-cloud-run.md` 5.10, in order:
+  - the service (and `cap-test`, if it's still there);
+  - the Artifact Registry repository;
+  - both secrets;
+  - shutting down the Google project.
 - Neon: delete the project (Settings → Delete project). The free plan doesn't bill, but deleting removes the data.
-- Then delete the demo's values from wherever they were pasted (Render's environment, `.env`).
+- Then check Billing → Reports for a week after: a shut-down project stops charging, but anything already used that
+  month is still billed.
+
+(Render was the first choice and was never used; its Blueprint, `render.yaml`, was deleted on 2026-11-15.)
