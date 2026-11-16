@@ -4,6 +4,14 @@ Spec L1, PA-10; LIVE-01, LIVE-02; ADR-0088. Replaces Render (option A), which th
 free-tier capacity limits before. **Instance-based billing, max 1, min 0, and no demo until the $10 stop is tested** (the owner, 2026-11-14). **Nothing is created until the owner says "go".** The owner does every click;
 secrets go only into Google's and Neon's consoles, never into chat, a file or a commit.
 
+**Render's Blueprint is gone (owner's OK, 2026-11-15).** `render.yaml` was deleted, so Cloud Run is the only demo
+host this repository describes.
+- The guarantees its test checked now apply to the 5.7 command:
+  `tests/test_demo_launch.py::test_the_cloud_run_deploy_is_one_instance_from_main_mock_only_and_holds_no_secret`
+  checks one instance at most, the image from `main`, mock AI only, and secrets by name only.
+- `Dockerfile.demo` and `app/demo_launch.py` are unchanged.
+- The Render steps in `docs/hosting-options.md` are history only.
+
 Facts below come from the official pages, read 2026-11-14:
 - Cloud Run pricing;
 - the Cloud Run billing settings, container contract and health checks;

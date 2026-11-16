@@ -1374,6 +1374,9 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   and the cases stayed. **Not deployed:** the owner creates the accounts (`docs/hosting-options.md`).
 - **What would change this decision:** a paid plan or a host with background workers (split back into three
   services); a request to try live AI in the demo (a new approval and a hard cap, then lift the forced mock).
+- **Superseded for hosting by ADR-0088 (2026-11-14).** Demo mode and the one-container launcher stay. `render.yaml`
+  was deleted on 2026-11-15 with the owner's OK. Its test was replaced by one on the Cloud Run deploy command, which
+  checks the same guarantees.
 
 ## ADR-0088: The public demo moves to Google Cloud Run + Neon, instance-based, behind a $10 spend cap
 - **Context:** on 2026-11-14 the owner dropped Render (ADR-0087's option A) after hitting its free-tier capacity

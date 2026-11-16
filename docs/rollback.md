@@ -14,7 +14,7 @@ during an incident.
 |---|---|
 | Compose (local, demo) | `git checkout <previous tag>`, then `docker compose up --build -d`. The migrate service runs `upgrade head`, which does nothing when the schema is already newer. |
 | AWS (reference path) | ECS's deployment circuit breaker rolls back by itself when a new task never becomes healthy (`infrastructure/terraform/aws/ecs.tf`). By hand: update each service to the previous task definition revision. |
-| Render (the demo) | Render's dashboard: the service → Events → the previous deploy → "Rollback". |
+| Cloud Run (the demo; ADR-0088) | Send all traffic back to the previous revision: `gcloud run services update-traffic loyalty-demo --region us-east5 --to-revisions PREVIOUS_REVISION=100` (the revision names are under Cloud Run → `loyalty-demo` → Revisions). A redeploy of an earlier `main` image also works (`docs/hosting-cloud-run.md` 5.6–5.7). |
 | An AI change (prompt, model, limits) | Return those files to the commit named in `benchmarks/results/mock/c-mock-dev/manifest.json` and confirm the release gate passes (`docs/release-gate.md`). |
 
 ## Migrations: what reverses safely

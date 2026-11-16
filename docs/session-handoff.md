@@ -18,7 +18,8 @@ pull requests.
 - **The public demo is built, not deployed.** The owner moved hosting to **Cloud Run + Neon** on 2026-11-14 (Render's
   free tier had hit capacity limits for them before). `Dockerfile.demo` and `app/demo_launch.py` run unchanged on
   Cloud Run with instance-based billing; steps, costs and the $10 spend cap are in `docs/hosting-cloud-run.md`. The
-  image passed the smoke test 10 of 10 locally under 512 MB limits.
+  image passed the smoke test 10 of 10 locally under 512 MB limits. `render.yaml` was deleted on 2026-11-15 with the
+  owner's OK. A test on the Cloud Run deploy command (5.7) now checks what its test did.
 - **Deferred by the owner's decision (no live model calls in M12):** ENT-17 (prompt caching), LIVE-05 (caps against a
   live deploy; the demo forces mock AI, so it has no model spend).
 - **Ways of working are unchanged:** branch, pull request, merge commit; push with

@@ -43,9 +43,10 @@ Git-ignored; a dump holds personal data in a real deployment, so encrypt it and 
   is confirmed.
 - **Deletion:** production has deletion protection, and a final snapshot is taken on delete.
 
-## Render + Neon (the demo)
-Neon's free plan keeps a short restore window (its own point-in-time history); the demo's data is synthetic and
-reset on a schedule, so a lost demo database is re-seeded, not restored (`docs/hosting-options.md`).
+## Cloud Run + Neon (the demo)
+Neon's free plan keeps a short restore window (its own point-in-time history). The demo's data is synthetic and
+reset daily, so a lost demo database is re-seeded, not restored: the next start rebuilds it
+(`app/demo_launch.py`, `docs/hosting-cloud-run.md`). Cloud Run itself holds no data.
 
 ## What a backup doesn't fix
 Retention and data-subject erasure don't reach backups: erased data lasts until the backup expires
