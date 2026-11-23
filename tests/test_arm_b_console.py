@@ -59,6 +59,18 @@ def request_id(arm: ArmA, case_id: int) -> int:
         return s.scalars(select(AdjustmentRequestRow.id).where(AdjustmentRequestRow.case_id == case_id)).one()
 
 
+def test_an_unassigned_case_says_investigating_assigns_it(arm: ArmA) -> None:
+    """A visitor read "assigned to nobody" beside Investigate and looked for an assign step (live demo, 2026-11-22).
+    There isn't one: Investigate assigns the case. The page says so until it's assigned."""
+    agent = browser(arm, "agent.ana")
+    cid = load(arm, "DV-001")
+    page = agent.get(f"/cases/{cid}").text
+    assert "assigned to nobody" in page
+    assert field(page, "assign-hint") == "Investigating assigns this case to you."
+    after = agent.post(f"/cases/{cid}/investigate").text
+    assert "assigned to agent.ana" in after and 'data-testid="assign-hint"' not in after
+
+
 def test_the_whole_path_from_investigation_to_credit(arm: ArmA) -> None:
     agent = browser(arm, "agent.ana")
     cid, page = investigated(arm, agent, "DV-001")

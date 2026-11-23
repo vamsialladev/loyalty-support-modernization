@@ -210,7 +210,7 @@ def install_console(
             raise CsrfFailed
 
     def banner(case: Case | None) -> dict[str, str]:
-        sim = "per case"
+        sim = "per case" if settings.sim_clock else "off (live mock clock)"  # the public demo: always the live clock
         ai_mode = "none (arms A and B)"
         if case is not None:
             sim = case.received_at_utc if settings.sim_clock else "off (live mock clock)"
