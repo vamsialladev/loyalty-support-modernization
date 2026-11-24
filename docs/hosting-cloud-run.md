@@ -36,6 +36,9 @@ measurements, until the deploy runs.
   1. **It isn't instant:** "the enforcement of spend caps isn't instant and any cost overages are billed as normal."
      With at most one instance of 1 vCPU and 1 GiB, the most this service can add is about **$0.07 an hour** at list
      price (instance-based rates below). A delay of a few hours costs cents.
+     **Observed once (the 5.3 test, 2026-11-17):** the $1 cap was enforced at **$1.45**, $0.45 over. At `cap-test`'s
+     list rate of about $0.27 an hour, that's roughly 1.6 hours of delay. The same delay at the demo's $0.07 an hour
+     would add about $0.12 past the $10 cap. One observation, not a guarantee.
   2. **It counts gross, list-price costs:** "The estimated costs are calculated based on the list price of services
      and don't include savings and credits." The free tier is a discount, so a $10 cap pauses the demo when the
      *list-price* usage reaches $10. At that point the real bill is about **$4.78** (section 3). The cap is stricter
@@ -73,7 +76,11 @@ built. Nothing changes in the code, and the worker behaves as it does everywhere
 - **Scale to zero:** with minimum instances 0, "it won't be kept idle for longer than 15 minutes", so the instance
   stops after a quiet spell.
 - **Cold start:** the next visitor starts a fresh one. The start runs the migrations and the daily reset when due, and
-  the first page waits for it. The wait isn't measured yet; I'll measure it after the deploy and put it in the labels.
+  the first page waits for it. **Measured on the live demo (2026-11-23, revision 00003, `GET /login` from Windows):**
+  - three tries, each after 16 quiet minutes: **20.9 s, 20.8 s and 20.8 s** to the first answer, then 0.09–0.21 s
+    warm;
+  - the first start of the day, which also ran the daily reset: about **87 s**. The first request timed out at 60 s,
+    and a retry answered 27 s later. That's one observation.
 
 **Decision (owner, 2026-11-14): instance-based billing**, max 1 instance, min 0.
 - **Why:** it stays inside the free tier at the expected traffic (section 3), and it keeps the demo honest: the system
@@ -102,6 +109,15 @@ minutes of use, and the instance staying alive up to 15 minutes afterwards. Visi
 
 These figures assume 1 vCPU and 1 GiB. Instance-based billing has no per-request charge. A portfolio demo is unlikely
 to reach 200 sessions; a crawler hammering the URL is bounded by max 1 instance and the cap.
+
+**A gap not explained yet:** `cap-test` (4 vCPU, 2 GiB, about $0.27 an hour at list price) ran from 10:25 on
+2026-11-16 (the owner's report; Eastern time assumed) until the cap was enforced at 01:34 ET on 2026-11-17, about 15
+hours. At that rate that's about $4 at list
+price, but the budget showed **$1.45**. The cause could be that the instance didn't run the whole time (the ping loop
+paused, or the laptop slept), that the budget lags actual spend, or that the rate above is wrong. The loop's output
+wasn't kept, so it can't tell us. **Billing → Reports, grouped by SKU for Cloud Run**, answers it: compare the CPU
+and memory SKUs' usage (vCPU-seconds, GiB-seconds) for 2026-11-16 and 2026-11-17 with 15 hours × 4 vCPU = 216,000
+vCPU-s. Until that's read, this projection is unchecked against real billing.
 
 **Other services, kept at $0 by design:**
 
@@ -191,7 +207,15 @@ and three-quarter hours is about 53,000 vCPU-seconds, inside the 240,000 free, s
    - If the target can't be edited (not stated), delete the $1 budget and create a new spend cap budget at $10, as in
      5.2.1.
    - The test's roughly $1 of list-price spend counts this month, so this month leaves about $9 for the demo.
+   - **Check that it took:** the budget's status must read **Configured** (not Enforced), and the console banner "A
+     service in your project has been paused because a spend cap was enforced." must be gone. On this project the
+     first raise didn't take: the cap stayed at $1, Enforced, from 2026-11-17 to 2026-11-22. Both demo revisions
+     deployed in that time (00001, 00002) failed their startup probe. Revision 00003 started as soon as the cap was
+     lifted.
 8. **Only now** go on to 5.4.
+
+**Keep the loop's window open until you've copied its last lines.** On this project the window was closed, so the
+times of the last success and first failure, and what a paused service returns, weren't captured.
 
 ### 5.4 Neon: a new project
 1. In console.neon.tech, click **New Project**.
@@ -202,6 +226,11 @@ and three-quarter hours is about 53,000 vCPU-seconds, inside the 240,000 free, s
    and maximum. Free autoscales up to 2 CU, and a fixed small size keeps the 100 CU-hours lasting.
 3. **Connect:** role `neondb_owner`, database `neondb`, **connection pooling off** (the direct string). It starts
    `postgresql://neondb_owner:` and ends `?sslmode=require`. Keep it for 5.5.1 only.
+4. **The string goes from Neon's page to Secret Manager's page, and nowhere else.** Never put it on screen in a
+   screenshot, a terminal command or a prompt.
+   - On this project, two passwords were exposed that way (2026-11-17). The first reset in Neon didn't take effect.
+   - The project was deleted and created again, which is the clean fix for an empty project.
+   - After a reset, prove the old password fails before trusting it.
 
 ### 5.5 Secrets (values never shown)
 1. In Google's console, go to **Security → Secret Manager → Create secret**.
@@ -258,16 +287,22 @@ gcloud run deploy loyalty-demo `
 3. If the logs show `permission denied to create role` or `…database`, the string isn't the owner's or pooling is on.
    Fix the secret (new version), then redeploy.
 4. **Tell me only the `run.app` URL** (it isn't a secret). I'll then:
-   - run `scripts/demo_smoke.py <URL>` and the Playwright happy path;
+   - run `scripts/demo_smoke.py <URL>`, and work DV-001 through the browser from intake to a posting (the Playwright
+     tests need the database directly, which a hosted demo rightly doesn't give);
    - measure the cold start after 15+ quiet minutes;
    - record the results, and add the "(live)" link to the README with its labels.
+   - **Check from outside on `/login`, not `/healthz`.** Cloud Run reserves some paths ending in `z` ("we recommend
+     avoiding all paths that end in `z`", Cloud Run known issues). On this demo, `GET /healthz` got a 404 from Google's
+     front end in 0.6 s and never woke the instance. The startup probe is unaffected: it calls the container directly,
+     and revision 00003 passed it. `scripts/demo_smoke.py` waits on `/login` since 2026-11-23.
 5. After two days, read **Billing → Reports** and Cloud Run's billable instance time with me. That checks section 3's
    projection against reality.
 
 ### 5.9 Labels
 - **The app's banner:** "Public demo: mock AI, synthetic data. Resets every day."
 - **The README and any link:** "Live demo: mock AI, synthetic data. Free hosting: the first visit after a quiet spell
-  takes about N seconds (N measured after deploy). Paused if the month's cap is reached."
+  takes about 20 seconds (up to about 90 on the first visit of the day). Paused if the month's cap is reached."
+  Measured in section 2.
 
 ### 5.10 Teardown
 1. `gcloud run services delete loyalty-demo --region us-east5` (and `cap-test`, if it's still there)
