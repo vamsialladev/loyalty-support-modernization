@@ -8,8 +8,8 @@ project's owner connection string, which the owner puts in Google's Secret Manag
 1. makes the three roles (`loyalty_owner`, `loyalty_app`, `mock_api`) and the two databases, if missing, with
    passwords derived from `APP_SECRET_KEY` (so nothing else needs storing, and changing the key rotates them);
 2. runs both databases' migrations, then the app role's grants, including append-only audit (ADR-0058);
-3. once a day, empties the demo's cases (`app.services.demo.reset`, as the owner), then loads the synthetic world
-   and the demo accounts (agent and supervisor only);
+3. once a day, empties the demo's cases (`app.services.demo.reset`, as the owner), then loads the synthetic world,
+   the demo accounts (agent and supervisor only) and a few sample cases (`app/services/demo_samples.py`);
 4. starts the mock API, the worker and the app, and stops them all if any one of them stops.
 
 While it runs, it checks every hour whether a reset is due. An idle instance usually stops within 15 minutes and
@@ -41,6 +41,9 @@ RESET_EVERY = timedelta(hours=24)
 RESET_CHECK_SECONDS = 3600.0  # how often a running demo asks whether a reset is due
 MOCK_PORT = 8020
 UVICORN = (sys.executable, "-m", "uvicorn", "--factory")
+# After the reset: the demo accounts (agent and supervisor only), the policies, and the sample cases, so a visitor never
+# lands on an empty queue (app/services/demo_samples.py). The mock world is loaded directly, before the mock API starts.
+SEED_ARGS = ("-m", "app.seed", "--dataset", "demo", "--skip-mock", "--sample-cases")
 
 
 @dataclass(frozen=True)
@@ -227,7 +230,7 @@ def main() -> int:
 
     def reset() -> None:
         daily_reset(urls, env["MOCK_API_SEED_DIR"])
-        run([py, "-m", "app.seed", "--dataset", "demo", "--skip-mock"], app_env)  # accounts (no admin), policies
+        run([py, *SEED_ARGS], app_env)  # accounts (no admin), policies, sample cases
 
     def start() -> list[subprocess.Popen[bytes]]:
         mock = subprocess.Popen(  # noqa: S603
