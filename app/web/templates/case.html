@@ -37,6 +37,7 @@
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <button type="submit">Start work</button>
   </form>
+  {% if not case.assigned_to %}<p class="muted" data-testid="assign-hint">Starting work assigns this case to you.</p>{% endif %}
   {% else %}
   <p class="notice">This case is in the billing queue, which the billing team works outside this tool.</p>
   {% endif %}

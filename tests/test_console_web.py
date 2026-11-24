@@ -155,6 +155,33 @@ def test_every_page_has_the_banner_and_security_headers(arm: ArmA) -> None:
     assert "SYNTHETIC DATA" in login.text
 
 
+def test_the_banner_says_the_simulated_clock_is_off_on_every_page_when_it_is(arm: ArmA) -> None:
+    """The public demo always runs on the live clock. The queue said "per case" anyway (found on the live demo,
+    2026-11-22): the banner must say what the setting is, with or without a case open."""
+    with arm.sessions() as s:
+        (case,) = arm.load(s, "DV-001")
+    live = Browser(TestClient(create_app(AppSettings(database_url=arm.app_url, sim_clock=False), arm.factory())))
+    live.login("agent.ana", arm.password)
+    for url in ("/queue", "/cases/new", "/approvals", f"/cases/{case.id}"):
+        text = live.get(url).text
+        assert "simulated time: off (live mock clock)" in text, url
+        assert "simulated time: per case" not in text, url
+    simulated = browser(arm, "agent.ana")
+    assert "simulated time: per case" in simulated.get("/queue").text  # the benchmark's setting is unchanged
+    assert f"simulated time: {case.received_at_utc}" in simulated.get(f"/cases/{case.id}").text
+
+
+def test_an_unassigned_arm_a_case_says_starting_work_assigns_it(arm: ArmA) -> None:
+    with arm.sessions() as s:
+        (case,) = arm.load(s, "DV-001")
+    b = browser(arm, "agent.ana")
+    page = b.get(f"/cases/{case.id}").text
+    assert "assigned to nobody" in page
+    assert field(page, "assign-hint") == "Starting work assigns this case to you."
+    started = b.post(f"/cases/{case.id}/start").text
+    assert "assigned to agent.ana" in started and 'data-testid="assign-hint"' not in started
+
+
 def test_member_text_is_escaped_not_executed(arm: ArmA) -> None:
     b = browser(arm, "agent.ana")
     page = b.get("/cases/new")
