@@ -9,8 +9,12 @@ points ledger right, with a supervisor approving every adjustment.**
 > Discovery and scoping (stage 0): [hotel-ai-discovery](https://github.com/vamsialladev/hotel-ai-discovery).
 
 > **Status: work in progress. Milestones 1–11 of 20 are complete; Milestone 12 (performance, observability, CI/CD,
-> hardening) is under way.** No app is deployed yet. Progress and every requirement's status:
+> hardening) is under way.** Progress and every requirement's status:
 > [docs/implementation-status.md](docs/implementation-status.md).
+
+**[Loyalty Support demo (live) →](https://loyalty-demo-1023835827965.us-east5.run.app)** Live demo: mock AI, synthetic
+data. Free hosting: the first visit after a quiet spell takes about 20 seconds (up to about 90 on the first visit of
+the day). Paused if the month's cap is reached. How it's hosted and capped: [docs/hosting-cloud-run.md](docs/hosting-cloud-run.md).
 
 ## What exists today (Milestones 1–11)
 - **Discovery and plans:** business case, pre-registered legacy defects and hypotheses, architecture, threat model

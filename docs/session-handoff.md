@@ -1,7 +1,8 @@
 # Session handoff
 
-**Updated:** 2026-11-14, at the end of Milestone 12: operations, delivery and the public demo, merged as fourteen
-pull requests.
+**Updated:** 2026-11-26 (revision 00004 checked live, the README's live link, the cap check and the second
+Dependabot round). Before that, 2026-11-14, at the end of Milestone 12: operations, delivery and the public demo,
+merged as fourteen pull requests.
 
 ## Where things stand
 - Milestones 1–12 are on `main` in the **public** repository (public since 2026-11-13, 22:07 UTC, `main` at
@@ -16,14 +17,14 @@ pull requests.
   test report is saved (`performance/reports/2026-11-14-local.md`), and `terraform validate` passes locally and in CI.
 - **Build provenance works on `main`:** attestation 67563437 for the app image, in Sigstore's public log (row 31).
 - **The public demo is live** at `https://loyalty-demo-1023835827965.us-east5.run.app` (Cloud Run `us-east5`, a Neon
-  Free project; revision 00003, image `a1d7f93`; the owner deployed it). Verification log M12 row 43 has everything
-  measured there:
-  - the $1 spend cap fired at $1.45;
-  - smoke test 10 of 10;
-  - DV-001 worked to a posting in a browser;
-  - cold start 20.8–20.9 s, and about 87 s on the day's first start.
-- **Fixed on `main`, not yet deployed:** the banner and assign hint (#80), the sample cases (#81) and the smoke test's
-  wake-up path. Going live needs one new image and one redeploy by the owner.
+  Free project; **revision 00004, image `cb50f8c`**, redeployed by the owner on 2026-11-26, serving 100% of traffic).
+  The README links it with the 5.9 labels. Verification log M12 rows 43 (revision 00003) and 44 (revision 00004):
+  - the $1 spend cap fired at $1.45; the $10 cap reads Configured (the owner, 2026-11-26);
+  - smoke test 10 of 10 on both revisions;
+  - on 00004: the banner fix (#80) and the four sample cases (#81) are live;
+  - DV-001 worked to a posting in a browser on both (00004: B-000005, `ADJ-C078D44C8431`);
+  - cold start on 00004: 20.72, 20.75 and 21.42 s; one more try found the instance still up after 17 quiet
+    minutes (0.40 s, unexplained). About 87 s on the day's first start (00003).
 - `render.yaml` was deleted on 2026-11-15 with the owner's OK. A test on the Cloud Run deploy command (5.7) now checks
   what its test did.
 - **Deferred by the owner's decision (no live model calls in M12):** ENT-17 (prompt caching), LIVE-05 (caps against a
@@ -39,20 +40,21 @@ pull requests.
     row 39).
 
 ## Waiting on the owner (Milestone 12)
-1. **Redeploy the demo from the new `main`** (`docs/hosting-cloud-run.md` 5.6 and 5.7 with the new tag). Then:
-   - **read Billing → Reports, grouped by SKU for Cloud Run**, for 2026-11-16 and 2026-11-17, to explain why the cap
-     test showed $1.45, not the roughly $4 projected (still unexplained);
-   - **decide on the README's "(live)" link**, with the labels in 5.9.
-2. **Dependabot is done (2026-11-14/15); nothing is waiting.** Each change had full local CI and green GitHub CI before
-   merging.
-   - **Merged:** #52 python-multipart 0.0.33 (`aa45e75`), #57 types-pyyaml (`7ae2567`), #63 SQLAlchemy 2.1.8
-     (`c033d57`) and #62 pydantic 2.14.3 (`cfd997f`).
-   - **Grouped:** the base images went together in #66 (Python 3.12.16, uv 0.13.8; `5bf8685`), replacing #54, #56,
-     #60 and #61.
-   - **Replaced:** #70 brought Playwright 1.65.1 with CI's image to match (`35a42b3`), replacing #53, which would
-     have skipped every browser test.
-   - **Closed by Dependabot:** #50 and #51 (Python 3.15), #55 (pypdf 7, a major version) and #58 (anthropic 2.x).
-     These are not adopted. Each needs its own look before it is.
+1. **The demo is redeployed and checked** (revision 00004, row 44). Two things were **not captured** (the owner,
+   2026-11-26), and either can be read later in the Billing console:
+   - the current Cloud Run spend against the $10 cap;
+   - **Billing → Reports, grouped by SKU for Cloud Run**, for 2026-11-16 and 2026-11-17, which would explain why
+     the cap test showed $1.45, not the roughly $4 projected (still unexplained).
+2. **Dependabot, second round (opened 2026-11-21): seven pull requests, reviewed, none merged yet.** All seven have
+   green GitHub CI, with the browser tests really run (11 passed in each). Release notes read 2026-11-23: nothing
+   breaking. Waiting for the redeploy to finish before full local CI and the merges (owner, 2026-11-23).
+   - **#73 and #74** (uv 0.13.8 → 0.13.9) go together in one pull request for all three Dockerfiles, as #66 did, from
+     the local branch `build/uv-0.13.9`; #73 and #74 then close as replaced.
+   - **#76** (fastapi 0.162.0 → 0.163.2) changes the pin to `>=0.162,<0.164`; it goes back to `~=0.163.2` before merging.
+   - **#75** SQLAlchemy 2.1.9, **#77** types-pyyaml, **#78** ruff 0.17.5 (formats no file differently), **#79**
+     python-multipart 0.0.34 (stricter about malformed boundaries): merge as they are.
+   - **The first round (2026-11-14/15) is done:** merged #52, #57, #62, #63; grouped #66; replaced #53 with #70;
+     #50, #51, #55 and #58 closed by Dependabot and not adopted.
 3. **The Milestone 12 exercise** (below), and the Milestone 7 to 9 exercises still open.
 4. Earlier items still open: connect your Claude Code to the local MCP server (optional); the Codex exercise; tick
    "Block command line pushes that expose my email" if not done.
