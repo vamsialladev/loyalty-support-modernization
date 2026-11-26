@@ -1,7 +1,7 @@
 # Session handoff
 
-**Updated:** 2026-11-14, at the end of Milestone 12: operations, delivery and the public demo, merged as fourteen
-pull requests.
+**Updated:** 2026-11-26 (the cap check, the README's live link and the second Dependabot round). Before that,
+2026-11-14, at the end of Milestone 12: operations, delivery and the public demo, merged as fourteen pull requests.
 
 ## Where things stand
 - Milestones 1–12 are on `main` in the **public** repository (public since 2026-11-13, 22:07 UTC, `main` at
@@ -39,20 +39,23 @@ pull requests.
     row 39).
 
 ## Waiting on the owner (Milestone 12)
-1. **Redeploy the demo from the new `main`** (`docs/hosting-cloud-run.md` 5.6 and 5.7 with the new tag). Then:
-   - **read Billing → Reports, grouped by SKU for Cloud Run**, for 2026-11-16 and 2026-11-17, to explain why the cap
-     test showed $1.45, not the roughly $4 projected (still unexplained);
-   - **decide on the README's "(live)" link**, with the labels in 5.9.
-2. **Dependabot is done (2026-11-14/15); nothing is waiting.** Each change had full local CI and green GitHub CI before
-   merging.
-   - **Merged:** #52 python-multipart 0.0.33 (`aa45e75`), #57 types-pyyaml (`7ae2567`), #63 SQLAlchemy 2.1.8
-     (`c033d57`) and #62 pydantic 2.14.3 (`cfd997f`).
-   - **Grouped:** the base images went together in #66 (Python 3.12.16, uv 0.13.8; `5bf8685`), replacing #54, #56,
-     #60 and #61.
-   - **Replaced:** #70 brought Playwright 1.65.1 with CI's image to match (`35a42b3`), replacing #53, which would
-     have skipped every browser test.
-   - **Closed by Dependabot:** #50 and #51 (Python 3.15), #55 (pypdf 7, a major version) and #58 (anthropic 2.x).
-     These are not adopted. Each needs its own look before it is.
+1. **Redeploy the demo from the new `main`** (`docs/hosting-cloud-run.md` 5.6 and 5.7; `main` at `cb50f8c` after
+   #82). Then send the new revision name; I run the smoke test, DV-001 in a browser and the cold start against it.
+   - **The cap (owner, 2026-11-26):** `loyalty-demo-cloud-run-cap` reads **$10.00, Configured**. Today's spend: not
+     reported yet.
+   - **Billing → Reports, grouped by SKU for Cloud Run**, for 2026-11-16 and 2026-11-17: not reported yet. It should
+     explain why the cap test showed $1.45, not the roughly $4 projected (still unexplained).
+   - **The README's "(live)" link:** the owner said yes (2026-11-26); added with the labels in 5.9.
+2. **Dependabot, second round (opened 2026-11-21): seven pull requests, reviewed, none merged yet.** All seven have
+   green GitHub CI, with the browser tests really run (11 passed in each). Release notes read 2026-11-23: nothing
+   breaking. Waiting for the redeploy to finish before full local CI and the merges (owner, 2026-11-23).
+   - **#73 and #74** (uv 0.13.8 → 0.13.9) go together in one pull request for all three Dockerfiles, as #66 did, from
+     the local branch `build/uv-0.13.9`; #73 and #74 then close as replaced.
+   - **#76** (fastapi 0.162.0 → 0.163.2) changes the pin to `>=0.162,<0.164`; it goes back to `~=0.163.2` before merging.
+   - **#75** SQLAlchemy 2.1.9, **#77** types-pyyaml, **#78** ruff 0.17.5 (formats no file differently), **#79**
+     python-multipart 0.0.34 (stricter about malformed boundaries): merge as they are.
+   - **The first round (2026-11-14/15) is done:** merged #52, #57, #62, #63; grouped #66; replaced #53 with #70;
+     #50, #51, #55 and #58 closed by Dependabot and not adopted.
 3. **The Milestone 12 exercise** (below), and the Milestone 7 to 9 exercises still open.
 4. Earlier items still open: connect your Claude Code to the local MCP server (optional); the Codex exercise; tick
    "Block command line pushes that expose my email" if not done.
