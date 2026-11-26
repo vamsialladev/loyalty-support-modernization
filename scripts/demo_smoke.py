@@ -1,7 +1,7 @@
 """A happy-path check of a running public demo (SEC-18, LIVE-02; ADR-0087), local or hosted.
 
     uv run python scripts/demo_smoke.py http://127.0.0.1:58010
-    uv run python scripts/demo_smoke.py https://<your-service>.onrender.com     (after the owner's deploy)
+    uv run python scripts/demo_smoke.py https://<your-service>.run.app     (after the owner's deploy)
 
 Signs in with the demo buttons, creates a case from a synthetic request, starts its investigation, waits for the
 worker's result, and checks the demo label, the absence of password sign-in and of any admin route. Prints PASS/FAIL
@@ -17,6 +17,9 @@ import time
 import httpx
 
 LABEL = "Public demo: mock AI, synthetic data."
+# Wait for the demo on a page the host passes to the app. Not /healthz: Cloud Run reserves some paths ending in "z", and
+# on the live demo /healthz got a 404 from Google's front end that never woke the instance (2026-11-23).
+WAKE_PATH = "/login"
 
 
 def local_client(base: str) -> httpx.Client:
@@ -52,18 +55,18 @@ def main(base: str) -> int:
         results.append(ok)
         print(f"{'PASS' if ok else 'FAIL'}  {name}{('  (' + detail + ')') if detail else ''}")
 
-    deadline = time.monotonic() + 180  # a sleeping free service wakes in about a minute
+    deadline = time.monotonic() + 180  # a stopped instance takes about 20 s to 90 s to start (verification log)
     while True:
         try:
-            if httpx.get(f"{base}/healthz", timeout=30).status_code == 200:
+            if httpx.get(f"{base}{WAKE_PATH}", timeout=60).status_code == 200:
                 break
         except httpx.HTTPError:
             pass
         if time.monotonic() > deadline:
-            check("the demo answers /healthz", False, "no answer within 3 minutes")
+            check(f"the demo answers {WAKE_PATH}", False, "no answer within 3 minutes")
             return 1
         time.sleep(5)
-    check("the demo answers /healthz", True)
+    check(f"the demo answers {WAKE_PATH}", True)
     with make_client(base) as client:
         page = client.get("/login")
         check("the sign-in page shows the demo label and buttons", LABEL in page.text and "demo-agent" in page.text)

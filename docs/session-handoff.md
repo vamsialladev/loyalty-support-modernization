@@ -15,11 +15,17 @@ pull requests.
 - **Appendix C, M12 is met:** the local CI equivalent passes (verification log, Milestone 12, row 33), the load
   test report is saved (`performance/reports/2026-11-14-local.md`), and `terraform validate` passes locally and in CI.
 - **Build provenance works on `main`:** attestation 67563437 for the app image, in Sigstore's public log (row 31).
-- **The public demo is built, not deployed.** The owner moved hosting to **Cloud Run + Neon** on 2026-11-14 (Render's
-  free tier had hit capacity limits for them before). `Dockerfile.demo` and `app/demo_launch.py` run unchanged on
-  Cloud Run with instance-based billing; steps, costs and the $10 spend cap are in `docs/hosting-cloud-run.md`. The
-  image passed the smoke test 10 of 10 locally under 512 MB limits. `render.yaml` was deleted on 2026-11-15 with the
-  owner's OK. A test on the Cloud Run deploy command (5.7) now checks what its test did.
+- **The public demo is live** at `https://loyalty-demo-1023835827965.us-east5.run.app` (Cloud Run `us-east5`, a Neon
+  Free project; revision 00003, image `a1d7f93`; the owner deployed it). Verification log M12 row 43 has everything
+  measured there:
+  - the $1 spend cap fired at $1.45;
+  - smoke test 10 of 10;
+  - DV-001 worked to a posting in a browser;
+  - cold start 20.8–20.9 s, and about 87 s on the day's first start.
+- **Fixed on `main`, not yet deployed:** the banner and assign hint (#80), the sample cases (#81) and the smoke test's
+  wake-up path. Going live needs one new image and one redeploy by the owner.
+- `render.yaml` was deleted on 2026-11-15 with the owner's OK. A test on the Cloud Run deploy command (5.7) now checks
+  what its test did.
 - **Deferred by the owner's decision (no live model calls in M12):** ENT-17 (prompt caching), LIVE-05 (caps against a
   live deploy; the demo forces mock AI, so it has no model spend).
 - **Ways of working are unchanged:** branch, pull request, merge commit; push with
@@ -33,11 +39,10 @@ pull requests.
     row 39).
 
 ## Waiting on the owner (Milestone 12)
-1. **Say "go" for the demo, then follow `docs/hosting-cloud-run.md` §5** (instance-based, max 1, min 0): Google
-   project, billing, the spend cap and $5 alert budgets, **then the $1 test of the stop on a throwaway service (5.3)**,
-   and only if it fired, a new Neon project, two secrets, build from `main`, deploy. Then send me the `run.app`
-   URL (not the connection string), and I'll run `scripts/demo_smoke.py` and measure the cold start. Neon's owner
-   role isn't a full superuser, so the first start is the real test of provisioning; the logs say which step failed.
+1. **Redeploy the demo from the new `main`** (`docs/hosting-cloud-run.md` 5.6 and 5.7 with the new tag). Then:
+   - **read Billing → Reports, grouped by SKU for Cloud Run**, for 2026-11-16 and 2026-11-17, to explain why the cap
+     test showed $1.45, not the roughly $4 projected (still unexplained);
+   - **decide on the README's "(live)" link**, with the labels in 5.9.
 2. **Dependabot is done (2026-11-14/15); nothing is waiting.** Each change had full local CI and green GitHub CI before
    merging.
    - **Merged:** #52 python-multipart 0.0.33 (`aa45e75`), #57 types-pyyaml (`7ae2567`), #63 SQLAlchemy 2.1.8
