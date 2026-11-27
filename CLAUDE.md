@@ -63,6 +63,8 @@ decision. Note what moves into the starter kit and what is customer-specific.
   **Held-out labels are public from this date:** any future held-out claim needs a new split written after it.
 - **Merges:** standing permission applies. If auto mode refuses a merge, don't work around it: list the green pull
   requests for the owner to merge, or to switch to Manual mode.
+- **`main` is protected (owner's request, 2026-11-27; ADR-0092):** the 8 CI checks are required (admins included),
+  pull requests only, no force pushes. Renaming a CI job means updating the required check names in the same change.
 
 ## The owner's decisions for Milestone 13 (2026-11-26)
 - **Milestone 13 is safe AI caching** (the owner's brief, 2026-11-26). The spec's operational drills (ROLL-01 to 04,

@@ -1557,3 +1557,24 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   properties, `docs/m13-baseline.md` §3).
 - **Starter kit:** the port keyword, the price rule for cached tokens and the switch pattern are reusable; the rates
   are per provider and model.
+
+## ADR-0092: `main` is protected: the 8 CI checks are required, admins included
+- **Context:** on 2026-11-27 the owner merged PR #86 before its CI finished. All 8 checks passed afterwards, so there
+  was no harm (verification log, Milestone 13, rows 21 to 23). Nothing could have stopped it: `main` had no branch
+  protection and no rulesets. Rule 6 ("merge on green") rested on memory alone.
+- **Options considered:**
+  - Leave it, and rely on the rule: it failed once already, with nothing to catch it.
+  - Required checks without admins: GitHub would still let the owner, an administrator, merge before CI by ticking
+    "bypass", which is how a slip like #86 happens.
+  - **Chosen:** classic branch protection. The 8 CI checks are required, pinned to GitHub Actions, so no other app can
+    report them; a pull request is required with 0 approvals (one owner can't approve their own PR); admins are
+    included; force pushes and deletion are blocked.
+  - Also requiring branches to be up to date: left off. With several sessions and Dependabot opening PRs at once,
+    every merge would force the others to re-sync and re-run CI, for a risk the merge commit's own CI run on `main`
+    already shows.
+- **Tradeoff:** an urgent fix now waits for CI too (about 30 minutes). In a real emergency the owner can lift
+  protection in Settings → Branches, and must say so in the verification log.
+- **What would change this decision:** a check renamed in `.github/workflows/ci.yml` (the required name must change
+  with it, or every PR waits forever); a second maintainer (then require 1 approval); merge conflicts from stale
+  branches landing broken code (then turn on up-to-date).
+- **Starter kit:** turn this on in week one of any engagement, not after the first slip.
