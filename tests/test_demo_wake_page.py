@@ -74,6 +74,13 @@ def test_external_links_open_safely_and_the_page_is_labelled_honestly() -> None:
     assert PAGE.count("<h1>") == 1 and 'role="status"' in PAGE
 
 
+def test_no_nav_item_is_marked_current() -> None:
+    """The page isn't a section of the site, so the site's own `site_sync.py --check` wants no current item. The
+    first copy, taken from now.html, still marked Now as current and failed that check (verification log M12 row 46)."""
+    assert 'aria-current="page"' not in PAGE
+    assert 'class="more current"' not in PAGE
+
+
 @pytest.mark.browser
 def test_the_page_waits_for_the_demo_then_opens_it(chromium: Any) -> None:  # noqa: F811
     site = "https://vamsialla.test"

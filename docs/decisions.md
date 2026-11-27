@@ -1504,6 +1504,24 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
     much, and only a warm instance or a different database can);
   - a migration that grows slow, or a first start after a deploy that matters (then the Cloud Run Job);
   - the owner accepting the `/readyz` probe change (then start the mock API and the app at once, and measure).
+
+**Addendum, 2026-11-27 (live results and the parallel start; verification log M12 row 46):**
+- **Live, revision 00005:** the fast path ran ("already set up"), and the launcher was ready in 14.55 s. Neon's
+  wake-up took 1.89 s. **The visitor's wait didn't change:** 20.57-20.67 s, against 20.72-21.42 s on 00004.
+- **The likely cause is the startup probe, not the work.** It checks every 10 s, and Cloud Run sends traffic only
+  after a check passes, so a container ready at about 15 s is first served at the third check, about 20 s.
+  - Google's page (read 2026-11-27): `periodSeconds` 1-600 s, default 10; `timeoutSeconds` can't exceed it; and
+    `failureThreshold` × `periodSeconds` can't exceed 600 s.
+  - **Proposed, waiting for the owner's OK** (it changes the deploy command): `periodSeconds=2,timeoutSeconds=2,
+    failureThreshold=150`. That's the same 300 s window and the same honest `/healthz`, checked five times as
+    often. Projected wait: about 15-17 s, not measured.
+- **Parallel start: measured, not shipped (owner, 2026-11-27).** Five turns each on a quiet machine: launcher total
+  median 16.36 s deployed vs 16.27 s parallel. On one vCPU, starting the mock API and the app at once shares the
+  same CPU-bound work, so it saves nothing. It would also have needed the startup probe on `/readyz`. The prototype
+  was never committed; its branch was deleted.
+- **Keep the fast path:** it removes work every start would otherwise repeat, its checks are tested on a real
+  Postgres, and the faster probe can't help unless the container is ready sooner.
+
 ## ADR-0090: Milestone 13 caches only the prompt the model re-reads (Phase 1; approved by the owner, 2026-11-26)
 - **Context:** the owner set Milestone 13 on 2026-11-26: find from Stage 9's own metrics where caching would help
   the support workflow, add it only there, safely, and prove it in business terms with zero wrong reuses. Phase 1

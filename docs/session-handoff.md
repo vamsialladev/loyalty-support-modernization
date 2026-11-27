@@ -67,10 +67,11 @@ merged as fourteen pull requests.
     row 39).
 
 ## Waiting on the owner (Milestone 12)
-0. **LIVE-06, the shorter cold start (ADR-0089), is on `main` but not deployed.** Redeploy with 5.6 and 5.7 (the
-   new tag), then send me the `demo startup:` lines from the first start's log, or just the new revision name: I
-   then time the cold start three times again. Install the wake page from `site/` (`site/README.md`) when you
-   want it; nothing there is published.
+0. **LIVE-06 is live on revision 00005 (image `8c5f314`), but the visitor's wait didn't change** (row 46). The
+   fast path ran and the app was ready in 14.55 s; cold `/login` stayed 20.57-20.67 s, because the startup probe
+   checks every 10 s. **Waiting for the owner:** OK to change 5.7's probe to `periodSeconds=2,timeoutSeconds=2,
+   failureThreshold=150` (ADR-0089 addendum), then a redeploy and three more cold-start tries. The parallel
+   start was measured and not shipped. The wake page in `site/` is ready to install (`site/README.md`).
 1. **The demo is redeployed and checked** (revision 00004, row 44). Two things were **not captured** (the owner,
    2026-11-26), and either can be read later in the Billing console:
    - the current Cloud Run spend against the $10 cap;

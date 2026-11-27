@@ -285,6 +285,9 @@ gcloud run deploy loyalty-demo `
    From LIVE-06 on, each start also prints `demo startup:` lines: each phase and its seconds, never a value. The
    first line, `first database connection (includes a Neon wake-up)`, separates Neon's wake-up from the demo's own
    work. `already set up, so roles, migrations and grants are skipped` means the fast path ran (ADR-0089).
+   On revision 00005 (2026-11-27) the app was ready after 14.55 s, but visitors still waited about 20.6 s: the
+   startup probe checks every 10 s, so the third check, at about 20 s, is the first to pass (verification log M12
+   row 46). A 2 s period is proposed in ADR-0089's addendum and isn't in 5.7 until the owner approves it.
 2. Open the service URL. The banner says "Public demo: mock AI, synthetic data. Resets every day.", and the sign-in
    page shows two buttons and no password form. Click **Try it as an agent** and open a case.
 3. If the logs show `permission denied to create role` or `…database`, the string isn't the owner's or pooling is on.
