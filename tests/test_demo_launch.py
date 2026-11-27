@@ -141,6 +141,21 @@ def test_the_cloud_run_deploy_is_one_instance_from_main_mock_only_and_holds_no_s
     assert not (ROOT / "render.yaml").exists()  # Render was dropped; its Blueprint was deleted (owner, 2026-11-15)
 
 
+def test_the_startup_probe_checks_often_and_stays_honest_within_googles_limits() -> None:
+    """LIVE-06 (ADR-0089 addendum, owner 2026-11-27): a 10 s period held an app ready at about 15 s back to the third
+    check, at about 20 s. The probe checks every 2 s, still on /healthz (the app's own answer, never early), with the
+    same 300 s to start. Google's limits (read 2026-11-27): timeoutSeconds can't exceed periodSeconds, and
+    failureThreshold x periodSeconds can't exceed 600 s."""
+    deploy = _cloud_run_deploy()
+    probe = dict(pair.split("=", 1) for pair in deploy.split('--startup-probe "', 1)[1].split('"', 1)[0].split(","))
+    period, timeout, threshold = (int(probe[key]) for key in ("periodSeconds", "timeoutSeconds", "failureThreshold"))
+    assert probe["httpGet.path"] == "/healthz" and probe["httpGet.port"] == "8080"
+    assert period == 2
+    assert 1 <= timeout <= period
+    assert period * threshold == 300  # the same budget as before: covers the day's first start (about 87 s)
+    assert period * threshold <= 600
+
+
 def test_the_demo_image_copies_named_folders_and_the_worlds_operational_files_only() -> None:
     text = (ROOT / "Dockerfile.demo").read_text(encoding="utf-8")
     final = text.split("FROM base AS demo", 1)[1]

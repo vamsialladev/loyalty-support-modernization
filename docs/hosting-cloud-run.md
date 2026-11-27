@@ -271,14 +271,17 @@ gcloud run deploy loyalty-demo `
   --service-account "loyalty-demo-run@PROJECT_ID.iam.gserviceaccount.com" `
   --set-secrets "DEMO_DATABASE_URL=demo-database-url:latest,APP_SECRET_KEY=app-secret-key:latest" `
   --set-env-vars "PUBLIC_DEMO_MODE=true,AI_PROVIDER=mock,FEATURE_LIVE_AI=false,DEMO_MAX_CASES_PER_DAY=300,RATE_LIMIT_PER_MINUTE=120,APP_PROFILE=portfolio,LOG_LEVEL=INFO" `
-  --startup-probe "httpGet.path=/healthz,httpGet.port=8080,periodSeconds=10,failureThreshold=30,timeoutSeconds=5"
+  --startup-probe "httpGet.path=/healthz,httpGet.port=8080,periodSeconds=2,failureThreshold=150,timeoutSeconds=2"
 ```
 - **`--no-cpu-throttling` is instance-based billing**, the owner's choice. `--min-instances 0 --max-instances 1` keep
   it to at most one instance, which stops after 15 idle minutes.
 - **Money:** `AI_PROVIDER=mock` and `FEATURE_LIVE_AI=false` are set, and the code forces mock whenever
   `PUBLIC_DEMO_MODE` is on. No model API key exists anywhere in this project. **Never add one.**
-- **The startup probe** allows 300 seconds (30 × 10 s, within the 600-second limit). That covers the first start's
-  migrations and the world's load.
+- **The startup probe** allows 300 seconds (150 × 2 s, within the 600-second limit). That covers the first start's
+  migrations and the world's load. It checks every 2 s (the owner, 2026-11-27): with 10 s, an app ready at about 15 s
+  waited for the third check, at about 20 s (verification log M12 row 46). It still asks the app's own `/healthz`, so
+  it never reports ready early. `timeoutSeconds` is 2 because Google doesn't allow it above `periodSeconds`
+  (read 2026-11-27).
 
 ### 5.8 Verify, then tell me
 1. Cloud Run → `loyalty-demo` → **Logs:** wait for `demo reset: removed 0 cases; mock world …`, then `Uvicorn running`.
@@ -287,7 +290,7 @@ gcloud run deploy loyalty-demo `
    work. `already set up, so roles, migrations and grants are skipped` means the fast path ran (ADR-0089).
    On revision 00005 (2026-11-27) the app was ready after 14.55 s, but visitors still waited about 20.6 s: the
    startup probe checks every 10 s, so the third check, at about 20 s, is the first to pass (verification log M12
-   row 46). A 2 s period is proposed in ADR-0089's addendum and isn't in 5.7 until the owner approves it.
+   row 46). The owner approved a 2 s period (2026-11-27), now in 5.7; it takes effect with the next deploy.
 2. Open the service URL. The banner says "Public demo: mock AI, synthetic data. Resets every day.", and the sign-in
    page shows two buttons and no password form. Click **Try it as an agent** and open a case.
 3. If the logs show `permission denied to create role` or `…database`, the string isn't the owner's or pooling is on.
