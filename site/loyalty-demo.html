@@ -6,11 +6,11 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-o79U98mSonxUvDkqUhfri07kWq61HcDtV8t3ftYFIlY=' 'sha256-JLpx5CfaK6waZ0Y2x5NuG7yR1PnJjlfaRCBxq4ZAVqU=' gc.zgo.at; style-src 'self'; font-src 'self'; img-src 'self' data: https://vamsialla.goatcounter.com; connect-src 'self' https://vamsialla.goatcounter.com https://loyalty-demo-1023835827965.us-east5.run.app; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Starting the live demo | Vamsi Alla</title>
-<meta name="description" content="Wakes the Stage 9 live demo (mock AI, synthetic data) and opens it when it answers, in about 20 seconds.">
+<meta name="description" content="Wakes the Stage 9 live demo (mock AI, synthetic data) and opens it when it answers, in about 10 seconds.">
 <meta name="robots" content="noindex, follow">
 <link rel="canonical" href="https://vamsialla.com/loyalty-demo.html">
 <meta property="og:title" content="Starting the live demo | Vamsi Alla">
-<meta property="og:description" content="Wakes the Stage 9 live demo (mock AI, synthetic data) and opens it when it answers, in about 20 seconds.">
+<meta property="og:description" content="Wakes the Stage 9 live demo (mock AI, synthetic data) and opens it when it answers, in about 10 seconds.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://vamsialla.com/loyalty-demo.html">
 <meta property="og:site_name" content="Vamsi Alla">
@@ -20,7 +20,7 @@
 <meta property="og:image:alt" content="Vamsi Alla, Senior Software Engineer building production AI systems">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Starting the live demo | Vamsi Alla">
-<meta name="twitter:description" content="Wakes the Stage 9 live demo (mock AI, synthetic data) and opens it when it answers, in about 20 seconds.">
+<meta name="twitter:description" content="Wakes the Stage 9 live demo (mock AI, synthetic data) and opens it when it answers, in about 10 seconds.">
 <meta name="twitter:image" content="https://vamsialla.com/assets/og-home.png">
 <meta name="twitter:image:alt" content="Vamsi Alla, Senior Software Engineer building production AI systems">
 <meta name="theme-color" content="#F7F4EE" media="(prefers-color-scheme: light)">
@@ -53,10 +53,10 @@
   <section class="hero">
     <div class="narrow">
       <span class="eyebrow">Live demo · Stage 9</span>
-      <h1>Starting the live demo (~20 s)…</h1>
+      <h1>Starting the live demo (~10 s)…</h1>
       <p>Loyalty Support Modernization, a public demo with mock AI and synthetic data for a fictional hotel group. It
-        sleeps when nobody is using it, so the first visit wakes it up: about 20 seconds, and up to about 90 on the
-        first visit of the day. This page opens it as soon as it answers.</p>
+        sleeps when nobody is using it, so the first visit wakes it up: about 10 seconds after a quiet spell (longer on the first visit of the day, when the daily reset runs). This page
+        opens it as soon as it answers.</p>
       <p id="wake-status" class="small" role="status" aria-live="polite">Waking it up… <span id="wake-elapsed">0</span> s</p>
       <p id="wake-slow" class="small" hidden>This is taking longer than usual. The demo may be paused because its
         monthly spending cap was reached, or its host may be slow. You can use the link below, or come back later.</p>
@@ -67,7 +67,7 @@
       <p class="small">This page can't tell "awake" from "paused": the browser hides the demo's reply from this site.
         If the demo is paused by its monthly spending cap, you'll see Google's error page instead of the demo.</p>
       <noscript><p class="small">JavaScript is off, so this page can't wait for the demo. Use the link above; the
-        first page may take about 20 seconds to appear.</p></noscript>
+        first page may take about 10 seconds to appear, longer on the first visit of the day.</p></noscript>
     </div>
   </section>
 </main>

@@ -74,9 +74,9 @@ merged as fourteen pull requests.
 ## Waiting on the owner (Milestone 12)
 0. **LIVE-06 is done (Implemented and verified, row 47).** Revision 00006 (image `8c5f314`, 2 s startup probe)
    starts cold in 10.61, 10.60 and 10.50 s, down from 20.57-20.67 s. The parallel start was measured and not
-   shipped. **Waiting on the owner:** whether the public labels (README, `docs/hosting-cloud-run.md` 5.9, the
-   wake page) should change from "about 20 seconds" to "about 10 seconds", and installing the wake page from
-   `site/`.
+   shipped. The public labels now say "about 10 seconds after a quiet spell (longer on the first visit of the day,
+   when the daily reset runs)" (the owner's wording, 2026-11-27). **Waiting on the owner:** installing the wake
+   page from `site/` (`site/README.md`).
 1. **The demo is redeployed and checked** (revision 00004, row 44). Two things were **not captured** (the owner,
    2026-11-26), and either can be read later in the Billing console:
    - the current Cloud Run spend against the $10 cap;

@@ -1,8 +1,8 @@
 # Wake page for vamsialla.com (LIVE-06)
 
-The live demo sleeps when nobody uses it. Its first visit after a quiet spell waits about 20 seconds, and up to
-about 90 on the first visit of the day (verification log, Milestone 12, rows 43 and 44). This page shows
-"Starting the live demo (~20 s)…" during that wait. It asks the demo for `/login` and opens it when it answers.
+The live demo sleeps when nobody uses it. Its first page takes about 10 seconds after a quiet spell, longer on the
+first visit of the day, when the daily reset runs (verification log, Milestone 12, row 47). This page shows
+"Starting the live demo (~10 s)…" during that wait. It asks the demo for `/login` and opens it when it answers.
 
 | File | Goes to (on vamsialla.com) | What it is |
 |---|---|---|
