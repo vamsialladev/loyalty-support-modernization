@@ -28,6 +28,23 @@ from evaluations.scoring import case_success, false_approval
 LIVE = ROOT / "benchmarks" / "results" / "live"
 LEDGER = LIVE / "spend-ledger.jsonl"
 OUT = ROOT / "benchmarks" / "reports" / "m13"
+RUN_LOGS = OUT / "run-logs"
+
+
+def requeued_jobs(name: str, logs: Path = RUN_LOGS) -> int | None:
+    """Worker jobs the runner requeued during a run ("job requeued ... OperationalError"), from its console log.
+
+    A requeue is the system's own recovery (TD-57), but it adds time to that case, so it's reported per run. None when
+    the log is missing. Windows PowerShell writes the log as UTF-16; anything else is read as UTF-8.
+    """
+    path = logs / f"{name}.log"
+    if not path.exists():
+        return None
+    raw = path.read_bytes()
+    text = raw.decode("utf-16") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8", "replace")
+    return text.count("job requeued")
+
+
 ARMS = {
     "A": ("m13-a-r1", "m13-a-r2", "m13-a-r3"),
     "D": ("m13-d-r1", "m13-d-r2", "m13-d-r3"),
@@ -70,6 +87,7 @@ def run_stats(name: str, labels: Mapping[str, Any], ledger: list[dict[str, Any]]
         "later_calls_reading_cache": sum(1 for c in later if c.get("cache_read_tokens", 0) > 0),
         "cost_usd": round(cost, 6),
         "cost_usd_per_1000_cases": round(cost / len(results) * 1000, 4) if results else math.nan,
+        "requeued_jobs": requeued_jobs(name),
     }
 
 
@@ -120,8 +138,8 @@ def markdown(result: dict[str, Any]) -> str:
         f"> {LABEL}. Written by `python -m evaluations.m13_results`; pass marks from `docs/m13-phase3-plan.md`.",
         "",
         "| Run | Cases | Case success | False approvals | p50 / p95 / p99 s | Calls | Cache-read share "
-        "| Later calls reading cache | $ per 1,000 cases |",
-        "|---|---:|---:|---:|---|---:|---:|---:|---:|",
+        "| Later calls reading cache | $ per 1,000 cases | Requeued jobs |",
+        "|---|---:|---:|---:|---|---:|---:|---:|---:|---:|",
     ]
     for arm in ARMS:
         for r in result["runs"][arm]:
@@ -130,7 +148,7 @@ def markdown(result: dict[str, Any]) -> str:
                 f"| {r['run']} | {r['cases']} | {r['case_success']} | {r['false_approvals']} | "
                 f"{lat['p50']} / {lat['p95']} / {lat['p99']} | {r['model_calls']} | "
                 f"{r['cache_read_share_of_input']:.1%} | {r['later_calls_reading_cache']}/{r['later_calls']} | "
-                f"${r['cost_usd_per_1000_cases']:.2f} |"
+                f"${r['cost_usd_per_1000_cases']:.2f} | {r['requeued_jobs']} |"
             )
     lines += ["", "| Pass mark | Result | Pass |", "|---|---|---|"]
     for key, mark in result["pass_marks"].items():
