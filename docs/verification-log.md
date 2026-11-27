@@ -3,6 +3,18 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## Milestone 13 (started 2026-11-26)
+
+All work by Claude Code (Opus 5.5), in worktree `feat/m13-answer-cache` from `origin/main` at `005a937`. Phase 1
+reads stored files only: no model call, no money, no app code changed.
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | Phase 1 baseline from stored files | `uv run python -m evaluations.m13_baseline` | Wrote `benchmarks/reports/m13/baseline.json`. 500 live cases split into their 1,903 model calls, every case's token totals matched exactly. Two run names (`c-live-dev`, `c-live-validation`) hold an earlier attempt in the ledger; the later run, matching the stored results, is used |
+| 2 | Baseline tests | `uv run pytest tests/test_m13_baseline.py` | **13 passed** (masking, ledger split for all 9 runs, a ledger that doesn't add up is refused, the projection arithmetic, the committed file reproduces) |
+| 3 | Lint, format, types on the new files | `uv run ruff check`, `ruff format --check`, `mypy` on `evaluations/m13_baseline.py`, `tests/test_m13_baseline.py` | Clean |
+| 4 | Prototype read before use | `Loyalty-Cache-Lab` (the owner's earlier prototype): `engine.py`, `README.md`, `DECISIONS.md`, `evidence/` read; nothing run | Used as a reference for behaviours (revision-scoped keys, intent check, single-flight, stale-write guard, outage fallback). Its FAQ workload has no counterpart in Stage 9's cases (`docs/m13-baseline.md` §2) |
+
 ## Milestone 12 (started 2026-11-13)
 
 All work by Claude Code (Opus 5.5). Mock AI and synthetic data only; no API key, no account created, no money. The

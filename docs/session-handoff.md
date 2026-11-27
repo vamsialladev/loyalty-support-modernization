@@ -1,5 +1,25 @@
 # Session handoff
 
+## Milestone 13: safe AI caching (started 2026-11-26), Phase 1 done, waiting for the owner's gate
+- **Scope (owner, 2026-11-26):** find from Stage 9's metrics where caching helps arm C; build only there, safely;
+  prove it in business terms with zero wrong reuses. Four phases: measure, build, prove (shadow, arms A–D, live under
+  a cap the owner approves), business outcome. The owner's full brief is in this session's prompt; its standing
+  orders: decide routine choices and record them, batch at most 3 questions with a recommended answer, merge on
+  green, but **stop before paid spend, deploys, publishing, deleting data or weakening a gate.**
+- **Where:** worktree `C:\projects\project1\lsm-m13\wt-cache`, branch `feat/m13-answer-cache` from `origin/main` at
+  `005a937` (PR #83 merged). Don't touch the shared checkout or the `lsm-dep-ci` worktrees: other sessions use them.
+  **Before Phase 2, rebase onto the latest `main`** (Dependabot round two may have merged).
+- **Phase 1 result** (`docs/m13-baseline.md`, `benchmarks/reports/m13/baseline.json`, ADR-0089 draft, CACHE-01):
+  answer caching has no safe target (0 of 910 identical masked pairs share an answer); no general policy questions
+  in the cases; provider prompt caching projected −30% cost per case, 0 calls avoided, $8.21 a month at 100
+  properties. Draft decision: build L3 only, flag OFF.
+- **Committed locally, not pushed:** the repository is public, and the owner reviews Phase 1 first.
+- **Next:** the owner's answers to the three Phase 1 questions, then Phase 2 (rebase first). Live runs need a new
+  approval with an estimate (cap $10 for this milestone, per the brief).
+- **Spec conflict noted:** the spec's own Milestone 13 is operational drills (ROLL-01 to 04, SEC-21, ENT-20, 26,
+  36). The owner's answer decides where they go.
+- **The prototype** `C:\Users\Vamsi\Downloads\Loyalty-Cache-Lab` was read, never run. Reference only.
+
 **Updated:** 2026-11-26 (revision 00004 checked live, the README's live link, the cap check and the second
 Dependabot round). Before that, 2026-11-14, at the end of Milestone 12: operations, delivery and the public demo,
 merged as fourteen pull requests.

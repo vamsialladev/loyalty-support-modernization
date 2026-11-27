@@ -1504,3 +1504,24 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
     much, and only a warm instance or a different database can);
   - a migration that grows slow, or a first start after a deploy that matters (then the Cloud Run Job);
   - the owner accepting the `/readyz` probe change (then start the mock API and the app at once, and measure).
+## ADR-0089: Milestone 13 caches only the prompt the model re-reads (Phase 1, draft for the owner's gate)
+- **Context:** the owner set Milestone 13 on 2026-11-26: find from Stage 9's own metrics where caching would help
+  the support workflow, add it only there, safely, and prove it in business terms with zero wrong reuses. Phase 1
+  measured, from stored files only (`docs/m13-baseline.md`, `benchmarks/reports/m13/baseline.json`).
+- **Options considered:** L1 exact and L2 semantic answer caches; L3 provider prompt caching; L4 embedding cache; L5
+  retrieval cache by index version; L6 tool/API result cache; L7 GPU KV cache (explain only).
+- **Decision (draft until the owner approves the Phase 1 gate):** build L3 only, behind a flag, default OFF. Don't
+  build L1, L2, L5, L6; L4 doesn't apply (no embeddings).
+- **Why:**
+  - 910 of 910 word-for-word identical masked message pairs need different answers (654 a different next action), so
+    any answer reuse would be wrong.
+  - No case asks a general policy question (5 of 280 contain a question; none is one).
+  - Each model call re-sends the previous call's input: 68% of held-out input tokens. Projected: input cost −54%,
+    case cost about −30%, 0 calls avoided.
+- **Tradeoff:** the saving is small in money ($0.16 a month at two properties, $8.21 at 100; projection) because
+  Haiku is cheap. L3 is one request field, so its cost in complexity is small too. The model's input is unchanged.
+- **What would change this decision:** a channel for general policy questions (L1/L2, backlog BL-M13-01);
+  `search_policy` at 10% or more of p95 draft-ready time in Phase 3's spans (L5); Phase 3 measuring less than a 20%
+  cost cut, or any change in case success or false approvals (then L3 stays off).
+- **Starter kit:** the classification table and `evaluations/m13_baseline.py`'s method (split the spend ledger by
+  case, project the re-sent prefix) are reusable. The volumes and prices are customer-specific.
