@@ -176,7 +176,7 @@ def run_loop(
     def priced(turn: ModelTurn) -> int:
         return 0 if price is None else price.usage_cost_microusd(turn.usage)
 
-    # Read once per run: a kill switch flipped mid-run applies from the next run (ADR-0090).
+    # Read once per run: a kill switch flipped mid-run applies from the next run (ADR-0091).
     cache = runtime.prompt_cache and not prompt_cache_switch.is_killed(s)
 
     budget = Budget(None if provider.is_mock else remaining_microusd(s, runtime.caps), priced)

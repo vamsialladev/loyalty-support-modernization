@@ -75,7 +75,7 @@ def test_the_gauges_export_the_snapshot_with_only_code_labels(arm: ArmA) -> None
     assert ({"action": "sign_in_failed"}, 2) in points["loyalty.security.refusals"]
     assert ({"protocol": "mcp"}, 1) in points["loyalty.protocol.calls"]
     labels = {k for series in points.values() for attrs, _ in series for k in attrs}
-    assert labels <= {"period", "action", "protocol", "kind"}  # kind: read, write, input (L3, ADR-0090)
+    assert labels <= {"period", "action", "protocol", "kind"}  # kind: read, write, input (L3, ADR-0091)
     provider.shutdown()
 
 

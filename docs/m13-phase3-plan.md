@@ -5,7 +5,7 @@
 > the cost below.
 
 ## What is compared
-Only L3 was built (ADR-0089, owner's gate 2026-11-26), so the brief's four arms reduce to two. The others are
+Only L3 was built (ADR-0090, owner's gate 2026-11-26), so the brief's four arms reduce to two. The others are
 **not run, because those layers weren't built**, and the reports say so:
 
 | Arm in the brief | Here | Configuration |

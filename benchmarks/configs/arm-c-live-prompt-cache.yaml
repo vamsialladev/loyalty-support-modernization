@@ -1,4 +1,4 @@
-# LIVE: spends real money. Milestone 13, Phase 3: arm C with provider prompt caching (L3, ADR-0090). Identical to
+# LIVE: spends real money. Milestone 13, Phase 3: arm C with provider prompt caching (L3, ADR-0091). Identical to
 # arm-c-live.yaml except prompt_cache and cache_state, so the two arms differ in one factor only. Runs only after
 # the owner approves the cost estimate (CLAUDE.md, Milestone 13).
 arm: C

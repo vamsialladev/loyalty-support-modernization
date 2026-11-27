@@ -58,7 +58,7 @@ class RunConfig:
     cost_ceiling_usd: float | None
     environment: str
     cache_state: str
-    prompt_cache: bool = False  # L3 (Milestone 13, ADR-0090). Optional, so every earlier configuration reads as off
+    prompt_cache: bool = False  # L3 (Milestone 13, ADR-0091). Optional, so every earlier configuration reads as off
 
     @property
     def kind(self) -> str:

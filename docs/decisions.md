@@ -1504,7 +1504,7 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
     much, and only a warm instance or a different database can);
   - a migration that grows slow, or a first start after a deploy that matters (then the Cloud Run Job);
   - the owner accepting the `/readyz` probe change (then start the mock API and the app at once, and measure).
-## ADR-0089: Milestone 13 caches only the prompt the model re-reads (Phase 1, draft for the owner's gate)
+## ADR-0090: Milestone 13 caches only the prompt the model re-reads (Phase 1; approved by the owner, 2026-11-26)
 - **Context:** the owner set Milestone 13 on 2026-11-26: find from Stage 9's own metrics where caching would help
   the support workflow, add it only there, safely, and prove it in business terms with zero wrong reuses. Phase 1
   measured, from stored files only (`docs/m13-baseline.md`, `benchmarks/reports/m13/baseline.json`).
@@ -1526,8 +1526,8 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **Starter kit:** the classification table and `evaluations/m13_baseline.py`'s method (split the spend ledger by
   case, project the re-sent prefix) are reusable. The volumes and prices are customer-specific.
 
-## ADR-0090: L3 prompt caching: one request marker, priced and capped, a flag and a switch
-- **Context:** the owner approved building only L3 at the Phase 1 gate (2026-11-26; ADR-0089). Arm C re-sends 68% of
+## ADR-0091: L3 prompt caching: one request marker, priced and capped, a flag and a switch
+- **Context:** the owner approved building only L3 at the Phase 1 gate (2026-11-26; ADR-0090). Arm C re-sends 68% of
   its input tokens from the call before. The provider's automatic caching caches up to the last cacheable block when
   a request carries one top-level `cache_control` (Anthropic prompt-caching page, read 2026-11-26).
 - **Options considered:**

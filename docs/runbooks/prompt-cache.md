@@ -1,7 +1,7 @@
 # Provider prompt caching (L3)
 
 **What it is:** arm C asks the model provider to cache the prompt it re-sends on every call of a case
-(`FEATURE_PROMPT_CACHE`, default **off**; ADR-0090). The model reads exactly the same input either way, so caching
+(`FEATURE_PROMPT_CACHE`, default **off**; ADR-0091). The model reads exactly the same input either way, so caching
 can make a call cheaper or slower to start, never different. It avoids no model calls. **Proposed owner:** AI
 operations owner (L3). Synthetic data only.
 

@@ -1,4 +1,4 @@
-"""Cache tokens on each AI run, for provider prompt caching (L3; CACHE-02, ADR-0090).
+"""Cache tokens on each AI run, for provider prompt caching (L3; CACHE-02, ADR-0091).
 
 Two integer columns with a server default of 0, so existing rows read as "no caching" and nothing is rewritten.
 Rolling back drops only these two columns.

@@ -68,7 +68,7 @@ decision. Note what moves into the starter kit and what is customer-specific.
 - **Milestone 13 is safe AI caching** (the owner's brief, 2026-11-26). The spec's operational drills (ROLL-01 to 04,
   SEC-21, ENT-20, 26, 36) move to **Milestone 13b**, right after it.
 - **Phase 1 gate approved.** Build only **L3, provider prompt caching**, flag off by default. L1, L2, L5 and L6 are
-  recorded as not built, with the evidence; L4 doesn't apply (ADR-0089, `docs/m13-baseline.md`).
+  recorded as not built, with the evidence; L4 doesn't apply (ADR-0090, `docs/m13-baseline.md`).
 - **One public dataset approved:** MultiWOZ 2.2, hotel domain, after checking its licence, version and size and
   recording them in `docs/datasets.md`.
 - **Headline for the results and decision memo:** "In this workflow, answer caching is unsafe (910 look-alike pairs,

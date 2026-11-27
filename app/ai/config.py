@@ -36,7 +36,7 @@ class ModelPrice:
     checked_on: str
     deprecated: bool = False
     retires_on: str | None = None  # the provider's published retirement date, if any (ENT-15, app/ai/lifecycle.py)
-    # Prompt caching (L3, ADR-0090): the 5-minute write rate and the read rate. Left out, cached tokens are charged at
+    # Prompt caching (L3, ADR-0091): the 5-minute write rate and the read rate. Left out, cached tokens are charged at
     # twice the input price, the most any cache write costs (the 1-hour rate), so a cap can't be passed by caching.
     cache_write_per_mtok: float | None = None
     cache_read_per_mtok: float | None = None

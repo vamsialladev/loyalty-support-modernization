@@ -22,7 +22,7 @@ RESPONSE_MODEL = "gen_ai.response.model"  # Recommended
 RESPONSE_ID = "gen_ai.response.id"  # Recommended
 FINISH_REASONS = "gen_ai.response.finish_reasons"  # Recommended, string[]
 INPUT_TOKENS = "gen_ai.usage.input_tokens"  # Recommended; SHOULD include cached tokens (v0.1.0)
-# Prompt caching (L3, ADR-0090). Names from `model/gen-ai/registry.yaml` at tag v0.1.0 (commit d0e74ba, 2026-11-21),
+# Prompt caching (L3, ADR-0091). Names from `model/gen-ai/registry.yaml` at tag v0.1.0 (commit d0e74ba, 2026-11-21),
 # both Development. Each SHOULD also be counted in INPUT_TOKENS. The older core-repository page used `cache_creation`.
 CACHE_READ_INPUT_TOKENS = "gen_ai.usage.cache_read.input_tokens"
 CACHE_WRITE_INPUT_TOKENS = "gen_ai.usage.cache_write.input_tokens"

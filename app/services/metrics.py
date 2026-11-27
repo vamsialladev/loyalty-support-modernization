@@ -56,7 +56,7 @@ class ArmMetrics:
     approvals_rejected: int = 0
     ai_runs: int = 0
     ai_tokens: int = 0  # uncached input, cache reads and writes, and output
-    ai_cache_read_tokens: int = 0  # L3 (ADR-0090)
+    ai_cache_read_tokens: int = 0  # L3 (ADR-0091)
     ai_cache_write_tokens: int = 0
     ai_input_tokens: int = 0  # every input token, cached or not
     ai_cost_microusd: int = 0

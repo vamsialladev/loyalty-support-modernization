@@ -1,4 +1,4 @@
-"""Milestone 13, L3: provider prompt caching, flag off by default (CACHE-02, ENT-17, ADR-0089, ADR-0090).
+"""Milestone 13, L3: provider prompt caching, flag off by default (CACHE-02, ENT-17, ADR-0090, ADR-0091).
 
 Written before the code. What has to hold:
 - the request is byte-for-byte the same with and without caching, apart from the one top-level `cache_control`;

@@ -12,10 +12,10 @@
 - **Where:** worktree `C:\projects\project1\lsm-m13\wt-cache`, branch `feat/m13-answer-cache` from `origin/main` at
   `005a937` (still the tip on 2026-11-26: Dependabot round two not merged yet). Don't touch the shared checkout or
   the `lsm-dep-ci` worktrees. **Rebase again before pushing.** Full test logs go to the session scratchpad `logs/`.
-- **Phase 1** (`docs/m13-baseline.md`, ADR-0089): answer caching has no safe target; MultiWOZ 2.2 (real hotel
+- **Phase 1** (`docs/m13-baseline.md`, ADR-0090): answer caching has no safe target; MultiWOZ 2.2 (real hotel
   dialogues): 148 of 1,713 hotel turns are public questions about a named hotel, 22 repeat; an answer cache belongs
   to Stage 1 or a gateway (BL-M13-02).
-- **Phase 2** (ADR-0090, CACHE-02): `prompt_cache` keyword on the provider port; `FEATURE_PROMPT_CACHE` (off);
+- **Phase 2** (ADR-0091, CACHE-02): `prompt_cache` keyword on the provider port; `FEATURE_PROMPT_CACHE` (off);
   `/admin` switch (off only); cache rates priced and capped; migration 0014; `/metrics`, gauge, spans;
   `docs/runbooks/prompt-cache.md`. Tests: `tests/test_prompt_cache.py`, written first.
 - **Phase 3** (`docs/m13-phase3-plan.md`, pre-registered): arms A (no cache) and D (L3) on the held-out 80, 3 runs

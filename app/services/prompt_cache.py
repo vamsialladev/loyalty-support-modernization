@@ -1,4 +1,4 @@
-"""The kill switch for provider prompt caching (L3; CACHE-02, ADR-0090).
+"""The kill switch for provider prompt caching (L3; CACHE-02, ADR-0091).
 
 `FEATURE_PROMPT_CACHE` turns caching on for a deployment (default off). This switch can only turn it **off**, and
 without a restart: it's a database row, read at the start of every AI run. A missing row means "not killed", so the

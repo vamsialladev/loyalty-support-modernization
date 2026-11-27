@@ -41,7 +41,7 @@ class AppSettings:
     worker_health_file: str = ""
     ai_provider: str = "mock"
     feature_live_ai: bool = False
-    feature_prompt_cache: bool = False  # L3, ADR-0090: provider prompt caching, off by default
+    feature_prompt_cache: bool = False  # L3, ADR-0091: provider prompt caching, off by default
     feature_adjustment_execution: bool = True  # spec F.1, ADR-0081; production.env sets it false
     anthropic_model: str = ""
     ai_budget_per_run_usd: float = 1.0
