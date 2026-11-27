@@ -290,7 +290,8 @@ gcloud run deploy loyalty-demo `
    work. `already set up, so roles, migrations and grants are skipped` means the fast path ran (ADR-0089).
    On revision 00005 (2026-11-27) the app was ready after 14.55 s, but visitors still waited about 20.6 s: the
    startup probe checks every 10 s, so the third check, at about 20 s, is the first to pass (verification log M12
-   row 46). The owner approved a 2 s period (2026-11-27), now in 5.7; it takes effect with the next deploy.
+   row 46). With the 2 s period (the owner, 2026-11-27), revision 00006 starts cold in **10.50-10.61 s**, three
+   tries (row 47).
 2. Open the service URL. The banner says "Public demo: mock AI, synthetic data. Resets every day.", and the sign-in
    page shows two buttons and no password form. Click **Try it as an agent** and open a case.
 3. If the logs show `permission denied to create role` or `…database`, the string isn't the owner's or pooling is on.

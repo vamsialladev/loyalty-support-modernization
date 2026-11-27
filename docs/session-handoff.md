@@ -72,11 +72,11 @@ merged as fourteen pull requests.
   no drill against the live demo; no spend.
 
 ## Waiting on the owner (Milestone 12)
-0. **LIVE-06 is live on revision 00005 (image `8c5f314`), but the visitor's wait didn't change** (row 46). The
-   fast path ran and the app was ready in 14.55 s; cold `/login` stayed 20.57-20.67 s, because the startup probe
-   checked every 10 s. **The owner approved a 2 s probe (2026-11-27); it's in 5.7.** Waiting for the owner's
-   redeploy (same image), then three cold-start tries; LIVE-06 is complete only if the wait drops. The parallel
-   start was measured and not shipped. The wake page in `site/` is ready to install (`site/README.md`).
+0. **LIVE-06 is done (Implemented and verified, row 47).** Revision 00006 (image `8c5f314`, 2 s startup probe)
+   starts cold in 10.61, 10.60 and 10.50 s, down from 20.57-20.67 s. The parallel start was measured and not
+   shipped. **Waiting on the owner:** whether the public labels (README, `docs/hosting-cloud-run.md` 5.9, the
+   wake page) should change from "about 20 seconds" to "about 10 seconds", and installing the wake page from
+   `site/`.
 1. **The demo is redeployed and checked** (revision 00004, row 44). Two things were **not captured** (the owner,
    2026-11-26), and either can be read later in the Billing console:
    - the current Cloud Run spend against the $10 cap;
