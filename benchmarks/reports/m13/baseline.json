@@ -1,0 +1,450 @@
+{
+ "label": "Measured from stored files. Real model (claude-haiku-5-5) token counts from Milestone 10's live runs; SYNTHETIC cases and messages. Cost projections are estimates.",
+ "dataset_version": "v1",
+ "inputs_sha256": {
+  "spend-ledger.jsonl": "07b0a98da4f70476b162842fb599398312fb2b783e7c9ae43d537726ad5397d3",
+  "dev.jsonl": "05b7636970f5ec8bb0660216145cff8f88610fd03404530f198285dcee195f36",
+  "validation.jsonl": "292f8b131974ca5356fb85b5f08aaef5fae8d60b56b7ad778431359a99c1f945",
+  "heldout.jsonl": "5bfa3cb57331db39a9c264e2286b555b05cc95aa52ed1199fd289b9b76102d50",
+  "stress.jsonl": "7f2fb41a7a374e652e7ab1d3791b9285fb7c8db87963fccd9cd738cc218b1c30",
+  "fairness.jsonl": "ea1991da325be6d756473e7490874d502063553b7238ec1b403101eab749cd0e"
+ },
+ "messages": {
+  "cases": 280,
+  "cases_with_an_explicit_question": 5,
+  "explicit_questions_masked": {
+   "while you re at it can you tell me how many points my colleague <code> has": 4,
+   "could i get retro credit for my beach resort stay <month> <n> <n> <n>": 1
+  },
+  "distinct_masked_messages": 125,
+  "exact_repeat_cases": 155,
+  "exact_repeat_rate": 0.5536,
+  "near_repeat_cases": {
+   "jaccard_0.6": 256,
+   "jaccard_0.8": 240,
+   "jaccard_0.9": 217
+  },
+  "identical_masked_pairs": 910,
+  "identical_pairs_same_next_action": 256,
+  "identical_pairs_same_full_answer": 0,
+  "identical_pairs_wrong_if_reused": 910,
+  "identical_pairs_wrong_if_reused_wilson95": [
+   0.9958,
+   1.0
+  ],
+  "near_0.8_pairs": 7749,
+  "near_0.8_pairs_same_full_answer": 0,
+  "masking": "emails, codes like BR-1234 and GR-12345, every number, month names, and every name in the data",
+  "full_answer": "next_action, owed_total and the claimed stay IDs from the labels"
+ },
+ "messages_heldout_only": {
+  "cases": 80,
+  "cases_with_an_explicit_question": 0,
+  "explicit_questions_masked": {},
+  "distinct_masked_messages": 49,
+  "exact_repeat_cases": 31,
+  "exact_repeat_rate": 0.3875,
+  "near_repeat_cases": {
+   "jaccard_0.6": 69,
+   "jaccard_0.8": 61,
+   "jaccard_0.9": 57
+  },
+  "identical_masked_pairs": 68,
+  "identical_pairs_same_next_action": 16,
+  "identical_pairs_same_full_answer": 0,
+  "identical_pairs_wrong_if_reused": 68,
+  "identical_pairs_wrong_if_reused_wilson95": [
+   0.9465,
+   1.0
+  ],
+  "near_0.8_pairs": 577,
+  "near_0.8_pairs_same_full_answer": 0,
+  "masking": "emails, codes like BR-1234 and GR-12345, every number, month names, and every name in the data",
+  "full_answer": "next_action, owed_total and the claimed stay IDs from the labels"
+ },
+ "policy_context": {
+  "versions": {
+   "guest-rewards-earning-v1": {
+    "customer": "hg-demo",
+    "effective_from": "2025-01-01",
+    "effective_to": "2025-12-31",
+    "sha256": "e675fe9b8e904f36"
+   },
+   "guest-rewards-earning-v2": {
+    "customer": "hg-demo",
+    "effective_from": "2026-01-01",
+    "effective_to": "None",
+    "sha256": "05acddb7d8d1ed3a"
+   },
+   "missing-points-requests-v1": {
+    "customer": "hg-demo",
+    "effective_from": "2025-01-01",
+    "effective_to": "2026-06-30",
+    "sha256": "c96cdb8dbcbc650f"
+   },
+   "missing-points-requests-v2": {
+    "customer": "hg-demo",
+    "effective_from": "2026-07-01",
+    "effective_to": "None",
+    "sha256": "cf80cc8a2a41ef44"
+   }
+  },
+  "by_run": [
+   {
+    "run": "c-live-dev",
+    "cases": 100,
+    "distinct_policy_sets": 5,
+    "cases_reusing_an_earlier_set": 95,
+    "sets": {
+     "guest-rewards-earning@v1 + missing-points-requests@v1": 40,
+     "guest-rewards-earning@v2 + missing-points-requests@v1": 34,
+     "guest-rewards-earning@v2 + missing-points-requests@v2": 19,
+     "(none)": 6,
+     "guest-rewards-earning@v1 + guest-rewards-earning@v2 + missing-points-requests@v1": 1
+    }
+   },
+   {
+    "run": "c-heldout-r1",
+    "cases": 80,
+    "distinct_policy_sets": 6,
+    "cases_reusing_an_earlier_set": 74,
+    "sets": {
+     "guest-rewards-earning@v2 + missing-points-requests@v1": 36,
+     "guest-rewards-earning@v2 + missing-points-requests@v2": 31,
+     "(none)": 6,
+     "guest-rewards-earning@v1 + missing-points-requests@v1": 5,
+     "guest-rewards-earning@v2 + missing-points-requests@v1 + missing-points-requests@v2": 1,
+     "guest-rewards-earning@v1 + guest-rewards-earning@v2 + missing-points-requests@v1": 1
+    }
+   }
+  ]
+ },
+ "model_calls": {
+  "runs": {
+   "c-live-dev": {
+    "cases": 100,
+    "calls": 389,
+    "calls_per_case": {
+     "n": 100,
+     "mean": 3.89,
+     "p50": 3,
+     "p95": 7,
+     "p99": 9,
+     "max": 10
+    },
+    "latency_s": {
+     "n": 100,
+     "mean": 7.7521,
+     "p50": 7.5,
+     "p95": 11.186,
+     "p99": 11.656,
+     "max": 11.968
+    },
+    "cost_usd_per_case": {
+     "n": 100,
+     "mean": 0.0018,
+     "p50": 0.001536,
+     "p95": 0.003305,
+     "p99": 0.004616,
+     "max": 0.00549
+    },
+    "case_success_note": "scored in benchmarks/reports/heldout/comparison.md, not re-scored here"
+   },
+   "c-live-validation": {
+    "cases": 30,
+    "calls": 109,
+    "calls_per_case": {
+     "n": 30,
+     "mean": 3.6333,
+     "p50": 3,
+     "p95": 7,
+     "p99": 7,
+     "max": 7
+    },
+    "latency_s": {
+     "n": 30,
+     "mean": 7.3615,
+     "p50": 7.312,
+     "p95": 8.765,
+     "p99": 9.297,
+     "max": 9.297
+    },
+    "cost_usd_per_case": {
+     "n": 30,
+     "mean": 0.0016,
+     "p50": 0.001469,
+     "p95": 0.002927,
+     "p99": 0.003134,
+     "max": 0.003134
+    },
+    "case_success_note": "scored in benchmarks/reports/heldout/comparison.md, not re-scored here"
+   },
+   "c-heldout-r1": {
+    "cases": 80,
+    "calls": 297,
+    "calls_per_case": {
+     "n": 80,
+     "mean": 3.7125,
+     "p50": 3,
+     "p95": 6,
+     "p99": 8,
+     "max": 8
+    },
+    "latency_s": {
+     "n": 80,
+     "mean": 7.969,
+     "p50": 7.593,
+     "p95": 10.952,
+     "p99": 25.0,
+     "max": 25.0
+    },
+    "cost_usd_per_case": {
+     "n": 80,
+     "mean": 0.0017,
+     "p50": 0.001595,
+     "p95": 0.002927,
+     "p99": 0.004087,
+     "max": 0.004087
+    },
+    "case_success_note": "scored in benchmarks/reports/heldout/comparison.md, not re-scored here"
+   },
+   "c-heldout-r2": {
+    "cases": 80,
+    "calls": 297,
+    "calls_per_case": {
+     "n": 80,
+     "mean": 3.7125,
+     "p50": 4,
+     "p95": 6,
+     "p99": 8,
+     "max": 8
+    },
+    "latency_s": {
+     "n": 80,
+     "mean": 8.1112,
+     "p50": 7.844,
+     "p95": 11.235,
+     "p99": 22.36,
+     "max": 22.36
+    },
+    "cost_usd_per_case": {
+     "n": 80,
+     "mean": 0.0017,
+     "p50": 0.001595,
+     "p95": 0.002927,
+     "p99": 0.003736,
+     "max": 0.003736
+    },
+    "case_success_note": "scored in benchmarks/reports/heldout/comparison.md, not re-scored here"
+   },
+   "c-heldout-r3": {
+    "cases": 80,
+    "calls": 302,
+    "calls_per_case": {
+     "n": 80,
+     "mean": 3.775,
+     "p50": 4,
+     "p95": 6,
+     "p99": 7,
+     "max": 7
+    },
+    "latency_s": {
+     "n": 80,
+     "mean": 8.0991,
+     "p50": 7.781,
+     "p95": 11.577,
+     "p99": 15.36,
+     "max": 15.36
+    },
+    "cost_usd_per_case": {
+     "n": 80,
+     "mean": 0.0017,
+     "p50": 0.001616,
+     "p95": 0.002845,
+     "p99": 0.003493,
+     "max": 0.003493
+    },
+    "case_success_note": "scored in benchmarks/reports/heldout/comparison.md, not re-scored here"
+   },
+   "c-stress": {
+    "cases": 30,
+    "calls": 128,
+    "calls_per_case": {
+     "n": 30,
+     "mean": 4.2667,
+     "p50": 3,
+     "p95": 9,
+     "p99": 9,
+     "max": 9
+    },
+    "latency_s": {
+     "n": 30,
+     "mean": 9.2071,
+     "p50": 8.422,
+     "p95": 12.688,
+     "p99": 14.891,
+     "max": 14.891
+    },
+    "cost_usd_per_case": {
+     "n": 30,
+     "mean": 0.0021,
+     "p50": 0.001811,
+     "p95": 0.003483,
+     "p99": 0.004681,
+     "max": 0.004681
+    },
+    "case_success_note": "scored in benchmarks/reports/heldout/comparison.md, not re-scored here"
+   },
+   "c-stress-r2": {
+    "cases": 30,
+    "calls": 130,
+    "calls_per_case": {
+     "n": 30,
+     "mean": 4.3333,
+     "p50": 4,
+     "p95": 8,
+     "p99": 9,
+     "max": 9
+    },
+    "latency_s": {
+     "n": 30,
+     "mean": 9.3971,
+     "p50": 8.406,
+     "p95": 14.125,
+     "p99": 17.719,
+     "max": 17.719
+    },
+    "cost_usd_per_case": {
+     "n": 30,
+     "mean": 0.0022,
+     "p50": 0.001833,
+     "p95": 0.003495,
+     "p99": 0.004195,
+     "max": 0.004195
+    },
+    "case_success_note": "scored in benchmarks/reports/heldout/comparison.md, not re-scored here"
+   },
+   "c-stress-r3": {
+    "cases": 30,
+    "calls": 123,
+    "calls_per_case": {
+     "n": 30,
+     "mean": 4.1,
+     "p50": 4,
+     "p95": 8,
+     "p99": 8,
+     "max": 8
+    },
+    "latency_s": {
+     "n": 30,
+     "mean": 8.9236,
+     "p50": 8.469,
+     "p95": 11.765,
+     "p99": 13.438,
+     "max": 13.438
+    },
+    "cost_usd_per_case": {
+     "n": 30,
+     "mean": 0.002,
+     "p50": 0.001847,
+     "p95": 0.003415,
+     "p99": 0.003862,
+     "max": 0.003862
+    },
+    "case_success_note": "scored in benchmarks/reports/heldout/comparison.md, not re-scored here"
+   },
+   "c-fairness": {
+    "cases": 40,
+    "calls": 128,
+    "calls_per_case": {
+     "n": 40,
+     "mean": 3.2,
+     "p50": 3,
+     "p95": 4,
+     "p99": 4,
+     "max": 4
+    },
+    "latency_s": {
+     "n": 40,
+     "mean": 7.5939,
+     "p50": 7.422,
+     "p95": 9.671,
+     "p99": 13.78,
+     "max": 13.78
+    },
+    "cost_usd_per_case": {
+     "n": 40,
+     "mean": 0.0015,
+     "p50": 0.001405,
+     "p95": 0.001752,
+     "p99": 0.002618,
+     "max": 0.002618
+    },
+    "case_success_note": "scored in benchmarks/reports/heldout/comparison.md, not re-scored here"
+   }
+  },
+  "cases_segmented": 500,
+  "calls_per_case_all": {
+   "n": 500,
+   "mean": 3.806,
+   "p50": 3,
+   "p95": 7,
+   "p99": 8,
+   "max": 10
+  },
+  "first_call_input_tokens": {
+   "n": 500,
+   "mean": 2164.496,
+   "p50": 2140,
+   "p95": 2325,
+   "p99": 2437,
+   "max": 2494
+  },
+  "input_tokens_per_call": {
+   "n": 1903,
+   "mean": 2578.195,
+   "p50": 2474,
+   "p95": 3144,
+   "p99": 4222,
+   "max": 5307
+  },
+  "heldout_cost_usd_per_case": {
+   "n": 240,
+   "mean": 0.0017,
+   "p50": 0.001614,
+   "p95": 0.002893,
+   "p99": 0.003608,
+   "max": 0.004087
+  },
+  "heldout_input_share_of_cost": 0.5636,
+  "heldout_within_case_cache_projection": {
+   "input_tokens": 2298324,
+   "resent_from_previous_call": 1569924,
+   "resent_share": 0.6831,
+   "input_cost_units_plain": 2298324.0,
+   "input_cost_units_cached": 1067492.4,
+   "input_cost_change": -0.5355
+  },
+  "heldout_case_cost_change_projected": -0.3018,
+  "assumptions": {
+   "cache_read_multiplier": 0.1,
+   "cache_write_multiplier": 1.25,
+   "price_in_per_mtok": 0.1,
+   "price_out_per_mtok": 0.5,
+   "ttl": "5 minutes"
+  }
+ },
+ "prefix": {
+  "system_prompt_chars": 1749,
+  "tool_spec_chars": 2726,
+  "prompt_version": "arm_c_v1"
+ },
+ "cross_case_warmth_5min": {
+  "two_properties": 0.0364,
+  "hundred_properties": 0.8431
+ },
+ "monthly_cases": {
+  "two_properties": 320,
+  "hundred_properties": 16000
+ }
+}
