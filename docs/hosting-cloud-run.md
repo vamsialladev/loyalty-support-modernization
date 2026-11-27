@@ -310,9 +310,10 @@ gcloud run deploy loyalty-demo `
 
 ### 5.9 Labels
 - **The app's banner:** "Public demo: mock AI, synthetic data. Resets every day."
-- **The README and any link:** "Live demo: mock AI, synthetic data. Free hosting: the first visit after a quiet spell
-  takes about 20 seconds (up to about 90 on the first visit of the day). Paused if the month's cap is reached."
-  Measured in section 2.
+- **The README and any link:** "Live demo: mock AI, synthetic data. Free hosting: the first page takes about 10
+  seconds after a quiet spell (longer on the first visit of the day, when the daily reset runs). Paused if the
+  month's cap is reached." The owner's wording (2026-11-27), from revision 00006's measured 10.50-10.61 s
+  (verification log M12 row 47). The day's first start wasn't re-measured after LIVE-06, so it gives no number.
 
 ### 5.10 Teardown
 1. `gcloud run services delete loyalty-demo --region us-east5` (and `cap-test`, if it's still there)

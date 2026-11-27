@@ -1,7 +1,7 @@
 /* Wakes the Stage 9 live demo, then opens it (LIVE-06). Served from vamsialla.com as /assets/demo-wake.js.
  *
- * The demo runs on Cloud Run with at most one instance and none while idle, so a first visit waits about 20 s while
- * it starts. This script asks the demo for /login (never /healthz: Cloud Run reserves paths ending in "z" and
+ * The demo runs on Cloud Run with at most one instance and none while idle, so a first visit waits about 10 s while
+ * it starts (longer on the day's first visit, when the daily reset runs). This script asks the demo for /login (never /healthz: Cloud Run reserves paths ending in "z" and
  * answers them itself, without waking the instance), waits for any answer, then sends the visitor there.
  *
  * The request is "no-cors": the browser hides the reply from this site, so the script can't tell a working demo

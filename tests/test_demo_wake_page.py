@@ -68,7 +68,9 @@ def test_external_links_open_safely_and_the_page_is_labelled_honestly() -> None:
             assert 'rel="noopener noreferrer"' in link, link
     text = " ".join(PAGE.split())
     assert "mock AI and synthetic data" in text and "fictional hotel group" in text
-    assert "about 20 seconds" in text and "about 90" in text  # the 5.9 labels, measured (M12 rows 43-44)
+    label = "about 10 seconds after a quiet spell (longer on the first visit of the day, when the daily reset runs)"
+    assert label in text  # the 5.9 label (owner, 2026-11-27), measured (M12 row 47)
+    assert "20 s" not in text and "20 seconds" not in text and "about 90" not in text  # the old wait is gone
     assert "spending cap" in text and "can't tell" in text
     assert '<meta name="robots" content="noindex, follow">' in PAGE
     assert PAGE.count("<h1>") == 1 and 'role="status"' in PAGE
