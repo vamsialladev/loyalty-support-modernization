@@ -66,6 +66,11 @@ merged as fourteen pull requests.
   - Local gitleaks had scanned 0 commits in git worktrees, and now fails if it scans none (verification log, M12
     row 39).
 
+## Waiting on the owner (Milestone 13b, planned 2026-11-27)
+- **Answer the six-line approval checklist** at the top of `docs/m13b-plan.md`: documents and code-only work now;
+  drills on the local stack only when the machine is free; break-glass as code; proposed RTO 1 hour and RPO 24 hours;
+  no drill against the live demo; no spend.
+
 ## Waiting on the owner (Milestone 12)
 0. **LIVE-06 is live on revision 00005 (image `8c5f314`), but the visitor's wait didn't change** (row 46). The
    fast path ran and the app was ready in 14.55 s; cold `/login` stayed 20.57-20.67 s, because the startup probe
