@@ -87,7 +87,7 @@ authorization, M9), API-01 and API-02 (moved to M7, as the owner approved). Code
 - **Terraform and operations documents:** validate-only AWS Terraform; rollback, backup, SLOs, maintenance, shared
   responsibility, data residency, encryption, enterprise integration.
 - **Public demo, ready for Cloud Run + Neon** (the owner's choice on 2026-11-14, replacing Render): demo mode, one
-  container, the owner's steps with a $10 spend cap (`docs/hosting-cloud-run.md`). **Live since 2026-11-22**; revision 00004 (image `cb50f8c`, 2026-11-26) serves the banner fix and the sample cases: smoke 10 of 10, DV-001 to a posting, cold start 20.7-21.4 s (verification log, M12 rows 43 and 44).
+  container, the owner's steps with a $10 spend cap (`docs/hosting-cloud-run.md`). **Live since 2026-11-22**; revision 00004 (image `cb50f8c`, 2026-11-26) serves the banner fix and the sample cases: smoke 10 of 10, DV-001 to a posting, cold start 20.7-21.4 s (verification log, M12 rows 43 and 44). **LIVE-06** (ADR-0089): a fast path that skips setup already done, start timings and a wake page for vamsialla.com; tested locally (row 45), live after the owner's redeploy.
 
 ## Milestone 11 deliverables
 - **Research first:** six protocol documents from primary sources (2026-11-11), RFC-0004, ADR-0071. MCP 2026-07-28, A2A 1.0, AG-UI 1.0 (the 1.1 draft isn't used).

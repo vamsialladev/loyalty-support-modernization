@@ -1444,3 +1444,63 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   - the spend cap not firing in the §5.3 test (then stop: the owner chooses again; the disable-billing function, tested with
     `SIMULATE_DEACTIVATION` first);
   - the owner choosing request-based billing (then build and test jobs-in-requests first).
+
+## ADR-0089: A shorter cold start: skip setup that's already done, and a wake page off the app
+- **Context:** after 15 quiet minutes Cloud Run stops the demo, and the next visitor waits about 21 s (verification
+  log M12 row 44: 20.72, 20.75 and 21.42 s on revision 00004). ADR-0088 listed the cause it expected: every start
+  runs provisioning, both databases' migrations and the grants. The owner chose (2026-11-26) a wake page off the app
+  and a faster start, and ruled out reporting ready early and `--min-instances 1` (about $51.84 a month at list
+  price, a projection; `docs/backlog.md`).
+- **Options considered:**
+  - **A page served by the app while it starts:** it needs the startup probe to pass before the app is ready, so
+    Cloud Run would send traffic to a revision that can't start. Rejected (the owner, 2026-11-26).
+  - **A wake page on vamsialla.com:** static, outside the app. It asks the demo for `/login` and opens it once it
+    answers. Chosen.
+  - **Migrations in a Cloud Run Job at deploy time:** moves the work out of every start. It adds a job, its
+    permissions and a step to every deploy.
+  - **A fast path in the launcher:** skip provisioning, migrations and grants when a read-only check finds them
+    already in place. Chosen.
+  - **Start the mock API and the app at once:** the mock API took 6–24 s and the app 17–41 s here, one after the
+    other. It needs the startup probe on `/readyz` (database migrated and the mock API ready), so it changes the
+    deploy command. Not done here: it's the next measured option.
+- **Decision:**
+  - **The fast path** (`set_up_already` in `app/demo_launch.py`). It is read-only and requires all of these:
+    - the app, mock and owner roles sign in with this key's passwords;
+    - both databases are at the code's migration heads;
+    - the app role can read and write every table;
+    - the app role can only add to `case_events` and `system_events`, and can't change `alembic_version`;
+    - every sequence is usable.
+
+    If any check fails, the full setup runs, as before. Only two expected states count as "not set up yet": a
+    refused sign-in, and a missing or unreadable migrations table. Any other database error stops the start loudly
+    instead of falling back.
+  - **Timing lines:** each start prints `demo startup:` lines (name and seconds, never a value). The first database
+    connection is its own phase, so Neon's wake-up shows apart from our own work on the live demo.
+  - **No Cloud Run Job for now.** On an ordinary cold start the fast path already skips the same work, so a job
+    would save nothing more there. It would only help the first start after a deploy that adds a migration, once
+    per deploy, at the cost of a job and a deploy step. Revisit if that first start matters, or if a migration grows
+    slow.
+  - **The wake page:** `site/loyalty-demo.html` and `site/assets/demo-wake.js`, for the owner to copy into the
+    site. Install steps are in `site/README.md`.
+- **Tradeoff:**
+  - **The check costs time:** 0.7–5.4 s locally, for three sign-ins and two reads. It saves provisioning, two
+    migration processes and the grants.
+  - **A schema changed by hand, with its version left at head, isn't detected.** The full path wouldn't detect it
+    either: `alembic upgrade head` does nothing at head.
+  - **The wake page can't tell "awake" from "paused":** a `no-cors` request hides the reply. The page says so.
+- **Result:**
+  - The Postgres test passes: the check says "not set up" with no roles, with no migrations, with no grants, with a
+    new key, with writable audit history, with an unreadable table, and with a database behind its head. It says
+    "set up" only when everything is in place.
+  - Writing that test found two bugs in the check before anything shipped (verification log M12 row 45).
+  - **Local timings** (`performance/reports/2026-11-27-demo-startup-compare.json`; 10 other containers were running,
+    so they're noisy): the before and after images took turns.
+    - Ordinary cold starts, before vs after: 93.50 vs 73.95 s, 91.98 vs 38.61 s, 38.19 vs 32.11 s.
+    - The phases the fast path skips took 25.76 s on the after image's first start (roles 2.99 s, migrations 10.51
+      and 12.11 s, grants 0.15 s).
+  - **Live:** not measured yet; it waits for the owner's redeploy.
+- **What would change this:**
+  - the live phase lines showing Neon's wake-up, not our work, is most of the 21 s (then the fast path can't help
+    much, and only a warm instance or a different database can);
+  - a migration that grows slow, or a first start after a deploy that matters (then the Cloud Run Job);
+  - the owner accepting the `/readyz` probe change (then start the mock API and the app at once, and measure).
