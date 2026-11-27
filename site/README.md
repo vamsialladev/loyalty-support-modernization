@@ -15,7 +15,8 @@ about 90 on the first visit of the day (verification log, Milestone 12, rows 43 
    says a new connection goes into the CSP on every page, so add it to the other pages too, or keep it on this page
    only and record why. It's only needed here.
 3. Point the Stage 9 "(live)" link at `/loyalty-demo.html` instead of the `run.app` address.
-4. Run the site's own checks (html-validate, lychee, Lighthouse) before pushing.
+4. Run the site's own checks before pushing: `python scripts/site_sync.py --check` (passes with this page added,
+   checked 2026-11-27 on a copy of the site), html-validate, lychee and Lighthouse.
 
 ## What it can't do
 - **It can't tell "awake" from "paused".** The request is `no-cors`, so the browser hides the demo's reply from
