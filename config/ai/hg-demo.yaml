@@ -17,6 +17,8 @@ models:
   claude-haiku-5-5:
     input_per_mtok: 0.10
     output_per_mtok: 0.50
+    cache_write_per_mtok: 0.125  # 5-minute cache writes; prompts up to 100,000 tokens (re-checked 2026-11-26)
+    cache_read_per_mtok: 0.01    # cache hits and refreshes (re-checked 2026-11-26)
     checked_on: "2026-11-06"
     deprecated: false
     retires_on: null       # none published as of checked_on; python -m app.ai.lifecycle reviews it (ENT-15)

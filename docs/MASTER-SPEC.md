@@ -2027,7 +2027,8 @@ Run the relevant checks and update the requirements matrix after each milestone.
 10. Benchmark runner, thresholds, A/B/C comparison, error analysis, business-value report.
 11. MCP, then A2A, then AG-UI.
 12. Performance and load tests, observability, CI/CD, Docker hardening, IaC (validate only), rollback.
-13. Operational drills, recovery, incident exercises.
+13. Operational drills, recovery, incident exercises. *(Owner, 2026-11-26: Milestone 13 is now safe AI caching; these
+    drills run as Milestone 13b, right after it. `CLAUDE.md`, ADR-0090.)*
 14. Second customer configuration.
 15. Actual-tool exercises, including bolt.new/React frontend and Supabase profile, as access allows.
 16. Optional protocol labs: A2UI, MCP Apps, Agent Client Protocol, historical ACP, ANP, commerce, payments.

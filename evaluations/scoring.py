@@ -52,6 +52,8 @@ class CaseResult:
     latency_s: float | None = None
     input_tokens: int = 0
     output_tokens: int = 0
+    cache_read_tokens: int = 0  # L3 (Milestone 13); earlier records have neither field
+    cache_write_tokens: int = 0
     cost_usd: float = 0.0
     interrupted: bool = False
     reopened: bool = False  # the member came back (simulated)

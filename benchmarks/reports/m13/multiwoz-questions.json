@@ -1,0 +1,34 @@
+{
+ "label": "Real public conversation data: MultiWOZ 2.2 test split, written by crowd workers in a role-play (licence: MIT per the repository, Apache-2.0 per the Hugging Face card; docs/datasets.md). No model used.",
+ "source": "github.com/budzianowski/multiwoz @ fe0c8e65cfcd8462bd33c86e35f21addc84ca82b, data/MultiWOZ_2.2/test",
+ "files_sha256": {
+  "dialogues_001.json": "d6f43876cf130fdb2dfa8f96bc056b0995354137f02122e004925d01264ed386",
+  "dialogues_002.json": "89af95d8f596a448e733d59b31be78f1dd1632eddd99d5cb298a3fcb1ac9d185"
+ },
+ "dialogues": 1000,
+ "hotel_dialogues": 395,
+ "hotel_dialogues_with_a_question": 200,
+ "user_turns_about_the_hotel": 1713,
+ "user_turns_booking": 483,
+ "user_turns_asking_a_question": 287,
+ "question_share_of_hotel_turns": 0.1675,
+ "requested_slots": {
+  "hotel-phone": 73,
+  "hotel-postcode": 55,
+  "hotel-address": 54,
+  "hotel-ref": 44,
+  "hotel-pricerange": 34,
+  "hotel-internet": 32,
+  "hotel-parking": 31,
+  "hotel-area": 27,
+  "hotel-name": 22,
+  "hotel-type": 13,
+  "hotel-stars": 7
+ },
+ "question_turns_about_own_booking": 44,
+ "question_turns_public_without_a_hotel_name": 95,
+ "question_turns_public_about_a_named_hotel": 148,
+ "named_public_repeats_keyed_by_hotel_and_slots": 22,
+ "named_public_repeats_keyed_by_slots_only": 109,
+ "slot_only_repeats_where_an_earlier_one_was_another_hotel": 106
+}

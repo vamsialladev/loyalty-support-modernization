@@ -8,6 +8,8 @@ from pathlib import Path
 
 import yaml
 
+from app.ports.model_provider import Usage
+
 ROOT = Path(__file__).resolve().parents[2]
 MICRO = 1_000_000
 
@@ -34,11 +36,44 @@ class ModelPrice:
     checked_on: str
     deprecated: bool = False
     retires_on: str | None = None  # the provider's published retirement date, if any (ENT-15, app/ai/lifecycle.py)
+    # Prompt caching (L3, ADR-0091): the 5-minute write rate and the read rate. Left out, cached tokens are charged at
+    # twice the input price, the most any cache write costs (the 1-hour rate), so a cap can't be passed by caching.
+    cache_write_per_mtok: float | None = None
+    cache_read_per_mtok: float | None = None
 
-    def cost_microusd(self, input_tokens: int, output_tokens: int) -> int:
-        """Rounded up, so a cap can't be passed by rounding."""
-        dollars_micro = input_tokens * self.input_per_mtok + output_tokens * self.output_per_mtok
+    @property
+    def _unknown_cache_rate(self) -> float:
+        return 2 * self.input_per_mtok
+
+    @property
+    def worst_input_per_mtok(self) -> float:
+        """The most one input token can cost when caching is asked for: the check before a call uses it."""
+        rates = (self.input_per_mtok, self.cache_write_per_mtok, self.cache_read_per_mtok)
+        known = [r for r in rates if r is not None]
+        if self.cache_write_per_mtok is None or self.cache_read_per_mtok is None:
+            known.append(self._unknown_cache_rate)
+        return max(known)
+
+    def cost_microusd(self, input_tokens: int, output_tokens: int, *, cache_read: int = 0, cache_write: int = 0) -> int:
+        """Rounded up, so a cap can't be passed by rounding. `input_tokens` is the uncached part, as the provider
+        reports it; cache reads and writes are counted on top."""
+        read_rate = self._unknown_cache_rate if self.cache_read_per_mtok is None else self.cache_read_per_mtok
+        write_rate = self._unknown_cache_rate if self.cache_write_per_mtok is None else self.cache_write_per_mtok
+        dollars_micro = (
+            input_tokens * self.input_per_mtok
+            + output_tokens * self.output_per_mtok
+            + cache_read * read_rate
+            + cache_write * write_rate
+        )
         return int(dollars_micro) + (0 if dollars_micro == int(dollars_micro) else 1)
+
+    def usage_cost_microusd(self, usage: Usage) -> int:
+        return self.cost_microusd(
+            usage.input_tokens,
+            usage.output_tokens,
+            cache_read=usage.cache_read_tokens,
+            cache_write=usage.cache_write_tokens,
+        )
 
 
 @dataclass(frozen=True)

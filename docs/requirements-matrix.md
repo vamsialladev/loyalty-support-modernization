@@ -354,6 +354,18 @@ rest are Tier 2.
 | DEF-02 | Tooling: uv + lockfile, ruff, mypy, gitleaks, pip-audit, syft, Trivy, Terraform | App. B | 1 | 1, 12 | other | `pyproject.toml`, `uv.lock` (uv, ruff, mypy, pytest so far) | verification log 2026-10-28 | Implemented but unverified |
 | FINAL-01 | Final acceptance report (N.2) with every item classified | N.2 | 4 | 20 | other | — | — | Planned (M20) |
 
+## Milestone 13 (owner, 2026-11-26): safe AI caching, proven by metrics
+
+The spec's own Milestone 13 items (drills: ROLL-01 to 04, SEC-21, ENT-20, 26, 36) keep "Planned (M13)" and run as
+Milestone 13b, right after this one (owner, 2026-11-26).
+
+| ID | Requirement | Spec | Tier | M | Score | Implementation | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|
+| CACHE-01 | Phase 1: classify every arm C step for caching; repeat rates, calls and tokens per case, latency; opportunity per layer at 2 and 100 properties (estimates); draft targets or a decision not to build | Owner, B.12, E4 | 2 | 13 | bench | `evaluations/m13_baseline.py`, `benchmarks/reports/m13/baseline.json`, `docs/m13-baseline.md`, ADR-0090 (draft) | `tests/test_m13_baseline.py` | Implemented and verified |
+| CACHE-02 | Phase 2: build only the layers Phase 1 supports, each rule tested first, flag per layer default OFF, kill switch, metrics and spans, runbook | Owner, B.12 | 2 | 13 | core | L3 only (owner's gate): `prompt_cache` on the provider port, `FEATURE_PROMPT_CACHE` (off), `app/services/prompt_cache.py` switch and `/admin`, cache rates in `config/ai/hg-demo.yaml`, migration 0014, `/metrics`, `loyalty.ai.cache_tokens`, GenAI cache attributes, `docs/runbooks/prompt-cache.md`, ADR-0091. L1, L2, L5, L6 not built, with the evidence (ADR-0090); L4 not applicable | `tests/test_prompt_cache.py` | Implemented but unverified |
+| CACHE-03 | Phase 3: shadow mode, arms on the same frozen cases, ≥3 live runs under a cap approved by the owner | Owner, E4 | 2 | 13 | bench | Pre-registered: `docs/m13-phase3-plan.md`, `benchmarks/configs/arm-c-live-prompt-cache.yaml`; waiting for the owner's cost approval | — | Planned (M13) |
+| CACHE-04 | Phase 4: results, decision memo, case study section, spend log | Owner | 2 | 13 | other | — | — | Planned (M13) |
+
 ## Appendix E: enterprise AI practices (Tier 2; milestone per the spec's placement)
 
 | ID | Requirement | Spec | Tier | M | Score | Implementation | Evidence | Status |

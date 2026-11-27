@@ -55,7 +55,10 @@ class ArmMetrics:
     approvals_approved: int = 0
     approvals_rejected: int = 0
     ai_runs: int = 0
-    ai_tokens: int = 0
+    ai_tokens: int = 0  # uncached input, cache reads and writes, and output
+    ai_cache_read_tokens: int = 0  # L3 (ADR-0091)
+    ai_cache_write_tokens: int = 0
+    ai_input_tokens: int = 0  # every input token, cached or not
     ai_cost_microusd: int = 0
     ai_cost_per_case_microusd: int | None = None  # over the cases that had an AI run
 
@@ -146,7 +149,11 @@ def collect(s: Session, who: Identity) -> Metrics:
             ai_cases[key] = ai_cases.get(key, 0) + 1
         for run in own_runs:
             stats.ai_runs += 1
-            stats.ai_tokens += run.input_tokens + run.output_tokens
+            cached = run.cache_read_tokens + run.cache_write_tokens
+            stats.ai_tokens += run.input_tokens + cached + run.output_tokens
+            stats.ai_input_tokens += run.input_tokens + cached
+            stats.ai_cache_read_tokens += run.cache_read_tokens
+            stats.ai_cache_write_tokens += run.cache_write_tokens
             stats.ai_cost_microusd += run.cost_microusd
         for item in feedback_by_case.get(case.id, []):
             stats.feedback_helpful += item.rating == "helpful"

@@ -35,7 +35,8 @@
   <p>Status: {% for name, n in r.by_status.items() %}{{ name }} {{ n }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
   {% if r.engine_results %}<p>Engine's latest result: {% for name, n in r.engine_results.items() %}{{ name }} {{ n }}{% if not loop.last %} · {% endif %}{% endfor %}</p>{% endif %}
   <p>Approvals: approved {{ r.approvals_approved }} · rejected {{ r.approvals_rejected }}</p>
-  {% if r.ai_runs %}<p data-testid="ai-cost-{{ r.arm }}-{{ r.kind }}">AI runs {{ r.ai_runs }} · tokens {{ r.ai_tokens }} · cost ${{ "%.4f"|format(r.ai_cost_microusd / 1000000) }}{% if r.ai_cost_per_case_microusd is not none %} · per case ${{ "%.4f"|format(r.ai_cost_per_case_microusd / 1000000) }}{% endif %}</p>{% endif %}
+  {% if r.ai_runs %}<p data-testid="ai-cost-{{ r.arm }}-{{ r.kind }}">AI runs {{ r.ai_runs }} · tokens {{ r.ai_tokens }} · cost ${{ "%.4f"|format(r.ai_cost_microusd / 1000000) }}{% if r.ai_cost_per_case_microusd is not none %} · per case ${{ "%.4f"|format(r.ai_cost_per_case_microusd / 1000000) }} · per 1,000 cases ${{ "%.2f"|format(r.ai_cost_per_case_microusd / 1000) }}{% endif %}</p>
+  <p data-testid="ai-cache-{{ r.arm }}-{{ r.kind }}">Prompt cache: {% if r.ai_cache_read_tokens or r.ai_cache_write_tokens %}{{ r.ai_cache_read_tokens }} of {{ r.ai_input_tokens }} input tokens read from the cache ({{ "%.0f"|format(100 * r.ai_cache_read_tokens / r.ai_input_tokens) }}%) · {{ r.ai_cache_write_tokens }} written · model calls avoided 0 (caching makes the same calls cheaper){% else %}not used{% endif %}</p>{% endif %}
 </section>
 {% endfor %}
 {% if metrics.tool_calls %}

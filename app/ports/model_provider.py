@@ -84,7 +84,14 @@ class ModelProvider(Protocol):
     is_mock: bool
 
     def complete(
-        self, system: str, messages: list[Message], tools: list[ToolSpec], max_tokens: int, timeout_seconds: float
+        self,
+        system: str,
+        messages: list[Message],
+        tools: list[ToolSpec],
+        max_tokens: int,
+        timeout_seconds: float,
+        *,
+        prompt_cache: bool = False,
     ) -> ModelTurn: ...
 
     def read_image(

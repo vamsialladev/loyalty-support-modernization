@@ -26,6 +26,7 @@ from app.observability.model_calls import TracedProvider
 from app.persistence.models import AiRun, AiSpend, AiStep, Case
 from app.ports.model_provider import ModelProvider, ModelTurn, UserMessage
 from app.services import jobs
+from app.services import prompt_cache as prompt_cache_switch
 from app.services.instrumentation import record
 
 MICRO = 1_000_000
@@ -50,6 +51,7 @@ class AiRuntime:
     provider: ModelProvider | None
     caps: SpendCaps = SpendCaps()
     unavailable_reason: str = ""
+    prompt_cache: bool = False  # L3, FEATURE_PROMPT_CACHE (default off); the kill switch can still turn it off
 
     @property
     def description(self) -> str:
@@ -172,7 +174,10 @@ def run_loop(
         )
 
     def priced(turn: ModelTurn) -> int:
-        return 0 if price is None else price.cost_microusd(turn.usage.input_tokens, turn.usage.output_tokens)
+        return 0 if price is None else price.usage_cost_microusd(turn.usage)
+
+    # Read once per run: a kill switch flipped mid-run applies from the next run (ADR-0091).
+    cache = runtime.prompt_cache and not prompt_cache_switch.is_killed(s)
 
     budget = Budget(None if provider.is_mock else remaining_microusd(s, runtime.caps), priced)
     step_number = [0]
@@ -204,7 +209,17 @@ def run_loop(
 
     started = time.monotonic()
     traced = TracedProvider(provider, case_id=case.id, cost=priced)  # GenAI spans, no content (ADR-0077)
-    loop = Loop(traced, prompt.text, config.limits, ctx, budget, cancelled=cancelled, on_step=on_step, on_turn=on_turn)
+    loop = Loop(
+        traced,
+        prompt.text,
+        config.limits,
+        ctx,
+        budget,
+        cancelled=cancelled,
+        on_step=on_step,
+        on_turn=on_turn,
+        prompt_cache=cache,
+    )
     result = loop.run(opening)
     return run, _finish(s, case, run, result, result.stop.value, int((time.monotonic() - started) * 1000))
 
@@ -214,6 +229,7 @@ def _finish(s: Session, case: Case, run: AiRun, result: LoopResult, reason: str,
     run.stop_reason = reason
     run.turns, run.tool_calls = result.turns, result.tool_calls
     run.input_tokens, run.output_tokens = result.input_tokens, result.output_tokens
+    run.cache_read_tokens, run.cache_write_tokens = result.cache_read_tokens, result.cache_write_tokens
     run.cost_microusd = result.cost_microusd
     run.elapsed_ms = elapsed_ms
     run.problems = list(result.problems)

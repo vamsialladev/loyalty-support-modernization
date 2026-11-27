@@ -1,5 +1,30 @@
 # Session handoff
 
+## Milestone 13: safe AI caching (started 2026-11-26). Phase 2 built; Phase 3 waits for the owner's cost approval
+- **Scope (owner, 2026-11-26):** find from Stage 9's metrics where caching helps arm C; build only there, safely;
+  prove it in business terms with zero wrong reuses. Four phases: measure, build, prove, business outcome. Standing
+  orders: decide routine choices and record them, batch at most 3 questions with a recommended answer, merge on
+  green, but **stop before paid spend, deploys, publishing, deleting data or weakening a gate.**
+- **Owner's decisions (2026-11-26, `CLAUDE.md`):** Phase 1 gate approved; build only **L3** (provider prompt
+  caching), flag off; L1, L2, L5, L6 not built with the evidence; L4 n/a; MultiWOZ 2.2 approved; the spec's drills
+  move to **13b**; headline "answer caching is unsafe (910 look-alike pairs, 0 shared correct answers); prompt
+  caching is the safe win"; save full test output; live runs only after an approved estimate (cap $10).
+- **Where:** worktree `C:\projects\project1\lsm-m13\wt-cache`, branch `feat/m13-answer-cache` from `origin/main` at
+  `005a937` (still the tip on 2026-11-26: Dependabot round two not merged yet). Don't touch the shared checkout or
+  the `lsm-dep-ci` worktrees. **Rebase again before pushing.** Full test logs go to the session scratchpad `logs/`.
+- **Phase 1** (`docs/m13-baseline.md`, ADR-0090): answer caching has no safe target; MultiWOZ 2.2 (real hotel
+  dialogues): 148 of 1,713 hotel turns are public questions about a named hotel, 22 repeat; an answer cache belongs
+  to Stage 1 or a gateway (BL-M13-02).
+- **Phase 2** (ADR-0091, CACHE-02): `prompt_cache` keyword on the provider port; `FEATURE_PROMPT_CACHE` (off);
+  `/admin` switch (off only); cache rates priced and capped; migration 0014; `/metrics`, gauge, spans;
+  `docs/runbooks/prompt-cache.md`. Tests: `tests/test_prompt_cache.py`, written first.
+- **Phase 3** (`docs/m13-phase3-plan.md`, pre-registered): arms A (no cache) and D (L3) on the held-out 80, 3 runs
+  each, alternating; expected about $0.71, worst about $0.89, hard limit $1.55. **Waiting for the owner:** the
+  approval, and copying `.env` into this worktree (the assistant never reads it). Then: merge L3, write the freeze,
+  smoke on 5 cases, the six runs, results.
+- **Not done yet:** push and PR (after the rebase and local checks); Phase 4 (results, memo, case study section).
+- **The prototype** `C:\Users\Vamsi\Downloads\Loyalty-Cache-Lab` was read, never run. Reference only.
+
 **Updated:** 2026-11-26 (revision 00004 checked live, the README's live link, the cap check and the second
 Dependabot round). Before that, 2026-11-14, at the end of Milestone 12: operations, delivery and the public demo,
 merged as fourteen pull requests.

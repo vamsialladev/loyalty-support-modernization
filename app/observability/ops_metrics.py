@@ -10,6 +10,7 @@ snapshot from the stored tables (`snapshot`), so the numbers mean the same as th
 | `loyalty.jobs.dead` | jobs | gave up; a person decides |
 | `loyalty.ai.spend` | USD | provider spend, by `period` (day, month), as the caps count it |
 | `loyalty.ai.cap` | USD | the configured caps, by `period`, so an alert can compare |
+| `loyalty.ai.cache_tokens` | tokens | prompt-cache tokens, AI runs of the last 24 h, by `kind` (read, write, input) |
 | `loyalty.security.refusals` | events | refusals in the last 15 minutes, by `action` |
 | `loyalty.protocol.calls` | calls | MCP and A2A calls in the last 15 minutes, by `protocol` |
 
@@ -28,9 +29,10 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.domain.business_time import format_utc, parse_utc
-from app.persistence.models import Job, SystemEvent
+from app.persistence.models import AiRun, Job, SystemEvent
 
 WINDOW_MINUTES = 15
+CACHE_WINDOW_HOURS = 24
 REFUSALS = ("sign_in_failed", "authorization_denied", "rate_limited", "csrf_failed")
 PROTOCOL_CALLS = {"mcp_call": "mcp", "a2a_call": "a2a"}
 MICRO = 1_000_000
@@ -52,12 +54,21 @@ def snapshot(s: Session, caps_usd: Mapping[str, float] | None = None, now: datet
         .group_by(SystemEvent.action)
     )
     recent = {action: count for action, count in rows}
+    day_ago = format_utc(moment - timedelta(hours=CACHE_WINDOW_HOURS))
+    read, write, plain = s.execute(
+        select(
+            func.coalesce(func.sum(AiRun.cache_read_tokens), 0),
+            func.coalesce(func.sum(AiRun.cache_write_tokens), 0),
+            func.coalesce(func.sum(AiRun.input_tokens), 0),
+        ).where(AiRun.started_at_utc >= day_ago)
+    ).one()
     return {
         "jobs_queued": len(waiting),
         "jobs_oldest_age": round(oldest, 1),
         "jobs_dead": int(dead),
         "ai_spend": {"day": spent_microusd(s, day) / MICRO, "month": spent_microusd(s, month) / MICRO},
         "ai_cap": dict(caps_usd or {}),
+        "ai_cache_tokens": {"read": int(read), "write": int(write), "input": int(read) + int(write) + int(plain)},
         "refusals": {action: int(recent.get(action, 0)) for action in REFUSALS},
         "protocol_calls": {name: int(recent.get(action, 0)) for action, name in PROTOCOL_CALLS.items()},
     }
@@ -106,6 +117,7 @@ def register(meter: Any, take: Callable[[], dict[str, Any]]) -> None:
     meter.create_observable_gauge("loyalty.jobs.dead", [scalar("jobs_dead")], unit="{job}")
     meter.create_observable_gauge("loyalty.ai.spend", [labelled("ai_spend", "period")], unit="USD")
     meter.create_observable_gauge("loyalty.ai.cap", [labelled("ai_cap", "period")], unit="USD")
+    meter.create_observable_gauge("loyalty.ai.cache_tokens", [labelled("ai_cache_tokens", "kind")], unit="{token}")
     meter.create_observable_gauge("loyalty.security.refusals", [labelled("refusals", "action")], unit="{event}")
     meter.create_observable_gauge("loyalty.protocol.calls", [labelled("protocol_calls", "protocol")], unit="{call}")
 

@@ -40,7 +40,14 @@ from evaluations.world import CUSTOMER, drop_the_duplicate_index, make_world, se
 DATASET = ROOT / "benchmarks" / "datasets" / "v1"
 SEED_DATA = ROOT / "seed_data" / "v1"
 RESULTS = ROOT / "benchmarks" / "results"
-CONFIG_BY_ARM = {"a": "arm-a", "a-as-is": "arm-a-as-is", "b": "arm-b", "c-mock": "arm-c-mock", "c-live": "arm-c-live"}
+CONFIG_BY_ARM = {
+    "a": "arm-a",
+    "a-as-is": "arm-a-as-is",
+    "b": "arm-b",
+    "c-mock": "arm-c-mock",
+    "c-live": "arm-c-live",
+    "c-live-cache": "arm-c-live-prompt-cache",
+}
 SYNTHETIC = "SYNTHETIC data. Scripted agents and a simulated member and supervisor: not human timing, not real people."
 
 
@@ -109,7 +116,8 @@ def runtime_for(config: RunConfig, run_name: str, split: str, budget_usd: float 
         run_name=run_name,
     )
     # The world's own spend table starts empty each run, so the ledger is what holds across runs.
-    return AiRuntime(guarded, SpendCaps(per_run_usd=0.10, daily_usd=hard_cap_usd(), monthly_usd=hard_cap_usd()))
+    caps = SpendCaps(per_run_usd=0.10, daily_usd=hard_cap_usd(), monthly_usd=hard_cap_usd())
+    return AiRuntime(guarded, caps, prompt_cache=config.prompt_cache)
 
 
 def run_cases(

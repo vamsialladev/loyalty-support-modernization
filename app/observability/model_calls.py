@@ -40,11 +40,20 @@ class TracedProvider:
         )
 
     def complete(
-        self, system: str, messages: list[Message], tools: list[ToolSpec], max_tokens: int, timeout_seconds: float
+        self,
+        system: str,
+        messages: list[Message],
+        tools: list[ToolSpec],
+        max_tokens: int,
+        timeout_seconds: float,
+        *,
+        prompt_cache: bool = False,
     ) -> ModelTurn:
         with self._span() as span:
             try:
-                turn = self.inner.complete(system, messages, tools, max_tokens, timeout_seconds)
+                turn = self.inner.complete(
+                    system, messages, tools, max_tokens, timeout_seconds, prompt_cache=prompt_cache
+                )
             except Exception as exc:
                 span.set_attribute(ERROR_TYPE, type(exc).__name__)
                 span.set_status(Status(StatusCode.ERROR))
@@ -55,6 +64,8 @@ class TracedProvider:
                     finish_reason=turn.stop_reason,
                     input_tokens=turn.usage.input_tokens,
                     output_tokens=turn.usage.output_tokens,
+                    cache_read_tokens=turn.usage.cache_read_tokens,
+                    cache_write_tokens=turn.usage.cache_write_tokens,
                     cost_microusd=self.cost(turn) if self.cost else None,
                 )
             )

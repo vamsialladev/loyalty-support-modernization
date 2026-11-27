@@ -22,7 +22,7 @@ class CountingModel:
     def __init__(self) -> None:
         self.calls = 0
 
-    def complete(self, *_args: Any) -> ModelTurn:
+    def complete(self, *_args: Any, **_kwargs: Any) -> ModelTurn:
         self.calls += 1
         return ModelTurn("end_turn", usage=Usage(1000, 100))
 
