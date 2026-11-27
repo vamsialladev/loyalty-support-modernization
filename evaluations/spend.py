@@ -31,6 +31,8 @@ class SpendEntry:
     output_tokens: int
     cost_usd: float
     at_utc: str
+    cache_read_tokens: int = 0  # L3 (Milestone 13); rows written before it have neither field
+    cache_write_tokens: int = 0
 
 
 def spent_usd(ledger: Path = LEDGER) -> float:
@@ -53,14 +55,31 @@ def require_room(worst_case_usd: float, cap_usd: float, reserve_usd: float = 0.0
 
 
 def record(
-    kind: str, run: str, model: str, input_tokens: int, output_tokens: int, cost_usd: float, ledger: Path = LEDGER
+    kind: str,
+    run: str,
+    model: str,
+    input_tokens: int,
+    output_tokens: int,
+    cost_usd: float,
+    ledger: Path = LEDGER,
+    *,
+    cache_read_tokens: int = 0,
+    cache_write_tokens: int = 0,
 ) -> SpendEntry:
     if kind not in KINDS:
         raise ValueError(f"unknown kind of spending: {kind}")
     if cost_usd < 0:
         raise ValueError("a cost can't be negative")
     entry = SpendEntry(
-        kind, run, model, input_tokens, output_tokens, cost_usd, datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        kind,
+        run,
+        model,
+        input_tokens,
+        output_tokens,
+        cost_usd,
+        datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        cache_read_tokens,
+        cache_write_tokens,
     )
     ledger.parent.mkdir(parents=True, exist_ok=True)
     with ledger.open("a", encoding="utf-8", newline="\n") as out:

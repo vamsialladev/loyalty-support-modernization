@@ -154,6 +154,7 @@ VARS: dict[str, Var] = {
         Var("LOG_LEVEL", _enum("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), "DEBUG, INFO, WARNING, ERROR"),
         Var("LOG_FORMAT", _enum("json", "text"), "json or text"),
         Var("FEATURE_LIVE_AI", _bool, "true or false"),
+        Var("FEATURE_PROMPT_CACHE", _bool, "true or false"),  # optional: off when unset (L3, ADR-0090)
         Var("FEATURE_ADJUSTMENT_EXECUTION", _bool, "true or false"),
         Var("FEATURE_PROTOCOL_LABS", _bool, "true or false"),
         Var("FEATURE_MCP", _bool, "true or false"),

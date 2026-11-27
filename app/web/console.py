@@ -58,6 +58,7 @@ from app.services import (
     metrics,
     policies,
     policy_publishing,
+    prompt_cache,
     rate_limit,
     retention,
     sessions,
@@ -1115,6 +1116,10 @@ def install_console(
             system_events=system_events(s),
             switch=kill_switch.state(s),
             switch_engaged=kill_switch.is_engaged(s),
+            prompt_cache_flag=settings.feature_prompt_cache,
+            prompt_cache_killed=prompt_cache.is_killed(s),
+            prompt_cache_on=settings.feature_prompt_cache and not prompt_cache.is_killed(s),
+            prompt_cache_switch=prompt_cache.state(s),
         )
 
     @app.get("/admin/users", response_class=HTMLResponse)
@@ -1216,6 +1221,14 @@ def install_console(
     ) -> Response:
         check_csrf(active, csrf)
         kill_switch.set_engaged(s, active.identity, engage == "on", reason)
+        return RedirectResponse("/admin", status_code=303)
+
+    @app.post("/admin/prompt-cache", response_model=None)
+    def set_prompt_cache(
+        s: DB, active: User, kill: Annotated[str, Form()], reason: Annotated[str, Form()] = "", csrf: Csrf = ""
+    ) -> Response:
+        check_csrf(active, csrf)
+        prompt_cache.set_killed(s, active.identity, kill == "on", reason)
         return RedirectResponse("/admin", status_code=303)
 
     @app.post("/admin/policies/draft", response_model=None)

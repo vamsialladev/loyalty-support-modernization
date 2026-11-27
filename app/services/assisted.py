@@ -66,7 +66,7 @@ def runtime_from_settings(settings: AppSettings) -> AiRuntime:
     from app.adapters.circuit import GuardedModel, breaker_for
 
     model = GuardedModel(AnthropicModel(settings.anthropic_model), breaker_for("model:anthropic"))  # ADR-0081
-    return AiRuntime(model, caps)  # GuardedModel has the provider's interface
+    return AiRuntime(model, caps, prompt_cache=settings.feature_prompt_cache)  # GuardedModel has the interface
 
 
 def mode_label(settings: AppSettings) -> str:
@@ -201,7 +201,7 @@ def _read_images(
             s.commit()
             return rec
         if not provider.is_mock and price is not None:
-            add_spend(s, price.cost_microusd(usage.input_tokens, usage.output_tokens))
+            add_spend(s, price.usage_cost_microusd(usage))
         found = fields.get("confirmation")
         matched = found in own
         record(s, case, jobs.SYSTEM, "document_read", method="vision", result="matched" if matched else "no_match")

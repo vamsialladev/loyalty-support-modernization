@@ -120,8 +120,19 @@ class GuardedModel:
         self.breaker.record_success()
         return result
 
-    def complete(self, system: str, messages: Any, tools: Any, max_tokens: int, timeout_seconds: float) -> Any:
-        return self._call(lambda: self.inner.complete(system, messages, tools, max_tokens, timeout_seconds))
+    def complete(
+        self,
+        system: str,
+        messages: Any,
+        tools: Any,
+        max_tokens: int,
+        timeout_seconds: float,
+        *,
+        prompt_cache: bool = False,
+    ) -> Any:
+        return self._call(
+            lambda: self.inner.complete(system, messages, tools, max_tokens, timeout_seconds, prompt_cache=prompt_cache)
+        )
 
     def read_image(self, media_type: str, content: bytes, timeout_seconds: float) -> Any:
         return self._call(lambda: self.inner.read_image(media_type, content, timeout_seconds))

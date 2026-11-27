@@ -207,6 +207,8 @@ class AiRun(Base):
     tool_calls: Mapped[int] = mapped_column(Integer, default=0)
     input_tokens: Mapped[int] = mapped_column(Integer, default=0)
     output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cache_read_tokens: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # L3, migration 0014
+    cache_write_tokens: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     cost_microusd: Mapped[int] = mapped_column(Integer, default=0)
     elapsed_ms: Mapped[int] = mapped_column(Integer, default=0)
     problems: Mapped[list[str]] = mapped_column(JSON, default=list)

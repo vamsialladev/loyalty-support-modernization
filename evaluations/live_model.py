@@ -39,6 +39,8 @@ class GuardedModel:
         self.cost_microusd = 0
         self.input_tokens = 0
         self.output_tokens = 0
+        self.cache_read_tokens = 0
+        self.cache_write_tokens = 0
         self.calls = 0
         self.stopped_because = ""
 
@@ -46,10 +48,12 @@ class GuardedModel:
     def stopped(self) -> bool:
         return bool(self.stopped_because)
 
-    def _admit(self, output_tokens: int) -> None:
+    def _admit(self, output_tokens: int, prompt_cache: bool = False) -> None:
         if self.stopped:
             raise ProviderRejected(self.stopped_because)
-        worst = self.price.cost_microusd(WORST_INPUT_TOKENS, output_tokens) / 1_000_000
+        # With caching, any input token could be billed at the dearest rate there is (a cache write).
+        rate = self.price.worst_input_per_mtok if prompt_cache else self.price.input_per_mtok
+        worst = (WORST_INPUT_TOKENS * rate + output_tokens * self.price.output_per_mtok) / 1_000_000
         if self.cost_microusd / 1_000_000 + worst > self.run_limit_usd:
             self.stopped_because = f"this run's limit of ${self.run_limit_usd:.2f} would be passed"
             raise ProviderRejected(self.stopped_because)
@@ -60,10 +64,12 @@ class GuardedModel:
             raise ProviderRejected(self.stopped_because) from exc
 
     def _record(self, usage: Usage) -> None:
-        cost = self.price.cost_microusd(usage.input_tokens, usage.output_tokens)
+        cost = self.price.usage_cost_microusd(usage)
         self.cost_microusd += cost
         self.input_tokens += usage.input_tokens
         self.output_tokens += usage.output_tokens
+        self.cache_read_tokens += usage.cache_read_tokens
+        self.cache_write_tokens += usage.cache_write_tokens
         self.calls += 1
         record(
             self.kind,
@@ -73,13 +79,22 @@ class GuardedModel:
             usage.output_tokens,
             cost / 1_000_000,
             self.ledger,
+            cache_read_tokens=usage.cache_read_tokens,
+            cache_write_tokens=usage.cache_write_tokens,
         )
 
     def complete(
-        self, system: str, messages: list[Message], tools: list[ToolSpec], max_tokens: int, timeout_seconds: float
+        self,
+        system: str,
+        messages: list[Message],
+        tools: list[ToolSpec],
+        max_tokens: int,
+        timeout_seconds: float,
+        *,
+        prompt_cache: bool = False,
     ) -> ModelTurn:
-        self._admit(max_tokens)
-        turn = self.inner.complete(system, messages, tools, max_tokens, timeout_seconds)
+        self._admit(max_tokens, prompt_cache)
+        turn = self.inner.complete(system, messages, tools, max_tokens, timeout_seconds, prompt_cache=prompt_cache)
         self._record(turn.usage)
         return turn
 

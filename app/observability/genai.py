@@ -1,6 +1,7 @@
 """GenAI span attribute names, in one place (spec L2, LIVE-03, ADR-0077).
 
-Source: OpenTelemetry GenAI semantic conventions, `open-telemetry/semantic-conventions-genai`, read 2026-11-13. Their
+Source: OpenTelemetry GenAI semantic conventions, `open-telemetry/semantic-conventions-genai`, read 2026-11-13; the
+cache attributes re-read on 2026-11-26 at its first tag, v0.1.0. Their
 status is **Development** (not stable), and the repository has no release yet; they moved out of the core
 semantic-conventions repository in its v1.42.0. So every name lives here, and a rename is a one-file change.
 
@@ -20,7 +21,11 @@ REQUEST_MODEL = "gen_ai.request.model"  # Conditionally Required
 RESPONSE_MODEL = "gen_ai.response.model"  # Recommended
 RESPONSE_ID = "gen_ai.response.id"  # Recommended
 FINISH_REASONS = "gen_ai.response.finish_reasons"  # Recommended, string[]
-INPUT_TOKENS = "gen_ai.usage.input_tokens"  # Recommended
+INPUT_TOKENS = "gen_ai.usage.input_tokens"  # Recommended; SHOULD include cached tokens (v0.1.0)
+# Prompt caching (L3, ADR-0090). Names from `model/gen-ai/registry.yaml` at tag v0.1.0 (commit d0e74ba, 2026-11-21),
+# both Development. Each SHOULD also be counted in INPUT_TOKENS. The older core-repository page used `cache_creation`.
+CACHE_READ_INPUT_TOKENS = "gen_ai.usage.cache_read.input_tokens"
+CACHE_WRITE_INPUT_TOKENS = "gen_ai.usage.cache_write.input_tokens"
 OUTPUT_TOKENS = "gen_ai.usage.output_tokens"  # Recommended
 # Not in the conventions: this project's own, kept under its own prefix so it can't collide.
 COST_MICROUSD = "loyalty.ai.cost_microusd"
@@ -63,6 +68,8 @@ def response_attributes(
     finish_reason: str = "",
     input_tokens: int | None = None,
     output_tokens: int | None = None,
+    cache_read_tokens: int = 0,
+    cache_write_tokens: int = 0,
     cost_microusd: int | None = None,
 ) -> dict[str, Any]:
     attrs: dict[str, Any] = {}
@@ -73,7 +80,12 @@ def response_attributes(
     if finish_reason:
         attrs[FINISH_REASONS] = (finish_reason,)
     if input_tokens is not None:
-        attrs[INPUT_TOKENS] = input_tokens
+        # The provider reports uncached input apart from cache reads and writes; the conventions want the total.
+        attrs[INPUT_TOKENS] = input_tokens + cache_read_tokens + cache_write_tokens
+    if cache_read_tokens:
+        attrs[CACHE_READ_INPUT_TOKENS] = cache_read_tokens
+    if cache_write_tokens:
+        attrs[CACHE_WRITE_INPUT_TOKENS] = cache_write_tokens
     if output_tokens is not None:
         attrs[OUTPUT_TOKENS] = output_tokens
     if cost_microusd is not None:

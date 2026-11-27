@@ -58,6 +58,7 @@ class RunConfig:
     cost_ceiling_usd: float | None
     environment: str
     cache_state: str
+    prompt_cache: bool = False  # L3 (Milestone 13, ADR-0090). Optional, so every earlier configuration reads as off
 
     @property
     def kind(self) -> str:
@@ -99,6 +100,8 @@ def load(name: str, config_dir: Path = CONFIG_DIR, cap_usd: float | None = None)
     missing = [field for field in REQUIRED if field not in data]
     if missing:
         raise ConfigError(f"{name} is missing {', '.join(missing)}")
-    config = RunConfig(name=name, **{field: data[field] for field in REQUIRED})
+    config = RunConfig(
+        name=name, **{field: data[field] for field in REQUIRED}, prompt_cache=bool(data.get("prompt_cache", False))
+    )
     check(config, hard_cap_usd() if cap_usd is None else cap_usd)
     return config

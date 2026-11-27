@@ -69,13 +69,13 @@ def test_the_gauges_export_the_snapshot_with_only_code_labels(arm: ArmA) -> None
         for sm in rm.scope_metrics:
             for metric in sm.metrics:
                 points[metric.name] = [(dict(p.attributes or {}), p.value) for p in metric.data.data_points]
-    assert len(calls) == 1  # one database snapshot for all seven gauges
+    assert len(calls) == 1  # one database snapshot for all eight gauges
     assert points["loyalty.jobs.oldest_age"] == [({}, 600.0)]
     assert ({"period": "day"}, 1.25) in points["loyalty.ai.spend"]
     assert ({"action": "sign_in_failed"}, 2) in points["loyalty.security.refusals"]
     assert ({"protocol": "mcp"}, 1) in points["loyalty.protocol.calls"]
     labels = {k for series in points.values() for attrs, _ in series for k in attrs}
-    assert labels <= {"period", "action", "protocol"}
+    assert labels <= {"period", "action", "protocol", "kind"}  # kind: read, write, input (L3, ADR-0090)
     provider.shutdown()
 
 

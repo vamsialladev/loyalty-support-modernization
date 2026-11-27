@@ -3,7 +3,7 @@ here.
 
 Haiku 5.5 runs adaptive thinking by default and rejects non-default sampling values, so neither is sent. It has no
 server-side refusal fallback, so `refusal` is a stop condition in the loop. `tool_choice` is `auto`, with strict
-schemas.
+schemas. Prompt caching (L3, ADR-0090) is added only when the caller asks, per call; reading a document never caches.
 """
 
 from __future__ import annotations
@@ -97,11 +97,22 @@ class AnthropicModel:
         return out
 
     def complete(
-        self, system: str, messages: list[Message], tools: list[ToolSpec], max_tokens: int, timeout_seconds: float
+        self,
+        system: str,
+        messages: list[Message],
+        tools: list[ToolSpec],
+        max_tokens: int,
+        timeout_seconds: float,
+        *,
+        prompt_cache: bool = False,
     ) -> ModelTurn:
         try:
             create: Any = self.client.with_options(timeout=timeout_seconds).messages.create
+            # L3 (ADR-0090): one top-level marker, so the API puts the breakpoint on the last cacheable block. Nothing
+            # else in the request changes, and the 5-minute cache is the default lifetime.
+            cache: dict[str, Any] = {"cache_control": {"type": "ephemeral"}} if prompt_cache else {}
             response = create(
+                **cache,
                 model=self.model_id,
                 max_tokens=max_tokens,
                 system=system,

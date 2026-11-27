@@ -475,6 +475,8 @@ class Journey:
             latency_s=round(max((r.elapsed_ms for r in runs), default=elapsed * 1000) / 1000, 3),
             input_tokens=sum(r.input_tokens for r in runs),
             output_tokens=sum(r.output_tokens for r in runs),
+            cache_read_tokens=sum(r.cache_read_tokens for r in runs),
+            cache_write_tokens=sum(r.cache_write_tokens for r in runs),
             cost_usd=sum(r.cost_microusd for r in runs) / 1_000_000,
             ai_runs=len(runs),
             ai_fallbacks=sum(1 for r in runs if r.status != "finished"),

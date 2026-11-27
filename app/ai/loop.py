@@ -75,8 +75,10 @@ class LoopResult:
     problems: list[str] = field(default_factory=list)
     turns: int = 0
     tool_calls: int = 0
-    input_tokens: int = 0
+    input_tokens: int = 0  # uncached input, as the provider reports it
     output_tokens: int = 0
+    cache_read_tokens: int = 0
+    cache_write_tokens: int = 0
     cost_microusd: int = 0
 
 
@@ -114,8 +116,10 @@ class Loop:
         on_step: Callable[[StepEvent], None] = lambda _event: None,
         on_turn: Callable[[ModelTurn, int], None] = lambda _turn, _cost: None,
         clock: Callable[[], float] = time.monotonic,
+        prompt_cache: bool = False,
     ) -> None:
         self.provider, self.system, self.limits, self.ctx, self.budget = provider, system, limits, ctx, budget
+        self.prompt_cache = prompt_cache  # L3: asks the provider to cache the prompt; the input itself doesn't change
         self.cancelled, self.on_step, self.on_turn, self.clock = cancelled, on_step, on_turn, clock
         self.seen: Counter[str] = Counter()
         self.repairs = 0
@@ -160,7 +164,12 @@ class Loop:
         timeout = min(self.limits.call_timeout_seconds, max(deadline - started, 0.1))
         try:
             turn = self.provider.complete(
-                self.system, messages, list(TOOL_SPECS), self.limits.max_output_tokens, timeout
+                self.system,
+                messages,
+                list(TOOL_SPECS),
+                self.limits.max_output_tokens,
+                timeout,
+                prompt_cache=self.prompt_cache,
             )
         except ProviderUnavailable as exc:
             self.failures += 1
@@ -172,6 +181,8 @@ class Loop:
         result.turns += 1
         result.input_tokens += turn.usage.input_tokens
         result.output_tokens += turn.usage.output_tokens
+        result.cache_read_tokens += turn.usage.cache_read_tokens
+        result.cache_write_tokens += turn.usage.cache_write_tokens
         cost = self.budget.priced(turn)
         result.cost_microusd += cost
         self.budget.spend(cost)

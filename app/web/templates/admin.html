@@ -17,6 +17,19 @@
   </form>
 </section>
 
+<section class="card" aria-labelledby="pc-h">
+  <h2 id="pc-h">Prompt caching (arm C's model calls)</h2>
+  <p data-testid="prompt-cache-state">Prompt caching is <strong>{{ "on" if prompt_cache_on else "off" }}</strong> · the flag (<code>FEATURE_PROMPT_CACHE</code>) is {{ "on" if prompt_cache_flag else "off" }}{% if prompt_cache_killed %}, and the switch below has turned it off{% endif %}{% if prompt_cache_switch and prompt_cache_switch.changed_by %} · changed by {{ prompt_cache_switch.changed_by }} at {{ prompt_cache_switch.changed_at_utc }}: {{ prompt_cache_switch.reason }}{% endif %}</p>
+  <p class="muted">Caching never changes what the model reads, so turning it off is always safe. It applies from the next AI run. The flag turns it on only with a restart (<code>docs/runbooks/prompt-cache.md</code>).</p>
+  <form method="post" action="/admin/prompt-cache">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="kill" value="{{ 'off' if prompt_cache_killed else 'on' }}">
+    <label for="pc-reason">Reason (at least 10 characters)</label>
+    <textarea id="pc-reason" name="reason" rows="2" required></textarea>
+    <button type="submit">{{ "Allow prompt caching again" if prompt_cache_killed else "Turn prompt caching off" }}</button>
+  </form>
+</section>
+
 <section class="card" aria-labelledby="pol-h">
   <h2 id="pol-h">Policy versions</h2>
   <p class="muted">A draft applies to no stay. Publishing runs the checks, supersedes the version before it and logs who did it.</p>

@@ -62,12 +62,21 @@ class ScriptedModel:
         self.image_fields = image_fields or {}
         self.calls = 0
         self.seen: list[tuple[str, list[Message]]] = []
+        self.cache_requests: list[bool] = []  # what each call asked for, so tests can see the flag arrive
 
     def complete(
-        self, system: str, messages: list[Message], tools: list[ToolSpec], max_tokens: int, timeout_seconds: float
+        self,
+        system: str,
+        messages: list[Message],
+        tools: list[ToolSpec],
+        max_tokens: int,
+        timeout_seconds: float,
+        *,
+        prompt_cache: bool = False,
     ) -> ModelTurn:
         self.calls += 1
         self.seen.append((system, list(messages)))
+        self.cache_requests.append(prompt_cache)
         turn = self.turns.pop(0) if self.turns else ModelTurn(MODEL_DONE, text="(the script ended)")
         if isinstance(turn, Exception):
             raise turn
@@ -135,7 +144,14 @@ class RulesMockModel:
     model_id = MOCK_MODEL_ID
 
     def complete(
-        self, system: str, messages: list[Message], tools: list[ToolSpec], max_tokens: int, timeout_seconds: float
+        self,
+        system: str,
+        messages: list[Message],
+        tools: list[ToolSpec],
+        max_tokens: int,
+        timeout_seconds: float,
+        *,
+        prompt_cache: bool = False,
     ) -> ModelTurn:
         results = _results_by_tool(messages)
         first_user = next(m for m in messages if isinstance(m, UserMessage)).text
