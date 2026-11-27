@@ -1597,3 +1597,47 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   with it, or every PR waits forever); a second maintainer (then require 1 approval); merge conflicts from stale
   branches landing broken code (then turn on up-to-date).
 - **Starter kit:** turn this on in week one of any engagement, not after the first slip.
+
+
+## ADR-0093: Break-glass is code: a time-limited administrator grant, out of band, two people, no renewal
+- **Context:** spec E6 asks for a break-glass procedure with time limits, a reason, an alert and an audit trail
+  (ENT-26). On 2026-11-27 the owner chose code over a document only, with these rules: at most 1 hour; a reason;
+  a security event; a full audit trail; expiry on its own; no renewal, only a new grant; off in the public demo; no
+  granting to oneself and no extending another grant; tests for expiry, audit and refusals.
+- **Options considered:**
+  - **A documented procedure only.** Nothing would enforce the limits. Rejected by the owner.
+  - **A console button for administrators.** The person who needs it is usually not an administrator, and a button
+    that raises your own role is the hole break-glass must not open.
+  - **A command-line grant, out of band, checked on every request.** Chosen.
+- **Decision:**
+  - `python -m app.services.break_glass grant|revoke|list` writes `break_glass_grants` (migration 0015).
+  - `sessions.resolve` raises the person to administrator while an open grant is unexpired, only when the caller
+    allows it. The console and API allow it unless `PUBLIC_DEMO_MODE` is set.
+  - Every audit row written under a grant carries `break_glass_grant`.
+  - Granted, refused, revoked and expired are security events, with severity 4, 3, 3 and 2.
+  - The reason stays in the database. The SIEM export allow-list has the grant's number, minutes and expiry, never
+    the reason.
+- **Tradeoff:**
+  - **Administrator, not "everything":** an administrator can't work cases, so a grant can't move money. That's by
+    design: an emergency fix to configuration shouldn't come with the power to post adjustments.
+  - **An expiry is recorded when it's seen** (the next request, or `list`). The raise ends at the minute either way,
+    because every request checks it.
+  - **The grantor is named, not authenticated:** whoever runs the command already has database access. A real
+    deployment would put the grant behind SSO and a second approver (`docs/break-glass.md`).
+- **Result:**
+  - `tests/test_break_glass.py`, 25 tests. They cover:
+    - the raise and its exact expiry minute;
+    - the security event, with the reason kept out of the export;
+    - the expiry, recorded once;
+    - the grant's number on audit rows;
+    - the public demo ignoring a grant;
+    - 13 refusal paths, each a security event;
+    - no renewal, and a new grant after expiry;
+    - no hand-on, and no revoking by someone raised;
+    - revocation;
+    - the command line and the console flag.
+  - Three planted bugs each failed a test: no self check, expiry one second late, and renewal allowed.
+  - CI runs the rest of the suite and the migration on Postgres.
+- **What would change this decision:** a real customer's SSO (then the grant needs its own sign-in and an approver);
+  a need to break glass for case work (then a separate, narrower grant, never this one); a misuse found in a drill.
+- **Starter kit:** the rules table and the tests move as they are; the roles and the command are customer-specific.
