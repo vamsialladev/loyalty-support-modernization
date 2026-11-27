@@ -16,6 +16,8 @@ synthetic data only. **No drill on the local stack runs until the owner says the
 | 5 | No drill against the live Cloud Run demo or its Neon database (local only; a local drill isn't proof of production availability) | **Yes** |
 | 6 | No spend: no live model call, no new cloud resource | **Yes** |
 
+**Progress (2026-11-27):** the seven F.3 drills and the SEC-21 exercises are written as procedures in `docs/drills.md`, each "Not run". The owner will answer the checklist when the machine is free.
+
 ## Scope: eight requirements
 
 | ID | What it needs | Part |
