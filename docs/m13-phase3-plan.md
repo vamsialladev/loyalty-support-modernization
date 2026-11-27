@@ -27,6 +27,21 @@ Only L3 was built (ADR-0090, owner's gate 2026-11-26), so the brief's four arms 
   (`tests/test_prompt_cache.py::test_the_request_is_identical_apart_from_one_cache_marker`). The paired A/D runs are
   the safety check instead.
 
+## Freeze record (written 2026-11-27, before any Phase 3 run)
+- **New freeze:** `benchmarks/configs/freeze.yaml`, written with `python -m evaluations.freeze --write` on branch
+  `bench/m13-phase3`, from `main` at `a662d60` (PR #85, which added L3, merged with all 8 checks green). It hashes 141
+  files (`app/`, `config/`, `policies/`, the mock API, customer shapes, agents, run configurations and the runner's
+  files). `changes_since_freeze()` returned `[]` straight after.
+- **It replaces** Milestone 10's freeze from commit `2c088e8`, which 54 files had moved away from since (Milestones
+  11 to 13). That freeze stays in git history; Milestone 10's held-out results name their own commits.
+- **Variability cases unchanged** (fixed seed 9, from case IDs alone): HO-001, HO-018, HO-024, HO-035, HO-044, HO-048,
+  HO-060, HO-065, HO-079, HO-080.
+- **Not frozen, on purpose:** scoring and reporting (`evaluations/m13_results.py`), as in Milestone 10, so a corrected
+  metric can re-score stored runs. Each run's manifest records the exact commit it ran from.
+- **Runs:** `scripts\m13_phase3.ps1`, only after the owner's "go". It runs preflight, the smoke run (and stops unless
+  some call read the cache), then the six held-out runs alternating, and writes the results with
+  `python -m evaluations.m13_results`. Console logs: `benchmarks/reports/m13/run-logs/`.
+
 ## Metrics and pass marks (from `docs/m13-baseline.md` §4)
 | Metric | Pass mark for D | Source |
 |---|---|---|

@@ -25,6 +25,11 @@ reads stored files only: no model call, no money, no app code changed.
 | 13 | Guard tests adapted, none weakened | `tests/test_live_guard.py` (its fake accepts the new keyword), `tests/test_ops_metrics.py` (the label allowlist adds `kind`, still code-only labels; "eight gauges"), `tests/test_preflight.py` (fixture gains the new variable) | Each still checks what it checked |
 | 14 | Lint, format, types | `uv run ruff check .`, `ruff format --check .`, `uv run mypy` | Clean; 451 files formatted; mypy: no issues in 187 files |
 | 15 | Release gate on the frozen mock regression | `uv run python -m seed_data.generator generate`, then `uv run python scripts/release_gate.py --force` | **Passed:** 100 case runs match `c-mock-dev` on every decision field. The generator rewrote the committed `evaluations/label-review/review-sheet.csv` as a blank template; restored from git (30 verdicts back) and logged as TD-58 |
+| 16 | PR #85 merged | GitHub | All 8 checks green; merged as `a662d60` (2026-11-27). The owner approved Phase 3 (about $0.71 expected, $1.55 hard limit) and asked to wait for "go" |
+| 17 | New freeze, before any Phase 3 run | `uv run python -m evaluations.freeze --write` on `bench/m13-phase3` | 141 files hashed; `changes_since_freeze()` = `[]`; variability cases unchanged. Replaces `2c088e8` (54 files had moved since). `docs/m13-phase3-plan.md`, freeze record |
+| 18 | Live readiness | `uv run python -m app.preflight --profile live-model` | **READY**; `ANTHROPIC_API_KEY` set from `.env` (no value printed). A one-off read of `.env` through `python-dotenv` was refused by the permission check, rightly: preflight is the only allowed check |
+| 19 | Results script on stored runs | `uv run pytest tests/test_m13_results.py tests/test_m13_baseline.py tests/test_freeze_and_reports.py` (full log kept) | **44 passed.** On Milestone 10's `c-heldout-r1` it reproduces the committed report: 78/80 case success, 0 false approvals, 297 calls, $0.13652. Two first-draft failures were arithmetic slips in the test inputs (each case now really falls below its mark) |
+| 20 | Configs and ledger, no spend | `evaluations.run_config.load` for both arms; `evaluations.spend.spent_usd()` | Both load (claude-haiku-5-5, ceiling $2.50; caching off / on). Ledger total $1.8283 |
 
 ## Milestone 12 (started 2026-11-13)
 
