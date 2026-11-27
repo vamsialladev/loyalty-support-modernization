@@ -15,6 +15,7 @@ real customer names them at handover (`docs/governance.md`).
 | Error rate high | [error-rate.md](error-rate.md) | Application team (L2) |
 | AI spend near its cap | [ai-spend.md](ai-spend.md) | AI operations owner (L3) |
 | AI quality drift | [ai-quality-drift.md](ai-quality-drift.md) | AI operations owner (L3) |
+| Prompt caching: cost, reads, turning it off (no alert; `/metrics`, `/admin`) | [prompt-cache.md](prompt-cache.md) | AI operations owner (L3) |
 | Unusual protocol read volume | [protocol-read-volume.md](protocol-read-volume.md) | Security (L3) |
 | Repeated sign-in failures | [auth-failures.md](auth-failures.md) | Security (L3) |
 
@@ -23,6 +24,6 @@ Where to look:
 | Where | What |
 |---|---|
 | Grafana (local, `--profile observability`) | <http://127.0.0.1:3000> → Dashboards → Loyalty support; Explore → traces by trace ID |
-| Console | `/metrics` (supervisors, administrators, auditors); `/admin` (kill switch, policy versions) |
+| Console | `/metrics` (supervisors, administrators, auditors); `/admin` (kill switch, prompt-cache switch, policy versions) |
 | Logs | `docker compose logs app worker mock-api`: JSON lines with `correlation_id` and `trace_id` |
 | Worker | `docker compose exec worker python -m app.worker --list-dead` |

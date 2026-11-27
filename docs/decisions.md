@@ -1525,3 +1525,35 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   cost cut, or any change in case success or false approvals (then L3 stays off).
 - **Starter kit:** the classification table and `evaluations/m13_baseline.py`'s method (split the spend ledger by
   case, project the re-sent prefix) are reusable. The volumes and prices are customer-specific.
+
+## ADR-0090: L3 prompt caching: one request marker, priced and capped, a flag and a switch
+- **Context:** the owner approved building only L3 at the Phase 1 gate (2026-11-26; ADR-0089). Arm C re-sends 68% of
+  its input tokens from the call before. The provider's automatic caching caches up to the last cacheable block when
+  a request carries one top-level `cache_control` (Anthropic prompt-caching page, read 2026-11-26).
+- **Options considered:**
+  - **Automatic caching (one top-level marker), chosen:** every call reads the previous call's prefix; no breakpoint
+    bookkeeping; the request is otherwise byte-for-byte the same.
+  - Explicit breakpoints on the system prompt and tools only: caches less (only about 1,100 tokens of the ~2,100 on a
+    first call), and adds code that can drift.
+  - 1-hour lifetime: writes cost 2× instead of 1.25×; calls of one case are seconds apart, so 5 minutes is enough.
+  - A self-contained `services/answer_cache/` package (the brief's example): it was for answer caches, which aren't
+    built. L3 is a request option, so it lives in the adapter, the harness and a small switch module.
+- **Decision:**
+  - The port's `complete(..., prompt_cache=False)` keyword; the adapter adds the marker only when asked. Reading a
+    document never caches.
+  - `FEATURE_PROMPT_CACHE` (default off) reaches the runtime; a database switch (`app/services/prompt_cache.py`,
+    `/admin`) can only turn it off, read at the start of each run. A missing row means "not killed".
+  - Cached tokens are priced at their own rates (`config/ai/hg-demo.yaml`). Without configured rates they cost 2× the
+    input price, the most any write costs, so caps can't be passed by caching. The benchmark guard's check before each
+    call uses the dearest input rate when caching is asked for.
+  - Run records (migration 0014), the spend ledger, case results, the `/metrics` page, the
+    `loyalty.ai.cache_tokens` gauge and the spans carry cache reads and writes. Spans follow GenAI conventions v0.1.0:
+    `gen_ai.usage.cache_read.input_tokens`, `gen_ai.usage.cache_write.input_tokens`, and input tokens as the total.
+- **Tradeoff:** the saving is cents at today's volume; the code is small. Cache writes cost 25% more than plain input,
+  so a case whose calls don't reuse the prefix costs more: Phase 3 measures it.
+- **Result so far:** 18 tests in `tests/test_prompt_cache.py`, written first, pass; no live call yet.
+- **What would change this decision:** Phase 3 missing a pass mark (then the flag stays off); a provider change to
+  caching or prices; a longer system prompt or a second customer, where cross-case reuse grows (84% warm at 100
+  properties, `docs/m13-baseline.md` §3).
+- **Starter kit:** the port keyword, the price rule for cached tokens and the switch pattern are reusable; the rates
+  are per provider and model.
