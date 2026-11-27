@@ -1510,7 +1510,7 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   measured, from stored files only (`docs/m13-baseline.md`, `benchmarks/reports/m13/baseline.json`).
 - **Options considered:** L1 exact and L2 semantic answer caches; L3 provider prompt caching; L4 embedding cache; L5
   retrieval cache by index version; L6 tool/API result cache; L7 GPU KV cache (explain only).
-- **Decision (draft until the owner approves the Phase 1 gate):** build L3 only, behind a flag, default OFF. Don't
+- **Decision (approved by the owner, 2026-11-26, at the Phase 1 gate):** build L3 only, behind a flag, default OFF. Don't
   build L1, L2, L5, L6; L4 doesn't apply (no embeddings).
 - **Why:**
   - 910 of 910 word-for-word identical masked message pairs need different answers (654 a different next action), so

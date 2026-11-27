@@ -356,6 +356,9 @@ rest are Tier 2.
 
 ## Milestone 13 (owner, 2026-11-26): safe AI caching, proven by metrics
 
+The spec's own Milestone 13 items (drills: ROLL-01 to 04, SEC-21, ENT-20, 26, 36) keep "Planned (M13)" and run as
+Milestone 13b, right after this one (owner, 2026-11-26).
+
 | ID | Requirement | Spec | Tier | M | Score | Implementation | Evidence | Status |
 |---|---|---|---|---|---|---|---|---|
 | CACHE-01 | Phase 1: classify every arm C step for caching; repeat rates, calls and tokens per case, latency; opportunity per layer at 2 and 100 properties (estimates); draft targets or a decision not to build | Owner, B.12, E4 | 2 | 13 | bench | `evaluations/m13_baseline.py`, `benchmarks/reports/m13/baseline.json`, `docs/m13-baseline.md`, ADR-0089 (draft) | `tests/test_m13_baseline.py` | Implemented and verified |

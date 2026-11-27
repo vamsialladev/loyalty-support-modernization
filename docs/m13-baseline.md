@@ -70,6 +70,31 @@ distinct sets of policy versions, and 95 reused a set seen earlier; on held-out 
 74 reused one. So policy search results would repeat often, per customer. But search is one local Postgres
 full-text query, with no model call behind it.
 
+### 2b. Real hotel messages: how often is it a general question? (`benchmarks/reports/m13/multiwoz-questions.json`)
+> **Real public conversation data: MultiWOZ 2.2 test split, crowd-written role-play (licence: MIT per the
+> repository, Apache-2.0 per the Hugging Face card; `docs/datasets.md`). No model used.** Added after the owner
+> approved the dataset at the Phase 1 gate (2026-11-26).
+
+Of 1,000 test dialogues, 395 involve a hotel. They hold 1,713 user turns about the hotel:
+
+| Kind of hotel turn | Turns | Share | Could an answer cache serve it? |
+|---|---:|---:|---|
+| Asks a question (requested slots in the turn) | 287 | 17% of 1,713 | Depends on the next three rows |
+| … about the guest's own booking (`hotel-ref`) | 44 | | **No:** private |
+| … about a property not named yet ("what area is it in?" while searching) | 95 | | **No:** nothing safe to key on |
+| … a public fact about a named hotel (phone, postcode, address, parking, internet…) | 148 | 9% of 1,713 | **Yes**, keyed by property, version and question |
+| Booking turns (`book_hotel`) | 483 | 28% of 1,713 | No: a transaction |
+
+- Of the 148 public questions about a named hotel, **22 (15%) repeat** one asked earlier about the same hotel, in
+  this 1,000-dialogue sample.
+- Keyed by the question alone, without the property, 109 would "repeat", and **106 of those had another hotel's
+  answer to reuse**. The property has to be part of the key.
+
+So even in a channel built for questions, about one turn in eleven is a public, cacheable question, and a key must
+carry the property. Stage 9's channel is claims: none of its 280 cases asks one. **The answer cache belongs in front
+of Stage 1's knowledge assistant (public policy and property questions) or a Stage 12 gateway, not in Stage 9's
+claims workflow** (backlog BL-M13-02).
+
 ### Model calls (`model_calls` in the JSON)
 The ledger was split into cases by matching each case's stored token totals exactly; all 500 cases matched (a test
 checks every run). The ledger also holds an earlier attempt for `c-live-dev` and `c-live-validation` under the same
