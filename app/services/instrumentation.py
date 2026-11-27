@@ -39,6 +39,8 @@ def actor_kind(who: Identity) -> str:
 def record(s: Session, case: Case, who: Identity, action: str, **detail: Any) -> CaseEvent:
     if correlation_id := correlation.current():
         detail["correlation_id"] = correlation_id
+    if who.break_glass_grant is not None:  # done under an emergency grant: say which (ENT-26)
+        detail["break_glass_grant"] = who.break_glass_grant
     # Serializes one case's events, so two writers can't take the same next step. The lock ends with the transaction.
     # FOR NO KEY UPDATE, not FOR UPDATE: an insert that references the case holds a key-share lock on it, and two of
     # those waiting to upgrade to FOR UPDATE deadlock (found on real Postgres, ADR-0061).
@@ -61,6 +63,8 @@ def record(s: Session, case: Case, who: Identity, action: str, **detail: Any) ->
 
 def record_system(s: Session, who: Identity, action: str, **detail: Any) -> SystemEvent:
     """An audit event with no case: policy publishing, the kill switch, dead jobs."""
+    if who.break_glass_grant is not None:  # done under an emergency grant: say which (ENT-26)
+        detail["break_glass_grant"] = who.break_glass_grant
     event = SystemEvent(
         actor=who.username, actor_kind=actor_kind(who), action=action, detail=detail, at_utc=utc_now_precise()
     )

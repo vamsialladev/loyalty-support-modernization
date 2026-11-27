@@ -11,13 +11,13 @@ from __future__ import annotations
 import hashlib
 import hmac
 import secrets
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
 from app.clock import utc_now
-from app.domain.roles import Identity
+from app.domain.roles import Identity, Role
 from app.persistence.models import UserSession
 from app.ports.identity import IdentityProvider
 
@@ -56,8 +56,15 @@ def start(s: Session, identity: Identity, now: datetime | None = None) -> tuple[
 
 
 def resolve(
-    s: Session, provider: IdentityProvider, token: str | None, now: datetime | None = None
+    s: Session,
+    provider: IdentityProvider,
+    token: str | None,
+    now: datetime | None = None,
+    *,
+    break_glass_allowed: bool = False,
 ) -> ActiveSession | None:
+    """The signed-in person for this request, or None. With `break_glass_allowed` (never in the public demo), an open,
+    unexpired emergency grant raises them to administrator for this request only (ENT-26, ADR-0093)."""
     if not token:
         return None
     row = s.get(UserSession, _hash(token))
@@ -71,6 +78,13 @@ def resolve(
     identity = provider.lookup(user_id)
     if identity is None:
         return None
+    if break_glass_allowed:
+        from app.services import break_glass  # here, not at the top: break_glass imports the audit helpers
+
+        grant = break_glass.active_for(s, identity, now)
+        s.commit()  # end the read, as above
+        if grant is not None:
+            identity = replace(identity, role=Role.ADMINISTRATOR, break_glass_grant=grant.grant_id)
     return ActiveSession(identity, csrf_token)
 
 

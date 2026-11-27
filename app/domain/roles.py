@@ -25,6 +25,7 @@ class Identity:
     display_name: str
     role: Role
     customer_id: str = "hg-demo"  # records of any other customer don't exist for this person (spec C.5)
+    break_glass_grant: int | None = None  # set only while an emergency grant raises this person (ENT-26, ADR-0093)
 
 
 class NotPermitted(Exception):

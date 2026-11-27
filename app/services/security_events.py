@@ -81,10 +81,16 @@ KINDS: dict[str, Kind] = {
     "execution_gave_up": Kind(EXECUTION, "failure", 3),
     "execution_unknown": Kind(EXECUTION, "unknown", 4),
     "ai_budget_exhausted": Kind(BUDGET, "failure", 3),
+    # Break-glass (ENT-26, ADR-0093): a grant is the loudest privilege event there is.
+    "break_glass_granted": Kind(PRIVILEGE, "success", 4),
+    "break_glass_refused": Kind(PRIVILEGE, "failure", 3),
+    "break_glass_revoked": Kind(PRIVILEGE, "success", 3),
+    "break_glass_expired": Kind(PRIVILEGE, "success", 2),
 }
 # Detail fields that may leave in an export: codes and names only (ENT-31 field map in docs/siem-field-map.md).
 SAFE_DETAIL = frozenset(
-    {"method", "path", "kind", "engaged", "policy", "version", "points", "stop", "name", "username"}
+    {"method", "path", "kind", "engaged", "policy", "version", "points", "stop", "name", "username", "grant", "minutes"}
+    | {"expires_at_utc", "break_glass_grant"}  # break-glass: numbers and a time; the reason never leaves
 )
 
 
