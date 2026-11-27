@@ -13,7 +13,17 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import ProgrammingError
 
-from app.demo_launch import Names, grant_app_role, provision, role_password, supervise, url_for
+from app.demo_launch import (
+    Names,
+    Phases,
+    grant_app_role,
+    migration_heads,
+    provision,
+    role_password,
+    set_up_already,
+    supervise,
+    url_for,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 NEON = "postgresql://neondb_owner:owner-pw@ep-example-123.us-east-2.aws.neon.tech/neondb?sslmode=require"
@@ -176,3 +186,89 @@ def test_provisioning_makes_roles_databases_and_append_only_grants() -> None:
         for role in (names.app, names.mock, names.owner):
             conn.execute(text(f'DROP ROLE IF EXISTS "{role}"'))
     admin.dispose()
+
+
+def test_each_startup_phase_prints_its_name_and_seconds_and_nothing_else() -> None:
+    lines: list[str] = []
+    ticks = iter([10.0, 10.0, 12.5, 12.5, 13.25, 20.0])
+    phases = Phases(clock=lambda: next(ticks), out=lines.append)
+    with phases("first database connection (includes a Neon wake-up)"):
+        pass
+    with phases("app migrations"):
+        pass
+    phases.total("the app answers")
+    assert lines == [
+        "demo startup: first database connection (includes a Neon wake-up) 2.50 s",
+        "demo startup: app migrations 0.75 s",
+        "demo startup: total until the app answers 10.00 s",
+    ]
+
+
+def test_a_failing_phase_still_prints_its_time_and_then_fails() -> None:
+    lines: list[str] = []
+    ticks = iter([0.0, 0.0, 1.0])
+    phases = Phases(clock=lambda: next(ticks), out=lines.append)
+    with pytest.raises(RuntimeError), phases("roles and databases"):
+        raise RuntimeError("no connection")
+    assert lines == ["demo startup: roles and databases failed after 1.00 s"]
+
+
+def test_the_code_knows_both_databases_migration_heads() -> None:
+    app_head, mock_head = migration_heads()
+    assert app_head and mock_head and app_head != mock_head
+
+
+@pytest.mark.postgres
+def test_the_fast_path_runs_only_when_roles_migrations_and_grants_are_all_in_place() -> None:
+    admin_url = os.environ.get("TEST_MOCK_API_DATABASE_URL")
+    if not admin_url:
+        pytest.skip("TEST_MOCK_API_DATABASE_URL is not set")
+    tag = secrets.token_hex(3)
+    names = Names(
+        owner=f"demo_owner_{tag}",
+        app=f"demo_app_{tag}",
+        mock=f"demo_mock_{tag}",
+        app_db=f"demo_app_db_{tag}",
+        mock_db=f"demo_mock_db_{tag}",
+    )
+    secret = secrets.token_urlsafe(32)
+    try:
+        assert set_up_already(admin_url, secret, names) is None  # nothing exists yet: full path
+        urls = provision(admin_url, secret, names)
+        assert set_up_already(admin_url, secret, names) is None  # roles, but no migrations
+        mock_env = {**os.environ, "DATABASE_URL": urls["mock"], "MOCK_API_DATABASE_URL": urls["mock"]}
+        subprocess.run(
+            [sys.executable, "-m", "alembic", "-c", "mock_customer_api/alembic.ini", "upgrade", "head"],
+            cwd=ROOT,
+            env=mock_env,
+            check=True,
+        )
+        owner_env = {**os.environ, "DATABASE_URL": urls["owner"]}
+        subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], cwd=ROOT, env=owner_env, check=True)
+        assert set_up_already(admin_url, secret, names) is None  # migrated, but the app role has no grants yet
+        grant_app_role(urls["owner"], names)
+        assert set_up_already(admin_url, secret, names) == urls  # everything in place: skip setup
+        assert set_up_already(admin_url, secrets.token_urlsafe(32), names) is None  # a new key: passwords change
+        owner = create_engine(urls["owner"], isolation_level="AUTOCOMMIT")
+        with owner.connect() as conn:
+            conn.execute(text(f'GRANT UPDATE ON case_events TO "{names.app}"'))
+        assert set_up_already(admin_url, secret, names) is None  # audit history writable: grants run again
+        with owner.connect() as conn:
+            conn.execute(text(f'REVOKE UPDATE ON case_events FROM "{names.app}"'))
+            conn.execute(text(f'REVOKE SELECT ON cases FROM "{names.app}"'))
+        assert set_up_already(admin_url, secret, names) is None  # a table the app can't read: grants run again
+        with owner.connect() as conn:
+            conn.execute(text("UPDATE alembic_version SET version_num = 'an_older_revision'"))
+        grant_app_role(urls["owner"], names)
+        assert set_up_already(admin_url, secret, names) is None  # behind the code's head: migrations run
+        owner.dispose()
+    finally:
+        admin = create_engine(
+            admin_url.replace("postgresql://", "postgresql+psycopg://", 1), isolation_level="AUTOCOMMIT"
+        )
+        with admin.connect() as conn:
+            for database in (names.app_db, names.mock_db):
+                conn.execute(text(f'DROP DATABASE IF EXISTS "{database}" WITH (FORCE)'))
+            for role in (names.app, names.mock, names.owner):
+                conn.execute(text(f'DROP ROLE IF EXISTS "{role}"'))
+        admin.dispose()

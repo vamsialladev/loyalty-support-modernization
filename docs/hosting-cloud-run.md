@@ -282,6 +282,9 @@ gcloud run deploy loyalty-demo `
 
 ### 5.8 Verify, then tell me
 1. Cloud Run → `loyalty-demo` → **Logs:** wait for `demo reset: removed 0 cases; mock world …`, then `Uvicorn running`.
+   From LIVE-06 on, each start also prints `demo startup:` lines: each phase and its seconds, never a value. The
+   first line, `first database connection (includes a Neon wake-up)`, separates Neon's wake-up from the demo's own
+   work. `already set up, so roles, migrations and grants are skipped` means the fast path ran (ADR-0089).
 2. Open the service URL. The banner says "Public demo: mock AI, synthetic data. Resets every day.", and the sign-in
    page shows two buttons and no password form. Click **Try it as an agent** and open a case.
 3. If the logs show `permission denied to create role` or `…database`, the string isn't the owner's or pooling is on.

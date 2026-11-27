@@ -1,0 +1,87 @@
+{
+  "label": "compare",
+  "measured_at_utc": "2026-11-27T01:58:04Z",
+  "where": "local Docker Desktop on Windows, 1 CPU and 1 GiB per container, Postgres 16.15 in Docker",
+  "other_containers_running_at_start": 10,
+  "not_measured": "Neon wake-up; Cloud Run's image pull and container start",
+  "images": {
+    "loyalty-demo:before": [
+      {
+        "kind": "first start of the day (reset)",
+        "seconds_to_login_200": 149.58,
+        "lines": []
+      },
+      {
+        "kind": "ordinary cold start (no reset)",
+        "seconds_to_login_200": 93.5,
+        "lines": []
+      },
+      {
+        "kind": "ordinary cold start (no reset)",
+        "seconds_to_login_200": 91.98,
+        "lines": []
+      },
+      {
+        "kind": "ordinary cold start (no reset)",
+        "seconds_to_login_200": 38.19,
+        "lines": []
+      }
+    ],
+    "loyalty-demo:after": [
+      {
+        "kind": "first start of the day (reset)",
+        "seconds_to_login_200": 169.42,
+        "lines": [
+          "demo startup: first database connection (includes a Neon wake-up) 2.92 s",
+          "demo startup: setup check (roles, migration heads, grants) 3.44 s",
+          "demo startup: roles and databases 2.99 s",
+          "demo startup: mock API migrations 10.51 s",
+          "demo startup: app migrations 12.11 s",
+          "demo startup: app role grants 0.15 s",
+          "demo startup: reset check 0.08 s",
+          "demo startup: daily reset and sample cases 55.62 s",
+          "demo startup: the mock API answers 24.40 s",
+          "demo startup: the app answers 40.68 s",
+          "demo startup: total until the app answers 152.92 s"
+        ]
+      },
+      {
+        "kind": "ordinary cold start (no reset)",
+        "seconds_to_login_200": 73.95,
+        "lines": [
+          "demo startup: first database connection (includes a Neon wake-up) 1.94 s",
+          "demo startup: setup check (roles, migration heads, grants) 2.25 s",
+          "demo startup: already set up, so roles, migrations and grants are skipped",
+          "demo startup: reset check 0.07 s",
+          "demo startup: the mock API answers 18.69 s",
+          "demo startup: the app answers 37.55 s",
+          "demo startup: total until the app answers 60.51 s"
+        ]
+      },
+      {
+        "kind": "ordinary cold start (no reset)",
+        "seconds_to_login_200": 38.61,
+        "lines": [
+          "demo startup: first database connection (includes a Neon wake-up) 2.61 s",
+          "demo startup: setup check (roles, migration heads, grants) 5.35 s",
+          "demo startup: already set up, so roles, migrations and grants are skipped",
+          "demo startup: reset check 0.06 s",
+          "demo startup: the mock API answers 6.29 s",
+          "demo startup: the app answers 17.18 s",
+          "demo startup: total until the app answers 31.49 s"
+        ]
+      },
+      {
+        "kind": "ordinary cold start (no reset)",
+        "seconds_to_login_200": 32.11,
+        "lines": [
+          "demo startup: first database connection (includes a Neon wake-up) 0.50 s",
+          "demo startup: setup check (roles, migration heads, grants) 0.73 s",
+          "demo startup: already set up, so roles, migrations and grants are skipped",
+          "demo startup: reset check 0.05 s",
+          "demo startup: the mock API answers 8.37 s"
+        ]
+      }
+    ]
+  }
+}

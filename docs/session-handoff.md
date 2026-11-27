@@ -40,6 +40,10 @@ merged as fourteen pull requests.
     row 39).
 
 ## Waiting on the owner (Milestone 12)
+0. **LIVE-06, the shorter cold start (ADR-0089), is on `main` but not deployed.** Redeploy with 5.6 and 5.7 (the
+   new tag), then send me the `demo startup:` lines from the first start's log, or just the new revision name: I
+   then time the cold start three times again. Install the wake page from `site/` (`site/README.md`) when you
+   want it; nothing there is published.
 1. **The demo is redeployed and checked** (revision 00004, row 44). Two things were **not captured** (the owner,
    2026-11-26), and either can be read later in the Billing console:
    - the current Cloud Run spend against the $10 cap;
