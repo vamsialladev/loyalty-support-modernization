@@ -132,7 +132,12 @@ DB = Annotated[Session, Depends(_db)]
 
 
 def _signed_in(request: Request, s: DB) -> sessions.ActiveSession:
-    active = sessions.resolve(s, request.app.state.identity, request.cookies.get(SESSION_COOKIE))
+    active = sessions.resolve(
+        s,
+        request.app.state.identity,
+        request.cookies.get(SESSION_COOKIE),
+        break_glass_allowed=getattr(request.app.state, "break_glass_allowed", False),
+    )
     if active is None:
         raise LoginRequired
     rate_limit.hit(s, f"user:{active.identity.user_id}", request.app.state.rate_limit_per_minute, 60)
@@ -182,6 +187,7 @@ def install_console(
     identity = LocalDemoIdentity(factory)
     app.state.sessions, app.state.identity = factory, identity
     app.state.rate_limit_per_minute = settings.rate_limit_per_minute
+    app.state.break_glass_allowed = not settings.public_demo_mode  # never in the public demo (ADR-0093)
     rules = LegacyRules.load(settings.customer_id)
     index = KeywordIndex.load()
     write_path = SharedWritePath(

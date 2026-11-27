@@ -68,6 +68,8 @@ merged as fourteen pull requests.
 
 ## Waiting on the owner (Milestone 13b, planned 2026-11-27)
 - **The drill procedures are ready** in `docs/drills.md` (prepared offline 2026-11-27, nothing run).
+- **Break-glass is built** (ENT-26, ADR-0093, `docs/break-glass.md`), with the owner's rules of 2026-11-27, and
+  tested without a stack. The drills will exercise it once the machine is free.
 - **Answer the six-line approval checklist** at the top of `docs/m13b-plan.md`: documents and code-only work now;
   drills on the local stack only when the machine is free; break-glass as code; proposed RTO 1 hour and RPO 24 hours;
   no drill against the live demo; no spend.
