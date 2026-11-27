@@ -1,6 +1,6 @@
 # Session handoff
 
-## Milestone 13: safe AI caching (started 2026-11-26). Phase 2 built; Phase 3 waits for the owner's cost approval
+## Milestone 13: safe AI caching (started 2026-11-26). Phase 3 ready; waiting for the owner's "go"
 - **Scope (owner, 2026-11-26):** find from Stage 9's metrics where caching helps arm C; build only there, safely;
   prove it in business terms with zero wrong reuses. Four phases: measure, build, prove, business outcome. Standing
   orders: decide routine choices and record them, batch at most 3 questions with a recommended answer, merge on
@@ -9,9 +9,9 @@
   caching), flag off; L1, L2, L5, L6 not built with the evidence; L4 n/a; MultiWOZ 2.2 approved; the spec's drills
   move to **13b**; headline "answer caching is unsafe (910 look-alike pairs, 0 shared correct answers); prompt
   caching is the safe win"; save full test output; live runs only after an approved estimate (cap $10).
-- **Where:** worktree `C:\projects\project1\lsm-m13\wt-cache`, branch `feat/m13-answer-cache` from `origin/main` at
-  `005a937` (still the tip on 2026-11-26: Dependabot round two not merged yet). Don't touch the shared checkout or
-  the `lsm-dep-ci` worktrees. **Rebase again before pushing.** Full test logs go to the session scratchpad `logs/`.
+- **Where:** worktree `C:\projects\project1\lsm-m13\wt-cache`. Phases 1 and 2 merged as PR #85 (`a662d60`, all 8
+  checks green). Phase 3 preparation is on branch `bench/m13-phase3`, from that `main`. Don't touch the shared
+  checkout or the `lsm-dep-ci` worktrees. Full test logs go to the session scratchpad `logs/`.
 - **Phase 1** (`docs/m13-baseline.md`, ADR-0090): answer caching has no safe target; MultiWOZ 2.2 (real hotel
   dialogues): 148 of 1,713 hotel turns are public questions about a named hotel, 22 repeat; an answer cache belongs
   to Stage 1 or a gateway (BL-M13-02).
@@ -19,10 +19,12 @@
   `/admin` switch (off only); cache rates priced and capped; migration 0014; `/metrics`, gauge, spans;
   `docs/runbooks/prompt-cache.md`. Tests: `tests/test_prompt_cache.py`, written first.
 - **Phase 3** (`docs/m13-phase3-plan.md`, pre-registered): arms A (no cache) and D (L3) on the held-out 80, 3 runs
-  each, alternating; expected about $0.71, worst about $0.89, hard limit $1.55. **Waiting for the owner:** the
-  approval, and copying `.env` into this worktree (the assistant never reads it). Then: merge L3, write the freeze,
-  smoke on 5 cases, the six runs, results.
-- **Not done yet:** push and PR (after the rebase and local checks); Phase 4 (results, memo, case study section).
+  each, alternating; expected about $0.71, worst about $0.89, hard limit $1.55. **Approved by the owner on
+  2026-11-27, but wait for the owner's "go":** Stage 10 needs a quiet machine first. Ready: the freeze is written
+  (141 files, 0 changes; replaces `2c088e8`), `.env` is in the worktree (preflight `live-model`: READY), and
+  `scripts\m13_phase3.ps1` and `evaluations/m13_results.py` are written and tested. On "go": run the script, then
+  commit `benchmarks/results/live/m13-*`, the ledger and `benchmarks/reports/m13/`, and set `.env` back to mock.
+- **Not done yet:** the runs; Phase 4 (results, decision memo, case study section, with the owner's headline).
 - **The prototype** `C:\Users\Vamsi\Downloads\Loyalty-Cache-Lab` was read, never run. Reference only.
 
 **Updated:** 2026-11-26 (revision 00004 checked live, the README's live link, the cap check and the second

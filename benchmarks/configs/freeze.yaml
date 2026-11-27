@@ -4,25 +4,31 @@ files:
 - path: app/adapters/__init__.py
   sha256: 9b3c3a6799c1365354fddb6a7dcc5fd775f228008fd3b2e69113fbe4fff0cf0c
 - path: app/adapters/anthropic_model.py
-  sha256: 8c43272f6c1a2e0ae188a10de992ef73c1ad1d613dd984688da3d9d93bd9b3ee
+  sha256: 89466f80b36340ea7ed678970a17b29944ada7a677c8074ebe57f809e62b4d4f
+- path: app/adapters/circuit.py
+  sha256: e03f45954b3b842410b0146fbeaffee11ece2bd8543185c166e9bd3b334c1cbd
 - path: app/adapters/local_demo_identity.py
-  sha256: 6ab5c5159cebb535ad1428a23d13982a5358059affde02effc76d2ad601a4c83
+  sha256: 8452623f990de41d9b5062419babe7c34eb3bc0d9e37664e0cc5c914d393aa11
 - path: app/adapters/mock_customer_api.py
-  sha256: ca44e37769bf839e79fe8ca1555e11b9c479c50d49d2ac6e2885340d4d4b9011
+  sha256: d3fae02fba43988d3ddbd17c79cfe7fdc8c326882d912346168350f88bb6a743
 - path: app/adapters/mock_model.py
-  sha256: afb56edace8325bd2e16de27186f5ed74ac394fbfbd4414b40c8195ed421b32b
+  sha256: 6ae39279450b582757483338187e70faf3f62c0bdaf74e83a978e6453fec21cc
+- path: app/adapters/oidc_discovery.py
+  sha256: c87d0da1292b0f9cd8ef463585107a9dfa78c35ed5fbdfb0453a7b22094aea0d
 - path: app/adapters/oidc_identity.py
-  sha256: 4da67d06bd92ee03bed4c80d9d8afe8f0cca8eae16a6725ca077bb6c60ac3a3e
+  sha256: 4f58a4f2962f2d366e9ac03e6dc44a4a918a27220e252bd0f7a03bbc42a27fe0
 - path: app/ai/__init__.py
   sha256: 69ea18371b0fcbe1e942fc1e2be1f6df72967cad7bbd196ee2dbcea07955f584
 - path: app/ai/config.py
-  sha256: 6b1282a885492693bd46e56f683ddb6129e1408b28bdc91e195b2ed9a04b7d1d
+  sha256: 62d8ae4c8510ce5c51fdcfcff7381af81ce56177f85f597045180ca4234caeb1
 - path: app/ai/context.py
   sha256: 959d870a485adfadcb215f3772e731cc2eca95b5a6e0268670e5fef983bfad2e
 - path: app/ai/harness.py
-  sha256: f5bf05e322f8d38efb242ce2dd1e88223c04facbf4a20a540510b19bbf6fc80c
+  sha256: 5041efebcf8ca460bf7ff6905b855a77e1125ede89e17fa958704b26b3db4857
+- path: app/ai/lifecycle.py
+  sha256: 8504aa18a3684c047ae8ef93bfd23de119785b147ebcc6cb6275c94993033ae0
 - path: app/ai/loop.py
-  sha256: 1e009c6180e2630a9c3c4789c9921165320f5ce450134305c1dccdaf28b2418d
+  sha256: 4a0ca06025bae0e4340738cd2a1ed7de14677fd45ddb690044f5a1c8327dcc66
 - path: app/ai/redaction.py
   sha256: 5ba8da2128be3d42b27de569199f664a050869011a6fbccbea83840e9998ff7b
 - path: app/ai/tools.py
@@ -34,11 +40,11 @@ files:
 - path: app/api/contract.py
   sha256: 1f84ae9012cdd202033974105c885290ceacbef158fdcdefc5059d58166c1f3d
 - path: app/api/contracts/openapi-v1.json
-  sha256: 76d46975bf620a569b74575e7059a11c6a04fb0aba35be829787e6f4ad1666b7
+  sha256: 08b965cc451a22568a0977e158218f18827ee0c08042115ec40d4e8193b69fc4
 - path: app/api/router.py
-  sha256: 1aadb843366da107aab32e0983aca9703ebedd3a52cd1c57676806a9a4ab8e57
+  sha256: 38141065d5ea59427feb0557e69bf0a934a289ff6499b6a7e7fc2217c67fc8fc
 - path: app/api/schemas.py
-  sha256: 43a12ba029d76283015aef196fdc67892983d48e270755a14d27ba6cbf5e5a77
+  sha256: 529bf2e397c7d27f5ce02a46c45410398ada14e4924777c1edd569a05f9e1481
 - path: app/arms/__init__.py
   sha256: 3123af5bb778eb11bfa1b45e638bb0aacb125cc99756ddcd4deed9564abc187f
 - path: app/arms/conventional/__init__.py
@@ -73,6 +79,8 @@ files:
   sha256: 25acc12654d1c42b7ae7d2070bd409ae27bbdaf5035aaf1e532733161de9d9ab
 - path: app/correlation.py
   sha256: 5225b31fc46418817a16379da685364387b6158edd16a925836073b9f64a4c59
+- path: app/demo_launch.py
+  sha256: 3f4980929eee3f3317b92f4ccc18367f02ca9e1c3946db449c121eef10a1c5de
 - path: app/domain/__init__.py
   sha256: 1caaea1c4b8fac8255b091186acd5eb53243940b105cab393b0284c089384dc5
 - path: app/domain/approval_binding.py
@@ -92,7 +100,21 @@ files:
 - path: app/env_leaks.py
   sha256: d8a4fa50625c1935b078a02f4696daa5c41af84ba79449f1f37fc851b9c04d9b
 - path: app/main.py
-  sha256: 0388ce7ec2ff2e07ce79f7239ca05a8aade44c13541dc25657415667f7613a09
+  sha256: 51b96c7ca89f1a7492bb56cce64dc3595a40daaaf78a3005464ca1f581bfb5d6
+- path: app/observability/__init__.py
+  sha256: bce6f2d7416ac7a4358f9cd53cf965c521664b2271990eb15cc6b837c7e38a66
+- path: app/observability/genai.py
+  sha256: 9cb104cdc34d910ff7906f4c92c88025e092a9cd0cdad26d34a62b5880efbe49
+- path: app/observability/logs.py
+  sha256: 489e598a7f1e0f5f8e953426de165e9e686ba578a8beb0f972297c4d2f5c0359
+- path: app/observability/model_calls.py
+  sha256: 69bbb51baaf9bc0c3770ebbe91ed56dad590a7ada4646d336f722106a5249868
+- path: app/observability/ops_metrics.py
+  sha256: b6e65084ecae5951387473a0ef1adfcf4c2e568d3448f7893a40f2ce542acda8
+- path: app/observability/scrub.py
+  sha256: 02666a8bcfdbbca96051e10fb8324768f5395f1e331b491e75765f5142737ad8
+- path: app/observability/tracing.py
+  sha256: 502a0891273e044dbf118288ffb0d0f10a504ad5a65988f28089a3ecb228db67
 - path: app/outbound.py
   sha256: d5136026491f95c654decb002b2097b1eccdca44ef22802a96b49c7586c7f225
 - path: app/persistence/__init__.py
@@ -100,7 +122,7 @@ files:
 - path: app/persistence/database.py
   sha256: 35d769b7d8b7361b4cf06028974fd115f8783bd7bcbdbdd27d989c0e59e3e89b
 - path: app/persistence/models.py
-  sha256: 37856f13b2b5186be870ab01830628c663c248a5489dd9236c4c41416c70b1d6
+  sha256: ea0607646de4f1f6994b738dac973624f6696dcfcb6bbb2c017e414ca7ba344d
 - path: app/ports/__init__.py
   sha256: 92838384136f0760b69472d109b5038c4a25d7dfe80d4d7d87397e4040608ce5
 - path: app/ports/customer_systems.py
@@ -108,59 +130,73 @@ files:
 - path: app/ports/identity.py
   sha256: 1307f06b9182de22e8d13f1814f4ab04c3332e945e187a83b6fead4b045870c6
 - path: app/ports/model_provider.py
-  sha256: c258537f0e51a00ab7847a7af06e99f193ed0ad6ff5d4f6b57715d761f77b171
+  sha256: 991a84b3bb4c8877190658053620a4ab379ce56cd0677be8aecea6bd6d9fc2ac
 - path: app/preflight.py
-  sha256: f39d90ca096a7f2aad84882368794849599acd3061d31b3b0b8a4e7e8cfe79ad
+  sha256: 3f4e8a50f3579bfff0f9495b04393e8611a5e4f6154a05f1dcb5f20561b8c3e9
 - path: app/seed.py
-  sha256: b19c7e16a64888db66df2a39d0a0911cbe843405b41a23d42bb31918d3ca4f2d
+  sha256: 1eb4f375b87f59a170375b309bc436f3a9a29336a53e3bb876c11888a0280856
 - path: app/services/accounts.py
   sha256: ce979497454f3c8b21d8e2624da2da0258401010c32aada9632ed4de30fd1e43
+- path: app/services/analytics_export.py
+  sha256: 9e5715f9fe88a4369f1118ee0d1745ad85dbd1e59dd5a9be44cbc8af932b6264
 - path: app/services/approvals.py
   sha256: f4ce6100c4ae9923b5601b166369810530033e2cbd28c4fabb4c62534fa112c9
 - path: app/services/arm_review.py
   sha256: d3127a459322e29917dd3c8a147decb742c360ba1b9b710eb626eb272617b074
 - path: app/services/assisted.py
-  sha256: ffc838f5f126b8512a1b999c141c0dd3043271d8823026375ec9b27f0492a9b9
+  sha256: 0da67782451c138058fadfe6dde87cea2319119313bb9001d40a3835d4ac87c5
 - path: app/services/cases.py
-  sha256: a4579f209aa3bcb77072da875923909f6511946ea7370205a8f310dfb69c7bb8
+  sha256: 4e70dc6853345abc954cff4716efd965b3e684e357087ccf0447a540958e3c46
 - path: app/services/conventional.py
-  sha256: 4fe483d1669dfc0f06a118f6d1472c02e8972b8872527091cdb7796bf825add7
+  sha256: 3c3a92f18700a0823578875652f5e724a0abdd9f8f5e6c461ce31b66aef9e30a
 - path: app/services/customer_config.py
-  sha256: 9deacd5409d8d4ed90bc7e7a9a842d2d34d3ef8a968ec334cb6a22687bf68227
+  sha256: af0563b0f651346067cf13a8ce0be23ce4a50eb847d687515edd2ee31b610b2c
+- path: app/services/demo.py
+  sha256: 79656c734b7e0b400d5ac4f57c934d73caf6bec2abc6d5157e35bc058f3fc538
+- path: app/services/demo_samples.py
+  sha256: e3b7bbae74fae40a12feed55715c62d8e078099b7cc15e7f2fb667dee4a4c02c
+- path: app/services/drift.py
+  sha256: d3bc5a71e8a9131d0200297d7c89864aa9d7af81f26393f0365e237bb71be834
 - path: app/services/instrumentation.py
-  sha256: 28415b1d671acc33135e1a87b9928cdab068e50b44ba83e4f073a6805e847916
+  sha256: d5e5ba295369e362241223708b853b4426558faeac5956ca6649b813c488f1d2
 - path: app/services/job_handlers.py
   sha256: ffa17a07036d70d903ab7185dbe5d1ed0249c2589062fd318246a2e05fbb4a2c
 - path: app/services/jobs.py
-  sha256: 91dd7497550a7510b47d31601e99815fe26351f18c6e7d59ef5fdc061f9b3d51
+  sha256: 644436b4664ec621c1105d9446e07d27d65b931a88bb4e3945c36a6324943fe6
 - path: app/services/kill_switch.py
   sha256: db21c0e2f383a4dbc0be3c997e98a1ad2f9cb533e56cd3fd7c1ff84ff15bb98b
 - path: app/services/metrics.py
-  sha256: 05dfb146e6de6d814e4b4a5c94bde97541a8233d43fcf5493dd52e31995f4146
+  sha256: e3add657e71bcc0969cffe49a8b13b769744e30b712eae18395121ef2411d187
 - path: app/services/policies.py
   sha256: 76e2cf3520a6cfc9e849987b954ba17fd46304203053af30a9871e5e33be32f0
 - path: app/services/policy_publishing.py
   sha256: 58b9e6e59a4ad5fd6213566039458b22127adfe27db45e064e6961a5bbbe417e
+- path: app/services/prompt_cache.py
+  sha256: 5dda4a051ac6a80c23797581621e7b0acdac6414d52d92838843425dfcd00868
+- path: app/services/qa_sampling.py
+  sha256: cc6ff2b2c05a2de48b028a272e5b9b5b10622f3d61df530d7a47589f1a969e68
 - path: app/services/rate_limit.py
   sha256: 41e92880a2a299f6926bf5099b4fb5f7c83e06dac3a29fe2ffc9a1073933fcff
 - path: app/services/retention.py
   sha256: 31e218ce84912bb8e5d0e7e5e94f52ce7785dc87d69c1a0d368fc6a01fb3ecbd
+- path: app/services/security_events.py
+  sha256: 6981081a591671bb48446f7744984530516fdf774e907f83376caed7f8102e71
 - path: app/services/sessions.py
   sha256: de97b11640f2dae264f18dc7569ea0ab95d21f81423f98335d6ee811fac84bec
 - path: app/services/systems.py
-  sha256: 259cffc8518c4fc473010eb0c2325359167c3061d0e0900c87272b0bbe69f33b
+  sha256: 4df16cc1fbecafca33f0d4dac12804b4e62c001436415287dff74f1785573413
 - path: app/services/write_path.py
-  sha256: 31efb7e31ff0cbddf8956dbc5211f080299d510eb6c74f316f095b34212691d4
+  sha256: 9afd615a71b237ba782662e48a1d9df7138d4b993521879db1fe44849f7c5348
 - path: app/settings.py
-  sha256: 320cc4e9572eceb10e0ea58ad54fa779750eff9ea825ecbcc6ccfd0c43475ad5
+  sha256: f344733e2acf2d4e8d97c40ebea54b0ba851e1bd1af9bf01af6f3fa650c99539
 - path: app/web/console.py
-  sha256: 756e078846430cbcffc75b4bbf07488ce74e4f65c80efea073ef21607a3e7443
+  sha256: 12442feeb7c71aa6348058acfb2de4df68afde21c7e09d6754e8e22cb7a77c73
 - path: app/web/day_one/summary.json
   sha256: ec5412f321c75723f42cdc2d41ff487a04a57f916f6dca6471d0b27fcf1cab7b
 - path: app/web/static/vendor/README.md
   sha256: e9b432eea522ef38b3e0cf1dd858dfa6eaea8230f776a0f663f9b766ac4d85c0
 - path: app/worker.py
-  sha256: fd089e5000fdf4ae8d7b9863a0876948b5e84a35e15779581aae4d029b3ebb25
+  sha256: 1f55afa139ee65e9c440046c5e5c82614a3b13445b54a7e9d1466953a9694103
 - path: benchmarks/agents/__init__.py
   sha256: 09fbbcc065ae56aa38d38d4f9aa0a0b1b83c044a6d66931f5498c1e188c0f170
 - path: benchmarks/agents/as_is_write_path.py
@@ -177,6 +213,8 @@ files:
   sha256: cf3eabcae7e53ef6648e57852b1ddbe927d16c8ce86c5248a839de4d27ac8a13
 - path: benchmarks/configs/arm-b.yaml
   sha256: 50e9b27b3cca354817db4a5ed046fc14df783759d88aa5ea9fea2f52526df970
+- path: benchmarks/configs/arm-c-live-prompt-cache.yaml
+  sha256: 2669e8b6d527f90eb7f41735b8507bca653615ee21be46be15b49e2002017c3e
 - path: benchmarks/configs/arm-c-live.yaml
   sha256: bab9f34cbf24e02639882a6caa79fd927cf3a54679fcbc837dc5d6b9dc2694d7
 - path: benchmarks/configs/arm-c-mock.yaml
@@ -184,11 +222,11 @@ files:
 - path: benchmarks/intake.py
   sha256: 1548b7739ebb7acc027c61a31b402c07f49220e6c25c077f7db618b6aa8b2c01
 - path: config/ai/hg-demo.yaml
-  sha256: 574a1b473b82fe5abd95d5f7dee6a68976d0458ce032845e9adf216689fe48af
+  sha256: 7580ffe9bc2b4b6ecc5b3d1b68cfb56a393f595e5f060e4f0bf1dc506dd18428
 - path: config/conventional/hg-demo.yaml
   sha256: 3d6815f1fe1ef91b5e1f496e70b302e55519395b40a9f514c0c36289e6832bb5
 - path: config/customers/hg-demo.yaml
-  sha256: e58ad2a9acd2907a052b18304684986915e930e2cdbd81ecf536522271c34f19
+  sha256: 2dec6ba4d37049b424f38c1763922b3c34f155a3c911d01cd924c30786f2de7c
 - path: config/legacy/hg-demo-legacy-rules.yaml
   sha256: c9a7859e973f460032bf6e7364bf18152c9cae5f5a1d484429a39e0e25d8d874
 - path: config/policy-regression/hg-demo.yaml
@@ -200,19 +238,19 @@ files:
 - path: customer_shapes/__init__.py
   sha256: e457c1cd657d37f232d010525dd08ddb6388c60a778344b16b7680679a696c81
 - path: evaluations/journey.py
-  sha256: 00b85455e16a3bdb9ea1f768d3558cd68e0f68b673f74a9f2b4386fba2391df1
+  sha256: 6e41d2d887bde2a371fedae64c628d8121e88d2653b4f452ff4e7dd0ebbd5d6d
 - path: evaluations/live_model.py
-  sha256: 5ec67dd0c290601ab735536d41b8b3fc29462aa919140996e2a7dde923dd2865
+  sha256: 9ecce20e70356b7d1b953aa6dc3843200aa22351b8b2cb60f2070b2cf0392068
 - path: evaluations/member.py
   sha256: 0f5a7f385a716314789e575d4ebac9ecc35661786202496426d64d022992174a
 - path: evaluations/run.py
-  sha256: 0eeeb0644495d7a73840bcc3f4869de4342acf324df94752e645f62c57f54503
+  sha256: d2886a7fd616240a69f6cfe23db19a0aa9fc02a96de9ac0fae18040cb3705805
 - path: evaluations/world.py
   sha256: 2416f366091dcc2484040f9eb6639225fce8b9b59bc1a7f1538e3c343ec83218
 - path: mock_customer_api/__init__.py
   sha256: 5a196f2792f39340151a1df844d095f1d6f57a8719daf73b0956d99f3a7ee635
 - path: mock_customer_api/api.py
-  sha256: b913d433ead0f0ba1ff7e18eccf0faee7258772e948f0522ebf4c7a1f295a0ce
+  sha256: 1a645903f5489d8298ceddcc39bf169b6ebdf3eacda500d7de15a0ceafde5c50
 - path: mock_customer_api/config/fault_rules.yaml
   sha256: e83d2985d49b6481bcb0115ad7c9d638026c8fe158ab194d6622e9982f13ba31
 - path: mock_customer_api/contract.py
@@ -233,6 +271,8 @@ files:
   sha256: 652a034c81ff77bb6919831af6c658ecc22bba079141b0084fb1cc7c814495f3
 - path: mock_customer_api/settings.py
   sha256: 9454c2228266ac32a662ac20d2426001988da48cee3941df9b959dddd68037e9
+- path: mock_customer_api/telemetry.py
+  sha256: f19cf4191ba17e7255b80a7384fe9447887ae0a603a859462c97b8e3505f84f8
 - path: policies/hg-demo/guest-rewards-earning-v1.md
   sha256: e675fe9b8e904f36ab9295b0c2345fdd6ab202a6c3ca438183af787a6d689c13
 - path: policies/hg-demo/guest-rewards-earning-v2.md
