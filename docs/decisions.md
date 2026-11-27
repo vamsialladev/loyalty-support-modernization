@@ -1512,7 +1512,7 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   after a check passes, so a container ready at about 15 s is first served at the third check, about 20 s.
   - Google's page (read 2026-11-27): `periodSeconds` 1-600 s, default 10; `timeoutSeconds` can't exceed it; and
     `failureThreshold` × `periodSeconds` can't exceed 600 s.
-  - **Proposed, waiting for the owner's OK** (it changes the deploy command): `periodSeconds=2,timeoutSeconds=2,
+  - **Approved by the owner (2026-11-27), now in 5.7;** live results come after the redeploy: `periodSeconds=2,timeoutSeconds=2,
     failureThreshold=150`. That's the same 300 s window and the same honest `/healthz`, checked five times as
     often. Projected wait: about 15-17 s, not measured.
 - **Parallel start: measured, not shipped (owner, 2026-11-27).** Five turns each on a quiet machine: launcher total
