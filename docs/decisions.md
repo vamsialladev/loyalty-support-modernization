@@ -1512,9 +1512,10 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   after a check passes, so a container ready at about 15 s is first served at the third check, about 20 s.
   - Google's page (read 2026-11-27): `periodSeconds` 1-600 s, default 10; `timeoutSeconds` can't exceed it; and
     `failureThreshold` × `periodSeconds` can't exceed 600 s.
-  - **Approved by the owner (2026-11-27), now in 5.7;** live results come after the redeploy: `periodSeconds=2,timeoutSeconds=2,
+  - **Approved by the owner (2026-11-27) and live on revision 00006:** cold start 10.61, 10.60, 10.50 s, down
+    from 20.57-20.67 s (verification log M12 row 47). The setting: `periodSeconds=2,timeoutSeconds=2,
     failureThreshold=150`. That's the same 300 s window and the same honest `/healthz`, checked five times as
-    often. Projected wait: about 15-17 s, not measured.
+    often. (I had projected 15-17 s from a first start; ordinary cold starts are faster.)
 - **Parallel start: measured, not shipped (owner, 2026-11-27).** Five turns each on a quiet machine: launcher total
   median 16.36 s deployed vs 16.27 s parallel. On one vCPU, starting the mock API and the app at once shares the
   same CPU-bound work, so it saves nothing. It would also have needed the startup probe on `/readyz`. The prototype
