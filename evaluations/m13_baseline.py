@@ -241,7 +241,7 @@ def policy_versions() -> dict[str, Any]:
 # ---------- 3. model calls, from the spend ledger ----------
 
 
-def _segment(run: str, ledger: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
+def _segment(run: str, ledger: list[dict[str, Any]], live: Path = LIVE) -> list[list[dict[str, Any]]]:
     """Split a run's calls into cases, in order, by matching each case's stored token totals exactly.
 
     Runs were one case at a time (concurrency 1), so calls are in case order. A case is complete when its calls' input
@@ -249,7 +249,7 @@ def _segment(run: str, ledger: list[dict[str, Any]]) -> list[list[dict[str, Any]
     number below wrong.
     """
     calls = [c for c in ledger if c["run"] == run]
-    cases = _jsonl(LIVE / run / "results.jsonl")
+    cases = _jsonl(live / run / "results.jsonl")
     # The ledger keeps every call ever paid for. Where a run name was used twice (an earlier attempt, then the stored
     # run), the stored run is the tail whose totals match its results exactly.
     need = sum(c["input_tokens"] for c in cases)
