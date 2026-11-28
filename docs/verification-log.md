@@ -3,6 +3,17 @@
 Every check run, with the command, date and result. Newest milestone first. Results are copied from real runs;
 nothing here is predicted.
 
+## Milestone 13b (started 2026-11-27)
+
+All work by Claude Code (Opus 5.5). Drills run in GitHub Actions (`.github/workflows/drills.yml`) on a throwaway
+Compose stack per run, never on the owner's laptop and never against the live demo, Cloud Run or Neon. Mock AI and
+synthetic data. No spend. Timings are a GitHub runner's. Each run's full output is its artifact
+`drill-<drill>-<run id>`.
+
+| # | Check | Command | Result |
+|---|---|---|---|
+| 1 | **D7 emergency execution shutdown, first CI run** (2026-11-28, run 46090310680, PR #96) | `scripts/drill.py d7` in `drills.yml` | **6 of 7 checks passed.** Two dev cases, DV-001 (14,840 points) and DV-003 (3,119), were approved. With the kill switch on, both executions got **409**, the first refusal **0.04 s** after the switch, and **0 postings** in the 10 s that followed. Released: both 202, both **executed**, each **exactly 1 posting**, and a repeat execute got 409 and added none. **Failed: "both switches are audited security events", found 0. My script's bug, not the app's:** the API returns Elastic Common Schema documents, where the action is `event.action`, and the check read a top-level `action`. Both switch requests had returned 303, and the 409s show the switch held. Fixed, with a test (`test_the_audit_check_reads_the_action_where_the_security_api_puts_it`); re-run below |
+
 ## Milestone 13 (started 2026-11-26)
 
 All work by Claude Code (Opus 5.5), in worktree `feat/m13-answer-cache` from `origin/main` at `005a937`. Phase 1

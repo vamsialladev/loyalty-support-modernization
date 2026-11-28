@@ -53,6 +53,13 @@ def test_postings_bind_their_values_instead_of_pasting_them(monkeypatch: pytest.
     assert "DROP" not in seen["sql"] and ":'stay'" in seen["sql"]
 
 
+def test_the_audit_check_reads_the_action_where_the_security_api_puts_it() -> None:
+    """Found on D7's first CI run (2026-11-28): the check looked for a top-level `action` and found none, while the
+    API returns Elastic Common Schema documents with `event.action` (verification log M13b row 1)."""
+    source = (ROOT / "scripts" / "drill.py").read_text(encoding="utf-8")
+    assert 'e.get("event", {}).get("action")' in source and 'e.get("action")' not in source
+
+
 def test_the_drills_workflow_reads_no_secret_runs_one_at_a_time_and_keeps_its_output() -> None:
     text = (ROOT / ".github" / "workflows" / "drills.yml").read_text(encoding="utf-8")
     workflow = yaml.safe_load(text)

@@ -280,9 +280,12 @@ def drill_d7(env: dict[str, str], stack: Stack, report: Report) -> None:
         after=after,
         repeat_http=[r.status_code for r in again],
     )
-    events = admin.api("GET", "/security/events").json()
-    switches = [e for e in events if e.get("action") == "kill_switch_changed"]
-    report.check("both switches are audited security events", len(switches) >= 2, found=len(switches))
+    events = read_json(admin, "/security/events")  # Elastic Common Schema documents: the action is event.action
+    actions = [e.get("event", {}).get("action") for e in events]
+    switches = actions.count("kill_switch_changed")
+    report.check(
+        "both switches are audited security events", switches >= 2, found=switches, actions_seen=sorted(set(actions))
+    )
 
 
 DRILLS: dict[str, Callable[[dict[str, str], Stack, Report], None]] = {"d7": drill_d7}
