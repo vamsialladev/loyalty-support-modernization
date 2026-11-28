@@ -16,7 +16,7 @@ has both. Timings measured there are a GitHub runner's, not the laptop's, and ea
 
 | Drill | Where | Status |
 |---|---|---|
-| D7 emergency execution shutdown | GitHub Actions (`scripts/drill.py d7`) | Written; first run on its pull request |
+| D7 emergency execution shutdown | GitHub Actions (`scripts/drill.py d7`) | **Passed** 7 of 7 (run 46090558919) |
 | D3 worker crash, D5 uncertain adjustment, D2 customer API outage, D1 model outage, D6 incorrect recommendation, D4 backup and restore | GitHub Actions, one pull request each, in that order | Not run |
 | SEC-21: integration credential, unauthorized access, leaked test key | GitHub Actions, on the stack | Not run |
 | SEC-21: malicious policy, unexpected agent action, compromised dependency, excessive spend | GitHub Actions, as pytest in the existing CI | Not run |
@@ -132,18 +132,26 @@ is the only copy (`docs/backup-restore.md`).
 - **Result:** Not run.
 
 ### D7. Emergency execution shutdown
-- **Setup:** two approved adjustments waiting.
+- **Setup:** two approved adjustments waiting (DV-001 and DV-003, worked through arm B by the drill).
 - **Steps:**
-  1. Turn execution off (`FEATURE_ADJUSTMENT_EXECUTION=false`), and turn AI off with the kill switch.
-  2. Try to execute.
-  3. Turn both back on.
-- **Measure:** the time from the switch to the first refused execution, and any posting made while it was off.
+  1. An administrator engages the kill switch. It's the emergency stop for adjustments: a database row that every
+     process reads without a restart (`app/services/kill_switch.py`). It doesn't touch AI or investigations.
+  2. A supervisor tries to execute both.
+  3. Release the switch, execute both, then execute both again.
+  (`FEATURE_ADJUSTMENT_EXECUTION=false` is the deploy-time setting for the same stop. It needs a restart and writes
+  no audit event, so the drill uses the switch.)
+- **Measure:** the time from the switch to the first refused execution, and any posting made while it was on.
 - **Pass:**
-  - **zero postings while off**;
-  - a clear message in the console;
+  - **zero postings while on**;
+  - every execution refused with a clear message;
   - an audit event for each switch;
-  - resuming posts each adjustment once.
-- **Result:** Not run.
+  - releasing posts each adjustment once, and a repeat posts nothing.
+- **Result (GitHub Actions run 46090558919, 2026-11-28): passed, 7 of 7.**
+  - Both executions were refused with 409, **0.04 s** after the switch, and **0 postings** followed in 10 s.
+  - After release, both were **executed** with **exactly 1 posting each**, and the repeat was refused (409).
+  - **2** `kill_switch_changed` security events.
+  - The first run (46090310680) failed only the audit check, through my script's bug (verification log M13b rows
+    1 and 2).
 
 ## SEC-21 incident exercises
 Each starts as a tabletop. Those marked **executed** are run for real: in `pytest` with no stack, or on the stack.

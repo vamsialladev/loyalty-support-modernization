@@ -66,13 +66,16 @@ merged as fourteen pull requests.
   - Local gitleaks had scanned 0 commits in git worktrees, and now fails if it scans none (verification log, M12
     row 39).
 
-## Waiting on the owner (Milestone 13b, planned 2026-11-27)
-- **The drill procedures are ready** in `docs/drills.md` (prepared offline 2026-11-27, nothing run).
+## Milestone 13b (planned 2026-11-27; drills in GitHub Actions since 2026-11-28)
+- **The drills run in GitHub Actions,** not on the laptop (owner, 2026-11-27): `.github/workflows/drills.yml` uses a
+  throwaway Compose stack per run, and `scripts/drill.py` holds the drills. None needs the laptop.
+- **D7 emergency execution shutdown: passed 7 of 7** (run 46090558919; verification log M13b rows 1-2). Next, one
+  pull request each: D3 worker crash, D5 uncertain adjustment, D2 customer API outage, D1 model outage, D6
+  incorrect recommendation, D4 measured backup and restore, then the SEC-21 exercises.
 - **Break-glass is built** (ENT-26, ADR-0093, `docs/break-glass.md`), with the owner's rules of 2026-11-27, and
-  tested without a stack. The drills will exercise it once the machine is free.
-- **Answer the six-line approval checklist** at the top of `docs/m13b-plan.md`: documents and code-only work now;
-  drills on the local stack only when the machine is free; break-glass as code; proposed RTO 1 hour and RPO 24 hours;
-  no drill against the live demo; no spend.
+  tested without a stack.
+- **Waiting on the owner:** nothing for the drills. The checklist in `docs/m13b-plan.md` is answered by the owner's
+  orders of 2026-11-27 (break-glass as code; drills in CI; no live systems; no spend).
 
 ## Waiting on the owner (Milestone 12)
 0. **LIVE-06 is done (Implemented and verified, row 47).** Revision 00006 (image `8c5f314`, 2 s startup probe)
