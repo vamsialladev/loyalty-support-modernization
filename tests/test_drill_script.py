@@ -73,7 +73,7 @@ def test_the_drills_workflow_reads_no_secret_runs_one_at_a_time_and_keeps_its_ou
     assert "docker compose -p ci --env-file .env.ci down -v" in text  # the throwaway stack is removed
     for forbidden in ("run.app", "neon.tech", "gcloud"):
         assert forbidden not in text  # never the live demo, Cloud Run or Neon
-    assert set(drill.DRILLS) >= {"d7", "d3", "d5", "d2", "d1", "d6"}
+    assert set(drill.DRILLS) == {"d1", "d2", "d3", "d4", "d5", "d6", "d7"}  # all seven F.3 drills
     for name in drill.DRILLS:
         assert f'"{name}"' in text, f"{name} isn't in the workflow's drill list"
 
@@ -100,6 +100,14 @@ def test_fault_rules_are_written_where_the_override_mounts_them(
     [command] = commands
     assert command[:2] == ["docker", "compose"] and command.count("-f") == 2
     assert command[-1] == "mock-api" and "--no-deps" in command
+
+
+def test_readiness_reads_a_restarting_app_as_not_ready(monkeypatch: pytest.MonkeyPatch) -> None:
+    def reset(*args: Any, **kwargs: Any) -> Any:
+        raise drill.httpx.ReadError("Connection reset by peer")
+
+    monkeypatch.setattr(drill.httpx, "get", reset)
+    assert drill.readiness() == 0  # not an exception: the drill keeps waiting
 
 
 def test_the_job_check_binds_the_case_number(monkeypatch: pytest.MonkeyPatch) -> None:

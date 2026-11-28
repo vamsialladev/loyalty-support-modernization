@@ -1659,3 +1659,27 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   the switch; the security sign-off failing; a provider change to caching or prices.
 - **Starter kit:** measure cacheability before building (Phase 1's method), test any cache on paired arms with
   pre-registered pass marks, and keep answer caches out of workflows whose answers depend on private records.
+
+
+## ADR-0096: After a restore, end every session, API token and break-glass grant before the app takes traffic
+- **Context:** ROLL-03 says a restore must never reinstate revoked access. Drill D4 tested it, once the measurement
+  was right (verification log M13b row 11): a session created before the backup, then revoked, **worked again (HTTP
+  200)** after the restore. The restored database still held it as live. API tokens and break-glass grants have the
+  same shape.
+- **Options considered:**
+  - **Revoke only what was revoked after the backup.** The restore can't know that: the revocations are in the lost
+    part.
+  - **Rotate `APP_SECRET_KEY`.** Sessions are random tokens stored by hash, so the key doesn't sign them, and
+    rotating it wouldn't end them. It also voids approvals not yet executed (`docs/credential-rotation.md`).
+  - **End all of them after every restore.** Chosen: it's what a restore needs, and it costs everyone a sign-in.
+- **Decision:** `python -m app.services.after_restore --reason ...` ends every open session, every unrevoked API
+  token and every open break-glass grant. It records `restore_access_sealed` with the counts, as a security event
+  (privilege, severity 3), and the reason never leaves in the export. It's a required step in `docs/backup-restore.md`
+  before the app takes traffic.
+- **Tradeoff:** everyone signs in again, and each integration needs a new token. Local accounts deactivated after the
+  backup are active again; an administrator re-checks them. With SSO the identity provider decides.
+- **Result:** `tests/test_after_restore.py`, 4 tests: all ended and recorded; a second run ends nothing; a reason is
+  required; the command line prints counts only. Drill D4 runs the step after its restore and checks that the revoked
+  session stays revoked.
+- **What would change this:** sessions signed with a key (then rotating the key would end them); an identity provider
+  for every account (then local accounts drop out of the problem).

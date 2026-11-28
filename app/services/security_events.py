@@ -86,11 +86,14 @@ KINDS: dict[str, Kind] = {
     "break_glass_refused": Kind(PRIVILEGE, "failure", 3),
     "break_glass_revoked": Kind(PRIVILEGE, "success", 3),
     "break_glass_expired": Kind(PRIVILEGE, "success", 2),
+    # After a restore (ROLL-03, ADR-0096): every session, API token and break-glass grant ended.
+    "restore_access_sealed": Kind(PRIVILEGE, "success", 3),
 }
 # Detail fields that may leave in an export: codes and names only (ENT-31 field map in docs/siem-field-map.md).
 SAFE_DETAIL = frozenset(
     {"method", "path", "kind", "engaged", "policy", "version", "points", "stop", "name", "username", "grant", "minutes"}
     | {"expires_at_utc", "break_glass_grant"}  # break-glass: numbers and a time; the reason never leaves
+    | {"sessions", "api_tokens", "break_glass_grants"}  # after a restore: counts only
 )
 
 
