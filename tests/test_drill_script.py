@@ -3,6 +3,7 @@ parts that need no stack. The drills themselves run in GitHub Actions against a 
 
 from __future__ import annotations
 
+import inspect
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -56,7 +57,7 @@ def test_postings_bind_their_values_instead_of_pasting_them(monkeypatch: pytest.
 def test_the_audit_check_reads_the_action_where_the_security_api_puts_it() -> None:
     """Found on D7's first CI run (2026-11-28): the check looked for a top-level `action` and found none, while the
     API returns Elastic Common Schema documents with `event.action` (verification log M13b row 1)."""
-    source = (ROOT / "scripts" / "drill.py").read_text(encoding="utf-8")
+    source = inspect.getsource(drill.drill_d7)  # only the security-event check; a case's audit has a top-level action
     assert 'e.get("event", {}).get("action")' in source and 'e.get("action")' not in source
 
 
@@ -72,4 +73,19 @@ def test_the_drills_workflow_reads_no_secret_runs_one_at_a_time_and_keeps_its_ou
     assert "docker compose -p ci --env-file .env.ci down -v" in text  # the throwaway stack is removed
     for forbidden in ("run.app", "neon.tech", "gcloud"):
         assert forbidden not in text  # never the live demo, Cloud Run or Neon
-    assert set(drill.DRILLS) >= {"d7"}
+    assert set(drill.DRILLS) >= {"d7", "d3"}
+    for name in drill.DRILLS:
+        assert f'"{name}"' in text, f"{name} isn't in the workflow's drill list"
+
+
+def test_the_job_check_binds_the_case_number(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict[str, Any] = {}
+
+    def fake_run(command: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        seen["command"], seen["sql"] = command, kwargs["input"]
+        return subprocess.CompletedProcess(command, 0, stdout="running:worker-1\n", stderr="")
+
+    monkeypatch.setattr(drill.subprocess, "run", fake_run)
+    stack = drill.Stack("ci", Path(".env.ci"), "loyalty", "loyalty")
+    assert drill.job_state(stack, 7) == "running:worker-1"
+    assert "case=7" in seen["command"] and ":'case'" in seen["sql"] and "-d" in seen["command"]

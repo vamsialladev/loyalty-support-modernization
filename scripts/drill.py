@@ -200,6 +200,7 @@ class Stack:
     project: str
     env_file: Path
     db_user: str
+    app_db: str = "loyalty"
 
     def compose(self, *args: str) -> list[str]:
         return ["docker", "compose", "-p", self.project, "--env-file", str(self.env_file), *args]
@@ -288,7 +289,80 @@ def drill_d7(env: dict[str, str], stack: Stack, report: Report) -> None:
     )
 
 
-DRILLS: dict[str, Callable[[dict[str, str], Stack, Report], None]] = {"d7": drill_d7}
+def job_state(stack: Stack, case_id: int) -> str:
+    """The execute job's status and lease owner for this case, from the stack's app database (read-only)."""
+    sql = (
+        "SELECT coalesce(max(status || ':' || coalesce(lease_owner, '-')), 'none') FROM jobs"
+        " WHERE kind = 'execute_adjustment' AND case_id = :'case';"
+    )
+    return stack.psql(stack.app_db, sql, case=str(case_id))
+
+
+def drill_d3(env: dict[str, str], stack: Stack, report: Report) -> None:
+    """D3, worker crash: the worker is killed while it holds an execute job's lease; a replacement recovers the job once
+    the lease runs out, and the adjustment posts exactly once.
+
+    To hold the worker inside the job, the customer's system is paused first: the worker claims the job, then waits on
+    its re-check read (about 2 s before it would time out). The kill lands there, before anything was submitted. The
+    case where a submission reached the system and the answer was lost is D5's."""
+    password = env["DEMO_USER_PASSWORD"]
+    agent, supervisor = (sign_in(u, password) for u in ("agent.ana", "supervisor.sam"))
+    waiting = approved_adjustments(agent, supervisor, 1, report)
+    report.check("one approved adjustment to work with", len(waiting) == 1, found=len(waiting))
+    if not waiting:
+        return
+    adjustment = waiting[0]
+    before = postings(stack, adjustment["member_number"], adjustment["stay_id"])
+
+    run(stack.compose("pause", "mock-api"))
+    report.step("customer system paused")
+    queued = supervisor.api("POST", f"/adjustments/{adjustment['id']}/execution")
+    report.check("the execution is queued", queued.status_code == 202, http=queued.status_code)
+    claimed = wait_until(
+        partial(job_state, stack, adjustment["case_id"]), lambda s: s.startswith("running:"), 20, every=0.2
+    )
+    run(stack.compose("kill", "-s", "SIGKILL", "worker"))
+    killed_at = time.monotonic()
+    report.check("the worker was killed while it held the job", claimed.startswith("running:"), job=claimed)
+    run(stack.compose("unpause", "mock-api"))
+    time.sleep(3)
+    report.step(
+        "worker killed, customer system resumed",
+        job=job_state(stack, adjustment["case_id"]),
+        postings_so_far=postings(stack, adjustment["member_number"], adjustment["stay_id"]) - before,
+    )
+
+    run(stack.compose("up", "-d", "--no-deps", "worker"))
+    report.step("replacement worker started")
+    final = wait_until(
+        partial(read_json, supervisor, f"/adjustments/{adjustment['id']}"),
+        lambda d: d["status"] not in ("approved", "executing"),
+        150,
+        every=2,
+    )
+    recovered_after = round(time.monotonic() - killed_at, 1)
+    after = postings(stack, adjustment["member_number"], adjustment["stay_id"])
+    report.check(
+        "the replacement finishes the job: executed",
+        final["status"] == "executed",
+        status=final["status"],
+        seconds_from_kill=recovered_after,
+    )
+    report.check("exactly one posting", after - before == 1, before=before, after=after)
+    audit = read_json(supervisor, f"/cases/{adjustment['case_id']}/audit")
+    actions = [e.get("action") for e in audit]
+    report.check(
+        "the timeline shows one execution",
+        actions.count("adjustment_executed") == 1,
+        actions=actions[-8:],
+    )
+
+
+def run(command: list[str]) -> None:
+    subprocess.run(command, check=True, capture_output=True, text=True)  # noqa: S603
+
+
+DRILLS: dict[str, Callable[[dict[str, str], Stack, Report], None]] = {"d3": drill_d3, "d7": drill_d7}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -299,7 +373,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=Path("drill-output"))
     args = parser.parse_args(argv)
     env = read_env(args.env_file)
-    stack = Stack(args.project, args.env_file, env.get("POSTGRES_USER", "loyalty"))
+    stack = Stack(args.project, args.env_file, env.get("POSTGRES_USER", "loyalty"), env.get("POSTGRES_DB", "loyalty"))
     report = Report(args.drill)
     try:
         DRILLS[args.drill](env, stack, report)
