@@ -412,11 +412,90 @@ def drill_d5(env: dict[str, str], stack: Stack, report: Report, out: Path) -> No
     )
 
 
+def job_attempts(stack: Stack, case_id: int) -> int:
+    sql = "SELECT coalesce(max(attempts), 0) FROM jobs WHERE kind = 'investigate_case' AND case_id = :'case';"
+    return int(stack.psql(stack.app_db, sql, case=str(case_id)))
+
+
+def drill_d2(env: dict[str, str], stack: Stack, report: Report, out: Path) -> None:
+    """D2, customer API outage: the customer's system goes down (the container stops) while investigations are asked
+    for. Nothing may show evidence it didn't read, the app must stay up and say the system is unreachable, and the
+    queued investigations must finish on their own (retry with backoff) once it's back."""
+    password = env["DEMO_USER_PASSWORD"]
+    agent = sign_in("agent.ana", password)
+    run(stack.compose("stop", "mock-api"))
+    down_at = time.monotonic()
+    report.step("customer system stopped")
+    ready = httpx.get(f"{APP}/readyz", timeout=10)
+    report.check(
+        "readiness says the customer system is unreachable",
+        ready.status_code == 503 and ready.json().get("customer_systems") == "unreachable",
+        http=ready.status_code,
+        body=ready.json(),
+    )
+    cases = []
+    for row in adjustable_cases(3):
+        request = row["requests"][0]
+        made = agent.api(
+            "POST",
+            "/cases",
+            {
+                "received_at_utc": request["received_at_utc"],
+                "contact_channel": request["contact_channel"],
+                "text": request["text"],
+                "arm": "B",
+                "sender_email": request.get("sender_email"),
+            },
+        )
+        made.raise_for_status()
+        case_id = made.json()["id"]
+        asked = agent.api("POST", f"/cases/{case_id}/investigation")
+        cases.append((row["case_id"], case_id, asked.status_code))
+    report.check("the app takes the requests while the system is down", all(c[2] == 202 for c in cases),
+                 http=[c[2] for c in cases])  # fmt: skip
+    time.sleep(15)
+    during = [read_json(agent, f"/cases/{case_id}") for _, case_id, _ in cases]
+    report.check(
+        "no case shows evidence or a proposal it couldn't read",
+        all(d["evidence"] is None and d["recommendation"] is None for d in during),
+        investigation=[d["investigation"] for d in during],
+    )
+    attempts = [job_attempts(stack, case_id) for _, case_id, _ in cases]
+    report.check("the investigations are being retried", all(a >= 2 for a in attempts), attempts=attempts)
+
+    run(stack.compose("start", "mock-api"))
+    outage = round(time.monotonic() - down_at, 1)
+    report.step("customer system started again", outage_seconds=outage)
+    back = wait_until(lambda: httpx.get(f"{APP}/readyz", timeout=10).status_code, lambda code: code == 200, 120, 2)
+    report.check("readiness recovers", back == 200, http=back)
+    finished = [
+        wait_until(
+            partial(read_json, agent, f"/cases/{case_id}"),
+            lambda d: (
+                d["investigation"] in ("none", "failed")
+                and (d["evidence"] is not None or d["investigation"] == "failed")
+            ),
+            150,
+            every=2,
+        )
+        for _, case_id, _ in cases
+    ]
+    recovered_after = round(time.monotonic() - down_at, 1)
+    report.check(
+        "every investigation finishes on its own once the system is back",
+        all(d["investigation"] == "none" and d["evidence"] is not None for d in finished),
+        investigation=[d["investigation"] for d in finished],
+        attempts=[job_attempts(stack, case_id) for _, case_id, _ in cases],
+        seconds_from_outage_start=recovered_after,
+    )
+
+
 def run(command: list[str]) -> None:
     subprocess.run(command, check=True, capture_output=True, text=True)  # noqa: S603
 
 
 DRILLS: dict[str, Callable[[dict[str, str], Stack, Report, Path], None]] = {
+    "d2": drill_d2,
     "d3": drill_d3,
     "d5": drill_d5,
     "d7": drill_d7,
