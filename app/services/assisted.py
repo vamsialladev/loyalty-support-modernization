@@ -49,7 +49,12 @@ def runtime_from_settings(settings: AppSettings) -> AiRuntime:
     """Live only when it's asked for and set up. Anything half-set falls back to arm B's result rather than failing."""
     caps = SpendCaps(settings.ai_budget_per_run_usd, settings.ai_budget_daily_usd, settings.ai_budget_total_usd)
     if settings.ai_provider == "mock" or settings.public_demo_mode:  # SEC-18: the public demo runs mock AI only
-        return AiRuntime(mock_runtime().provider, caps)
+        provider = mock_runtime().provider
+        if settings.mock_model_fault and not settings.public_demo_mode and provider is not None:
+            from app.adapters.mock_model import DrillFaultModel  # a drill's fault on the mock only (docs/drills.md)
+
+            provider = DrillFaultModel(provider, settings.mock_model_fault)
+        return AiRuntime(provider, caps)
     if settings.ai_provider == "mock":
         return AiRuntime(mock_runtime().provider, caps)
     if settings.ai_provider == "bedrock":

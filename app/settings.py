@@ -40,6 +40,7 @@ class AppSettings:
     secret_key: str = ""
     worker_health_file: str = ""
     ai_provider: str = "mock"
+    mock_model_fault: str = ""  # drills only (docs/drills.md D1, D6): the mock fails on purpose; ignored otherwise
     feature_live_ai: bool = False
     feature_prompt_cache: bool = False  # L3, ADR-0091: provider prompt caching, off by default
     feature_adjustment_execution: bool = True  # spec F.1, ADR-0081; production.env sets it false
@@ -80,6 +81,7 @@ class AppSettings:
             secret_key=os.environ.get("APP_SECRET_KEY", ""),
             worker_health_file=os.environ.get("WORKER_HEALTH_FILE", ""),
             ai_provider=os.environ.get("AI_PROVIDER", "mock").strip() or "mock",
+            mock_model_fault=os.environ.get("MOCK_MODEL_FAULT", "").strip(),
             feature_live_ai=_flag("FEATURE_LIVE_AI"),
             feature_prompt_cache=_flag("FEATURE_PROMPT_CACHE"),
             feature_adjustment_execution=_flag_on("FEATURE_ADJUSTMENT_EXECUTION"),

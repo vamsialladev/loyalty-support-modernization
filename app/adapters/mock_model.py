@@ -19,7 +19,9 @@ from app.ports.model_provider import (
     MODEL_WANTS_TOOLS,
     AssistantMessage,
     Message,
+    ModelProvider,
     ModelTurn,
+    ProviderUnavailable,
     ToolCall,
     ToolResults,
     ToolSpec,
@@ -203,3 +205,53 @@ class RulesMockModel:
             "out_of_scope_items": out_of_scope,
             "request_language": signals.detect_language(text),
         }
+
+
+DRILL_FAULTS = ("unavailable", "wrong_action")
+
+
+class DrillFaultModel:
+    """A mock model made to fail on purpose, for the Milestone 13b drills (docs/drills.md D1 and D6). It wraps the
+    mock only: `app.services.assisted.runtime_from_settings` builds it from `MOCK_MODEL_FAULT`, never with a live
+    provider and never in the public demo.
+
+    - `unavailable` (D1): every call fails as a provider outage would (`ProviderUnavailable`).
+    - `wrong_action` (D6): the recommendation names the opposite action: "adjust" where the engine found nothing
+      owed, and "no_adjustment_credited" where it found points owed. A proposal has no amount field, so a wrong action
+      is the worst a model can propose.
+    """
+
+    def __init__(self, inner: ModelProvider, fault: str) -> None:
+        if fault not in DRILL_FAULTS:
+            raise ValueError(f"unknown MOCK_MODEL_FAULT {fault!r}; use one of {', '.join(DRILL_FAULTS)}")
+        self.inner, self.fault = inner, fault
+        self.name, self.model_id, self.is_mock = inner.name, f"{inner.model_id}+drill-{fault}", True
+
+    def complete(
+        self,
+        system: str,
+        messages: list[Message],
+        tools: list[ToolSpec],
+        max_tokens: int,
+        timeout_seconds: float,
+        *,
+        prompt_cache: bool = False,
+    ) -> ModelTurn:
+        if self.fault == "unavailable":
+            raise ProviderUnavailable("[MOCK drill] the model provider is down")
+        turn = self.inner.complete(system, messages, tools, max_tokens, timeout_seconds, prompt_cache=prompt_cache)
+        calls = tuple(_wrong(call) if call.name == "submit_recommendation" else call for call in turn.tool_calls)
+        return ModelTurn(turn.stop_reason, turn.text, calls, turn.usage, turn.state)
+
+    def read_image(
+        self, media_type: str, content: bytes, timeout_seconds: float
+    ) -> tuple[dict[str, str | None], Usage]:
+        if self.fault == "unavailable":
+            raise ProviderUnavailable("[MOCK drill] the model provider is down")
+        return self.inner.read_image(media_type, content, timeout_seconds)
+
+
+def _wrong(call: ToolCall) -> ToolCall:
+    action = call.arguments.get("recommended_action")
+    flipped = NextAction.NO_ADJUSTMENT_CREDITED.value if action == NextAction.ADJUST.value else NextAction.ADJUST.value
+    return ToolCall(call.call_id, call.name, {**call.arguments, "recommended_action": flipped})
