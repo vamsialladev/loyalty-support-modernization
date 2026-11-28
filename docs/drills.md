@@ -8,6 +8,21 @@ times, counts and what failed, with the evidence file. Local drills aren't proof
 Plan and approval checklist: `docs/m13b-plan.md`. Mock AI and synthetic data only. Never against the live Cloud Run
 demo or its Neon database. Cost: $0.
 
+## Where each drill runs (owner's order, 2026-11-27: GitHub Actions wherever possible)
+The drills run in `.github/workflows/drills.yml`: each on its own throwaway Compose stack on a GitHub runner, started
+the way CI's Compose job starts it. The full output is kept as an artifact for 90 days: the drill's JSON, its console
+output, and the stack's logs. **None needs the owner's laptop.** Each needs only Docker and the stack, and a runner
+has both. Timings measured there are a GitHub runner's, not the laptop's, and each result says so.
+
+| Drill | Where | Status |
+|---|---|---|
+| D7 emergency execution shutdown | GitHub Actions (`scripts/drill.py d7`) | Written; first run on its pull request |
+| D3 worker crash, D5 uncertain adjustment, D2 customer API outage, D1 model outage, D6 incorrect recommendation, D4 backup and restore | GitHub Actions, one pull request each, in that order | Not run |
+| SEC-21: integration credential, unauthorized access, leaked test key | GitHub Actions, on the stack | Not run |
+| SEC-21: malicious policy, unexpected agent action, compromised dependency, excessive spend | GitHub Actions, as pytest in the existing CI | Not run |
+
+The laptop steps below stay for anyone running a drill by hand.
+
 ## Before any drill
 1. **The machine is free:** the owner says so, and `docker stats --no-stream` shows no other project's stack busy.
    Record the number of other running containers with each result. On 2026-11-26 a busy machine doubled timings

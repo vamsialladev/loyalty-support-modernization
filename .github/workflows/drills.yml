@@ -1,0 +1,73 @@
+# Milestone 13b drills (ROLL-02; docs/drills.md, docs/m13b-plan.md). Each drill runs on its own throwaway Compose stack
+# on a GitHub runner, never on the owner's laptop and never against the live demo, Cloud Run or Neon. Every value is a
+# throwaway made in this run (scripts/update-local-env.ps1); the workflow reads no secret. Full output is kept as an
+# artifact: the drill's JSON and console output, and the stack's (scrubbed JSON) logs.
+# Runs on a pull request that changes a drill, or by hand: Actions → Drills → Run workflow.
+name: Drills
+
+on:
+  pull_request:
+    paths:
+      - "scripts/drill.py"
+      - ".github/workflows/drills.yml"
+  workflow_dispatch:
+    inputs:
+      drills:
+        description: 'Drills to run, as a JSON list, e.g. ["d7"]'
+        type: string
+        default: '["d7"]'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: drills-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  drill:
+    name: Drill ${{ matrix.drill }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 1  # one drill at a time
+      matrix:
+        drill: ${{ fromJSON(inputs.drills || '["d7"]') }}  # a pull request runs every drill listed here
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.5"
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Synthetic seed data and a throwaway env file
+        shell: pwsh
+        run: |
+          uv run python -m seed_data.generator generate
+          ./scripts/update-local-env.ps1 -Path .env.ci
+      - name: Start a throwaway stack and wait for every health check
+        run: docker compose -p ci --env-file .env.ci up --build -d --wait
+      - name: Seed the demo world and accounts
+        run: |
+          docker compose -p ci --env-file .env.ci exec -T app python -m app.seed --dataset demo
+          curl --fail --silent --show-error http://127.0.0.1:8010/readyz
+      - name: Run drill ${{ matrix.drill }}
+        run: |
+          mkdir -p drill-output
+          set -o pipefail
+          uv run python scripts/drill.py ${{ matrix.drill }} --env-file .env.ci --project ci --out drill-output \
+            2>&1 | tee drill-output/${{ matrix.drill }}.log
+      - name: Keep the stack's logs
+        if: always()
+        run: docker compose -p ci --env-file .env.ci logs --no-color --timestamps > drill-output/stack.log 2>&1 || true
+      - name: Upload the full output
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: drill-${{ matrix.drill }}-${{ github.run_id }}
+          path: drill-output/
+          retention-days: 90
+      - if: always()
+        run: docker compose -p ci --env-file .env.ci down -v
