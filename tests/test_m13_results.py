@@ -32,6 +32,21 @@ def _run(success: int, approvals: int, p95: float, later: int, reading: int, cos
     }
 
 
+def test_the_comparison_and_its_projections_come_from_the_run_numbers() -> None:
+    a = [dict(_run(78, 0, 12.0, 220, 0, 0.140), run="a1", model_calls=300) for _ in range(2)]
+    d = [dict(_run(78, 0, 11.0, 220, 210, 0.098), run="d1", model_calls=296) for _ in range(2)]
+    c = res.comparison(a, d)
+    assert (c["A"]["cost_usd_per_case"], c["D"]["cost_usd_per_case"]) == (0.00175, 0.001225)
+    assert c["cost_change"] == -0.3  # 0.001225 / 0.00175 - 1
+    hundred = c["projections"]["hundred_properties"]
+    assert (hundred["cases_per_month"], hundred["saving_usd_per_month"], hundred["saving_usd_per_year"]) == (
+        16000,
+        8.4,
+        100.8,
+    )
+    assert c["projection_label"] == "projection" and c["D"]["later_calls_reading_cache"] == [420, 440]
+
+
 def test_all_pass_marks_met() -> None:
     a = [_run(78, 0, 11.0, 220, 0, 0.136), _run(77, 0, 11.5, 220, 0, 0.137), _run(78, 0, 11.2, 220, 0, 0.136)]
     d = [_run(77, 0, 11.4, 220, 210, 0.095), _run(78, 0, 10.9, 220, 215, 0.096), _run(76, 0, 11.5, 220, 212, 0.094)]

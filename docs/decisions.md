@@ -1597,3 +1597,22 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   with it, or every PR waits forever); a second maintainer (then require 1 approval); merge conflicts from stale
   branches landing broken code (then turn on up-to-date).
 - **Starter kit:** turn this on in week one of any engagement, not after the first slip.
+
+## ADR-0094: Recommend prompt caching on for arm C, with four conditions; no answer cache
+- **Context:** Phase 3's six live runs met all six pre-registered pass marks (`docs/m13-results.md`; verification log,
+  Milestone 13, rows 32 to 36). The owner asked for a recommendation to turn caching on, with conditions, and for the
+  three flags (a requeue in A3, shared CPU in A3 and D3, invalid results in D3) to stay visible, with runs 1 and 2 as
+  the clean comparison.
+- **Options considered:**
+  - Keep it off: no risk, but gives up a measured 26.0% (30.4% clean) at no quality cost.
+  - Turn it on without conditions: ignores the unexplained D3 invalid results and the test's limits.
+  - **Chosen:** on, with conditions: a first-week watch on cost and cache reads; quality checks unchanged, switched off
+    if validation failures pass their drift threshold; a security sign-off on the provider's data handling; prices
+    re-checked on any model or price change (`docs/m13-decision-memo.md`).
+- **Tradeoff:** a small saving today (about $8 a month at 100 properties, projection) for a reversible change with
+  nothing stored. The flag stays off in this repository and the demo; switching it on in an environment is that
+  environment's change.
+- **What would change this decision:** cost not lower over a week of real traffic; a quality change that follows
+  the switch; the security sign-off failing; a provider change to caching or prices.
+- **Starter kit:** measure cacheability before building (Phase 1's method), test any cache on paired arms with
+  pre-registered pass marks, and keep answer caches out of workflows whose answers depend on private records.

@@ -226,5 +226,175 @@
    "p95_all_cases": 14.78,
    "p95_without_requeued_cases": 14.78
   }
- ]
+ ],
+ "comparison_all_runs": {
+  "A": {
+   "runs": [
+    "m13-a-r1",
+    "m13-a-r2",
+    "m13-a-r3"
+   ],
+   "cases": 240,
+   "case_success": [
+    78,
+    78,
+    78
+   ],
+   "false_approvals": [
+    0,
+    0,
+    0
+   ],
+   "p50_s": [
+    8.0,
+    8.53,
+    9.155
+   ],
+   "p95_s": [
+    12.671,
+    13.766,
+    14.78
+   ],
+   "model_calls_per_case": 3.737,
+   "later_calls_reading_cache": [
+    0,
+    658
+   ],
+   "cost_usd_per_case": 0.001723,
+   "cost_usd_per_1000_cases": 1.72
+  },
+  "D": {
+   "runs": [
+    "m13-d-r1",
+    "m13-d-r2",
+    "m13-d-r3"
+   ],
+   "cases": 240,
+   "case_success": [
+    78,
+    78,
+    78
+   ],
+   "false_approvals": [
+    0,
+    0,
+    0
+   ],
+   "p50_s": [
+    7.968,
+    9.188,
+    8.688
+   ],
+   "p95_s": [
+    11.468,
+    11.952,
+    13.155
+   ],
+   "model_calls_per_case": 3.825,
+   "later_calls_reading_cache": [
+    650,
+    678
+   ],
+   "cost_usd_per_case": 0.001275,
+   "cost_usd_per_1000_cases": 1.27
+  },
+  "cost_change": -0.26,
+  "projection_label": "projection",
+  "projections": {
+   "two_properties": {
+    "cases_per_month": 320,
+    "a_usd_per_month": 0.55,
+    "d_usd_per_month": 0.41,
+    "saving_usd_per_month": 0.14,
+    "saving_usd_per_year": 1.72
+   },
+   "hundred_properties": {
+    "cases_per_month": 16000,
+    "a_usd_per_month": 27.57,
+    "d_usd_per_month": 20.4,
+    "saving_usd_per_month": 7.17,
+    "saving_usd_per_year": 86.02
+   }
+  }
+ },
+ "comparison_clean_runs_1_2": {
+  "A": {
+   "runs": [
+    "m13-a-r1",
+    "m13-a-r2"
+   ],
+   "cases": 160,
+   "case_success": [
+    78,
+    78
+   ],
+   "false_approvals": [
+    0,
+    0
+   ],
+   "p50_s": [
+    8.0,
+    8.53
+   ],
+   "p95_s": [
+    12.671,
+    13.766
+   ],
+   "model_calls_per_case": 3.763,
+   "later_calls_reading_cache": [
+    0,
+    442
+   ],
+   "cost_usd_per_case": 0.001732,
+   "cost_usd_per_1000_cases": 1.73
+  },
+  "D": {
+   "runs": [
+    "m13-d-r1",
+    "m13-d-r2"
+   ],
+   "cases": 160,
+   "case_success": [
+    78,
+    78
+   ],
+   "false_approvals": [
+    0,
+    0
+   ],
+   "p50_s": [
+    7.968,
+    9.188
+   ],
+   "p95_s": [
+    11.468,
+    11.952
+   ],
+   "model_calls_per_case": 3.694,
+   "later_calls_reading_cache": [
+    417,
+    431
+   ],
+   "cost_usd_per_case": 0.001205,
+   "cost_usd_per_1000_cases": 1.21
+  },
+  "cost_change": -0.3043,
+  "projection_label": "projection",
+  "projections": {
+   "two_properties": {
+    "cases_per_month": 320,
+    "a_usd_per_month": 0.55,
+    "d_usd_per_month": 0.39,
+    "saving_usd_per_month": 0.17,
+    "saving_usd_per_year": 2.02
+   },
+   "hundred_properties": {
+    "cases_per_month": 16000,
+    "a_usd_per_month": 27.71,
+    "d_usd_per_month": 19.28,
+    "saving_usd_per_month": 8.43,
+    "saving_usd_per_year": 101.18
+   }
+  }
+ }
 }

@@ -502,6 +502,18 @@ default-credentials check. **Customer-specific:** which profiles a customer runs
   and mock AI. `Dockerfile.demo` runs everything in one container; `scripts/demo_smoke.py <url>` checks it.
 - **Rollback:** roll the image back, never the schema (`docs/rollback.md`).
 
+## 4m. Caching, measured before built (Milestone 13)
+- **The question was where caching is safe, not how to add a cache.** `uv run python -m evaluations.m13_baseline`
+  measures it from stored runs: answers depend on each member's records, so an answer cache would always be wrong
+  here (0 of 910 look-alike pairs share an answer). Only provider prompt caching was built.
+- **It's one flag:** `FEATURE_PROMPT_CACHE` (off by default). The adapter adds one `cache_control` to the request,
+  and nothing else changes. `/admin` can switch it off without a restart (`docs/runbooks/prompt-cache.md`).
+- **Cached tokens cost money too:** writes cost 1.25× the input price, reads 0.1×. They're priced in
+  `config/ai/hg-demo.yaml` and counted against the caps; unknown rates are charged at 2×.
+- **The proof:** `uv run python -m evaluations.m13_results` re-scores the six live runs: 26.0% lower cost per case,
+  the same quality (`docs/m13-results.md`). The paired runs, the pass marks fixed beforehand and the flags kept
+  visible are the pattern to copy.
+
 ## 5. Common failure modes so far
 - **`ModuleNotFoundError: app`** when running pytest outside `uv run`: use `uv run pytest`.
 - **Preflight says NOT READY:** expected with an empty `.env`; it lists exactly which settings are missing.
@@ -566,6 +578,12 @@ default-credentials check. **Customer-specific:** which profiles a customer runs
   (`"1"` became `_ratio`, so the check matches names exactly); Postgres can report healthy before it accepts TCP (the
   healthcheck now uses `-h 127.0.0.1`); a guard test you didn't run still runs on CI (run every test that reads
   `docs/` before pushing).
+- **Milestone 13's traps:** Windows PowerShell 5.1 turns a native command's stderr line into an error, and with
+  `$ErrorActionPreference = "Stop"` that killed a live run at 60 of 80 cases (go by the exit code); a report that
+  counts every run folder moves when a later milestone adds runs (scope it to its own runs: `is_milestone_10_run`); a
+  hash of a growing ledger breaks reproduction (hash only the rows you read); `python -m seed_data.generator generate`
+  blanks the committed label-review sheet (TD-58: `git checkout` it back); a dirty working tree refuses the next
+  held-out run, so commit before a run starts, not during a batch.
 
 ## 6. First tasks to try
 1. Run the checks and read the preflight output for each profile.

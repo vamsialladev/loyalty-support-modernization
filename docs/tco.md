@@ -8,7 +8,7 @@
 
 | Component | Year 1 | Year 2 | Year 3 | Source of the number |
 |---|---|---|---|---|
-| Model / API usage | about $6.60 (estimate) | — | — | $0.00171 per case measured at list price, × an assumed 320 a month × 12 |
+| Model / API usage | about $6.60 (estimate); about $4.60 with prompt caching (estimate) | — | — | $0.00171 per case measured at list price, × an assumed 320 a month × 12. With prompt caching (Milestone 13, measured on runs 1–2): $0.001205 per case, −30.4% (−26.0% over three runs); at 100 properties about $101 a year saved (projection, `docs/m13-results.md`) |
 | Hosting: the public demo (Cloud Run + Neon, chosen 2026-11-14) | $0 up to about 200 visit sessions a month (projection) | — | — | Instance-based billing, max 1 instance; prices read 2026-11-14 (`docs/hosting-cloud-run.md`). A $10 spend cap pauses Cloud Run at about 416 sessions, when the real bill is about $4.78. Assumptions there; not measured until deployed |
 | Hosting: an AWS deployment (reference path, not built) | about $1,200 a year or more (estimate) | — | — | About $100 a month at the smallest sizes (Fargate, RDS, ALB, NAT gateway); third-party figures, re-price on AWS's pages first (`docs/teardown.md`) |
 | Engineering build | assumption, set in M10 | — | — | Hours × rate, both assumptions |
