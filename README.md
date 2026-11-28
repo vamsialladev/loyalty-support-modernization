@@ -33,6 +33,22 @@ when the daily reset runs). Paused if the month's cap is reached. How it's hoste
   limitations ([protocol test results](docs/protocol-test-results.md)).
 - A configuration check that never prints secrets: `python -m app.preflight`.
 
+## Safe AI caching: results (Milestone 13)
+**In this workflow, answer caching is unsafe (910 look-alike pairs, 0 shared correct answers); prompt caching is the
+safe win: 26.0% lower cost per case, with the same quality.**
+
+- **Measured first:** in the 280 frozen cases, 0 of 910 pairs with word-for-word identical masked messages share a
+  correct answer, so no answer cache was built ([baseline](docs/m13-baseline.md)).
+- **Then tested live** (claude-haiku-5-5, SYNTHETIC cases, 3 runs per arm on the same 80 held-out cases):
+  - case success was 78 of 80 and false approvals 0 in every run, with caching and without;
+  - cost per case fell from $0.001723 to $0.001275 (−26.0%), and by 30.4% in runs 1 and 2, the clean comparison;
+  - no model calls were avoided: the same calls cost less. Live spend was $0.81 of a $1.55 cap
+    ([results](docs/m13-results.md)).
+- **Flags that travel with it:** one requeued job in run A3 (the SQLite race, TD-57); runs A3 and D3 shared the laptop
+  with another batch; D3 had 5 invalid model results against 0 or 1 in the other runs, cause not established.
+- **Recommendation:** turn it on, with four conditions ([decision memo](docs/m13-decision-memo.md)). It's off by
+  default (`FEATURE_PROMPT_CACHE`), and the `/admin` switch turns it off without a restart.
+
 ## Run the checks (Windows PowerShell)
 
 ```powershell
@@ -99,6 +115,9 @@ key is needed for any offline check.
   [Baseline measurement plan](docs/baseline-measurement-plan.md) · [Experiment plan](docs/experiment-plan.md) ·
   [Threat model](security/threat-model.md) · [Governance and RACI](docs/governance.md) ·
   [Registers](docs/registers.md)
+- **Safe AI caching (Milestone 13):** [Baseline](docs/m13-baseline.md) · [Phase 3 plan](docs/m13-phase3-plan.md) ·
+  [Results](docs/m13-results.md) · [Decision memo](docs/m13-decision-memo.md) · [Datasets](docs/datasets.md) ·
+  [Prompt-cache runbook](docs/runbooks/prompt-cache.md)
 - [Implementation plan](docs/implementation-plan.md) · [Status](docs/implementation-status.md) ·
   [Decisions](docs/decisions.md) · [Known limitations](docs/known-limitations.md) ·
   [Verification log](docs/verification-log.md) · [Session handoff](docs/session-handoff.md)

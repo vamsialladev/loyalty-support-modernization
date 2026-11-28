@@ -48,6 +48,13 @@ flag. **Reading this as a standard:** `docs/rfcs/RFC-0001-write-path-integrity.m
 - **Validate-only infrastructure.** The AWS Terraform is reviewed and checked in CI but never applied without an
   account and a budget; the public demo runs on free tiers.
 
+## Added in Milestone 13
+- **Measure cacheability before building a cache.** The baseline came from stored runs and cost nothing. It showed
+  an answer cache would be wrong every time in a claims workflow (0 of 910 look-alike pairs share an answer), so only
+  provider prompt caching was built: 26.0% lower cost per case at the same quality (`docs/m13-results.md`).
+- **Answer caches belong where answers are shared:** a knowledge assistant or a gateway in front of several
+  assistants (BL-M13-02), keyed by property and policy version.
+
 ## What not to build
 A general agent framework; a vector database before a measured need; multitenancy inside one database; a workflow
 automation platform; anything that lets a model move points.
