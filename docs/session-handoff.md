@@ -1,6 +1,6 @@
 # Session handoff
 
-## Milestone 13: safe AI caching (started 2026-11-26). Phase 3 done (2026-11-28): all six pass marks met
+## Milestone 13: safe AI caching (2026-11-26 to 2026-11-28). Done; TD-57 next, in its own PR
 - **Scope (owner, 2026-11-26):** find from Stage 9's metrics where caching helps arm C; build only there, safely;
   prove it in business terms with zero wrong reuses. Four phases: measure, build, prove, business outcome.
 - **Standing orders (owner, 2026-11-27):** work straight through; decide routine choices; batch questions with a
@@ -30,9 +30,38 @@
   partial D2 ($0.084858) included. Flagged: one requeue in A3 (HO-032; p95 14.78 s either way); A3 and D3 ran beside
   the owner's Stage 10 batch (CPU samples 12 to 100%); D3 had 5 invalid results, cause not established. Verification
   log rows 25 to 38. **`.env` should go back to mock now** (the owner does it).
-- **After Phase 3:** TD-57 (the SQLite lock race; likely cause of the Phase 1 `test_runner [B]` failure), Phase 4
-  (results, decision memo, README section; the website case study needs the owner's OK to publish).
+- **Phase 4** (branch `docs/m13-phase4`; CACHE-04): `docs/m13-results.md` with the owner's headline ("26.0% lower
+  cost per case, with the same quality"), the three flags and runs 1–2 as the clean comparison (−30.4%);
+  `docs/m13-decision-memo.md` (on, with four conditions; ADR-0094); the README section; the executive brief; the
+  milestone-end docs. `evaluations/m13_results.py` now also writes both comparisons and the projections.
+  **Not done:** the website case study (publishing needs the owner's OK).
+- **PR #99's CI fix:** Milestone 10's reports counted every run folder, so Phase 3's runs moved a published H6 line;
+  they now count Milestone 10's runs only (rows 39 and 40; the auto-merge setting is logged in row 39).
+- **Next:** TD-57 (the SQLite lock race; likely cause of the Phase 1 `test_runner [B]` failure), in its own PR, with
+  a test that reproduces the race.
 - **The prototype** `C:\Users\Vamsi\Downloads\Loyalty-Cache-Lab` was read, never run. Reference only.
+
+## Milestone 13, in K.1 form
+**What changed.** Arm C can ask the provider to cache the prompt it re-sends on every call of a case
+(`FEATURE_PROMPT_CACHE`, off by default; `/admin` switches it off). Cached tokens are priced and counted against the
+caps. Nothing else was built: an answer cache would be wrong in this workflow every time.
+
+**Why.** A cache only helps where something is truly reused. Here the answers are private to each member, but the
+instructions and the case's own conversation are re-read on every step. Measured from stored runs first, then on
+paired live runs with pass marks fixed beforehand: 26.0% lower cost per case, the same quality.
+
+**How to verify.** `uv run python -m evaluations.m13_baseline` and `uv run python -m evaluations.m13_results` rebuild
+the reports from stored files; `uv run pytest tests/test_prompt_cache.py tests/test_m13_results.py`.
+
+**Common failure modes.** A stderr line ending a PowerShell script; a report counting another milestone's runs; a
+hash of a growing file; a dirty tree refusing a held-out run (`docs/onboarding.md` §5).
+
+## The Milestone 13 exercise (K.1), waiting for your answer
+D3 had 5 invalid AI results where every other run had 0 or 1, and caching can't change what the model reads.
+**Say what you would check first to find the cause, and what result would make you keep caching off.** Then try one
+small change: in `config/ai/hg-demo.yaml`, delete `cache_read_per_mtok`, run `uv run pytest tests/test_prompt_cache.py`,
+and say which test fails and why that's the safe behaviour (then put it back). Your answer goes in
+`docs/owner-exercises.md`.
 
 **Updated:** 2026-11-26 (revision 00004 checked live, the README's live link, the cap check and the second
 Dependabot round). Before that, 2026-11-14, at the end of Milestone 12: operations, delivery and the public demo,

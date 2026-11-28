@@ -206,6 +206,14 @@ artifact checks, and the rule that no protocol writes.
 | The demo's one container (TD-56) | Separate services | Use `Dockerfile.app` and `mock_customer_api/Dockerfile` (the mock replaced by their system's adapter) |
 | Systems of record | Their CRM, loyalty platform, PMS, warehouse | `docs/enterprise-integration.md`: the port operations and what each adapter needs |
 
+## Prompt caching (Milestone 13)
+| Piece here | For a real customer | What to change |
+|---|---|---|
+| `FEATURE_PROMPT_CACHE` and the `/admin` switch | The same flag in their environment's configuration | Turn it on under the conditions in `docs/m13-decision-memo.md`; their security team signs off on the provider's cache handling first |
+| Automatic caching on the Anthropic adapter (one top-level `cache_control`) | Another provider or a gateway | Each provider caches differently (explicit breakpoints, automatic prefixes, or none): keep the port's `prompt_cache` keyword and change only the adapter; price cached tokens at that provider's rates in `config/ai/<customer>.yaml` |
+| Cache rates in `config/ai/hg-demo.yaml` | Their contract prices | Set them from the contract; unknown rates are charged at 2× input, so caps stay safe |
+| The A/D comparison on frozen synthetic cases | Their real cases | Repeat the paired comparison in the pilot before any claim (`docs/m13-phase3-plan.md` is the template) |
+
 ## The benchmark (Milestone 10)
 
 | Part | Here | For a real engagement |

@@ -214,6 +214,40 @@ def markdown(result: dict[str, Any]) -> str:
         else "**at least one pass mark missed: L3 stays off**"
     )
     lines += ["", f"**Verdict:** {verdict}.", ""]
+    for key, title in (
+        ("comparison_all_runs", "All three runs per arm"),
+        (
+            "comparison_clean_runs_1_2",
+            "Runs 1 and 2 only (the clean comparison: before the requeue and the shared load)",
+        ),
+    ):
+        c = result.get(key)
+        if not c:
+            continue
+        lines += [
+            f"## {title}",
+            "",
+            "| | No cache (A) | Prompt caching (D) |",
+            "|---|---|---|",
+            f"| Case success | {c['A']['case_success']} of {c['A']['cases'] // len(c['A']['runs'])} | "
+            f"{c['D']['case_success']} of {c['D']['cases'] // len(c['D']['runs'])} |",
+            f"| False approvals | {c['A']['false_approvals']} | {c['D']['false_approvals']} |",
+            f"| p50 / p95 draft-ready (s) | {c['A']['p50_s']} / {c['A']['p95_s']} | "
+            f"{c['D']['p50_s']} / {c['D']['p95_s']} |",
+            f"| Model calls per case | {c['A']['model_calls_per_case']} | {c['D']['model_calls_per_case']} |",
+            f"| Later calls reading the cache | {c['A']['later_calls_reading_cache'][0]} of "
+            f"{c['A']['later_calls_reading_cache'][1]} | {c['D']['later_calls_reading_cache'][0]} of "
+            f"{c['D']['later_calls_reading_cache'][1]} |",
+            f"| Cost per case | ${c['A']['cost_usd_per_case']:.6f} | ${c['D']['cost_usd_per_case']:.6f} "
+            f"(**{c['cost_change']:+.1%}**) |",
+        ]
+        for volume, p in c["projections"].items():
+            lines.append(
+                f"| Per month at {p['cases_per_month']:,} cases ({volume.replace('_', ' ')}; **projection**) | "
+                f"${p['a_usd_per_month']:.2f} | ${p['d_usd_per_month']:.2f} (saves ${p['saving_usd_per_month']:.2f}; "
+                f"${p['saving_usd_per_year']:.2f} a year) |"
+            )
+        lines.append("")
     flagged = result.get("requeue_sensitivity") or []
     if flagged:
         lines += [
@@ -242,6 +276,54 @@ def smoke(name: str, ledger: list[dict[str, Any]]) -> int:
         print("SMOKE FAILED: no call read the cache. Stop and look before the full runs.")
         return 1
     return 0
+
+
+MONTHLY_CASES = {"two_properties": 320, "hundred_properties": 16000}  # docs/load-profile.md; 100 = 50 x 320
+CLEAN_RUNS = 2  # the owner's reading (2026-11-28): runs 1 and 2 of each arm, before the requeue and the shared load
+
+
+def comparison(a: Sequence[dict[str, Any]], d: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """Arm against arm over the runs given: quality, latency, calls, cache use, cost, and the monthly cost at the
+    stated volumes. The monthly figures are projections: measured cost per case times an assumed volume."""
+
+    def side(rs: Sequence[dict[str, Any]]) -> dict[str, Any]:
+        cases = sum(r["cases"] for r in rs)
+        cost = sum(r["cost_usd"] for r in rs)
+        return {
+            "runs": [r["run"] for r in rs],
+            "cases": cases,
+            "case_success": [r["case_success"] for r in rs],
+            "false_approvals": [r["false_approvals"] for r in rs],
+            "p50_s": [r["latency_s"]["p50"] for r in rs],
+            "p95_s": [r["latency_s"]["p95"] for r in rs],
+            "model_calls_per_case": round(sum(r["model_calls"] for r in rs) / cases, 3),
+            "later_calls_reading_cache": [
+                sum(r["later_calls_reading_cache"] for r in rs),
+                sum(r["later_calls"] for r in rs),
+            ],
+            "cost_usd_per_case": round(cost / cases, 6),
+            "cost_usd_per_1000_cases": round(cost / cases * 1000, 2),
+        }
+
+    sa, sd = side(a), side(d)
+    change = sd["cost_usd_per_case"] / sa["cost_usd_per_case"] - 1
+    projections = {
+        volume: {
+            "cases_per_month": n,
+            "a_usd_per_month": round(sa["cost_usd_per_case"] * n, 2),
+            "d_usd_per_month": round(sd["cost_usd_per_case"] * n, 2),
+            "saving_usd_per_month": round((sa["cost_usd_per_case"] - sd["cost_usd_per_case"]) * n, 2),
+            "saving_usd_per_year": round((sa["cost_usd_per_case"] - sd["cost_usd_per_case"]) * n * 12, 2),
+        }
+        for volume, n in MONTHLY_CASES.items()
+    }
+    return {
+        "A": sa,
+        "D": sd,
+        "cost_change": round(change, 4),
+        "projection_label": "projection",
+        "projections": projections,
+    }
 
 
 def requeue_sensitivity(runs: Mapping[str, Sequence[dict[str, Any]]], live: Path = LIVE) -> list[dict[str, Any]]:
@@ -282,6 +364,8 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     result: dict[str, Any] = {"label": LABEL, "runs": runs, "pass_marks": pass_marks(runs["A"], runs["D"])}
     result["requeue_sensitivity"] = requeue_sensitivity(runs)
+    result["comparison_all_runs"] = comparison(runs["A"], runs["D"])
+    result["comparison_clean_runs_1_2"] = comparison(runs["A"][:CLEAN_RUNS], runs["D"][:CLEAN_RUNS])
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "phase3-results.json").write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8", newline="\n")
     (OUT / "phase3-results.md").write_text(markdown(result), encoding="utf-8", newline="\n")
