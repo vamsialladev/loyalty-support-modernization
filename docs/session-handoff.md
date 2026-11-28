@@ -69,9 +69,11 @@ merged as fourteen pull requests.
 ## Milestone 13b (planned 2026-11-27; drills in GitHub Actions since 2026-11-28)
 - **The drills run in GitHub Actions,** not on the laptop (owner, 2026-11-27): `.github/workflows/drills.yml` uses a
   throwaway Compose stack per run, and `scripts/drill.py` holds the drills. None needs the laptop.
-- **D7 emergency execution shutdown: passed 7 of 7** (run 46090558919; verification log M13b rows 1-2). Next, one
-  pull request each: D3 worker crash, D5 uncertain adjustment, D2 customer API outage, D1 model outage, D6
-  incorrect recommendation, D4 measured backup and restore, then the SEC-21 exercises.
+- **D7 emergency execution shutdown: passed 7 of 7** (run 46090558919; verification log M13b rows 1-2).
+- **D3 worker crash: passed 6 of 6** (run 46092829733; row 3). Recovered 61.7 s after the kill, with one posting.
+  Found: the recovery isn't on the case's timeline (backlog).
+- **Next, one pull request each:** D5 uncertain adjustment (written, on `ci/m13b-d5`), D2 customer API outage, D1 model
+  outage, D6 incorrect recommendation, D4 measured backup and restore, then the SEC-21 exercises.
 - **Break-glass is built** (ENT-26, ADR-0093, `docs/break-glass.md`), with the owner's rules of 2026-11-27, and
   tested without a stack.
 - **Waiting on the owner:** nothing for the drills. The checklist in `docs/m13b-plan.md` is answered by the owner's
