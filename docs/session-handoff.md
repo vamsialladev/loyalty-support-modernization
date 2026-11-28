@@ -43,8 +43,10 @@
   write, and reads before it hold none. The cause was two read-then-write transactions overlapping: the worker's
   heartbeat and a running job. The reproducer passes; three race tests fail on the old engine and pass now; 556
   SQLite-heavy tests pass locally (rows 42 to 45). It's the likely cause of the Phase 1 `test_runner [B]` failure too.
-- **Waiting on the owner:** the website case study for Milestone 13 (publishing needs the OK); `.env` back to mock
-  (delete the worktree's copy); the Milestone 13 exercise (below).
+- **Waiting on the owner:** review and approve publishing the case study draft (vamsialladev.github.io PR #20, a
+  GitHub draft with auto-merge off, `noindex` and unlinked). Done by the owner on 2026-11-28: `.env` back to mock
+  (the worktree's copy deleted; the main checkout confirmed `AI_PROVIDER=mock`), and the Milestone 13 exercise
+  answered (`docs/owner-exercises.md`, row 13).
 - **Next:** Milestone 13b (the operational drills), which another session is running in GitHub Actions.
 - **The prototype** `C:\Users\Vamsi\Downloads\Loyalty-Cache-Lab` was read, never run. Reference only.
 
@@ -63,7 +65,7 @@ the reports from stored files; `uv run pytest tests/test_prompt_cache.py tests/t
 **Common failure modes.** A stderr line ending a PowerShell script; a report counting another milestone's runs; a
 hash of a growing file; a dirty tree refusing a held-out run (`docs/onboarding.md` §5).
 
-## The Milestone 13 exercise (K.1), waiting for your answer
+## The Milestone 13 exercise (K.1), answered (2026-11-28; `docs/owner-exercises.md`, row 13)
 D3 had 5 invalid AI results where every other run had 0 or 1, and caching can't change what the model reads.
 **Say what you would check first to find the cause, and what result would make you keep caching off.** Then try one
 small change: in `config/ai/hg-demo.yaml`, delete `cache_read_per_mtok`, run `uv run pytest tests/test_prompt_cache.py`,
