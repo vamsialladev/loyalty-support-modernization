@@ -1598,7 +1598,6 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
   branches landing broken code (then turn on up-to-date).
 - **Starter kit:** turn this on in week one of any engagement, not after the first slip.
 
-
 ## ADR-0093: Break-glass is code: a time-limited administrator grant, out of band, two people, no renewal
 - **Context:** spec E6 asks for a break-glass procedure with time limits, a reason, an alert and an audit trail
   (ENT-26). On 2026-11-27 the owner chose code over a document only, with these rules: at most 1 hour; a reason;
@@ -1641,3 +1640,46 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **What would change this decision:** a real customer's SSO (then the grant needs its own sign-in and an approver);
   a need to break glass for case work (then a separate, narrower grant, never this one); a misuse found in a drill.
 - **Starter kit:** the rules table and the tests move as they are; the roles and the command are customer-specific.
+
+## ADR-0094: Recommend prompt caching on for arm C, with four conditions; no answer cache
+- **Context:** Phase 3's six live runs met all six pre-registered pass marks (`docs/m13-results.md`; verification log,
+  Milestone 13, rows 32 to 36). The owner asked for a recommendation to turn caching on, with conditions, and for the
+  three flags (a requeue in A3, shared CPU in A3 and D3, invalid results in D3) to stay visible, with runs 1 and 2 as
+  the clean comparison.
+- **Options considered:**
+  - Keep it off: no risk, but gives up a measured 26.0% (30.4% clean) at no quality cost.
+  - Turn it on without conditions: ignores the unexplained D3 invalid results and the test's limits.
+  - **Chosen:** on, with conditions: a first-week watch on cost and cache reads; quality checks unchanged, switched off
+    if validation failures pass their drift threshold; a security sign-off on the provider's data handling; prices
+    re-checked on any model or price change (`docs/m13-decision-memo.md`).
+- **Tradeoff:** a small saving today (about $8 a month at 100 properties, projection) for a reversible change with
+  nothing stored. The flag stays off in this repository and the demo; switching it on in an environment is that
+  environment's change.
+- **What would change this decision:** cost not lower over a week of real traffic; a quality change that follows
+  the switch; the security sign-off failing; a provider change to caching or prices.
+- **Starter kit:** measure cacheability before building (Phase 1's method), test any cache on paired arms with
+  pre-registered pass marks, and keep answer caches out of workflows whose answers depend on private records.
+
+
+## ADR-0096: After a restore, end every session, API token and break-glass grant before the app takes traffic
+- **Context:** ROLL-03 says a restore must never reinstate revoked access. Drill D4 tested it, once the measurement
+  was right (verification log M13b row 11): a session created before the backup, then revoked, **worked again (HTTP
+  200)** after the restore. The restored database still held it as live. API tokens and break-glass grants have the
+  same shape.
+- **Options considered:**
+  - **Revoke only what was revoked after the backup.** The restore can't know that: the revocations are in the lost
+    part.
+  - **Rotate `APP_SECRET_KEY`.** Sessions are random tokens stored by hash, so the key doesn't sign them, and
+    rotating it wouldn't end them. It also voids approvals not yet executed (`docs/credential-rotation.md`).
+  - **End all of them after every restore.** Chosen: it's what a restore needs, and it costs everyone a sign-in.
+- **Decision:** `python -m app.services.after_restore --reason ...` ends every open session, every unrevoked API
+  token and every open break-glass grant. It records `restore_access_sealed` with the counts, as a security event
+  (privilege, severity 3), and the reason never leaves in the export. It's a required step in `docs/backup-restore.md`
+  before the app takes traffic.
+- **Tradeoff:** everyone signs in again, and each integration needs a new token. Local accounts deactivated after the
+  backup are active again; an administrator re-checks them. With SSO the identity provider decides.
+- **Result:** `tests/test_after_restore.py`, 4 tests: all ended and recorded; a second run ends nothing; a reason is
+  required; the command line prints counts only. Drill D4 runs the step after its restore and checks that the revoked
+  session stays revoked.
+- **What would change this:** sessions signed with a key (then rotating the key would end them); an identity provider
+  for every account (then local accounts drop out of the problem).

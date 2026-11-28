@@ -3,6 +3,27 @@
 > One page per phase for a non-technical sponsor (PURP-06). Plain language. **Simulated engagement, synthetic data.**
 > Newest phase first.
 
+## Milestone 13: safe AI caching (completed 2026-11-28)
+
+**The answer, on a simulation.** In this workflow, answer caching is unsafe (910 look-alike pairs, 0 shared correct
+answers); prompt caching is the safe win: 26.0% lower cost per case, with the same quality. Every member's answer
+depends on their own records, so two requests that read the same still need different replies. What can be reused
+safely is the instructions the AI re-reads on every step, and the provider can bill those at a tenth of the price.
+
+**The test.** The same 80 cases, three times each with and without caching, with the pass marks written down first.
+All six pass marks were met: 78 of 80 right and nothing over-credited every time; cost down 26.0% (30.4% on the two
+cleanest runs). Three things travel with that: one run had a database retry; two runs shared the laptop with other
+work; one run had a few more rejected AI drafts than the others, with no cause found.
+
+**What it's worth.** Very little today: about $8 a month at 100 properties (a projection). It costs nothing to
+reverse and stores nothing. The same share saved grows with volume or a dearer model.
+
+**Decision needed.** Whether to turn it on in a real environment, under four conditions: a first-week watch,
+unchanged quality checks, a security sign-off on the provider's handling, and prices re-checked
+(`docs/m13-decision-memo.md`).
+
+**Next.** Fix the database retry's cause (TD-57), then the operational drills (Milestone 13b).
+
 ## Phase 4: AI, security and the benchmark (Milestones 8-10, completed 2026-11-07)
 
 **The answer, on a simulation.** Better tools and corrected rules did most of the work. On 80 test cases written before the results were known, the old way got 41 right, the improved way without AI got 71, and with AI 78. Neither improved way over-credited anyone. The old way did so on 8.

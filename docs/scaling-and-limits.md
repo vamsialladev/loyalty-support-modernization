@@ -106,6 +106,17 @@ through `arm_review.review_for`.
 - **Token checks are local** (no call to the issuer per request), so the issuer isn't a bottleneck; the price is
   TD-49 (a disabled client's last token works until it expires).
 
+## Prompt caching (Milestone 13)
+- **Measured** (live, 80 held-out cases, 3 runs per arm): the cache was read on 95.9% of calls after a case's first;
+  cost per case −26.0% (−30.4% in the clean runs 1–2); no change in case success or false approvals
+  (`docs/m13-results.md`).
+- **What scale changes:** the provider's cache lives 5 minutes. Calls within a case are seconds apart, so they hit at
+  any volume. Between cases, a new case finds the shared prompt prefix still warm about 3.6% of the time at two
+  properties and about 84% at 100 (an estimate assuming even arrivals; `docs/m13-baseline.md` §3), which would add a
+  little more saving at scale. Not measured.
+- **What breaks first:** nothing in our code; the limits are the provider's (a 512-token minimum, at most 4
+  breakpoints). A prompt change starts new cache entries, as it should.
+
 ## Load test (Milestone 12)
 
 **Measured** on the owner's laptop, 2026-11-14, with `scripts\load_test.ps1`: the default Compose stack, mock customer
