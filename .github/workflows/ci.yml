@@ -172,7 +172,7 @@ jobs:
           docker run --rm -v "$PWD:/repo:ro" aquasec/trivy:0.76.1 config --quiet --severity HIGH,CRITICAL \
             --exit-code 1 --skip-dirs /repo/.venv --skip-dirs /repo/seed_data --skip-dirs /repo/benchmarks /repo
       - name: SBOM of the app image (SPDX JSON)
-        uses: anchore/sbom-action@v0.24.3
+        uses: anchore/sbom-action@v0.24.4
         with:
           image: loyalty-app:ci
           format: spdx-json
