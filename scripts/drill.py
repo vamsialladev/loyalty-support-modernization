@@ -223,7 +223,7 @@ def postings(stack: Stack, member: str, stay: str) -> int:
     return int(stack.psql("mock_customer_api", sql, member=member, stay=stay))
 
 
-def drill_d7(env: dict[str, str], stack: Stack, report: Report) -> None:
+def drill_d7(env: dict[str, str], stack: Stack, report: Report, out: Path) -> None:
     """D7, emergency execution shutdown: the kill switch stops every execution, nothing posts while it's on, and each
     approved adjustment posts exactly once after it's released."""
     password = env["DEMO_USER_PASSWORD"]
@@ -298,7 +298,7 @@ def job_state(stack: Stack, case_id: int) -> str:
     return stack.psql(stack.app_db, sql, case=str(case_id))
 
 
-def drill_d3(env: dict[str, str], stack: Stack, report: Report) -> None:
+def drill_d3(env: dict[str, str], stack: Stack, report: Report, out: Path) -> None:
     """D3, worker crash: the worker is killed while it holds an execute job's lease; a replacement recovers the job once
     the lease runs out, and the adjustment posts exactly once.
 
@@ -358,11 +358,69 @@ def drill_d3(env: dict[str, str], stack: Stack, report: Report) -> None:
     )
 
 
+def with_faults(stack: Stack, out: Path, rules: list[dict[str, Any]]) -> None:
+    """Recreate only the mock API with seeded fault rules (`docker-compose.drills.yml`). The rule file lives in the
+    drill's own output folder, so it's kept with the run's artifact."""
+    folder = out / "rules"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "rules.yaml").write_text(json.dumps({"rules": rules}, indent=2) + "\n", encoding="utf-8")  # JSON is YAML
+    overrides = ["-f", str(ROOT / "docker-compose.yml"), "-f", str(ROOT / "docker-compose.drills.yml")]
+    base = stack.compose()
+    run([*base[:2], *overrides, *base[2:], "up", "-d", "--no-deps", "--force-recreate", "--wait", "mock-api"])
+
+
+def drill_d5(env: dict[str, str], stack: Stack, report: Report, out: Path) -> None:
+    """D5, uncertain adjustment: the customer's system applies the adjustment, then the gateway times out (504), so
+    the app can't know whether it posted. The case must go to "execution unknown" (never "failed", never a blind
+    retry), and reconciliation must settle it by a status lookup, with exactly one posting."""
+    password = env["DEMO_USER_PASSWORD"]
+    agent, supervisor = (sign_in(u, password) for u in ("agent.ana", "supervisor.sam"))
+    waiting = approved_adjustments(agent, supervisor, 1, report)
+    report.check("one approved adjustment to work with", len(waiting) == 1, found=len(waiting))
+    if not waiting:
+        return
+    adjustment = waiting[0]
+    before = postings(stack, adjustment["member_number"], adjustment["stay_id"])
+    # Every call about this stay matches; only the adjustment submission acts on this fault (reads ignore it). The
+    # reconciliation's status lookup is by idempotency key, with no stay, so it isn't matched and tells the truth.
+    with_faults(stack, out, [{"fault": "commit_then_lost", "stay_suffix": adjustment["stay_id"]}])
+    report.step("customer system restarted with commit_then_lost for this stay", stay=adjustment["stay_id"])
+
+    queued = supervisor.api("POST", f"/adjustments/{adjustment['id']}/execution")
+    report.check("the execution is queued", queued.status_code == 202, http=queued.status_code)
+    started = time.monotonic()
+    seen: list[str] = []
+
+    def status() -> str:
+        value = str(read_json(supervisor, f"/adjustments/{adjustment['id']}")["status"])
+        if not seen or seen[-1] != value:
+            seen.append(value)
+        return value
+
+    final = wait_until(status, lambda s: s not in ("approved", "executing", "execution_unknown"), 180, every=0.5)
+    settled_after = round(time.monotonic() - started, 1)
+    after = postings(stack, adjustment["member_number"], adjustment["stay_id"])
+    report.check("the case went to execution unknown first", "execution_unknown" in seen, statuses_seen=seen)
+    report.check("reconciliation settles it as executed", final == "executed", final=final, seconds=settled_after)
+    report.check("exactly one posting", after - before == 1, before=before, after=after)
+    audit = read_json(supervisor, f"/cases/{adjustment['case_id']}/audit")
+    actions = [e.get("action") for e in audit]
+    report.check(
+        "the timeline shows unknown, then one execution",
+        "execution_unknown" in actions and actions.count("adjustment_executed") == 1,
+        actions=actions[-8:],
+    )
+
+
 def run(command: list[str]) -> None:
     subprocess.run(command, check=True, capture_output=True, text=True)  # noqa: S603
 
 
-DRILLS: dict[str, Callable[[dict[str, str], Stack, Report], None]] = {"d3": drill_d3, "d7": drill_d7}
+DRILLS: dict[str, Callable[[dict[str, str], Stack, Report, Path], None]] = {
+    "d3": drill_d3,
+    "d5": drill_d5,
+    "d7": drill_d7,
+}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -376,7 +434,7 @@ def main(argv: list[str] | None = None) -> int:
     stack = Stack(args.project, args.env_file, env.get("POSTGRES_USER", "loyalty"), env.get("POSTGRES_DB", "loyalty"))
     report = Report(args.drill)
     try:
-        DRILLS[args.drill](env, stack, report)
+        DRILLS[args.drill](env, stack, report, args.out)
     except Exception as error:  # the drill itself broke: record it as a failed check, with its type and message
         report.check("the drill ran to the end", False, error=f"{type(error).__name__}: {error}"[:500])
     path = report.save(args.out)

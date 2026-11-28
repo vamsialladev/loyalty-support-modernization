@@ -9,13 +9,14 @@ on:
   pull_request:
     paths:
       - "scripts/drill.py"
+      - "docker-compose.drills.yml"
       - ".github/workflows/drills.yml"
   workflow_dispatch:
     inputs:
       drills:
         description: 'Drills to run, as a JSON list, e.g. ["d7"]'
         type: string
-        default: '["d7", "d3"]'
+        default: '["d7", "d3", "d5"]'
 
 permissions:
   contents: read
@@ -33,7 +34,7 @@ jobs:
       fail-fast: false
       max-parallel: 1  # one drill at a time
       matrix:
-        drill: ${{ fromJSON(inputs.drills || '["d7", "d3"]') }}  # a pull request runs every drill listed here
+        drill: ${{ fromJSON(inputs.drills || '["d7", "d3", "d5"]') }}  # a pull request runs every drill listed here
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: astral-sh/setup-uv@v10.3.3
