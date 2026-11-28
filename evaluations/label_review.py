@@ -20,7 +20,7 @@ from typing import Any
 
 from evaluations.compare import HEADER, Labels, _table, load_run
 from evaluations.decide import Runs
-from evaluations.final_report import OUT, decisions
+from evaluations.final_report import OUT, decisions, is_milestone_10_run
 from evaluations.run import DATASET, RESULTS, read_labels
 from evaluations.scoring import (
     CaseResult,
@@ -188,6 +188,8 @@ def _gate_runs() -> list[CaseResult]:
     for kind in ("deterministic", "live"):
         for folder in sorted((RESULTS / kind).iterdir()):
             if "as-is" in folder.name or "second-look" in folder.name or not (folder / "manifest.json").exists():
+                continue
+            if not is_milestone_10_run(folder.name):
                 continue
             gate.extend(load_run(folder).results)
     return gate
