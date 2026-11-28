@@ -114,13 +114,19 @@ merged as fourteen pull requests.
   (backlog).
 - **D1 model outage: passed 5 of 5; D6 incorrect recommendation: passed 4 of 4** (run 46100411460; row 7). D6 is
   AI-INC-001 (drill) in `docs/ai-incident-register.md`.
-- **Next:** D4 measured backup and restore (written, on `ci/m13b-d4`), then the SEC-21 write-up
-  (`docs/incident-exercises.md`), then the remaining part A documents (rollout stages, incident guide, ownership
-  matrix, continuity) and one example incident report from a drill.
-- **Break-glass is built** (ENT-26, ADR-0093, `docs/break-glass.md`), with the owner's rules of 2026-11-27, and
-  tested without a stack.
-- **Waiting on the owner:** nothing for the drills. The checklist in `docs/m13b-plan.md` is answered by the owner's
-  orders of 2026-11-27 (break-glass as code; drills in CI; no live systems; no spend).
+- **D4 measured backup and restore: passed 13 of 13** (run 46153749325; rows 8-12). Backup 0.14 s, restore 0.22 s,
+  RTO 5.5 s on a GitHub runner. **It found a real bug:** a session revoked after the backup worked again after the
+  restore. Fixed by `python -m app.services.after_restore` (#113, ADR-0096), now a required restore step.
+- **All seven drills pass in one run** (46153749325). ROLL-02 and ROLL-03 are Implemented and verified.
+- **Documents:** rollout stages (ROLL-01), the incident guide, the ownership matrix, an example incident report from
+  drill D5 (ROLL-04), business continuity (ENT-36), the AI incident register (ENT-20), break-glass (ENT-26,
+  ADR-0093), and the SEC-21 exercises (`docs/incident-exercises.md`; malicious policy is partial).
+- **Backlog, not built:**
+  - BL-M13b-01: record a recovered job on its case;
+  - BL-M13b-02: investigations outlast a longer customer-system outage;
+  - BL-M13b-03: test malicious policy text.
+- **Waiting on the owner:** nothing. The checklist in `docs/m13b-plan.md` was answered by the owner's orders of
+  2026-11-27 (break-glass as code; drills in CI; no live systems; no spend).
 
 ## Waiting on the owner (Milestone 12)
 0. **LIVE-06 is done (Implemented and verified, row 47).** Revision 00006 (image `8c5f314`, 2 s startup probe)

@@ -22,7 +22,7 @@ has both. Timings measured there are a GitHub runner's, not the laptop's, and ea
 | D2 customer API outage | GitHub Actions (`scripts/drill.py d2`) | **Passed** 6 of 6 (run 46097832129); a 16 s outage used all 5 attempts (found) |
 | D1 model outage | GitHub Actions (`scripts/drill.py d1`) | **Passed** 5 of 5 (run 46100411460) |
 | D6 incorrect recommendation | GitHub Actions (`scripts/drill.py d6`) | **Passed** 4 of 4 (run 46100411460) |
-| D4 backup and restore | GitHub Actions (`scripts/drill.py d4`) | Written; not run |
+| D4 backup and restore | GitHub Actions (`scripts/drill.py d4`) | **Passed** 13 of 13 (run 46153749325), with the fix for a real bug (#113) |
 | SEC-21: integration credential, unauthorized access, leaked test key | GitHub Actions, on the stack | Not run |
 | SEC-21: malicious policy, unexpected agent action, compromised dependency, excessive spend | GitHub Actions, as pytest in the existing CI | Not run |
 
@@ -119,23 +119,37 @@ is the only copy (`docs/backup-restore.md`).
 
 ### D4. Database backup and restore, measured (ROLL-03)
 - **Steps:**
-  1. Back up per `docs/backup-restore.md` (Local and Compose).
-  2. Make the "after the backup" changes: resolve one more case, and revoke the demo agent's session.
-  3. Drop and restore into `loyalty_restore`, re-apply the role grants, and point a copy of the app at it.
+  1. Approve DV-001 and DV-003, and execute DV-001. Sign agent.ben in.
+  2. Back up the app database (`pg_dump -Fc`, per `docs/backup-restore.md`).
+  3. After the backup: execute DV-003, and sign agent.ben out (revoked).
+  4. Stop the app and the worker, then drop the database. Restore it (`pg_restore --no-owner
+     --role=loyalty_owner`), and re-apply the role grants in the db container.
+  5. Run `python -m app.services.after_restore` (ADR-0096), then start the app and the worker.
+
+  The customer's system (the mock API's database) isn't restored: it's another company's system.
 - **Measure:**
   - backup seconds and dump size;
   - restore seconds;
-  - the time from "start restore" to `/readyz` ready, which is the measured RTO;
-  - what was lost: the changes after the backup, which is the measured RPO.
+  - the time from the loss to `/readyz` 200, which is the measured RTO;
+  - the changes lost: those after the backup.
 - **Pass, the ROLL-03 rules:**
-  - re-running reconciliation after the restore **doesn't post DV-001 again**, so its idempotency key still holds;
-  - the case resolved after the backup is reported missing, not silently re-executed;
-  - **access revoked after the backup stays revoked:** the session revoked in step 2 must not work against the
-    restored database. If it does, the restore runbook must rotate `APP_SECRET_KEY` before reopening (that
-    voids approvals not yet executed, by design; `docs/credential-rotation.md`), and the drill records it as
-    found;
+  - each adjustment is still posted **exactly once**, after re-executing DV-003 and repeating DV-001;
+  - the restore holds exactly the backup's cases;
+  - **access revoked after the backup stays revoked;**
   - append-only audit holds after the grants are re-applied.
-- **Result:** Not run.
+- **Result (GitHub Actions run 46153749325, 2026-11-28): passed, 13 of 13.**
+  - **Measured:** backup **0.14 s, 99,305 bytes**; restore and grants **0.22 s**; **RTO 5.5 s** from the loss to
+    ready; **1.2 s** of changes lost after the backup. These are a GitHub runner's numbers on a small database,
+    not a production estimate.
+  - Each adjustment was still posted exactly once. DV-003 was `approved` again in the restored database, and
+    re-executing it ended `refused_duplicate`, because the customer's system already had it. DV-001's repeat got 409.
+  - The after-restore step ended 3 sessions, and the revoked one stayed revoked (401). It's one recorded security
+    event. Audit stayed append-only (`permission denied for table case_events`).
+  - **Found on the way (verification log M13b rows 8-11):**
+    - two script bugs: the same case twice, and a readiness probe that raised;
+    - one check that passed for the wrong reason: the session was made after the backup;
+    - **a real bug:** without the new step, the revoked session **worked again after the restore (HTTP
+      200)**. Fixed in #113 (ADR-0096).
 
 ### D5. Uncertain adjustment
 - **Setup:** a seeded `commit_then_lost` rule for the adjustment's stay. The mock API is recreated with

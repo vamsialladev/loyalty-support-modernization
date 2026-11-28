@@ -21,7 +21,7 @@ outage recovered on its own. A longer one would leave investigations dead until 
 ## Disaster recovery approach
 | | Target (proposed) | Measured | How |
 |---|---|---|---|
-| **Compose stack** | RTO 1 hour, RPO 24 hours | D4's restore, on a GitHub runner (`docs/drills.md`) | A daily `pg_dump`, plus restore steps (`docs/backup-restore.md`) |
+| **Compose stack** | RTO 1 hour, RPO 24 hours | **RTO 5.5 s** (restore and grants 0.22 s) on a GitHub runner, with a small synthetic database (drill D4, run 46153749325); not a production estimate | A daily `pg_dump`, plus restore steps (`docs/backup-restore.md`) |
 | **AWS reference path** | RTO 1 hour; RPO set by RDS point-in-time recovery from transaction logs (not checked against AWS's pages here) | Not measured: never applied | RDS automated backups, 7 days in staging and 14 in production, and point-in-time restore into a new instance (`infrastructure/terraform/aws/rds.tf`, validate only; `docs/backup-restore.md`) |
 | **Public demo** | Not a target: it resets every day | Not applicable | Re-seeded on its next start; Neon's own restore window (`docs/backup-restore.md`) |
 
