@@ -16,7 +16,7 @@ on:
       drills:
         description: 'Drills to run, as a JSON list, e.g. ["d7"]'
         type: string
-        default: '["d7", "d3", "d5", "d2", "d1", "d6"]'
+        default: '["d7", "d3", "d5", "d2", "d1", "d6", "d4"]'
 
 permissions:
   contents: read
@@ -35,7 +35,7 @@ jobs:
       max-parallel: 1  # one drill at a time
       matrix:
         # a pull request runs every drill listed here, one at a time
-        drill: ${{ fromJSON(inputs.drills || '["d7", "d3", "d5", "d2", "d1", "d6"]') }}
+        drill: ${{ fromJSON(inputs.drills || '["d7", "d3", "d5", "d2", "d1", "d6", "d4"]') }}
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: astral-sh/setup-uv@v10.3.3

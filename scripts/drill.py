@@ -597,6 +597,127 @@ def drill_d6(env: dict[str, str], stack: Stack, report: Report, out: Path) -> No
     with_model_fault(stack, "")
 
 
+APPEND_ONLY_PROBE = "UPDATE case_events SET actor = actor WHERE false;"  # must be refused to the app role
+
+
+def in_db(stack: Stack, script: str, stdin: str | None = None) -> subprocess.CompletedProcess[str]:
+    """A shell command inside the stack's db container. Passwords the container already holds stay there
+    (`$APP_OWNER_DB_PASSWORD`): nothing secret passes through this script."""
+    command = stack.compose("exec", "-T", "db", "sh", "-c", script)
+    return subprocess.run(command, input=stdin, capture_output=True, text=True, check=False)  # noqa: S603
+
+
+def executed_adjustment(agent: Person, supervisor: Person, report: Report) -> dict[str, Any]:
+    [adjustment] = approved_adjustments(agent, supervisor, 1, report)
+    supervisor.api("POST", f"/adjustments/{adjustment['id']}/execution").raise_for_status()
+    done = wait_until(
+        partial(read_json, supervisor, f"/adjustments/{adjustment['id']}"),
+        lambda d: d["status"] not in ("approved", "executing"),
+        60,
+    )
+    return {**adjustment, "status": done["status"]}
+
+
+def drill_d4(env: dict[str, str], stack: Stack, report: Report, out: Path) -> None:
+    """D4, database backup and restore, measured (ROLL-03). Back up the app's database, change things, lose the
+    database, restore the backup, and check the rules: a completed posting is never replayed, access revoked after
+    the backup stays revoked, audit history stays append-only. The customer's system (the mock API's database) isn't
+    restored: it's another company's system, and it keeps what really happened."""
+    password = env["DEMO_USER_PASSWORD"]
+    app_db = stack.app_db
+    agent, supervisor = (sign_in(u, password) for u in ("agent.ana", "supervisor.sam"))
+    first = executed_adjustment(agent, supervisor, report)
+    report.check("a completed adjustment before the backup", first["status"] == "executed", status=first["status"])
+    cases_at_backup = int(stack.psql(app_db, "SELECT count(*) FROM cases;"))
+
+    started = time.monotonic()
+    dumped = in_db(
+        stack, f'pg_dump -U "$POSTGRES_USER" -d {app_db} -Fc -f /tmp/drill.dump && stat -c %s /tmp/drill.dump'
+    )
+    backup_seconds = round(time.monotonic() - started, 2)
+    report.check("the backup is made", dumped.returncode == 0, seconds=backup_seconds,
+                 bytes=dumped.stdout.strip(), error=dumped.stderr.strip()[:300])  # fmt: skip
+    backup_at = time.monotonic()
+
+    # After the backup: a second adjustment posts, and a session is revoked (sign-out). Both are lost by a restore.
+    second = executed_adjustment(agent, supervisor, report)
+    leaver = sign_in("agent.ben", password)
+    leaver_cookie = str(leaver.client.headers["cookie"])  # kept before sign-out, which drops it from the client
+    signed_out = leaver.form("/logout", {})
+    revoked = httpx.get(f"{APP}/api/v1/me", headers={"cookie": leaver_cookie}, timeout=10)
+    report.check(
+        "after the backup: one more posting, and a session revoked",
+        second["status"] == "executed" and revoked.status_code in (401, 403),
+        second=second["status"],
+        logout_http=signed_out.status_code,
+        revoked_session_http=revoked.status_code,
+    )
+    posted = {a["id"]: postings(stack, a["member_number"], a["stay_id"]) for a in (first, second)}
+
+    lost_at = time.monotonic()
+    run(stack.compose("stop", "app", "worker"))
+    dropped = in_db(stack, f'dropdb -U "$POSTGRES_USER" --force {app_db}')
+    report.check("the database is lost (dropped)", dropped.returncode == 0, error=dropped.stderr.strip()[:300])
+    restore_started = time.monotonic()
+    restored = in_db(
+        stack,
+        f'createdb -U "$POSTGRES_USER" -O loyalty_owner {app_db}'
+        f' && pg_restore -U "$POSTGRES_USER" -d {app_db} --no-owner --role=loyalty_owner /tmp/drill.dump'
+        f' && psql -U "$POSTGRES_USER" -d {app_db} -v ON_ERROR_STOP=1 -v owner_pw="$APP_OWNER_DB_PASSWORD"'
+        " -f /pg-sql/app-owner.sql -q",
+    )
+    restore_seconds = round(time.monotonic() - restore_started, 2)
+    report.check("the restore and the grants succeed", restored.returncode == 0, seconds=restore_seconds,
+                 error=restored.stderr.strip()[:500])  # fmt: skip
+    run(stack.compose("start", "app", "worker"))
+    ready = wait_until(lambda: httpx.get(f"{APP}/readyz", timeout=10).status_code, lambda c: c == 200, 180, 2)
+    rto = round(time.monotonic() - lost_at, 1)
+    report.check(
+        "the app is ready again (measured RTO)",
+        ready == 200,
+        seconds_from_loss_to_ready=rto,
+        restore_seconds=restore_seconds,
+        lost_after_backup_seconds=round(lost_at - backup_at, 1),
+    )
+
+    cases_now = int(stack.psql(app_db, "SELECT count(*) FROM cases;"))
+    report.check("the restore holds exactly what the backup held", cases_now == cases_at_backup,
+                 cases_at_backup=cases_at_backup, cases_now=cases_now)  # fmt: skip
+    supervisor = sign_in("supervisor.sam", password)
+    status_second = read_json(supervisor, f"/adjustments/{second['id']}")["status"]
+    again = supervisor.api("POST", f"/adjustments/{second['id']}/execution")
+    final_second = wait_until(
+        partial(read_json, supervisor, f"/adjustments/{second['id']}"),
+        lambda d: d["status"] not in ("approved", "executing"),
+        90,
+    )
+    repeat_first = supervisor.api("POST", f"/adjustments/{first['id']}/execution")
+    time.sleep(5)
+    after = {a["id"]: postings(stack, a["member_number"], a["stay_id"]) for a in (first, second)}
+    report.check(
+        "no completed posting is replayed: each adjustment is still posted exactly once",
+        after == posted and all(v == 1 for v in after.values()),
+        before_restore=posted,
+        after_restore=after,
+        second_status_after_restore=status_second,
+        second_execute_http=again.status_code,
+        second_final=final_second["status"],
+        first_repeat_http=repeat_first.status_code,
+    )
+    replayed = httpx.get(f"{APP}/api/v1/me", headers={"cookie": leaver_cookie}, timeout=10)
+    report.check(
+        "a session revoked after the backup stays revoked",
+        replayed.status_code in (401, 403),
+        http=replayed.status_code,
+    )
+    denied = in_db(stack, f"psql -U loyalty_app -d {app_db} -v ON_ERROR_STOP=1", stdin=APPEND_ONLY_PROBE)
+    report.check(
+        "audit history is append-only after the restore",
+        denied.returncode != 0 and "permission denied" in denied.stderr,
+        error=denied.stderr.strip()[:200],
+    )
+
+
 def run(command: list[str], env: dict[str, str] | None = None) -> None:
     subprocess.run(command, check=True, capture_output=True, text=True, env=env)  # noqa: S603
 
@@ -605,6 +726,7 @@ DRILLS: dict[str, Callable[[dict[str, str], Stack, Report, Path], None]] = {
     "d1": drill_d1,
     "d2": drill_d2,
     "d3": drill_d3,
+    "d4": drill_d4,
     "d5": drill_d5,
     "d6": drill_d6,
     "d7": drill_d7,

@@ -73,7 +73,7 @@ def test_the_drills_workflow_reads_no_secret_runs_one_at_a_time_and_keeps_its_ou
     assert "docker compose -p ci --env-file .env.ci down -v" in text  # the throwaway stack is removed
     for forbidden in ("run.app", "neon.tech", "gcloud"):
         assert forbidden not in text  # never the live demo, Cloud Run or Neon
-    assert set(drill.DRILLS) >= {"d7", "d3", "d5", "d2", "d1", "d6"}
+    assert set(drill.DRILLS) == {"d1", "d2", "d3", "d4", "d5", "d6", "d7"}  # all seven F.3 drills
     for name in drill.DRILLS:
         assert f'"{name}"' in text, f"{name} isn't in the workflow's drill list"
 
