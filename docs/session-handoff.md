@@ -1,6 +1,6 @@
 # Session handoff
 
-## Milestone 13: safe AI caching (started 2026-11-26). Phase 3 live runs in progress (2026-11-27)
+## Milestone 13: safe AI caching (started 2026-11-26). Phase 3 done (2026-11-28): all six pass marks met
 - **Scope (owner, 2026-11-26):** find from Stage 9's metrics where caching helps arm C; build only there, safely;
   prove it in business terms with zero wrong reuses. Four phases: measure, build, prove, business outcome.
 - **Standing orders (owner, 2026-11-27):** work straight through; decide routine choices; batch questions with a
@@ -24,12 +24,12 @@
   `/admin` switch (off only); cache rates priced and capped; migration 0014; `/metrics`, gauge, spans;
   `docs/runbooks/prompt-cache.md`. Tests: `tests/test_prompt_cache.py`, written first.
 - **Phase 3** (`docs/m13-phase3-plan.md`, pre-registered; owner's "go" 2026-11-27; cap $1.55): branch
-  `bench/m13-phase3-results`. Done: smoke (5/5, cache read on every later call), A1 $0.137, D1 $0.096, A2 $0.140.
-  D2's first attempt was killed at 60 of 80 by a bug in the run script (stderr turned fatal under PowerShell 5.1;
-  fixed, verification log rows 26 to 31; the partial $0.085 stays flagged). **Running now:** D2 in full, then A3 and
-  D3, then `evaluations/m13_results.py` (requeues per run; any requeued run's p95 shown with and without the
-  requeued cases, by a rule committed before the re-run). Then: commit `benchmarks/results/live/m13-*`, the ledger
-  and `benchmarks/reports/m13/`, a PR with auto-merge, and `.env` back to mock.
+  `bench/m13-phase3-results`. **All six pass marks met** (`benchmarks/reports/m13/phase3-results.md`): case
+  success 78/80 in every run, 0 false approvals, D's p95 11.5 to 13.2 s against A's highest 14.8 s, the cache read on
+  650 of 678 later calls, cost per case $0.001723 → $0.001275 (−26.0%). Spend **$0.809158 of $1.55**, the killed
+  partial D2 ($0.084858) included. Flagged: one requeue in A3 (HO-032; p95 14.78 s either way); A3 and D3 ran beside
+  the owner's Stage 10 batch (CPU samples 12 to 100%); D3 had 5 invalid results, cause not established. Verification
+  log rows 25 to 38. **`.env` should go back to mock now** (the owner does it).
 - **After Phase 3:** TD-57 (the SQLite lock race; likely cause of the Phase 1 `test_runner [B]` failure), Phase 4
   (results, decision memo, README section; the website case study needs the owner's OK to publish).
 - **The prototype** `C:\Users\Vamsi\Downloads\Loyalty-Cache-Lab` was read, never run. Reference only.
