@@ -19,7 +19,8 @@ has both. Timings measured there are a GitHub runner's, not the laptop's, and ea
 | D7 emergency execution shutdown | GitHub Actions (`scripts/drill.py d7`) | **Passed** 7 of 7 (run 46090558919) |
 | D3 worker crash | GitHub Actions (`scripts/drill.py d3`) | **Passed** 6 of 6 (run 46092829733); the recovery isn't on the case timeline (found) |
 | D5 uncertain adjustment | GitHub Actions (`scripts/drill.py d5`) | **Passed** 7 of 7 (run 46095480270) |
-| D2 customer API outage, D1 model outage, D6 incorrect recommendation, D4 backup and restore | GitHub Actions, one pull request each, in that order | Not run |
+| D2 customer API outage | GitHub Actions (`scripts/drill.py d2`) | **Passed** 6 of 6 (run 46097832129); a 16 s outage used all 5 attempts (found) |
+| D1 model outage, D6 incorrect recommendation, D4 backup and restore | GitHub Actions, one pull request each, in that order | Written; not run |
 | SEC-21: integration credential, unauthorized access, leaked test key | GitHub Actions, on the stack | Not run |
 | SEC-21: malicious policy, unexpected agent action, compromised dependency, excessive spend | GitHub Actions, as pytest in the existing CI | Not run |
 
@@ -65,19 +66,24 @@ is the only copy (`docs/backup-restore.md`).
 - **Result:** Not run.
 
 ### D2. Customer API outage
-- **Setup:** the mock API's fault switch (`MOCK_API_FAULTS=true`, `X-Mock-Fault: unavailable`, then `timeout` and
-  `partial`; ADR-0038).
-- **Steps:** investigate 5 cases while the API is down, then bring it back.
+- **Setup:** stop the mock API container: a real outage, with connections refused. Fault injection
+  (`X-Mock-Fault: unavailable`, `timeout`, `partial`; ADR-0038) is covered by the mock API's own tests.
+- **Steps:** ask for 3 investigations while the API is down, then start it again.
 - **Measure:**
-  - 503 + `Retry-After` from our API (backpressure);
+  - readiness;
   - retries per job;
-  - time to recover;
-  - the `error-rate` and `queue-backlog` alerts firing and clearing.
+  - time to recover.
 - **Pass:**
   - no case shows evidence it didn't fetch;
-  - jobs retry and complete after recovery, or go to dead jobs with a reason;
-  - the runbooks the alerts link to match what happened.
-- **Result:** Not run.
+  - jobs retry and complete after recovery, or go to dead jobs with a reason.
+- **Not covered here:** our API's own backpressure (503 + `Retry-After` under load), and the `error-rate` and
+  `queue-backlog` alerts. The observability profile isn't in the drill stack.
+- **Result (GitHub Actions run 46097832129, 2026-11-28): passed, 6 of 6.**
+  - The outage lasted 16.1 s. `/readyz` answered 503 with `customer_systems: unreachable`.
+  - All 3 cases stayed `queued`, with no evidence and no proposal, while the jobs retried.
+  - All 3 finished on their own **38.4 s** after the outage began.
+  - **Found: each used 5 of its 5 attempts.** The backoff reaches its last attempt about 30 s in, so a longer outage
+    would leave investigations dead until requeued. That's inferred from the schedule, not tested; see the backlog.
 
 ### D3. Worker crash
 - **Setup:** one worker, then a second as the replacement.
