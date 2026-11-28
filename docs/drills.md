@@ -20,7 +20,9 @@ has both. Timings measured there are a GitHub runner's, not the laptop's, and ea
 | D3 worker crash | GitHub Actions (`scripts/drill.py d3`) | **Passed** 6 of 6 (run 46092829733); the recovery isn't on the case timeline (found) |
 | D5 uncertain adjustment | GitHub Actions (`scripts/drill.py d5`) | **Passed** 7 of 7 (run 46095480270) |
 | D2 customer API outage | GitHub Actions (`scripts/drill.py d2`) | **Passed** 6 of 6 (run 46097832129); a 16 s outage used all 5 attempts (found) |
-| D1 model outage, D6 incorrect recommendation, D4 backup and restore | GitHub Actions, one pull request each, in that order | Written; not run |
+| D1 model outage | GitHub Actions (`scripts/drill.py d1`) | **Passed** 5 of 5 (run 46100411460) |
+| D6 incorrect recommendation | GitHub Actions (`scripts/drill.py d6`) | **Passed** 4 of 4 (run 46100411460) |
+| D4 backup and restore | GitHub Actions (`scripts/drill.py d4`) | Written; not run |
 | SEC-21: integration credential, unauthorized access, leaked test key | GitHub Actions, on the stack | Not run |
 | SEC-21: malicious policy, unexpected agent action, compromised dependency, excessive spend | GitHub Actions, as pytest in the existing CI | Not run |
 
@@ -51,19 +53,24 @@ is the only copy (`docs/backup-restore.md`).
 ## The seven drills
 
 ### D1. Model provider outage
-- **Setup:** arm C on the mock provider, with provider failures switched on (`ProviderUnavailable` from the mock
-  model adapter; the circuit breaker in `app/adapters/circuit.py`).
-- **Steps:** start 5 arm C investigations. Let the breaker open, then restore the provider and start 5 more.
-- **Measure:**
-  - how many runs stopped as "needs a person";
-  - how long until the breaker opened, and until it closed after recovery;
-  - spend recorded during the outage.
+- **Setup:** the app and the worker are recreated with `MOCK_MODEL_FAULT=unavailable`, so every model call fails as an
+  outage would (`ProviderUnavailable`; drill-only, mock only, never in the public demo; #100).
+- **Steps:**
+  1. Run one arm C investigation, and one arm B case to an approved adjustment, while the model is down.
+  2. Recreate the app and worker with the plain mock, and run another arm C investigation.
+- **Measure:** what the arm C case shows, and whether arm B is affected.
 - **Pass:**
-  - no proposal and no adjustment request is made from a failed run;
-  - arms A and B keep working;
-  - the breaker closes once the provider recovers;
-  - no spend is counted for failed calls beyond what the cap rules say.
-- **Result:** Not run.
+  - no proposal comes from a failed run;
+  - the engine's result stands;
+  - arm B keeps working;
+  - arm C proposes again once the model is back.
+- **Not covered here:** the circuit breaker's open and close times (`app/adapters/circuit.py`, covered by its unit
+  tests), and spend during an outage (the mock model costs nothing; the spend caps are SEC-21's exercise).
+- **Result (GitHub Actions run 46100411460, 2026-11-28): passed, 5 of 5.**
+  - The arm C investigation finished with **`fallback: provider_failures`** and no AI proposal.
+  - The engine's **`adjust`** stood.
+  - Arm B approved an adjustment beside it (DV-001, 14,840 points).
+  - With the plain mock back, arm C proposed again: a full proposal, with no fallback.
 
 ### D2. Customer API outage
 - **Setup:** stop the mock API container: a real outage, with connections refused. Fault injection
@@ -150,15 +157,25 @@ is the only copy (`docs/backup-restore.md`).
     (verification log M13b rows 4 and 5).
 
 ### D6. Incorrect recommendation
-- **Setup:** arm C with a scripted mock model (`ScriptedModel`) that proposes a wrong amount for a case with a known
-  label.
-- **Steps:** an agent requests the adjustment, and a supervisor reviews it.
-- **Measure:** whether the validation layer or the supervisor caught it, and what the case shows.
+- **Setup:** `MOCK_MODEL_FAULT=wrong_action`: the model names the opposite action. A proposal has **no amount
+  field** (`app/ai/tools.py`), so a wrong amount isn't something a model can propose; a wrong action is the worst
+  it can do.
+- **Steps:**
+  1. Run arm C on a case owed points (DV-001), then request the adjustment.
+  2. Run arm C on a case owed nothing (DV-002), then try to request one.
+- **Measure:** whether the deterministic checks caught it, and what the case shows.
 - **Pass:**
-  - the wrong amount never posts;
-  - the catch is recorded;
+  - the wrong action never becomes the case's result;
+  - a request always asks for the engine's amount;
+  - no adjustment can be requested where the engine owes nothing;
   - an entry goes in `docs/ai-incident-register.md`, marked "drill".
-- **Result:** Not run.
+- **Result (GitHub Actions run 46100411460, 2026-11-28): passed, 4 of 4.**
+  - **DV-001:** the AI's "no adjustment" was caught (**`fallback: invalid_result`**: the validation found an
+    `action_mismatch`). The engine's **`adjust`** stood, and the request asked for exactly the engine's **14,840**
+    points (201).
+  - **DV-002:** the AI's "adjust" was caught the same way. The engine's **`no_adjustment_credited`** stood, and the
+    adjustment request was refused (**409**).
+  - It's in the AI incident register as AI-INC-001 (drill).
 
 ### D7. Emergency execution shutdown
 - **Setup:** two approved adjustments waiting (DV-001 and DV-003, worked through arm B by the drill).
