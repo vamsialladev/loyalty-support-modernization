@@ -657,6 +657,10 @@ def drill_d4(env: dict[str, str], stack: Stack, report: Report, out: Path) -> No
     first = execute_now(supervisor, approved[0])
     report.check("a completed adjustment before the backup", first["status"] == "executed", status=first["status"])
     cases_at_backup = int(stack.psql(app_db, "SELECT count(*) FROM cases;"))
+    # Signed in BEFORE the backup, revoked after it: the backup holds the session as live. The third run
+    # (46150398885) signed in after the backup, so the restore simply had no such session, and the check passed for
+    # the wrong reason (verification log M13b row 10).
+    leaver = sign_in("agent.ben", password)
 
     started = time.monotonic()
     dumped = in_db(
@@ -669,7 +673,6 @@ def drill_d4(env: dict[str, str], stack: Stack, report: Report, out: Path) -> No
 
     # After the backup: a second adjustment posts, and a session is revoked (sign-out). Both are lost by a restore.
     second = execute_now(supervisor, approved[1])
-    leaver = sign_in("agent.ben", password)
     leaver_cookie = str(leaver.client.headers["cookie"])  # kept before sign-out, which drops it from the client
     signed_out = leaver.form("/logout", {})
     revoked = httpx.get(f"{APP}/api/v1/me", headers={"cookie": leaver_cookie}, timeout=10)
