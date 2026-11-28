@@ -25,7 +25,7 @@ mapping). Nothing here was sent to a real SIEM; that needs a customer's tenant (
 | `labels.case_reference` | The case, for case events | `cases.reference` |
 | `labels.synthetic` | Always `"true"` in this project | fixed |
 | `service.name` | `loyalty-app` | fixed |
-| `loyalty.detail.*` | An allow-list of code fields: `method`, `path`, `kind`, `engaged`, `policy`, `version`, `points`, `stop`, `name`, `username`, and for break-glass `grant`, `minutes`, `expires_at_utc`, `break_glass_grant` (ADR-0093) | the audit row's detail |
+| `loyalty.detail.*` | An allow-list of code fields: `method`, `path`, `kind`, `engaged`, `policy`, `version`, `points`, `stop`, `name`, `username`, and for break-glass `grant`, `minutes`, `expires_at_utc`, `break_glass_grant` (ADR-0093), and after a restore `sessions`, `api_tokens`, `break_glass_grants` (ADR-0096) | the audit row's detail |
 
 **Never exported:** passwords, tokens, reasons and notes typed by people (a kill switch's or a break-glass grant's
 reason stays in the audit row), request text, member or stay details. A test plants a password in the username box and a reason on the kill

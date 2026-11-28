@@ -35,12 +35,23 @@ Then point a copy of the app at `loyalty_restore` and confirm `/readyz` is ready
 dump made with `--no-owner` doesn't carry them, and append-only audit depends on them (ADR-0058). `backups/` is
 Git-ignored; a dump holds personal data in a real deployment, so encrypt it and keep it off laptops.
 
+**Then, before the app takes traffic, end every access the backup holds as live** (ROLL-03, ADR-0096):
+
+```powershell
+docker compose run --rm app python -m app.services.after_restore --reason "restored from the YYYY-MM-DD backup"
+```
+
+A restore brings back every session, API token and break-glass grant that was revoked after the backup. Drill D4
+proved it: a revoked session worked again. This ends them all and records it as a security event, so everyone signs in
+again and each integration gets a new token. **Local accounts deactivated after the backup are active again:** an
+administrator re-checks them. With SSO, the identity provider decides who signs in.
+
 ## AWS reference path
 - **Automated backups:** RDS keeps daily snapshots plus transaction logs for point-in-time recovery: 7 days in
   staging and 14 in production (`infrastructure/terraform/aws/rds.tf`). Encrypted with the project's KMS key.
 - **Restore:** RDS restores into a **new** instance (point in time or snapshot). Then point the services'
-  `DATABASE_URL` secrets at it, run the migrate task, and check as above. The old instance stays until the new one
-  is confirmed.
+  `DATABASE_URL` secrets at it, run the migrate task, run `python -m app.services.after_restore` as a one-off
+  task, and check as above. The old instance stays until the new one is confirmed.
 - **Deletion:** production has deletion protection, and a final snapshot is taken on delete.
 
 ## Cloud Run + Neon (the demo)
