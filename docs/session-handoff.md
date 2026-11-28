@@ -72,8 +72,11 @@ merged as fourteen pull requests.
 - **D7 emergency execution shutdown: passed 7 of 7** (run 46090558919; verification log M13b rows 1-2).
 - **D3 worker crash: passed 6 of 6** (run 46092829733; row 3). Recovered 61.7 s after the kill, with one posting.
   Found: the recovery isn't on the case's timeline (backlog).
-- **Next, one pull request each:** D5 uncertain adjustment (written, on `ci/m13b-d5`), D2 customer API outage, D1 model
-  outage, D6 incorrect recommendation, D4 measured backup and restore, then the SEC-21 exercises.
+- **D5 uncertain adjustment: passed 7 of 7** (run 46095480270; rows 4-5). Unknown, then reconciled 10 ms later, with
+  one posting. The first run's failure was my check polling too coarsely.
+- **Next, one pull request each:** D2 customer API outage (written, on `ci/m13b-d2`), then D1 model outage and D6
+  incorrect recommendation, which use `MOCK_MODEL_FAULT` (on `feat/mock-model-drill-faults`), then D4 measured backup
+  and restore, then the SEC-21 exercises.
 - **Break-glass is built** (ENT-26, ADR-0093, `docs/break-glass.md`), with the owner's rules of 2026-11-27, and
   tested without a stack.
 - **Waiting on the owner:** nothing for the drills. The checklist in `docs/m13b-plan.md` is answered by the owner's
