@@ -1,6 +1,6 @@
 # Session handoff
 
-## Milestone 13: safe AI caching (2026-11-26 to 2026-11-28). Done; TD-57 next, in its own PR
+## Milestone 13: safe AI caching (2026-11-26 to 2026-11-28). Done, and TD-57 fixed
 - **Scope (owner, 2026-11-26):** find from Stage 9's metrics where caching helps arm C; build only there, safely;
   prove it in business terms with zero wrong reuses. Four phases: measure, build, prove, business outcome.
 - **Standing orders (owner, 2026-11-27):** work straight through; decide routine choices; batch questions with a
@@ -37,8 +37,15 @@
   **Not done:** the website case study (publishing needs the owner's OK).
 - **PR #99's CI fix:** Milestone 10's reports counted every run folder, so Phase 3's runs moved a published H6 line;
   they now count Milestone 10's runs only (rows 39 and 40; the auto-merge setting is logged in row 39).
-- **Next:** TD-57 (the SQLite lock race; likely cause of the Phase 1 `test_runner [B]` failure), in its own PR, with
-  a test that reproduces the race.
+- **Merged:** #99 (Phase 3 results) and #110 (Phase 4 docs), each with all 8 checks green. **#111** (TD-57, below)
+  had 7 of 8 green on 2026-11-28 with the full suite still running; auto-merge merges it on green. Check it first.
+- **TD-57 fixed (PR #111, ADR-0095):** SQLite transactions take the write lock with `BEGIN IMMEDIATE` at their first
+  write, and reads before it hold none. The cause was two read-then-write transactions overlapping: the worker's
+  heartbeat and a running job. The reproducer passes; three race tests fail on the old engine and pass now; 556
+  SQLite-heavy tests pass locally (rows 42 to 45). It's the likely cause of the Phase 1 `test_runner [B]` failure too.
+- **Waiting on the owner:** the website case study for Milestone 13 (publishing needs the OK); `.env` back to mock
+  (delete the worktree's copy); the Milestone 13 exercise (below).
+- **Next:** Milestone 13b (the operational drills), which another session is running in GitHub Actions.
 - **The prototype** `C:\Users\Vamsi\Downloads\Loyalty-Cache-Lab` was read, never run. Reference only.
 
 ## Milestone 13, in K.1 form
