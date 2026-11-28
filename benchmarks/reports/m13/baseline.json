@@ -2,7 +2,7 @@
  "label": "Measured from stored files. Real model (claude-haiku-5-5) token counts from Milestone 10's live runs; SYNTHETIC cases and messages. Cost projections are estimates.",
  "dataset_version": "v1",
  "inputs_sha256": {
-  "spend-ledger.jsonl": "07b0a98da4f70476b162842fb599398312fb2b783e7c9ae43d537726ad5397d3",
+  "spend-ledger.jsonl, rows of the nine runs used": "4a05d72ed5d9c484772cb07f6bf0e2d168bcafc609f1704bc7470fac358968a3",
   "dev.jsonl": "05b7636970f5ec8bb0660216145cff8f88610fd03404530f198285dcee195f36",
   "validation.jsonl": "292f8b131974ca5356fb85b5f08aaef5fae8d60b56b7ad778431359a99c1f945",
   "heldout.jsonl": "5bfa3cb57331db39a9c264e2286b555b05cc95aa52ed1199fd289b9b76102d50",
