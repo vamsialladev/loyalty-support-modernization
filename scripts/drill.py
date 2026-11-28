@@ -619,8 +619,8 @@ def in_db(stack: Stack, script: str, stdin: str | None = None) -> subprocess.Com
     return subprocess.run(command, input=stdin, capture_output=True, text=True, check=False)  # noqa: S603
 
 
-def executed_adjustment(agent: Person, supervisor: Person, report: Report) -> dict[str, Any]:
-    [adjustment] = approved_adjustments(agent, supervisor, 1, report)
+def execute_now(supervisor: Person, adjustment: dict[str, Any]) -> dict[str, Any]:
+    """Execute one approved adjustment and wait for its result."""
     supervisor.api("POST", f"/adjustments/{adjustment['id']}/execution").raise_for_status()
     done = wait_until(
         partial(read_json, supervisor, f"/adjustments/{adjustment['id']}"),
@@ -638,7 +638,14 @@ def drill_d4(env: dict[str, str], stack: Stack, report: Report, out: Path) -> No
     password = env["DEMO_USER_PASSWORD"]
     app_db = stack.app_db
     agent, supervisor = (sign_in(u, password) for u in ("agent.ana", "supervisor.sam"))
-    first = executed_adjustment(agent, supervisor, report)
+    # Two different cases, both approved before the backup: one stay can be credited by only one case (the first run,
+    # 46147954318, picked DV-001 twice, and the app rightly refused the second; M13b row 8).
+    approved = approved_adjustments(agent, supervisor, 2, report)
+    report.check("two approved adjustments, for different stays", len({a["stay_id"] for a in approved}) == 2,
+                 stays=[a["stay_id"] for a in approved])  # fmt: skip
+    if len(approved) < 2:
+        return
+    first = execute_now(supervisor, approved[0])
     report.check("a completed adjustment before the backup", first["status"] == "executed", status=first["status"])
     cases_at_backup = int(stack.psql(app_db, "SELECT count(*) FROM cases;"))
 
@@ -652,7 +659,7 @@ def drill_d4(env: dict[str, str], stack: Stack, report: Report, out: Path) -> No
     backup_at = time.monotonic()
 
     # After the backup: a second adjustment posts, and a session is revoked (sign-out). Both are lost by a restore.
-    second = executed_adjustment(agent, supervisor, report)
+    second = execute_now(supervisor, approved[1])
     leaver = sign_in("agent.ben", password)
     leaver_cookie = str(leaver.client.headers["cookie"])  # kept before sign-out, which drops it from the client
     signed_out = leaver.form("/logout", {})
