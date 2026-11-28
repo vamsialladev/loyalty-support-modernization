@@ -1,0 +1,230 @@
+{
+ "label": "Real model (claude-haiku-5-5) \u00b7 SYNTHETIC cases and personal data \u00b7 paired A/D regression on the frozen held-out split, not a held-out claim",
+ "runs": {
+  "A": [
+   {
+    "run": "m13-a-r1",
+    "cases": 80,
+    "interrupted": false,
+    "case_success": 78,
+    "case_success_wilson95": [
+     0.9134,
+     0.9931
+    ],
+    "false_approvals": 0,
+    "latency_s": {
+     "p50": 8.0,
+     "p95": 12.671,
+     "p99": 15.125
+    },
+    "model_calls": 296,
+    "calls_per_case": 3.7,
+    "input_tokens_uncached": 761548,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_share_of_input": 0.0,
+    "later_calls": 216,
+    "later_calls_reading_cache": 0,
+    "cost_usd": 0.13697,
+    "cost_usd_per_1000_cases": 1.7121,
+    "requeued_jobs": 0
+   },
+   {
+    "run": "m13-a-r2",
+    "cases": 80,
+    "interrupted": false,
+    "case_success": 78,
+    "case_success_wilson95": [
+     0.9134,
+     0.9931
+    ],
+    "false_approvals": 0,
+    "latency_s": {
+     "p50": 8.53,
+     "p95": 13.766,
+     "p99": 17.875
+    },
+    "model_calls": 306,
+    "calls_per_case": 3.825,
+    "input_tokens_uncached": 789379,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_share_of_input": 0.0,
+    "later_calls": 226,
+    "later_calls_reading_cache": 0,
+    "cost_usd": 0.140133,
+    "cost_usd_per_1000_cases": 1.7517,
+    "requeued_jobs": 0
+   },
+   {
+    "run": "m13-a-r3",
+    "cases": 80,
+    "interrupted": false,
+    "case_success": 78,
+    "case_success_wilson95": [
+     0.9134,
+     0.9931
+    ],
+    "false_approvals": 0,
+    "latency_s": {
+     "p50": 9.155,
+     "p95": 14.78,
+     "p99": 464.671
+    },
+    "model_calls": 295,
+    "calls_per_case": 3.688,
+    "input_tokens_uncached": 757006,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_share_of_input": 0.0,
+    "later_calls": 216,
+    "later_calls_reading_cache": 0,
+    "cost_usd": 0.136317,
+    "cost_usd_per_1000_cases": 1.704,
+    "requeued_jobs": 1
+   }
+  ],
+  "D": [
+   {
+    "run": "m13-d-r1",
+    "cases": 80,
+    "interrupted": false,
+    "case_success": 78,
+    "case_success_wilson95": [
+     0.9134,
+     0.9931
+    ],
+    "false_approvals": 0,
+    "latency_s": {
+     "p50": 7.968,
+     "p95": 11.468,
+     "p99": 15.469
+    },
+    "model_calls": 293,
+    "calls_per_case": 3.663,
+    "input_tokens_uncached": 760,
+    "cache_read_tokens": 491078,
+    "cache_write_tokens": 255218,
+    "cache_read_share_of_input": 0.6574,
+    "later_calls": 213,
+    "later_calls_reading_cache": 206,
+    "cost_usd": 0.095528,
+    "cost_usd_per_1000_cases": 1.1941,
+    "requeued_jobs": 0
+   },
+   {
+    "run": "m13-d-r2",
+    "cases": 80,
+    "interrupted": false,
+    "case_success": 78,
+    "case_success_wilson95": [
+     0.9134,
+     0.9931
+    ],
+    "false_approvals": 0,
+    "latency_s": {
+     "p50": 9.188,
+     "p95": 11.952,
+     "p99": 16.593
+    },
+    "model_calls": 298,
+    "calls_per_case": 3.725,
+    "input_tokens_uncached": 770,
+    "cache_read_tokens": 505216,
+    "cache_write_tokens": 258132,
+    "cache_read_share_of_input": 0.6612,
+    "later_calls": 218,
+    "later_calls_reading_cache": 211,
+    "cost_usd": 0.097294,
+    "cost_usd_per_1000_cases": 1.2162,
+    "requeued_jobs": 0
+   },
+   {
+    "run": "m13-d-r3",
+    "cases": 80,
+    "interrupted": false,
+    "case_success": 78,
+    "case_success_wilson95": [
+     0.9134,
+     0.9931
+    ],
+    "false_approvals": 0,
+    "latency_s": {
+     "p50": 8.688,
+     "p95": 13.155,
+     "p99": 61.906
+    },
+    "model_calls": 327,
+    "calls_per_case": 4.088,
+    "input_tokens_uncached": 844,
+    "cache_read_tokens": 565859,
+    "cache_write_tokens": 290795,
+    "cache_read_share_of_input": 0.6599,
+    "later_calls": 247,
+    "later_calls_reading_cache": 233,
+    "cost_usd": 0.113091,
+    "cost_usd_per_1000_cases": 1.4136,
+    "requeued_jobs": 0
+   }
+  ]
+ },
+ "pass_marks": {
+  "wrong_reuses": {
+   "value": 0,
+   "pass": true,
+   "how": "none possible: tests/test_prompt_cache.py, request test"
+  },
+  "case_success": {
+   "value": [
+    78,
+    78,
+    78
+   ],
+   "floor": 78,
+   "pass": true
+  },
+  "false_approvals": {
+   "value": [
+    0,
+    0,
+    0
+   ],
+   "pass": true
+  },
+  "p95_draft_ready_s": {
+   "value": [
+    11.468,
+    11.952,
+    13.155
+   ],
+   "ceiling": 14.78,
+   "pass": true
+  },
+  "cache_used": {
+   "value": 0.9587,
+   "minimum": 0.9,
+   "pass": true
+  },
+  "cost_per_case": {
+   "a_usd": 0.001723,
+   "d_usd": 0.001275,
+   "change": -0.26,
+   "pass": true
+  },
+  "all": {
+   "pass": true
+  }
+ },
+ "requeue_sensitivity": [
+  {
+   "run": "m13-a-r3",
+   "requeued_jobs": 1,
+   "cases_left_out": [
+    "HO-032"
+   ],
+   "how": "cases 31-40: HO-032 (more AI runs than in every no-cache run)",
+   "p95_all_cases": 14.78,
+   "p95_without_requeued_cases": 14.78
+  }
+ ]
+}

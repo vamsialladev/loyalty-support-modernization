@@ -28,6 +28,7 @@ import math
 import re
 import statistics
 from collections import Counter, defaultdict
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -388,6 +389,13 @@ def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
+def _ledger_sha(runs: Sequence[str] = FROZEN_RUNS) -> str:
+    """Only the ledger rows of the runs this baseline reads, in file order. The ledger grows with every later live run
+    (Milestone 13's Phase 3 added rows), and that mustn't change what this baseline says it was built from."""
+    rows = [line for line in LEDGER.read_text(encoding="utf-8").splitlines() if json.loads(line)["run"] in runs]
+    return hashlib.sha256("\n".join(rows).encode("utf-8")).hexdigest()
+
+
 def build(read: float = 0.1, write: float = 1.25, price_in: float = 0.10, price_out: float = 0.50) -> dict[str, Any]:
     cases: list[dict[str, Any]] = []
     labels: dict[str, dict[str, Any]] = {}
@@ -400,7 +408,10 @@ def build(read: float = 0.1, write: float = 1.25, price_in: float = 0.10, price_
         "label": "Measured from stored files. Real model (claude-haiku-5-5) token counts from Milestone 10's live "
         "runs; SYNTHETIC cases and messages. Cost projections are estimates.",
         "dataset_version": manifest["dataset_version"],
-        "inputs_sha256": {p.name: _sha(p) for p in [LEDGER, *(DATASET / f"{s}.jsonl" for s in SPLITS)]},
+        "inputs_sha256": {
+            "spend-ledger.jsonl, rows of the nine runs used": _ledger_sha(),
+            **{p.name: _sha(p) for p in (DATASET / f"{s}.jsonl" for s in SPLITS)},
+        },
         "messages": message_repeats(cases, labels),
         "messages_heldout_only": message_repeats([c for c in cases if c["split"] == "heldout"], labels),
         "policy_context": {

@@ -29,8 +29,18 @@ $runs = @(
 
 function Invoke-Logged([string]$Log, [string[]]$Command) {
     Write-Host "> $($Command -join ' ')"
-    & $Command[0] $Command[1..($Command.Length - 1)] 2>&1 | Tee-Object -FilePath $Log
-    if ($LASTEXITCODE -ne 0) { throw "stopped: exit $LASTEXITCODE (full output in $Log)" }
+    # Windows PowerShell 5.1 turns every stderr line of a native command into an error record, and with "Stop" the
+    # first one ends the script. On 2026-11-27 that killed m13-d-r2 at about 60 of 80 cases, on a worker log line
+    # ("job requeued ... OperationalError") the runner itself had recovered from. So the exit code decides, not stderr.
+    $saved = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & $Command[0] $Command[1..($Command.Length - 1)] 2>&1 | ForEach-Object { "$_" } | Tee-Object -FilePath $Log
+        $code = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $saved
+    }
+    if ($code -ne 0) { throw "stopped: exit $code (full output in $Log)" }
 }
 
 Invoke-Logged "$logs\preflight.log" @("uv", "run", "python", "-m", "app.preflight", "--profile", "live-model")

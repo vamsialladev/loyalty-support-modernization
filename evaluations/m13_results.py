@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -28,6 +29,74 @@ from evaluations.scoring import case_success, false_approval
 LIVE = ROOT / "benchmarks" / "results" / "live"
 LEDGER = LIVE / "spend-ledger.jsonl"
 OUT = ROOT / "benchmarks" / "reports" / "m13"
+RUN_LOGS = OUT / "run-logs"
+
+
+def requeued_jobs(name: str, logs: Path = RUN_LOGS) -> int | None:
+    """Worker jobs the runner requeued during a run ("job requeued ... OperationalError"), from its console log.
+
+    A requeue is the system's own recovery (TD-57), but it adds time to that case, so it's reported per run. None when
+    the log is missing. Windows PowerShell writes the log as UTF-16; anything else is read as UTF-8.
+    """
+    path = logs / f"{name}.log"
+    if not path.exists():
+        return None
+    return _log_text(path).count("job requeued")
+
+
+def _log_text(path: Path) -> str:
+    raw = path.read_bytes()
+    return raw.decode("utf-16") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8", "replace")
+
+
+_PROGRESS = re.compile(r"^\s*(\d+)/\d+ cases\s*$")
+
+
+def requeue_blocks(name: str, logs: Path = RUN_LOGS) -> list[int]:
+    """For each requeue line, the number of cases finished before it (the start of its block of 10).
+
+    The runner prints progress after every 10 cases, and worker lines arrive in order, so a requeue between "50/80"
+    and "60/80" happened while cases 51 to 60 ran. Fixed on 2026-11-27, before the D2 re-run, because the frozen
+    runner records no job-to-case link (verification log, Milestone 13).
+    """
+    path = logs / f"{name}.log"
+    if not path.exists():
+        return []
+    done, blocks = 0, []
+    for line in _log_text(path).splitlines():
+        found = _PROGRESS.match(line)
+        if found:
+            done = int(found.group(1))
+        elif "job requeued" in line:
+            blocks.append(done)
+    return blocks
+
+
+def requeued_cases(name: str, others: Sequence[str], live: Path = LIVE, logs: Path = RUN_LOGS) -> tuple[list[str], str]:
+    """Which cases a run's requeues hit, by the rule fixed before the re-run: in the requeue's block of 10, the case
+    whose `ai_runs` is higher than in every other run named (the no-cache runs). A requeued investigation runs the AI
+    loop again. If that doesn't single out exactly one case per requeue, the whole block counts, and the reason says so.
+    """
+    order = [r.case_id for r in load_run(live / name).results]
+    runs = {r.case_id: r.ai_runs for r in load_run(live / name).results}
+    elsewhere: dict[str, int] = {}
+    for other in others:
+        for r in load_run(live / other).results:
+            elsewhere[r.case_id] = max(elsewhere.get(r.case_id, 0), r.ai_runs)
+    chosen: list[str] = []
+    notes = []
+    for start in requeue_blocks(name, logs):
+        block = order[start : start + 10]
+        higher = [c for c in block if runs[c] > elsewhere.get(c, 0)]
+        if len(higher) == 1:
+            chosen += higher
+            notes.append(f"cases {start + 1}-{start + 10}: {higher[0]} (more AI runs than in every no-cache run)")
+        else:
+            chosen += block
+            notes.append(f"cases {start + 1}-{start + 10}: {len(higher)} candidates, so the whole block is left out")
+    return sorted(set(chosen)), "; ".join(notes)
+
+
 ARMS = {
     "A": ("m13-a-r1", "m13-a-r2", "m13-a-r3"),
     "D": ("m13-d-r1", "m13-d-r2", "m13-d-r3"),
@@ -70,6 +139,7 @@ def run_stats(name: str, labels: Mapping[str, Any], ledger: list[dict[str, Any]]
         "later_calls_reading_cache": sum(1 for c in later if c.get("cache_read_tokens", 0) > 0),
         "cost_usd": round(cost, 6),
         "cost_usd_per_1000_cases": round(cost / len(results) * 1000, 4) if results else math.nan,
+        "requeued_jobs": requeued_jobs(name),
     }
 
 
@@ -120,8 +190,8 @@ def markdown(result: dict[str, Any]) -> str:
         f"> {LABEL}. Written by `python -m evaluations.m13_results`; pass marks from `docs/m13-phase3-plan.md`.",
         "",
         "| Run | Cases | Case success | False approvals | p50 / p95 / p99 s | Calls | Cache-read share "
-        "| Later calls reading cache | $ per 1,000 cases |",
-        "|---|---:|---:|---:|---|---:|---:|---:|---:|",
+        "| Later calls reading cache | $ per 1,000 cases | Requeued jobs |",
+        "|---|---:|---:|---:|---|---:|---:|---:|---:|---:|",
     ]
     for arm in ARMS:
         for r in result["runs"][arm]:
@@ -130,7 +200,7 @@ def markdown(result: dict[str, Any]) -> str:
                 f"| {r['run']} | {r['cases']} | {r['case_success']} | {r['false_approvals']} | "
                 f"{lat['p50']} / {lat['p95']} / {lat['p99']} | {r['model_calls']} | "
                 f"{r['cache_read_share_of_input']:.1%} | {r['later_calls_reading_cache']}/{r['later_calls']} | "
-                f"${r['cost_usd_per_1000_cases']:.2f} |"
+                f"${r['cost_usd_per_1000_cases']:.2f} | {r['requeued_jobs']} |"
             )
     lines += ["", "| Pass mark | Result | Pass |", "|---|---|---|"]
     for key, mark in result["pass_marks"].items():
@@ -144,6 +214,23 @@ def markdown(result: dict[str, Any]) -> str:
         else "**at least one pass mark missed: L3 stays off**"
     )
     lines += ["", f"**Verdict:** {verdict}.", ""]
+    flagged = result.get("requeue_sensitivity") or []
+    if flagged:
+        lines += [
+            "## Flagged: runs with requeued jobs (kept, as the owner decided on 2026-11-27)",
+            "",
+            "A requeue is the worker recovering from a database error (likely TD-57, the SQLite lock race in the "
+            "benchmark environment). The pass marks above use every case; this shows how much the requeues moved p95.",
+            "",
+            "| Run | Requeued jobs | p95, all cases (s) | p95 without the requeued cases (s) | Cases left out | How |",
+            "|---|---:|---:|---:|---|---|",
+        ]
+        for f in flagged:
+            lines.append(
+                f"| {f['run']} | {f['requeued_jobs']} | {f['p95_all_cases']} | {f['p95_without_requeued_cases']} | "
+                f"{', '.join(f['cases_left_out'])} | {f['how']} |"
+            )
+        lines.append("")
     return "\n".join(lines)
 
 
@@ -155,6 +242,30 @@ def smoke(name: str, ledger: list[dict[str, Any]]) -> int:
         print("SMOKE FAILED: no call read the cache. Stop and look before the full runs.")
         return 1
     return 0
+
+
+def requeue_sensitivity(runs: Mapping[str, Sequence[dict[str, Any]]], live: Path = LIVE) -> list[dict[str, Any]]:
+    """The owner's rule (2026-11-27): a run with requeues is kept, and its p95 is shown with and without the requeued
+    cases, flagged. The pass marks themselves use every case."""
+    out = []
+    for arm, stats in runs.items():
+        others = ARMS["A"] if arm == "D" else ARMS["D"]
+        for r in stats:
+            if not r.get("requeued_jobs"):
+                continue
+            cases, how = requeued_cases(r["run"], others, live)
+            kept = [x.latency_s for x in load_run(live / r["run"]).results if x.case_id not in cases and x.latency_s]
+            out.append(
+                {
+                    "run": r["run"],
+                    "requeued_jobs": r["requeued_jobs"],
+                    "cases_left_out": cases,
+                    "how": how,
+                    "p95_all_cases": r["latency_s"]["p95"],
+                    "p95_without_requeued_cases": _pct(kept, 95),
+                }
+            )
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -169,7 +280,8 @@ def main(argv: list[str] | None = None) -> int:
     if any(r["interrupted"] for rs in runs.values() for r in rs):
         print("An interrupted run is never scored (RFC-0003).")
         return 1
-    result = {"label": LABEL, "runs": runs, "pass_marks": pass_marks(runs["A"], runs["D"])}
+    result: dict[str, Any] = {"label": LABEL, "runs": runs, "pass_marks": pass_marks(runs["A"], runs["D"])}
+    result["requeue_sensitivity"] = requeue_sensitivity(runs)
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "phase3-results.json").write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8", newline="\n")
     (OUT / "phase3-results.md").write_text(markdown(result), encoding="utf-8", newline="\n")

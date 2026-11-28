@@ -673,6 +673,15 @@ def stress_report(runs: Mapping[str, Sequence[Run]], labels: Labels) -> str:
     )
 
 
+LATER_MILESTONE_RUNS = ("m13-",)  # their own experiments, with their own reports (Milestone 13: docs/m13-results.md)
+
+
+def is_milestone_10_run(name: str) -> bool:
+    """Milestone 10's reports count Milestone 10's stored runs only. Later milestones add runs to the same folders;
+    counting them would move a published number (found by `tests/test_label_review.py` on PR #99, 2026-11-28)."""
+    return not name.startswith(LATER_MILESTONE_RUNS)
+
+
 def _run(kind: str, name: str) -> Run | None:
     folder = RESULTS / kind / name
     return load_run(folder) if (folder / "manifest.json").exists() else None
@@ -702,7 +711,7 @@ def main() -> int:
         gate_runs.extend(load_run(folder).results)
     live_root = RESULTS / "live"
     for folder in live_root.iterdir():
-        if folder.is_dir() and (folder / "manifest.json").exists():
+        if folder.is_dir() and (folder / "manifest.json").exists() and is_milestone_10_run(folder.name):
             gate_runs.extend(load_run(folder).results)
 
     ds = decisions(a_runs, b_runs, c_set, gate_runs)

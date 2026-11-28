@@ -70,3 +70,20 @@ def test_the_smoke_check_stops_unless_some_call_read_the_cache(capsys: pytest.Ca
     assert res.smoke("s", [dict(r, cache_read_tokens=0) for r in ledger]) == 1
     assert res.smoke("missing", ledger) == 1
     assert "SMOKE FAILED" in capsys.readouterr().out
+
+
+def test_requeued_jobs_are_counted_from_either_log_encoding(tmp_path: Any) -> None:
+    line = "  10/80 cases\njob requeued id=80 kind=investigate_case code=OperationalError\n  20/80 cases\n"
+    (tmp_path / "a.log").write_bytes(b"\xff\xfe" + line.encode("utf-16-le"))  # Windows PowerShell's Tee-Object
+    (tmp_path / "b.log").write_text(line * 2, encoding="utf-8")
+    assert res.requeued_jobs("a", tmp_path) == 1
+    assert res.requeued_jobs("b", tmp_path) == 2
+    assert res.requeued_jobs("missing", tmp_path) is None
+
+
+def test_a_requeue_is_placed_in_its_block_of_ten(tmp_path: Any) -> None:
+    lines = ["  10/80 cases", "  20/80 cases", "job requeued id=80 kind=investigate_case code=OperationalError",
+             "  30/80 cases", "job requeued id=91 kind=investigate_case code=OperationalError"]  # fmt: skip
+    (tmp_path / "r.log").write_bytes(b"\xff\xfe" + "\r\n".join(lines).encode("utf-16-le"))
+    assert res.requeue_blocks("r", tmp_path) == [20, 30]
+    assert res.requeue_blocks("missing", tmp_path) == []
