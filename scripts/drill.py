@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -132,8 +133,8 @@ def wait_until(probe: Callable[[], Any], ok: Callable[[Any], bool], seconds: flo
         time.sleep(every)
 
 
-def adjustable_cases(limit: int = 12) -> list[dict[str, Any]]:
-    """Dev cases labelled "adjusted", with one message and no attachment, in file order: a drill needs real ones."""
+def adjustable_cases(limit: int = 12, outcome: str = "adjusted") -> list[dict[str, Any]]:
+    """Dev cases with this labelled outcome, one message and no attachment, in file order: a drill needs real ones."""
     labels = {
         row["case_id"]: row
         for row in map(json.loads, (DATASET / "labels" / "dev.jsonl").read_text(encoding="utf-8").splitlines())
@@ -142,7 +143,7 @@ def adjustable_cases(limit: int = 12) -> list[dict[str, Any]]:
     for row in map(json.loads, (DATASET / "dev.jsonl").read_text(encoding="utf-8").splitlines()):
         label = labels.get(row["case_id"], {})
         requests = row["requests"]
-        if label.get("expected_outcome") == "adjusted" and len(requests) == 1 and not requests[0]["attachments"]:
+        if label.get("expected_outcome") == outcome and len(requests) == 1 and not requests[0]["attachments"]:
             picked.append(row)
         if len(picked) >= limit:
             break
@@ -502,14 +503,122 @@ def drill_d2(env: dict[str, str], stack: Stack, report: Report, out: Path) -> No
     )
 
 
-def run(command: list[str]) -> None:
-    subprocess.run(command, check=True, capture_output=True, text=True)  # noqa: S603
+def with_model_fault(stack: Stack, fault: str) -> None:
+    """Recreate the app and the worker with `MOCK_MODEL_FAULT` (drill-only; `docker-compose.drills.yml`). An empty
+    value puts the plain mock back. It's read from this process's environment by Compose's interpolation."""
+    overrides = ["-f", str(ROOT / "docker-compose.yml"), "-f", str(ROOT / "docker-compose.drills.yml")]
+    base = stack.compose()
+    command = [*base[:2], *overrides, *base[2:], "up", "-d", "--no-deps", "--force-recreate", "--wait", "app", "worker"]
+    run(command, env={**os.environ, "MOCK_MODEL_FAULT": fault})
+
+
+def arm_c_case(agent: Person, row: dict[str, Any]) -> tuple[int, dict[str, Any], list[dict[str, Any]]]:
+    """Create the dev case on arm C, investigate it, and return its id, its detail and its recommendations."""
+    request = row["requests"][0]
+    body = {
+        "received_at_utc": request["received_at_utc"],
+        "contact_channel": request["contact_channel"],
+        "text": request["text"],
+        "arm": "C",
+        "sender_email": request.get("sender_email"),
+    }
+    made = agent.api("POST", "/cases", body)
+    made.raise_for_status()
+    case_id = int(made.json()["id"])
+    agent.api("POST", f"/cases/{case_id}/investigation").raise_for_status()
+    detail = wait_until(
+        partial(read_json, agent, f"/cases/{case_id}"), lambda d: d["investigation"] in ("none", "failed"), 120, 1
+    )
+    return case_id, detail, read_json(agent, f"/cases/{case_id}/recommendations")
+
+
+def drill_d1(env: dict[str, str], stack: Stack, report: Report, out: Path) -> None:
+    """D1, model provider outage: every model call fails. Arm C must fall back to the engine's result and say so, no
+    proposal may come from a failed run, and arm B must keep working beside it."""
+    password = env["DEMO_USER_PASSWORD"]
+    with_model_fault(stack, "unavailable")
+    report.step("app and worker restarted with MOCK_MODEL_FAULT=unavailable")
+    agent = sign_in("agent.ana", password)
+    rows = adjustable_cases(2)
+    _case_id, detail, recs = arm_c_case(agent, rows[0])
+    latest = recs[-1] if recs else {}
+    ai = latest.get("ai") or {}
+    report.check(
+        "arm C's investigation still finishes", detail["investigation"] == "none", investigation=detail["investigation"]
+    )
+    report.check("it records a fallback, not an AI proposal", "fallback" in ai, ai=ai)
+    report.check("the engine's result stands", latest.get("action") == "adjust", action=latest.get("action"))
+    supervisor = sign_in("supervisor.sam", password)
+    beside = approved_adjustments(agent, supervisor, 1, report)
+    report.check("arm B keeps working during the outage", len(beside) == 1, found=len(beside))
+    with_model_fault(stack, "")
+    report.step("app and worker restarted with the plain mock")
+    agent = sign_in("agent.ana", password)
+    _after_id, after_detail, after_recs = arm_c_case(agent, rows[1])
+    after_ai = (after_recs[-1] if after_recs else {}).get("ai") or {}
+    report.check(
+        "once the model is back, arm C proposes again",
+        after_detail["investigation"] == "none" and "fallback" not in after_ai and bool(after_ai),
+        ai_keys=sorted(after_ai),
+    )
+
+
+def drill_d6(env: dict[str, str], stack: Stack, report: Report, out: Path) -> None:
+    """D6, incorrect recommendation: the model names the opposite action. The deterministic checks must catch it, the
+    engine's result must stand, and no wrong adjustment can be requested or posted."""
+    password = env["DEMO_USER_PASSWORD"]
+    with_model_fault(stack, "wrong_action")
+    report.step("app and worker restarted with MOCK_MODEL_FAULT=wrong_action")
+    agent = sign_in("agent.ana", password)
+    owed = adjustable_cases(1)[0]
+    owed_id, _detail, owed_recs = arm_c_case(agent, owed)
+    owed_rec = owed_recs[-1] if owed_recs else {}
+    report.check(
+        "a case owed points: the AI's 'no adjustment' is caught and the engine's 'adjust' stands",
+        owed_rec.get("action") == "adjust" and "fallback" in (owed_rec.get("ai") or {}),
+        action=owed_rec.get("action"),
+        ai=owed_rec.get("ai"),
+        points_owed=owed_rec.get("points_owed"),
+    )
+    asked = agent.api("POST", f"/cases/{owed_id}/adjustment-request")
+    adjustment: dict[str, Any] = (asked.json().get("adjustment") or {}) if asked.status_code == 201 else {}
+    report.check(
+        "the request asks for exactly the engine's amount",
+        bool(adjustment) and adjustment.get("points") == owed_rec.get("points_owed"),
+        http=asked.status_code,
+        requested=adjustment.get("points"),
+        engine=owed_rec.get("points_owed"),
+    )
+    nothing = adjustable_cases(1, outcome="no_adjustment")[0]
+    none_id, _detail, none_recs = arm_c_case(agent, nothing)
+    none_rec = none_recs[-1] if none_recs else {}
+    report.check(
+        "a case owed nothing: the AI's 'adjust' is caught and the engine's result stands",
+        none_rec.get("action") != "adjust" and "fallback" in (none_rec.get("ai") or {}),
+        action=none_rec.get("action"),
+        ai=none_rec.get("ai"),
+    )
+    refused = agent.api("POST", f"/cases/{none_id}/adjustment-request")
+    report.check(
+        "no adjustment can be requested for it",
+        refused.status_code != 201 or not refused.json().get("adjustment"),
+        http=refused.status_code,
+        body=refused.json() if refused.headers.get("content-type", "").startswith("application/json") else None,
+    )
+    report.step("wrong-action drill done", case_owed=owed["case_id"], case_owed_nothing=nothing["case_id"])
+    with_model_fault(stack, "")
+
+
+def run(command: list[str], env: dict[str, str] | None = None) -> None:
+    subprocess.run(command, check=True, capture_output=True, text=True, env=env)  # noqa: S603
 
 
 DRILLS: dict[str, Callable[[dict[str, str], Stack, Report, Path], None]] = {
+    "d1": drill_d1,
     "d2": drill_d2,
     "d3": drill_d3,
     "d5": drill_d5,
+    "d6": drill_d6,
     "d7": drill_d7,
 }
 

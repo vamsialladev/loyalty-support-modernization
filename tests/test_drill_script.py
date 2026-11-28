@@ -73,17 +73,19 @@ def test_the_drills_workflow_reads_no_secret_runs_one_at_a_time_and_keeps_its_ou
     assert "docker compose -p ci --env-file .env.ci down -v" in text  # the throwaway stack is removed
     for forbidden in ("run.app", "neon.tech", "gcloud"):
         assert forbidden not in text  # never the live demo, Cloud Run or Neon
-    assert set(drill.DRILLS) >= {"d7", "d3", "d5", "d2"}
+    assert set(drill.DRILLS) >= {"d7", "d3", "d5", "d2", "d1", "d6"}
     for name in drill.DRILLS:
         assert f'"{name}"' in text, f"{name} isn't in the workflow's drill list"
 
 
-def test_the_drill_overrides_touch_only_the_mock_api_and_turn_its_faults_on() -> None:
+def test_the_drill_overrides_add_only_faults_and_nothing_else() -> None:
     override = yaml.safe_load((ROOT / "docker-compose.drills.yml").read_text(encoding="utf-8"))
-    assert set(override["services"]) == {"mock-api"}
+    assert set(override["services"]) == {"mock-api", "app", "worker"}
     env = override["services"]["mock-api"]["environment"]
     assert env["MOCK_API_FAULTS"] == "true" and env["MOCK_API_FAULT_RULES_FILE"] == "/drill-rules/rules.yaml"
     assert override["services"]["mock-api"]["volumes"] == ["./drill-output/rules:/drill-rules:ro"]
+    for name in ("app", "worker"):  # the mock model's fault only, empty unless a drill sets it
+        assert override["services"][name] == {"environment": {"MOCK_MODEL_FAULT": "${MOCK_MODEL_FAULT:-}"}}
 
 
 def test_fault_rules_are_written_where_the_override_mounts_them(
