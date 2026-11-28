@@ -93,6 +93,25 @@ class UserSession(Base):
     revoked_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
 
 
+class BreakGlassGrant(Base):
+    """Emergency administrator access for one person, for at most 60 minutes (ENT-26, ADR-0093). Granted out of band
+    by a different supervisor or administrator, with a reason. It is never extended: it ends by expiring or by being
+    revoked, and only a new grant can follow it."""
+
+    __tablename__ = "break_glass_grants"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    granted_by: Mapped[str] = mapped_column(String(64))  # a username, never the grantee's own
+    reason: Mapped[str] = mapped_column(Text)
+    granted_at_utc: Mapped[str] = mapped_column(String(20))
+    expires_at_utc: Mapped[str] = mapped_column(String(20))
+    ended_at_utc: Mapped[str | None] = mapped_column(String(20), default=None)
+    end_reason: Mapped[str | None] = mapped_column(String(16), default=None)  # expired | revoked
+    ended_by: Mapped[str | None] = mapped_column(String(64), default=None)
+
+    __table_args__ = (Index("ix_break_glass_grants_user_open", "user_id", "ended_at_utc"),)
+
+
 class Case(Base):
     __tablename__ = "cases"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

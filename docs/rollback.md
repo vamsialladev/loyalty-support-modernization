@@ -26,6 +26,7 @@ run in production":** a downgrade that drops a table drops its data.
 |---|---|---|
 | 0013 `qa_samples` | drops the QA samples table | **No:** loses QA reviews. Not needed: older code ignores the table |
 | 0014 `ai_run_cache_tokens` | drops the two cache-token columns on `ai_runs` | **No:** loses the cache counts of past runs. Not needed: older code ignores the columns (they default to 0) |
+| 0015 `break_glass_grants` | drops the break-glass grants table | **No:** loses the grant history (the audit rows in `system_events` stay). Not needed: older code ignores the table, and without it no one can be raised |
 | 0012 `job_trace_context` | drops one nullable telemetry column | Yes (the value is telemetry only), and also not needed |
 | 0011 `a2a_tasks` | drops the A2A task table | **No:** loses A2A evidence requests. Not needed: older code ignores it |
 | 0010 security hardening | drops rate limits, recovery and API tokens; removes columns from `users` and `cases` | **No:** signs everyone out and removes legal holds |

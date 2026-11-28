@@ -102,10 +102,25 @@ merged as fourteen pull requests.
   - Local gitleaks had scanned 0 commits in git worktrees, and now fails if it scans none (verification log, M12
     row 39).
 
-## Waiting on the owner (Milestone 13b, planned 2026-11-27)
-- **Answer the six-line approval checklist** at the top of `docs/m13b-plan.md`: documents and code-only work now;
-  drills on the local stack only when the machine is free; break-glass as code; proposed RTO 1 hour and RPO 24 hours;
-  no drill against the live demo; no spend.
+## Milestone 13b (planned 2026-11-27; drills in GitHub Actions since 2026-11-28)
+- **The drills run in GitHub Actions,** not on the laptop (owner, 2026-11-27): `.github/workflows/drills.yml` uses a
+  throwaway Compose stack per run, and `scripts/drill.py` holds the drills. None needs the laptop.
+- **D7 emergency execution shutdown: passed 7 of 7** (run 46090558919; verification log M13b rows 1-2).
+- **D3 worker crash: passed 6 of 6** (run 46092829733; row 3). Recovered 61.7 s after the kill, with one posting.
+  Found: the recovery isn't on the case's timeline (backlog).
+- **D5 uncertain adjustment: passed 7 of 7** (run 46095480270; rows 4-5). Unknown, then reconciled 10 ms later, with
+  one posting. The first run's failure was my check polling too coarsely.
+- **D2 customer API outage: passed 6 of 6** (run 46097832129; row 6). Found: a 16 s outage used all 5 attempts
+  (backlog).
+- **D1 model outage: passed 5 of 5; D6 incorrect recommendation: passed 4 of 4** (run 46100411460; row 7). D6 is
+  AI-INC-001 (drill) in `docs/ai-incident-register.md`.
+- **Next:** D4 measured backup and restore (written, on `ci/m13b-d4`), then the SEC-21 write-up
+  (`docs/incident-exercises.md`), then the remaining part A documents (rollout stages, incident guide, ownership
+  matrix, continuity) and one example incident report from a drill.
+- **Break-glass is built** (ENT-26, ADR-0093, `docs/break-glass.md`), with the owner's rules of 2026-11-27, and
+  tested without a stack.
+- **Waiting on the owner:** nothing for the drills. The checklist in `docs/m13b-plan.md` is answered by the owner's
+  orders of 2026-11-27 (break-glass as code; drills in CI; no live systems; no spend).
 
 ## Waiting on the owner (Milestone 12)
 0. **LIVE-06 is done (Implemented and verified, row 47).** Revision 00006 (image `8c5f314`, 2 s startup probe)

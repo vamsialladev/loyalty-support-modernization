@@ -1,0 +1,220 @@
+# Operational drills (Milestone 13b; spec F.3, ROLL-02 and ROLL-03, SEC-21)
+
+**Status: prepared, not run.** Each drill below has its setup, steps, measures and pass criteria written down. No
+drill has run yet: they need the local Compose stack, and the owner said on 2026-11-27 not to run anything heavy until
+the machine is free. Each **Result** reads "Not run" until the drill really runs. Then it holds the actual outcome:
+times, counts and what failed, with the evidence file. Local drills aren't proof of production availability.
+
+Plan and approval checklist: `docs/m13b-plan.md`. Mock AI and synthetic data only. Never against the live Cloud Run
+demo or its Neon database. Cost: $0.
+
+## Where each drill runs (owner's order, 2026-11-27: GitHub Actions wherever possible)
+The drills run in `.github/workflows/drills.yml`: each on its own throwaway Compose stack on a GitHub runner, started
+the way CI's Compose job starts it. The full output is kept as an artifact for 90 days: the drill's JSON, its console
+output, and the stack's logs. **None needs the owner's laptop.** Each needs only Docker and the stack, and a runner
+has both. Timings measured there are a GitHub runner's, not the laptop's, and each result says so.
+
+| Drill | Where | Status |
+|---|---|---|
+| D7 emergency execution shutdown | GitHub Actions (`scripts/drill.py d7`) | **Passed** 7 of 7 (run 46090558919) |
+| D3 worker crash | GitHub Actions (`scripts/drill.py d3`) | **Passed** 6 of 6 (run 46092829733); the recovery isn't on the case timeline (found) |
+| D5 uncertain adjustment | GitHub Actions (`scripts/drill.py d5`) | **Passed** 7 of 7 (run 46095480270) |
+| D2 customer API outage | GitHub Actions (`scripts/drill.py d2`) | **Passed** 6 of 6 (run 46097832129); a 16 s outage used all 5 attempts (found) |
+| D1 model outage | GitHub Actions (`scripts/drill.py d1`) | **Passed** 5 of 5 (run 46100411460) |
+| D6 incorrect recommendation | GitHub Actions (`scripts/drill.py d6`) | **Passed** 4 of 4 (run 46100411460) |
+| D4 backup and restore | GitHub Actions (`scripts/drill.py d4`) | Written; not run |
+| SEC-21: integration credential, unauthorized access, leaked test key | GitHub Actions, on the stack | Not run |
+| SEC-21: malicious policy, unexpected agent action, compromised dependency, excessive spend | GitHub Actions, as pytest in the existing CI | Not run |
+
+The laptop steps below stay for anyone running a drill by hand.
+
+## Before any drill
+1. **The machine is free:** the owner says so, and `docker stats --no-stream` shows no other project's stack busy.
+   Record the number of other running containers with each result. On 2026-11-26 a busy machine doubled timings
+   (verification log M12 row 45).
+2. **Start a throwaway stack:** `powershell -ExecutionPolicy Bypass -File scripts\compose_check.ps1 -Keep`.
+   It builds the stack from an empty volume with its own env file and Compose project (`loyalty-check`), runs
+   its checks, and keeps it running. The drills never touch the owner's `.env` or database volume. Its checks
+   must pass before a drill starts.
+3. **Save the full output** of every command to `observability/drills/<date>/<drill>.txt`, not just a summary (the
+   owner's rule, 2026-11-26). Mask nothing by hand: the stack prints no secret, and a drill that would is stopped.
+4. **Starting state:** the demo dataset, plus one case worked to Resolved / adjusted (DV-001, 14,840 points). It's
+   the "completed action" that must never be replayed.
+
+## Proposed recovery targets (not measured)
+- **RTO: 1 hour** for the Compose stack. That's the time from "the database is lost" to serving again from the last
+  backup.
+- **RPO: 24 hours**, from a daily `pg_dump`.
+
+These are proposals for this simulated engagement, stated apart from the measured restore in D4, and a real customer
+sets their own. The live demo has no backup of its own: its data is reset every day, and Neon's own restore window
+is the only copy (`docs/backup-restore.md`).
+
+## The seven drills
+
+### D1. Model provider outage
+- **Setup:** the app and the worker are recreated with `MOCK_MODEL_FAULT=unavailable`, so every model call fails as an
+  outage would (`ProviderUnavailable`; drill-only, mock only, never in the public demo; #100).
+- **Steps:**
+  1. Run one arm C investigation, and one arm B case to an approved adjustment, while the model is down.
+  2. Recreate the app and worker with the plain mock, and run another arm C investigation.
+- **Measure:** what the arm C case shows, and whether arm B is affected.
+- **Pass:**
+  - no proposal comes from a failed run;
+  - the engine's result stands;
+  - arm B keeps working;
+  - arm C proposes again once the model is back.
+- **Not covered here:** the circuit breaker's open and close times (`app/adapters/circuit.py`, covered by its unit
+  tests), and spend during an outage (the mock model costs nothing; the spend caps are SEC-21's exercise).
+- **Result (GitHub Actions run 46100411460, 2026-11-28): passed, 5 of 5.**
+  - The arm C investigation finished with **`fallback: provider_failures`** and no AI proposal.
+  - The engine's **`adjust`** stood.
+  - Arm B approved an adjustment beside it (DV-001, 14,840 points).
+  - With the plain mock back, arm C proposed again: a full proposal, with no fallback.
+
+### D2. Customer API outage
+- **Setup:** stop the mock API container: a real outage, with connections refused. Fault injection
+  (`X-Mock-Fault: unavailable`, `timeout`, `partial`; ADR-0038) is covered by the mock API's own tests.
+- **Steps:** ask for 3 investigations while the API is down, then start it again.
+- **Measure:**
+  - readiness;
+  - retries per job;
+  - time to recover.
+- **Pass:**
+  - no case shows evidence it didn't fetch;
+  - jobs retry and complete after recovery, or go to dead jobs with a reason.
+- **Not covered here:** our API's own backpressure (503 + `Retry-After` under load), and the `error-rate` and
+  `queue-backlog` alerts. The observability profile isn't in the drill stack.
+- **Result (GitHub Actions run 46097832129, 2026-11-28): passed, 6 of 6.**
+  - The outage lasted 16.1 s. `/readyz` answered 503 with `customer_systems: unreachable`.
+  - All 3 cases stayed `queued`, with no evidence and no proposal, while the jobs retried.
+  - All 3 finished on their own **38.4 s** after the outage began.
+  - **Found: each used 5 of its 5 attempts.** The backoff reaches its last attempt about 30 s in, so a longer outage
+    would leave investigations dead until requeued. That's inferred from the schedule, not tested; see the backlog.
+
+### D3. Worker crash
+- **Setup:** one worker, then a second as the replacement.
+- **Steps:**
+  1. Pause the mock API.
+  2. Request the execution of an approved adjustment.
+  3. When the job is `running` under the worker's lease, `SIGKILL` the worker. It's then waiting on its re-check
+     read, before anything is submitted.
+  4. Resume the mock API, and start the replacement.
+
+  The case where a submission reached the system and the answer was lost is D5.
+- **Measure:**
+  - the time until the lease runs out and the job is claimed again (`recovered: true`);
+  - postings in the ledger for that adjustment.
+- **Pass:**
+  - **exactly one posting** (the idempotency key);
+  - the job finishes once;
+  - the case's timeline shows the recovery.
+- **Result (GitHub Actions run 46092829733, 2026-11-28): passed, 6 of 6.**
+  - The worker was killed while it held the job, with 0 postings.
+  - The replacement finished it as **executed 61.7 s after the kill** (the lease is 60 s), with **exactly 1
+    posting**. The timeline has one `execution_started` and one `adjustment_executed`.
+  - **Found: the timeline doesn't show the recovery,** so the last pass criterion isn't met as written. The job was
+    recovered, but nothing had started on the case, so no case event records it. It was added to the backlog, to
+    record a recovered job on the case.
+
+### D4. Database backup and restore, measured (ROLL-03)
+- **Steps:**
+  1. Back up per `docs/backup-restore.md` (Local and Compose).
+  2. Make the "after the backup" changes: resolve one more case, and revoke the demo agent's session.
+  3. Drop and restore into `loyalty_restore`, re-apply the role grants, and point a copy of the app at it.
+- **Measure:**
+  - backup seconds and dump size;
+  - restore seconds;
+  - the time from "start restore" to `/readyz` ready, which is the measured RTO;
+  - what was lost: the changes after the backup, which is the measured RPO.
+- **Pass, the ROLL-03 rules:**
+  - re-running reconciliation after the restore **doesn't post DV-001 again**, so its idempotency key still holds;
+  - the case resolved after the backup is reported missing, not silently re-executed;
+  - **access revoked after the backup stays revoked:** the session revoked in step 2 must not work against the
+    restored database. If it does, the restore runbook must rotate `APP_SECRET_KEY` before reopening (that
+    voids approvals not yet executed, by design; `docs/credential-rotation.md`), and the drill records it as
+    found;
+  - append-only audit holds after the grants are re-applied.
+- **Result:** Not run.
+
+### D5. Uncertain adjustment
+- **Setup:** a seeded `commit_then_lost` rule for the adjustment's stay. The mock API is recreated with
+  `docker-compose.drills.yml`, and the rule file is kept in the run's artifact. The adjustment commits, then the
+  gateway answers 504.
+- **Steps:** execute one approved adjustment.
+- **Measure:** how long the case sits in "Execution unknown", and how long until reconciliation settles it. Both
+  come from the case's audit trail: a polled status can miss a state that short.
+- **Pass:**
+  - the case goes to "Execution unknown", not "failed" and not a retry;
+  - reconciliation finds the posting by status lookup and resolves it;
+  - **one posting**.
+- **Result (GitHub Actions run 46095480270, 2026-11-28): passed, 7 of 7.**
+  - The timeline went `execution_started` → `execution_unknown` → `reconciled_applied`, **10 ms** later, then
+    `adjustment_executed`.
+  - One `execution_started`, so no blind retry, and nothing marked failed.
+  - **Exactly 1 posting**, about 1.0 s after the request.
+  - The first run (46094877745) failed only because my check polled the status and missed the unknown state
+    (verification log M13b rows 4 and 5).
+
+### D6. Incorrect recommendation
+- **Setup:** `MOCK_MODEL_FAULT=wrong_action`: the model names the opposite action. A proposal has **no amount
+  field** (`app/ai/tools.py`), so a wrong amount isn't something a model can propose; a wrong action is the worst
+  it can do.
+- **Steps:**
+  1. Run arm C on a case owed points (DV-001), then request the adjustment.
+  2. Run arm C on a case owed nothing (DV-002), then try to request one.
+- **Measure:** whether the deterministic checks caught it, and what the case shows.
+- **Pass:**
+  - the wrong action never becomes the case's result;
+  - a request always asks for the engine's amount;
+  - no adjustment can be requested where the engine owes nothing;
+  - an entry goes in `docs/ai-incident-register.md`, marked "drill".
+- **Result (GitHub Actions run 46100411460, 2026-11-28): passed, 4 of 4.**
+  - **DV-001:** the AI's "no adjustment" was caught (**`fallback: invalid_result`**: the validation found an
+    `action_mismatch`). The engine's **`adjust`** stood, and the request asked for exactly the engine's **14,840**
+    points (201).
+  - **DV-002:** the AI's "adjust" was caught the same way. The engine's **`no_adjustment_credited`** stood, and the
+    adjustment request was refused (**409**).
+  - It's in the AI incident register as AI-INC-001 (drill).
+
+### D7. Emergency execution shutdown
+- **Setup:** two approved adjustments waiting (DV-001 and DV-003, worked through arm B by the drill).
+- **Steps:**
+  1. An administrator engages the kill switch. It's the emergency stop for adjustments: a database row that every
+     process reads without a restart (`app/services/kill_switch.py`). It doesn't touch AI or investigations.
+  2. A supervisor tries to execute both.
+  3. Release the switch, execute both, then execute both again.
+  (`FEATURE_ADJUSTMENT_EXECUTION=false` is the deploy-time setting for the same stop. It needs a restart and writes
+  no audit event, so the drill uses the switch.)
+- **Measure:** the time from the switch to the first refused execution, and any posting made while it was on.
+- **Pass:**
+  - **zero postings while on**;
+  - every execution refused with a clear message;
+  - an audit event for each switch;
+  - releasing posts each adjustment once, and a repeat posts nothing.
+- **Result (GitHub Actions run 46090558919, 2026-11-28): passed, 7 of 7.**
+  - Both executions were refused with 409, **0.04 s** after the switch, and **0 postings** followed in 10 s.
+  - After release, both were **executed** with **exactly 1 posting each**, and the repeat was refused (409).
+  - **2** `kill_switch_changed` security events.
+  - The first run (46090310680) failed only the audit check, through my script's bug (verification log M13b rows
+    1 and 2).
+
+## SEC-21 incident exercises
+Each starts as a tabletop. Those marked **executed** are run for real: in `pytest` with no stack, or on the stack.
+
+| Exercise | How | Pass | Result |
+|---|---|---|---|
+| Leaked model key | Tabletop, plus a test-key rotation on the stack (no real key exists in this project) | Rotation steps work, and **the old key is proven to fail** | Not run |
+| Compromised integration credential | Executed on the stack: rotate `MOCK_API_TOKEN` | The old token gets 401, the new one works, and the security event is logged | Not run |
+| Unauthorized access | Executed on the stack: a revoked session, a wrong customer's case, and a forged CSRF token | All refused, each with a security event | Not run |
+| Malicious policy | Executed in pytest: publishing a policy without the second approval, or with an injected instruction | Refused, or treated as data, never as an instruction | Not run |
+| Unexpected agent action | Executed in pytest: a scripted model calls a tool outside its allowlist, or tries to execute | The call is refused, the run stops, the attempt is recorded | Not run |
+| Compromised dependency | Executed: `pip-audit` on the lockfile, plus the steps to pin back a bad release | No known vulnerability, or the pin-back steps work | Not run |
+| Excessive spend | Executed in pytest: runs past the stored daily cap | Blocked at the cap, and the cap survives a restart | Not run |
+
+## After the drills
+- **One example incident report,** written from a drill that actually ran (ROLL-04). It follows the template in
+  `docs/incident-response.md`.
+- **Every surprise is recorded as found.** A real bug gets its own PR with a test, then the drill runs again.
+- **The milestone isn't complete without D4's measured restore** (`docs/m13b-plan.md`).
+- **Estimated stack time** for the whole set: about 2-3 hours. That's an estimate, to be replaced by the measured time.

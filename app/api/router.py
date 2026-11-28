@@ -202,7 +202,12 @@ DB = Annotated[Session, Depends(db)]
 def signed_in(request: Request, s: DB) -> sessions.ActiveSession:
     """A person's session, or a machine's read-only bearer token. A token carries no CSRF value, so it can't change
     anything."""
-    active = sessions.resolve(s, request.app.state.identity, request.cookies.get(SESSION_COOKIE))
+    active = sessions.resolve(
+        s,
+        request.app.state.identity,
+        request.cookies.get(SESSION_COOKIE),
+        break_glass_allowed=getattr(request.app.state, "break_glass_allowed", False),
+    )
     if active is None:
         bearer = request.headers.get("authorization", "")
         token = bearer[7:].strip() if bearer.lower().startswith("bearer ") else None
