@@ -1,10 +1,15 @@
 # Session handoff
 
-## Milestone 13: safe AI caching (started 2026-11-26). Phase 3 ready; waiting for the owner's "go"
+## Milestone 13: safe AI caching (started 2026-11-26). Phase 3 live runs in progress (2026-11-27)
 - **Scope (owner, 2026-11-26):** find from Stage 9's metrics where caching helps arm C; build only there, safely;
-  prove it in business terms with zero wrong reuses. Four phases: measure, build, prove, business outcome. Standing
-  orders: decide routine choices and record them, batch at most 3 questions with a recommended answer, merge on
-  green, but **stop before paid spend, deploys, publishing, deleting data or weakening a gate.**
+  prove it in business terms with zero wrong reuses. Four phases: measure, build, prove, business outcome.
+- **Standing orders (owner, 2026-11-27):** work straight through; decide routine choices; batch questions with a
+  recommended answer; re-run flagged or killed runs and fix own script or test bugs within an approved cap, logging
+  each; real-stack and Docker work in GitHub Actions where possible; a local benchmark or Docker stack only after the
+  owner says "machine is free" (Phase 3 already has it), one at a time; auto-merge on green and fix failing CI;
+  keep this file current. **Ask before** new spend or a higher cap, deploys, publishing, deleting data, secrets or
+  Cloud Run/Neon changes, or weakening any test, gate or branch protection. No shell heredocs: file tools only.
+  Report in 5 lines.
 - **Owner's decisions (2026-11-26, `CLAUDE.md`):** Phase 1 gate approved; build only **L3** (provider prompt
   caching), flag off; L1, L2, L5, L6 not built with the evidence; L4 n/a; MultiWOZ 2.2 approved; the spec's drills
   move to **13b**; headline "answer caching is unsafe (910 look-alike pairs, 0 shared correct answers); prompt
@@ -18,13 +23,15 @@
 - **Phase 2** (ADR-0091, CACHE-02): `prompt_cache` keyword on the provider port; `FEATURE_PROMPT_CACHE` (off);
   `/admin` switch (off only); cache rates priced and capped; migration 0014; `/metrics`, gauge, spans;
   `docs/runbooks/prompt-cache.md`. Tests: `tests/test_prompt_cache.py`, written first.
-- **Phase 3** (`docs/m13-phase3-plan.md`, pre-registered): arms A (no cache) and D (L3) on the held-out 80, 3 runs
-  each, alternating; expected about $0.71, worst about $0.89, hard limit $1.55. **Approved by the owner on
-  2026-11-27, but wait for the owner's "go":** Stage 10 needs a quiet machine first. Ready: the freeze is written
-  (141 files, 0 changes; replaces `2c088e8`), `.env` is in the worktree (preflight `live-model`: READY), and
-  `scripts\m13_phase3.ps1` and `evaluations/m13_results.py` are written and tested. On "go": run the script, then
-  commit `benchmarks/results/live/m13-*`, the ledger and `benchmarks/reports/m13/`, and set `.env` back to mock.
-- **Not done yet:** the runs; Phase 4 (results, decision memo, case study section, with the owner's headline).
+- **Phase 3** (`docs/m13-phase3-plan.md`, pre-registered; owner's "go" 2026-11-27; cap $1.55): branch
+  `bench/m13-phase3-results`. Done: smoke (5/5, cache read on every later call), A1 $0.137, D1 $0.096, A2 $0.140.
+  D2's first attempt was killed at 60 of 80 by a bug in the run script (stderr turned fatal under PowerShell 5.1;
+  fixed, verification log rows 26 to 31; the partial $0.085 stays flagged). **Running now:** D2 in full, then A3 and
+  D3, then `evaluations/m13_results.py` (requeues per run; any requeued run's p95 shown with and without the
+  requeued cases, by a rule committed before the re-run). Then: commit `benchmarks/results/live/m13-*`, the ledger
+  and `benchmarks/reports/m13/`, a PR with auto-merge, and `.env` back to mock.
+- **After Phase 3:** TD-57 (the SQLite lock race; likely cause of the Phase 1 `test_runner [B]` failure), Phase 4
+  (results, decision memo, README section; the website case study needs the owner's OK to publish).
 - **The prototype** `C:\Users\Vamsi\Downloads\Loyalty-Cache-Lab` was read, never run. Reference only.
 
 **Updated:** 2026-11-26 (revision 00004 checked live, the README's live link, the cap check and the second
