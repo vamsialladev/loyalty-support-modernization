@@ -1641,3 +1641,33 @@ from spec Part 0.6. Later ADRs are made during the build. A decision is changed 
 - **What would change this decision:** a real customer's SSO (then the grant needs its own sign-in and an approver);
   a need to break glass for case work (then a separate, narrower grant, never this one); a misuse found in a drill.
 - **Starter kit:** the rules table and the tests move as they are; the roles and the command are customer-specific.
+
+## ADR-0095: SQLite takes the write lock at a transaction's first write, and reads hold none (TD-57)
+- **Context:** on SQLite (offline tests, the browser tests' offline stack, the benchmark), a deferred `BEGIN` reads
+  under a shared lock and upgrades at its first write. If another connection holds the write lock, SQLite refuses the
+  upgrade at once, whatever the busy timeout. Two transactions that each read and then write fail whenever they
+  overlap: the worker's heartbeat (it reads the clock, then extends the lease) and a running job are exactly that.
+  It made a browser test flaky in Milestone 12 (TD-57) and requeued a job in Milestone 13's live runs (A3's HO-032,
+  464.7 s). The owner asked for it to be fixed after the freeze, in its own pull request, with a reproducing test.
+- **Options considered:**
+  - `BEGIN IMMEDIATE` on every transaction (tried in Milestone 12): reads take the write lock too, so an open reader
+    blocks every writer; 70 tests deadlocked. Reverted.
+  - WAL mode alone: readers stop blocking writers, but a transaction that read before another writer committed still
+    can't write (`SQLITE_BUSY_SNAPSHOT`). The reproducing test still fails.
+  - Retry the whole unit of work on "database is locked": every caller would need retry code, and the worker's retry
+    is what produced the 464.7 s case.
+  - **Chosen: no `BEGIN` until the first write.** Reads before it run without a lock, as each statement does under
+    Postgres's READ COMMITTED; the first write (or `SAVEPOINT`) sends `BEGIN IMMEDIATE`, which waits for the other
+    writer up to the 30 s timeout, then holds the write lock to commit.
+- **Tradeoff:** reads before a transaction's first write no longer share one snapshot. That's already so on Postgres,
+  where every deployment runs, and correctness there rests on constraints and conditional updates; SQLite now
+  behaves the same way, instead of failing. A transaction holding the write lock for long makes other writers wait
+  (up to 30 s), where before they failed at once.
+- **Result:** `tests/test_sqlite_engine.py`: the reproducer now passes (its strict `xfail` removed); a heartbeat-and-
+  job test, an open-reader test, savepoint and rollback tests, and the statement classifier, 15 tests. Against the old
+  engine, the three race tests fail ("database is locked" twice; a reader blocking a writer once) and the two
+  rollback tests pass, as regression guards should.
+- **What would change this decision:** a SQLite-only deployment with long write transactions (then WAL as well); a
+  statement the classifier calls a read that writes (it treats anything but `SELECT`, `PRAGMA` and `EXPLAIN` as a
+  write, so the risk runs to the safe side).
+- **Starter kit:** the engine module moves as it is; it's the SQLite pattern for any app with a worker.
