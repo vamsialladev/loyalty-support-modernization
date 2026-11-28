@@ -17,7 +17,9 @@ has both. Timings measured there are a GitHub runner's, not the laptop's, and ea
 | Drill | Where | Status |
 |---|---|---|
 | D7 emergency execution shutdown | GitHub Actions (`scripts/drill.py d7`) | **Passed** 7 of 7 (run 46090558919) |
-| D3 worker crash, D5 uncertain adjustment, D2 customer API outage, D1 model outage, D6 incorrect recommendation, D4 backup and restore | GitHub Actions, one pull request each, in that order | Not run |
+| D3 worker crash | GitHub Actions (`scripts/drill.py d3`) | **Passed** 6 of 6 (run 46092829733); the recovery isn't on the case timeline (found) |
+| D5 uncertain adjustment | GitHub Actions (`scripts/drill.py d5`) | **Passed** 7 of 7 (run 46095480270) |
+| D2 customer API outage, D1 model outage, D6 incorrect recommendation, D4 backup and restore | GitHub Actions, one pull request each, in that order | Not run |
 | SEC-21: integration credential, unauthorized access, leaked test key | GitHub Actions, on the stack | Not run |
 | SEC-21: malicious policy, unexpected agent action, compromised dependency, excessive spend | GitHub Actions, as pytest in the existing CI | Not run |
 
@@ -79,8 +81,14 @@ is the only copy (`docs/backup-restore.md`).
 
 ### D3. Worker crash
 - **Setup:** one worker, then a second as the replacement.
-- **Steps:** start an execution of an approved adjustment, kill the worker container mid-job (`docker kill`), and
-  start the replacement.
+- **Steps:**
+  1. Pause the mock API.
+  2. Request the execution of an approved adjustment.
+  3. When the job is `running` under the worker's lease, `SIGKILL` the worker. It's then waiting on its re-check
+     read, before anything is submitted.
+  4. Resume the mock API, and start the replacement.
+
+  The case where a submission reached the system and the answer was lost is D5.
 - **Measure:**
   - the time until the lease runs out and the job is claimed again (`recovered: true`);
   - postings in the ledger for that adjustment.
@@ -88,7 +96,13 @@ is the only copy (`docs/backup-restore.md`).
   - **exactly one posting** (the idempotency key);
   - the job finishes once;
   - the case's timeline shows the recovery.
-- **Result:** Not run.
+- **Result (GitHub Actions run 46092829733, 2026-11-28): passed, 6 of 6.**
+  - The worker was killed while it held the job, with 0 postings.
+  - The replacement finished it as **executed 61.7 s after the kill** (the lease is 60 s), with **exactly 1
+    posting**. The timeline has one `execution_started` and one `adjustment_executed`.
+  - **Found: the timeline doesn't show the recovery,** so the last pass criterion isn't met as written. The job was
+    recovered, but nothing had started on the case, so no case event records it. It was added to the backlog, to
+    record a recovered job on the case.
 
 ### D4. Database backup and restore, measured (ROLL-03)
 - **Steps:**
@@ -111,14 +125,23 @@ is the only copy (`docs/backup-restore.md`).
 - **Result:** Not run.
 
 ### D5. Uncertain adjustment
-- **Setup:** `X-Mock-Fault: commit_then_lost`. The adjustment commits, then the gateway times out.
+- **Setup:** a seeded `commit_then_lost` rule for the adjustment's stay. The mock API is recreated with
+  `docker-compose.drills.yml`, and the rule file is kept in the run's artifact. The adjustment commits, then the
+  gateway answers 504.
 - **Steps:** execute one approved adjustment.
-- **Measure:** how long the case sits in "Execution unknown", and how long until reconciliation settles it.
+- **Measure:** how long the case sits in "Execution unknown", and how long until reconciliation settles it. Both
+  come from the case's audit trail: a polled status can miss a state that short.
 - **Pass:**
   - the case goes to "Execution unknown", not "failed" and not a retry;
   - reconciliation finds the posting by status lookup and resolves it;
   - **one posting**.
-- **Result:** Not run.
+- **Result (GitHub Actions run 46095480270, 2026-11-28): passed, 7 of 7.**
+  - The timeline went `execution_started` → `execution_unknown` → `reconciled_applied`, **10 ms** later, then
+    `adjustment_executed`.
+  - One `execution_started`, so no blind retry, and nothing marked failed.
+  - **Exactly 1 posting**, about 1.0 s after the request.
+  - The first run (46094877745) failed only because my check polled the status and missed the unknown state
+    (verification log M13b rows 4 and 5).
 
 ### D6. Incorrect recommendation
 - **Setup:** arm C with a scripted mock model (`ScriptedModel`) that proposes a wrong amount for a case with a known

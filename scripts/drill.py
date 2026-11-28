@@ -400,16 +400,28 @@ def drill_d5(env: dict[str, str], stack: Stack, report: Report, out: Path) -> No
     final = wait_until(status, lambda s: s not in ("approved", "executing", "execution_unknown"), 180, every=0.5)
     settled_after = round(time.monotonic() - started, 1)
     after = postings(stack, adjustment["member_number"], adjustment["stay_id"])
-    report.check("the case went to execution unknown first", "execution_unknown" in seen, statuses_seen=seen)
-    report.check("reconciliation settles it as executed", final == "executed", final=final, seconds=settled_after)
-    report.check("exactly one posting", after - before == 1, before=before, after=after)
+    # The audit trail is the record: a status polled every 0.5 s can miss a state that lasts under a second (the first
+    # run, 46094877745, saw only approved -> executed while the timeline held execution_unknown; M13b row 4).
     audit = read_json(supervisor, f"/cases/{adjustment['case_id']}/audit")
     actions = [e.get("action") for e in audit]
+    at = {e.get("action"): e.get("at_utc") for e in audit}
+    order = [a for a in actions if a in ("execution_started", "execution_unknown", "reconciled_applied")]
     report.check(
-        "the timeline shows unknown, then one execution",
-        "execution_unknown" in actions and actions.count("adjustment_executed") == 1,
+        "the case went to execution unknown, then reconciliation, in that order",
+        order == ["execution_started", "execution_unknown", "reconciled_applied"],
+        order=order,
+        statuses_polled=seen,
+        unknown_at=at.get("execution_unknown"),
+        reconciled_at=at.get("reconciled_applied"),
+    )
+    report.check(
+        "no blind retry and nothing marked failed",
+        actions.count("execution_started") == 1 and not any("failed" in str(a) for a in actions),
         actions=actions[-8:],
     )
+    report.check("reconciliation settles it as executed", final == "executed", final=final, seconds=settled_after)
+    report.check("exactly one posting", after - before == 1, before=before, after=after)
+    report.check("the timeline has one execution", actions.count("adjustment_executed") == 1, actions=actions[-8:])
 
 
 def job_attempts(stack: Stack, case_id: int) -> int:
