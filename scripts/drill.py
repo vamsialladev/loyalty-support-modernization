@@ -700,6 +700,19 @@ def drill_d4(env: dict[str, str], stack: Stack, report: Report, out: Path) -> No
     restore_seconds = round(time.monotonic() - restore_started, 2)
     report.check("the restore and the grants succeed", restored.returncode == 0, seconds=restore_seconds,
                  error=restored.stderr.strip()[:500])  # fmt: skip
+    # The restore runbook's last step before traffic (ADR-0096): end every access the backup still holds as live.
+    # Without it the fourth run (46151620213) found the revoked session working again (M13b row 11).
+    sealed = subprocess.run(  # noqa: S603
+        stack.compose(
+            "run", "--rm", "--no-deps", "app", "python", "-m", "app.services.after_restore",
+            "--reason", "drill D4: restored from the backup taken this run",
+        ),
+        capture_output=True,
+        text=True,
+        check=False,
+    )  # fmt: skip
+    report.check("after the restore, every live access is ended", sealed.returncode == 0,
+                 output=sealed.stdout.strip()[-200:], error=sealed.stderr.strip()[-300:])  # fmt: skip
     run(stack.compose("start", "app", "worker"))
     ready = wait_until(readiness, lambda c: c == 200, 180, 2)
     rto = round(time.monotonic() - lost_at, 1)
@@ -746,6 +759,13 @@ def drill_d4(env: dict[str, str], stack: Stack, report: Report, out: Path) -> No
         "audit history is append-only after the restore",
         denied.returncode != 0 and "permission denied" in denied.stderr,
         error=denied.stderr.strip()[:200],
+    )
+    admin = sign_in("admin.ada", password)
+    actions = [e.get("event", {}).get("action") for e in read_json(admin, "/security/events")]
+    report.check(
+        "ending the access is a recorded security event",
+        actions.count("restore_access_sealed") == 1,
+        found=actions.count("restore_access_sealed"),
     )
 
 
