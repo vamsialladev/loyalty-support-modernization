@@ -118,6 +118,15 @@ class Report:
         return path
 
 
+def readiness() -> int:
+    """`/readyz`'s status code, or 0 while the app can't be reached yet (it's restarting). The second D4 run,
+    46149198354, ended on a connection reset here (verification log M13b row 9)."""
+    try:
+        return httpx.get(f"{APP}/readyz", timeout=10).status_code
+    except httpx.TransportError:
+        return 0
+
+
 def read_json(person: Person, path: str) -> Any:
     response = person.api("GET", path)
     response.raise_for_status()
@@ -479,7 +488,7 @@ def drill_d2(env: dict[str, str], stack: Stack, report: Report, out: Path) -> No
     run(stack.compose("start", "mock-api"))
     outage = round(time.monotonic() - down_at, 1)
     report.step("customer system started again", outage_seconds=outage)
-    back = wait_until(lambda: httpx.get(f"{APP}/readyz", timeout=10).status_code, lambda code: code == 200, 120, 2)
+    back = wait_until(readiness, lambda code: code == 200, 120, 2)
     report.check("readiness recovers", back == 200, http=back)
     finished = [
         wait_until(
@@ -689,7 +698,7 @@ def drill_d4(env: dict[str, str], stack: Stack, report: Report, out: Path) -> No
     report.check("the restore and the grants succeed", restored.returncode == 0, seconds=restore_seconds,
                  error=restored.stderr.strip()[:500])  # fmt: skip
     run(stack.compose("start", "app", "worker"))
-    ready = wait_until(lambda: httpx.get(f"{APP}/readyz", timeout=10).status_code, lambda c: c == 200, 180, 2)
+    ready = wait_until(readiness, lambda c: c == 200, 180, 2)
     rto = round(time.monotonic() - lost_at, 1)
     report.check(
         "the app is ready again (measured RTO)",
