@@ -1,0 +1,10 @@
+# Drill-only overrides (Milestone 13b; docs/drills.md). Never used by the normal stack, the demo or CI's other jobs.
+# `scripts/drill.py` writes the rules file, then recreates only the mock API with this file added:
+#   docker compose -p ci --env-file .env.ci -f docker-compose.yml -f docker-compose.drills.yml up -d --no-deps mock-api
+services:
+  mock-api:
+    environment:
+      MOCK_API_FAULTS: "true"
+      MOCK_API_FAULT_RULES_FILE: /drill-rules/rules.yaml
+    volumes:
+      - ./drill-output/rules:/drill-rules:ro

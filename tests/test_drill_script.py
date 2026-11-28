@@ -73,9 +73,31 @@ def test_the_drills_workflow_reads_no_secret_runs_one_at_a_time_and_keeps_its_ou
     assert "docker compose -p ci --env-file .env.ci down -v" in text  # the throwaway stack is removed
     for forbidden in ("run.app", "neon.tech", "gcloud"):
         assert forbidden not in text  # never the live demo, Cloud Run or Neon
-    assert set(drill.DRILLS) >= {"d7", "d3"}
+    assert set(drill.DRILLS) >= {"d7", "d3", "d5"}
     for name in drill.DRILLS:
         assert f'"{name}"' in text, f"{name} isn't in the workflow's drill list"
+
+
+def test_the_drill_overrides_touch_only_the_mock_api_and_turn_its_faults_on() -> None:
+    override = yaml.safe_load((ROOT / "docker-compose.drills.yml").read_text(encoding="utf-8"))
+    assert set(override["services"]) == {"mock-api"}
+    env = override["services"]["mock-api"]["environment"]
+    assert env["MOCK_API_FAULTS"] == "true" and env["MOCK_API_FAULT_RULES_FILE"] == "/drill-rules/rules.yaml"
+    assert override["services"]["mock-api"]["volumes"] == ["./drill-output/rules:/drill-rules:ro"]
+
+
+def test_fault_rules_are_written_where_the_override_mounts_them(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    commands: list[list[str]] = []
+    monkeypatch.setattr(drill, "run", commands.append)
+    drill.with_faults(drill.Stack("ci", Path(".env.ci"), "loyalty"), tmp_path, [{"fault": "commit_then_lost"}])
+    assert yaml.safe_load((tmp_path / "rules" / "rules.yaml").read_text(encoding="utf-8")) == {
+        "rules": [{"fault": "commit_then_lost"}]
+    }
+    [command] = commands
+    assert command[:2] == ["docker", "compose"] and command.count("-f") == 2
+    assert command[-1] == "mock-api" and "--no-deps" in command
 
 
 def test_the_job_check_binds_the_case_number(monkeypatch: pytest.MonkeyPatch) -> None:
